@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Mechanical\Flanges\" />
+    <Folder Include="Mechanical\PressureVessels\" />
+    <Folder Include="Reports\" />
+  </ItemGroup>
+
+</Project>

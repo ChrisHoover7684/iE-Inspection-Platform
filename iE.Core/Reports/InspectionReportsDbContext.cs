@@ -4,31 +4,44 @@ namespace iE.Core.Reports;
 
 public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbContext> options) : DbContext(options)
 {
-    public DbSet<Client> Clients => Set<Client>();
+    public DbSet<ClientOrganization> ClientOrganizations => Set<ClientOrganization>();
     public DbSet<Facility> Facilities => Set<Facility>();
-    public DbSet<UserAccess> UserAccesses => Set<UserAccess>();
+    public DbSet<ProcessUnit> ProcessUnits => Set<ProcessUnit>();
+    public DbSet<Asset> Assets => Set<Asset>();
+    public DbSet<UserFacilityAccess> UserFacilityAccesses => Set<UserFacilityAccess>();
     public DbSet<InspectionReport> InspectionReports => Set<InspectionReport>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Client>(builder =>
+        modelBuilder.Entity<ClientOrganization>(builder =>
         {
-            builder.ToTable("Clients");
+            builder.ToTable("ClientOrganizations");
             builder.HasKey(c => c.Id);
             builder.Property(c => c.Id).HasMaxLength(64);
             builder.Property(c => c.Name).HasMaxLength(256);
-            builder.Property(c => c.Code).HasMaxLength(64);
-            builder.HasIndex(c => c.Code).IsUnique();
 
             builder.HasMany(c => c.Facilities)
-                .WithOne(f => f.Client)
-                .HasForeignKey(f => f.ClientId)
+                .WithOne(f => f.ClientOrganization)
+                .HasForeignKey(f => f.ClientOrganizationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasMany(c => c.UserAccesses)
-                .WithOne(u => u.Client)
-                .HasForeignKey(u => u.ClientId)
+            builder.HasMany(c => c.UserFacilityAccesses)
+                .WithOne(ufa => ufa.ClientOrganization)
+                .HasForeignKey(ufa => ufa.ClientOrganizationId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(c => c.InspectionReports)
+                .WithOne()
+                .HasForeignKey(r => r.ClientOrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasData(new ClientOrganization
+            {
+                Id = "client-demo-refining",
+                Name = "Demo Refining Client",
+                IsActive = true,
+                CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            });
         });
 
         modelBuilder.Entity<Facility>(builder =>
@@ -36,22 +49,103 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
             builder.ToTable("Facilities");
             builder.HasKey(f => f.Id);
             builder.Property(f => f.Id).HasMaxLength(64);
-            builder.Property(f => f.ClientId).HasMaxLength(64);
+            builder.Property(f => f.ClientOrganizationId).HasMaxLength(64);
             builder.Property(f => f.Name).HasMaxLength(256);
-            builder.Property(f => f.Code).HasMaxLength(64);
             builder.Property(f => f.Location).HasMaxLength(512);
-            builder.HasIndex(f => new { f.ClientId, f.Code }).IsUnique();
+            builder.HasIndex(f => f.ClientOrganizationId);
+
+            builder.HasMany(f => f.ProcessUnits)
+                .WithOne(pu => pu.Facility)
+                .HasForeignKey(pu => pu.FacilityId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(f => f.Assets)
+                .WithOne(a => a.Facility)
+                .HasForeignKey(a => a.FacilityId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(f => f.InspectionReports)
+                .WithOne()
+                .HasForeignKey(r => r.FacilityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasData(new Facility
+            {
+                Id = "facility-demo-gulf-coast",
+                ClientOrganizationId = "client-demo-refining",
+                Name = "Demo Gulf Coast Refinery",
+                Location = null,
+                IsActive = true,
+                CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            });
         });
 
-        modelBuilder.Entity<UserAccess>(builder =>
+        modelBuilder.Entity<ProcessUnit>(builder =>
         {
-            builder.ToTable("UserAccesses");
-            builder.HasKey(u => u.Id);
-            builder.Property(u => u.Id).HasMaxLength(64);
-            builder.Property(u => u.ClientId).HasMaxLength(64);
-            builder.Property(u => u.UserId).HasMaxLength(128);
-            builder.Property(u => u.Role).HasMaxLength(64);
-            builder.HasIndex(u => new { u.ClientId, u.UserId }).IsUnique();
+            builder.ToTable("ProcessUnits");
+            builder.HasKey(pu => pu.Id);
+            builder.Property(pu => pu.Id).HasMaxLength(64);
+            builder.Property(pu => pu.FacilityId).HasMaxLength(64);
+            builder.Property(pu => pu.Name).HasMaxLength(256);
+            builder.Property(pu => pu.UnitCode).HasMaxLength(64);
+
+            builder.HasMany(pu => pu.Assets)
+                .WithOne(a => a.ProcessUnit)
+                .HasForeignKey(a => a.ProcessUnitId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasData(new ProcessUnit
+            {
+                Id = "unit-demo-crude",
+                FacilityId = "facility-demo-gulf-coast",
+                Name = "Crude Unit",
+                UnitCode = "001",
+                IsActive = true
+            });
+        });
+
+        modelBuilder.Entity<Asset>(builder =>
+        {
+            builder.ToTable("Assets");
+            builder.HasKey(a => a.Id);
+            builder.Property(a => a.Id).HasMaxLength(64);
+            builder.Property(a => a.FacilityId).HasMaxLength(64);
+            builder.Property(a => a.ProcessUnitId).HasMaxLength(64);
+            builder.Property(a => a.EquipmentTag).HasMaxLength(128);
+            builder.Property(a => a.EquipmentType).HasMaxLength(128);
+            builder.Property(a => a.Service).HasMaxLength(256);
+            builder.HasIndex(a => a.FacilityId);
+
+            builder.HasData(new Asset
+            {
+                Id = "asset-demo-piping-system",
+                FacilityId = "facility-demo-gulf-coast",
+                ProcessUnitId = "unit-demo-crude",
+                EquipmentTag = "EDR-010-H21",
+                EquipmentType = "Piping",
+                Service = "Demo Service",
+                IsActive = true
+            });
+        });
+
+        modelBuilder.Entity<UserFacilityAccess>(builder =>
+        {
+            builder.ToTable("UserFacilityAccesses");
+            builder.HasKey(ufa => ufa.Id);
+            builder.Property(ufa => ufa.Id).HasMaxLength(64);
+            builder.Property(ufa => ufa.UserId).HasMaxLength(128);
+            builder.Property(ufa => ufa.ClientOrganizationId).HasMaxLength(64);
+            builder.Property(ufa => ufa.FacilityId).HasMaxLength(64);
+            builder.Property(ufa => ufa.Role).HasMaxLength(64);
+
+            builder.HasOne(ufa => ufa.Facility)
+                .WithMany()
+                .HasForeignKey(ufa => ufa.FacilityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasIndex(ufa => ufa.UserId);
+            builder.HasIndex(ufa => ufa.ClientOrganizationId);
+            builder.HasIndex(ufa => ufa.FacilityId);
         });
 
         modelBuilder.Entity<InspectionReport>(builder =>
@@ -59,9 +153,12 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
             builder.ToTable("InspectionReports");
             builder.HasKey(r => r.Id);
             builder.Property(r => r.Id).HasMaxLength(64);
-            builder.Property(r => r.ClientId).HasMaxLength(64);
+            builder.Property(r => r.ClientOrganizationId).HasMaxLength(64);
             builder.Property(r => r.FacilityId).HasMaxLength(64);
+            builder.Property(r => r.ProcessUnitId).HasMaxLength(64);
+            builder.Property(r => r.AssetId).HasMaxLength(64);
             builder.Property(r => r.CreatedByUserId).HasMaxLength(128);
+            builder.Property(r => r.UpdatedByUserId).HasMaxLength(128);
             builder.Property(r => r.TemplateId).HasMaxLength(128);
             builder.Property(r => r.ReportNumber).HasMaxLength(128);
             builder.Property(r => r.EquipmentTag).HasMaxLength(128);
@@ -70,18 +167,20 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
             builder.Property(r => r.CircuitId).HasMaxLength(128);
             builder.Property(r => r.Service).HasMaxLength(256);
             builder.Property(r => r.Status).HasMaxLength(32);
-            builder.HasIndex(r => new { r.ClientId, r.FacilityId, r.ReportNumber }).IsUnique();
-            builder.HasIndex(r => new { r.ClientId, r.FacilityId, r.CreatedAt });
+            builder.HasIndex(r => r.ClientOrganizationId);
+            builder.HasIndex(r => r.FacilityId);
+            builder.HasIndex(r => r.TemplateId);
+            builder.HasIndex(r => r.Status);
 
-            builder.HasOne<Client>()
+            builder.HasOne<ProcessUnit>()
                 .WithMany()
-                .HasForeignKey(r => r.ClientId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasForeignKey(r => r.ProcessUnitId)
+                .OnDelete(DeleteBehavior.SetNull);
 
-            builder.HasOne<Facility>()
+            builder.HasOne<Asset>()
                 .WithMany()
-                .HasForeignKey(r => r.FacilityId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasForeignKey(r => r.AssetId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             builder.OwnsMany(r => r.Sections, sectionBuilder =>
             {

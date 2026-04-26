@@ -1,3 +1,4 @@
+using iE.Api.Contracts;
 using iE.Core.Reports;
 using iE.Core.Reports.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -30,9 +31,13 @@ public class ReportingController(
     }
 
     [HttpGet("instances")]
-    public ActionResult<List<InspectionReport>> GetInstances()
+    public ActionResult<List<InspectionReport>> GetInstances(
+        [FromQuery] string? clientOrganizationId,
+        [FromQuery] string? facilityId,
+        [FromQuery] string? templateId,
+        [FromQuery] string? status)
     {
-        return Ok(inspectionReportRepository.GetAll());
+        return Ok(inspectionReportRepository.GetAll(clientOrganizationId, facilityId, templateId, status));
     }
 
     [HttpGet("instances/{id}")]
@@ -123,7 +128,13 @@ public class ReportingController(
     }
 
     [HttpPost("templates/{templateId}/instances")]
-    public ActionResult<InspectionReport> CreateInstanceFromTemplate(string templateId)
+    public ActionResult<InspectionReport> CreateInstanceFromTemplate(
+        string templateId,
+        [FromQuery] string? clientOrganizationId,
+        [FromQuery] string? facilityId,
+        [FromQuery] string? processUnitId,
+        [FromQuery] string? assetId,
+        [FromBody] CreateReportInstanceRequest? request)
     {
         var template = ReportingSeedData.GetTemplateById(templateId);
         if (template is null)
@@ -132,6 +143,19 @@ public class ReportingController(
         }
 
         var report = inspectionReportFactory.CreateFromTemplate(template);
+
+        report.ClientOrganizationId = request?.ClientOrganizationId
+            ?? clientOrganizationId
+            ?? "client-demo-refining";
+        report.FacilityId = request?.FacilityId
+            ?? facilityId
+            ?? "facility-demo-gulf-coast";
+        report.ProcessUnitId = request?.ProcessUnitId
+            ?? processUnitId
+            ?? "unit-demo-crude";
+        report.AssetId = request?.AssetId
+            ?? assetId
+            ?? "asset-demo-piping-system";
 
         var created = inspectionReportRepository.Create(report);
         return CreatedAtAction(nameof(GetInstanceById), new { id = created.Id }, created);

@@ -92,13 +92,23 @@ public static class ReportingSeedData
                     Order = 2,
                     Fields =
                     [
-                        CreateChecklistField("scope-external-visual-inspection", "External Visual Inspection"),
-                        CreateChecklistField("scope-cui-visual-screening", "CUI Visual Screening"),
-                        CreateChecklistField("scope-support-inspection", "Support Inspection"),
-                        CreateChecklistField("scope-coating-inspection", "Coating Inspection"),
-                        CreateChecklistField("scope-insulation-inspection", "Insulation Inspection"),
-                        CreateChecklistField("scope-follow-up-inspection", "Follow-up Inspection"),
-                        CreateChecklistField("scope-repair-verification", "Repair Verification")
+                        new ReportTemplateField
+                        {
+                            Id = "inspection-scope-selection",
+                            Label = "Inspection Scope Selection",
+                            DataType = "multiselect",
+                            Options =
+                            [
+                                "External Visual Inspection",
+                                "CUI Screening",
+                                "Support Inspection",
+                                "Coating Inspection",
+                                "Insulation Inspection",
+                                "Follow-up Inspection",
+                                "Repair Verification"
+                            ],
+                            HelpText = "Select all scope areas that apply for this inspection."
+                        }
                     ]
                 },
                 new ReportTemplateSection
@@ -143,7 +153,7 @@ public static class ReportingSeedData
                         CreateChecklistField("active-process-leaks", "Active Process Leaks"),
                         CreateChecklistField("leak-repair-devices-clamps", "Leak Repair Devices / Clamps"),
                         CreateChecklistField("pipe-cracks-or-corrosion", "Pipe Cracks or Corrosion"),
-                        CreateChecklistField("dead-legs", "Dead Legs"),
+                        CreateChecklistField("dead-legs", "Dead Legs", "Sections of piping with little or no flow"),
                         CreateChecklistField("long-horizontal-runs-over-100-ft", "Long Horizontal Runs Over 100 ft"),
                         CreateChecklistField("abnormal-thermal-expansion-deformation", "Abnormal Thermal Expansion / Deformation"),
                         CreateChecklistField("vibration-overhung-weight", "Vibration / Overhung Weight"),
@@ -167,7 +177,7 @@ public static class ReportingSeedData
                         CreateChecklistField("insulated-piping-condition", "Insulated Piping Condition"),
                         CreateChecklistField("approximate-percent-insulated", "Approximate Percent Insulated"),
                         CreateChecklistField("insulation-type-identified", "Insulation Type Identified"),
-                        CreateChecklistField("cui-temperature-range", "Circuit Operates Within CUI Temperature Range"),
+                        CreateChecklistField("cui-temperature-range", "Circuit Operates Within CUI Temperature Range", "Corrosion Under Insulation risk area"),
                         CreateChecklistField("sweating-service", "Sweating Service"),
                         CreateChecklistField("steam-traced", "Steam Traced"),
                         CreateChecklistField("evidence-corrosion-under-insulation", "Evidence of Corrosion Under Insulation"),
@@ -212,13 +222,31 @@ public static class ReportingSeedData
                     Id = "component-finding-details",
                     Title = "Component / Finding Details",
                     Order = 9,
+                    IsRepeatable = true,
                     Fields =
                     [
-                        new ReportTemplateField { Id = "component-circuit-location", Label = "Component / Circuit / Location", DataType = "text" },
+                        new ReportTemplateField { Id = "component-location", Label = "Component / Location", DataType = "text" },
+                        new ReportTemplateField { Id = "component-circuit-location", Label = "Component / Circuit / Location (Legacy)", DataType = "text", HelpText = "Legacy field retained for backward compatibility." },
+                        new ReportTemplateField
+                        {
+                            Id = "component-type",
+                            Label = "Component Type",
+                            DataType = "select",
+                            Options = ["Pipe", "Elbow", "Flange", "Valve", "Support", "Branch", "Dead Leg", "Other"],
+                            HelpText = "Dead Leg: Sections of piping with little or no flow."
+                        },
                         new ReportTemplateField { Id = "finding-type", Label = "Finding Type", DataType = "text" },
-                        new ReportTemplateField { Id = "detailed-finding-description", Label = "Detailed Finding Description", DataType = "textarea" },
                         new ReportTemplateField { Id = "associated-checklist-item", Label = "Associated Checklist Item", DataType = "text" },
-                        new ReportTemplateField { Id = "photo-numbers", Label = "Photo Numbers", DataType = "text" },
+                        new ReportTemplateField { Id = "detailed-description", Label = "Detailed Description", DataType = "textarea" },
+                        new ReportTemplateField { Id = "detailed-finding-description", Label = "Detailed Finding Description (Legacy)", DataType = "textarea", HelpText = "Legacy field retained for backward compatibility." },
+                        new ReportTemplateField
+                        {
+                            Id = "severity",
+                            Label = "Severity",
+                            DataType = "select",
+                            Options = ["Low", "Moderate", "Severe"]
+                        },
+                        new ReportTemplateField { Id = "photo-numbers", Label = "Photo Numbers (Legacy)", DataType = "text", HelpText = "Legacy field retained for backward compatibility." },
                         new ReportTemplateField { Id = "recommendation-required", Label = "Recommendation Required", DataType = "boolean" },
                         new ReportTemplateField { Id = "recommendation-text", Label = "Recommendation Text", DataType = "textarea" }
                     ]
@@ -228,11 +256,13 @@ public static class ReportingSeedData
                     Id = "photos",
                     Title = "Photos",
                     Order = 10,
+                    IsRepeatable = true,
                     Fields =
                     [
                         new ReportTemplateField { Id = "photo-number", Label = "Photo Number", DataType = "text" },
                         new ReportTemplateField { Id = "photo-description", Label = "Photo Description", DataType = "textarea" },
-                        new ReportTemplateField { Id = "related-component-location", Label = "Related Component / Location", DataType = "text" },
+                        new ReportTemplateField { Id = "related-component", Label = "Related Component", DataType = "text" },
+                        new ReportTemplateField { Id = "related-component-location", Label = "Related Component / Location (Legacy)", DataType = "text", HelpText = "Legacy field retained for backward compatibility." },
                         new ReportTemplateField { Id = "related-checklist-item", Label = "Related Checklist Item", DataType = "text" },
                         new ReportTemplateField { Id = "photo-required", Label = "Photo Required", DataType = "boolean" },
                         new ReportTemplateField { Id = "photo-attached", Label = "Photo Attached", DataType = "boolean" }

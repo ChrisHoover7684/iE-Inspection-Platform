@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using iE.Core.Reports;
 using iE.Core.Reports.Services;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,14 +11,23 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-builder.Services.AddSingleton<InspectionReportRepository>();
-builder.Services.AddSingleton<InspectionReportFactory>();
-builder.Services.AddSingleton<InspectionReportDocxExportService>();
+builder.Services.AddDbContext<InspectionReportsDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("InspectionReports") ?? "Data Source=inspection-reports.db"));
+
+builder.Services.AddScoped<InspectionReportRepository>();
+builder.Services.AddScoped<InspectionReportFactory>();
+builder.Services.AddScoped<InspectionReportDocxExportService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<InspectionReportsDbContext>();
+    dbContext.Database.EnsureCreated();
+}
 
 if (app.Environment.IsDevelopment())
 {

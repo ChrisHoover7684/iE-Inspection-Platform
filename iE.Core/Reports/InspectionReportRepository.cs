@@ -1,62 +1,76 @@
+using Microsoft.EntityFrameworkCore;
+
 namespace iE.Core.Reports;
 
-public class InspectionReportRepository
+public class InspectionReportRepository(InspectionReportsDbContext dbContext)
 {
-    private static readonly List<InspectionReport> Reports = new();
-    private static readonly object Sync = new();
-
     public List<InspectionReport> GetAll()
     {
-        lock (Sync)
-        {
-            return Reports.ToList();
-        }
+        return dbContext.InspectionReports
+            .AsNoTracking()
+            .OrderByDescending(r => r.CreatedAt)
+            .ToList();
     }
 
     public InspectionReport? GetById(string id)
     {
-        lock (Sync)
-        {
-            return Reports.FirstOrDefault(r => string.Equals(r.Id, id, StringComparison.OrdinalIgnoreCase));
-        }
+        return dbContext.InspectionReports
+            .AsNoTracking()
+            .FirstOrDefault(r => r.Id == id);
     }
 
     public InspectionReport Create(InspectionReport report)
     {
-        lock (Sync)
-        {
-            Reports.Add(report);
-            return report;
-        }
+        dbContext.InspectionReports.Add(report);
+        dbContext.SaveChanges();
+        return report;
     }
 
     public InspectionReport? Update(string id, InspectionReport report)
     {
-        lock (Sync)
+        var existing = dbContext.InspectionReports.FirstOrDefault(r => r.Id == id);
+        if (existing is null)
         {
-            var index = Reports.FindIndex(r => string.Equals(r.Id, id, StringComparison.OrdinalIgnoreCase));
-            if (index < 0)
-            {
-                return null;
-            }
-
-            Reports[index] = report;
-            return report;
+            return null;
         }
+
+        dbContext.Entry(existing).CurrentValues.SetValues(report);
+
+        dbContext.Entry(existing).Collection(r => r.Sections).Load();
+        existing.Sections.Clear();
+        foreach (var section in report.Sections)
+        {
+            existing.Sections.Add(section);
+        }
+
+        dbContext.Entry(existing).Collection(r => r.Findings).Load();
+        existing.Findings.Clear();
+        foreach (var finding in report.Findings)
+        {
+            existing.Findings.Add(finding);
+        }
+
+        dbContext.Entry(existing).Collection(r => r.Photos).Load();
+        existing.Photos.Clear();
+        foreach (var photo in report.Photos)
+        {
+            existing.Photos.Add(photo);
+        }
+
+        dbContext.SaveChanges();
+        return existing;
     }
 
     public bool Delete(string id)
     {
-        lock (Sync)
+        var existing = dbContext.InspectionReports.FirstOrDefault(r => r.Id == id);
+        if (existing is null)
         {
-            var existing = Reports.FirstOrDefault(r => string.Equals(r.Id, id, StringComparison.OrdinalIgnoreCase));
-            if (existing is null)
-            {
-                return false;
-            }
-
-            Reports.Remove(existing);
-            return true;
+            return false;
         }
+
+        dbContext.InspectionReports.Remove(existing);
+        dbContext.SaveChanges();
+        return true;
     }
 }

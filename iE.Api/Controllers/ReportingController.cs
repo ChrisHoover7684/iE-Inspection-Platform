@@ -8,7 +8,8 @@ namespace iE.Api.Controllers;
 [Route("api/reports")]
 public class ReportingController(
     InspectionReportRepository inspectionReportRepository,
-    InspectionReportFactory inspectionReportFactory) : ControllerBase
+    InspectionReportFactory inspectionReportFactory,
+    InspectionReportDocxExportService inspectionReportDocxExportService) : ControllerBase
 {
     [HttpGet("templates")]
     public ActionResult<IReadOnlyList<ReportTemplate>> GetTemplates()
@@ -44,6 +45,27 @@ public class ReportingController(
         }
 
         return Ok(report);
+    }
+
+    [HttpGet("instances/{id}/export/docx")]
+    public ActionResult ExportInstanceDocx(string id)
+    {
+        var report = inspectionReportRepository.GetById(id);
+        if (report is null)
+        {
+            return NotFound(new { error = $"Inspection report instance '{id}' was not found." });
+        }
+
+        var fileBytes = inspectionReportDocxExportService.Export(report);
+        var safeReportNumber = string.IsNullOrWhiteSpace(report.ReportNumber)
+            ? id
+            : report.ReportNumber.Trim().Replace(' ', '-');
+        var fileName = $"api570-report-{safeReportNumber}.docx";
+
+        return File(
+            fileBytes,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            fileName);
     }
 
     [HttpPost("instances")]

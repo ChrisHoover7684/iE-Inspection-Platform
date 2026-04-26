@@ -12,6 +12,7 @@ builder.Services.AddControllers()
 
 builder.Services.AddSingleton<InspectionReportRepository>();
 builder.Services.AddSingleton<InspectionReportFactory>();
+builder.Services.AddSingleton<InspectionReportDocxExportService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

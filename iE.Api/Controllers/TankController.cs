@@ -36,5 +36,11 @@ namespace iE.Api.Controllers
         {
             return Ok(_settlementService.Calculate(input));
         }
+
+        [HttpPost("localized-corrosion")]
+        public IActionResult CalculateLocalizedCorrosion([FromBody] TankLocalizedCorrosionInput input)
+        {
+            return Ok(_shellService.CalculateLocalizedCorrosion(input));
+        }
     }
 }

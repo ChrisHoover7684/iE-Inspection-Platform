@@ -19,6 +19,19 @@ namespace iE.Api.Controllers
             return Ok(TankMaterialRepository.GetAll());
         }
 
+
+        [HttpGet("joint-efficiencies")]
+        public IActionResult GetJointEfficiencies([FromQuery] double kFactor = 0)
+        {
+            return Ok(TankJointEfficiencyRepository.GetAll(kFactor));
+        }
+
+        [HttpGet("joint-efficiencies/options")]
+        public IActionResult GetJointEfficiencyOptions()
+        {
+            return Ok(TankJointEfficiencyRepository.GetOptions());
+        }
+
         [HttpPost("shell")]
         public IActionResult CalculateShell([FromBody] TankShellInput input)
         {

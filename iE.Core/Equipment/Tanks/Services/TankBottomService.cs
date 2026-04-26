@@ -35,5 +35,36 @@ namespace iE.Core.Equipment.Tanks.Services
 
             return result;
         }
+
+        public TankMrtResult CalculateMrt(TankMrtInput input)
+        {
+            if (input.Or > 20)
+            {
+                throw new ArgumentException("Or cannot be greater than 20 years.");
+            }
+
+            var mrt = Math.Min(input.RTbc, input.RTip) - input.Or * (input.StPr + input.UPr);
+
+            var hasEnhancedProtection =
+                string.Equals(input.BottomProtectionType, "RPB", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(input.BottomProtectionType, "Double Bottom", StringComparison.OrdinalIgnoreCase);
+
+            var requiredMrt = hasEnhancedProtection ? 0.05 : 0.10;
+
+            if (input.BottomCoated)
+            {
+                var coatedRequiredMrt = 0.10 - input.CoatingLife * input.UPr;
+                requiredMrt = Math.Max(requiredMrt, coatedRequiredMrt);
+            }
+
+            return new TankMrtResult
+            {
+                MRT = Math.Round(mrt, 3),
+                RequiredMRT = Math.Round(requiredMrt, 3),
+                Passes = mrt >= requiredMrt,
+                Status = mrt >= requiredMrt ? "PASS" : "FAIL - Below required MRT"
+            };
+        }
+
     }
 }

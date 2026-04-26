@@ -4,10 +4,35 @@ namespace iE.Core.Reports;
 
 public class InspectionReportRepository(InspectionReportsDbContext dbContext)
 {
-    public List<InspectionReport> GetAll()
+    public List<InspectionReport> GetAll(
+        string? clientOrganizationId = null,
+        string? facilityId = null,
+        string? templateId = null,
+        string? status = null)
     {
-        return dbContext.InspectionReports
-            .AsNoTracking()
+        var query = dbContext.InspectionReports.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(clientOrganizationId))
+        {
+            query = query.Where(r => r.ClientOrganizationId == clientOrganizationId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(facilityId))
+        {
+            query = query.Where(r => r.FacilityId == facilityId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(templateId))
+        {
+            query = query.Where(r => r.TemplateId == templateId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query = query.Where(r => r.Status == status);
+        }
+
+        return query
             .OrderByDescending(r => r.CreatedAt)
             .ToList();
     }

@@ -7,7 +7,8 @@ public static class ReportingSeedData
     private static readonly List<ReportTemplate> Templates =
     [
         CreateApi510Template(),
-        CreateApi570Template()
+        CreateApi570Template(),
+        CreateApi653Template()
     ];
 
     public static IReadOnlyList<ReportTemplate> GetTemplates() => Templates;
@@ -19,11 +20,11 @@ public static class ReportingSeedData
     {
         return new ReportTemplate
         {
-            Id = "std-api-510-pressure-vessel-inspection",
-            Name = "Standard API 510 Pressure Vessel Inspection",
+            Id = "std-api-510-external-pressure-vessel-inspection",
+            Name = "Standard API 510 External Pressure Vessel Inspection",
             Standard = "API 510",
             EquipmentType = "Pressure Vessel",
-            Description = "Baseline API 510 pressure vessel inspection template.",
+            Description = "Checklist-driven external pressure vessel inspection template for API 510 inspection reporting.",
             Sections =
             [
                 new ReportTemplateSection
@@ -36,6 +37,14 @@ public static class ReportingSeedData
                         new ReportTemplateField { Id = "asset-id", Label = "Asset ID", DataType = "text", IsRequired = true },
                         new ReportTemplateField { Id = "inspection-date", Label = "Inspection Date", DataType = "date", IsRequired = true },
                         new ReportTemplateField { Id = "inspector-name", Label = "Inspector Name", DataType = "text", IsRequired = true },
+                        new ReportTemplateField
+                        {
+                            Id = "inspection-type",
+                            Label = "Inspection Type",
+                            DataType = "select",
+                            DefaultValue = "External Visual",
+                            Options = ["External Visual", "On-Stream", "Follow-up Inspection", "Repair Verification"]
+                        },
                         new ReportTemplateField { Id = "summary", Label = "Inspection Summary", DataType = "textarea" }
                     ]
                 }
@@ -286,6 +295,59 @@ public static class ReportingSeedData
             AllowsRecommendationFlag = true,
             HelpText = helpText,
             Options = [..InspectionStatusOptions]
+        };
+    }
+
+    private static ReportTemplate CreateApi653Template()
+    {
+        return new ReportTemplate
+        {
+            Id = "std-api-653-external-tank-inspection",
+            Name = "Standard API 653 External Tank Inspection",
+            Standard = "API 653",
+            EquipmentType = "Storage Tank",
+            Description = "Checklist-driven external storage tank inspection template for API 653 inspection reporting.",
+            Sections =
+            [
+                new ReportTemplateSection
+                {
+                    Id = "general-information",
+                    Title = "General Information",
+                    Order = 1,
+                    Fields =
+                    [
+                        new ReportTemplateField { Id = "tank-id", Label = "Tank ID", DataType = "text", IsRequired = true },
+                        new ReportTemplateField { Id = "inspection-date", Label = "Inspection Date", DataType = "date", IsRequired = true },
+                        new ReportTemplateField { Id = "inspector-name", Label = "Inspector Name", DataType = "text", IsRequired = true },
+                        new ReportTemplateField
+                        {
+                            Id = "inspection-type",
+                            Label = "Inspection Type",
+                            DataType = "select",
+                            DefaultValue = "External Visual",
+                            Options = ["External Visual", "CML Review", "Follow-up Inspection", "Repair Verification"]
+                        },
+                        new ReportTemplateField { Id = "summary", Label = "Inspection Summary", DataType = "textarea" }
+                    ]
+                },
+                new ReportTemplateSection
+                {
+                    Id = "external-checklist",
+                    Title = "External Checklist",
+                    Order = 2,
+                    Fields =
+                    [
+                        CreateChecklistField("shell-condition", "Shell Condition"),
+                        CreateChecklistField("roof-condition", "Roof Condition"),
+                        CreateChecklistField("bottom-edge-corrosion", "Bottom Edge Corrosion"),
+                        CreateChecklistField("foundation-ringwall-condition", "Foundation / Ringwall Condition"),
+                        CreateChecklistField("nozzle-manway-condition", "Nozzle / Manway Condition"),
+                        CreateChecklistField("coating-condition", "Coating Condition"),
+                        CreateChecklistField("leaks-emissions", "Leaks / Emissions"),
+                        CreateChecklistField("external-appurtenances", "External Appurtenances (Ladders, Platforms, Stairs)")
+                    ]
+                }
+            ]
         };
     }
 }

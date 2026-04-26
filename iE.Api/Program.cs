@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using iE.Core.Reports;
+using iE.Core.Reports.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,7 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddSingleton<InspectionReportRepository>();
+builder.Services.AddSingleton<InspectionReportFactory>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

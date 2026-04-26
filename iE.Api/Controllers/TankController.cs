@@ -55,5 +55,18 @@ namespace iE.Api.Controllers
         {
             return Ok(_shellService.CalculateLocalizedCorrosion(input));
         }
+
+        [HttpPost("mrt")]
+        public IActionResult CalculateMrt([FromBody] TankMrtInput input)
+        {
+            try
+            {
+                return Ok(_bottomService.CalculateMrt(input));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }

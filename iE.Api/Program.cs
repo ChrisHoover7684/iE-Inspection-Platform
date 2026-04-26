@@ -12,7 +12,9 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddDbContext<InspectionReportsDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("InspectionReports") ?? "Data Source=inspection-reports.db"));
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("InspectionReports")
+        ?? "Host=localhost;Port=5432;Database=inspection_reports;Username=postgres;Password=postgres"));
 
 builder.Services.AddScoped<InspectionReportRepository>();
 builder.Services.AddScoped<InspectionReportFactory>();

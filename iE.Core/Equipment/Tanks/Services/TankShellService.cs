@@ -136,6 +136,36 @@ namespace iE.Core.Equipment.Tanks.Services
             return result;
         }
 
+
+
+        public TankLocalizedCorrosionResult CalculateLocalizedCorrosion(TankLocalizedCorrosionInput input)
+        {
+            if (input.Diameter <= 0)
+                throw new Exception("Diameter must be > 0.");
+
+            if (input.RemainingThickness <= 0)
+                throw new Exception("Remaining thickness (t2) must be > 0.");
+
+            if (input.MinimumThickness <= 0)
+                throw new Exception("Minimum thickness (t_min) must be > 0.");
+
+            if (input.ActualMeasuredLength < 0)
+                throw new Exception("Actual measured length must be >= 0.");
+
+            double allowableLength = Math.Min(3.7 * Math.Sqrt(input.Diameter * input.RemainingThickness), 40.0);
+            bool thicknessPass = input.RemainingThickness >= (0.6 * input.MinimumThickness);
+            bool lengthPass = input.ActualMeasuredLength <= allowableLength;
+            bool overallPass = thicknessPass && lengthPass;
+
+            return new TankLocalizedCorrosionResult
+            {
+                AllowableLength = Math.Round(allowableLength, 3),
+                ThicknessPass = thicknessPass,
+                LengthPass = lengthPass,
+                OverallPass = overallPass
+            };
+        }
+
         private static TankStressResult GetAllowableStress(
             int courseNumber,
             double yieldStrength,

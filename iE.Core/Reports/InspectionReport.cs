@@ -10,6 +10,9 @@ public static class InspectionReportStatuses
 public class InspectionReport
 {
     public string Id { get; set; } = string.Empty;
+    public string ClientId { get; set; } = string.Empty;
+    public string FacilityId { get; set; } = string.Empty;
+    public string CreatedByUserId { get; set; } = string.Empty;
     public string TemplateId { get; set; } = string.Empty;
     public string ReportNumber { get; set; } = string.Empty;
     public string EquipmentTag { get; set; } = string.Empty;

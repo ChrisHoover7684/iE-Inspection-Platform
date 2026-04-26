@@ -4,15 +4,64 @@ namespace iE.Core.Reports;
 
 public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbContext> options) : DbContext(options)
 {
+    public DbSet<Client> Clients => Set<Client>();
+    public DbSet<Facility> Facilities => Set<Facility>();
+    public DbSet<UserAccess> UserAccesses => Set<UserAccess>();
     public DbSet<InspectionReport> InspectionReports => Set<InspectionReport>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Client>(builder =>
+        {
+            builder.ToTable("Clients");
+            builder.HasKey(c => c.Id);
+            builder.Property(c => c.Id).HasMaxLength(64);
+            builder.Property(c => c.Name).HasMaxLength(256);
+            builder.Property(c => c.Code).HasMaxLength(64);
+            builder.HasIndex(c => c.Code).IsUnique();
+
+            builder.HasMany(c => c.Facilities)
+                .WithOne(f => f.Client)
+                .HasForeignKey(f => f.ClientId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(c => c.UserAccesses)
+                .WithOne(u => u.Client)
+                .HasForeignKey(u => u.ClientId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Facility>(builder =>
+        {
+            builder.ToTable("Facilities");
+            builder.HasKey(f => f.Id);
+            builder.Property(f => f.Id).HasMaxLength(64);
+            builder.Property(f => f.ClientId).HasMaxLength(64);
+            builder.Property(f => f.Name).HasMaxLength(256);
+            builder.Property(f => f.Code).HasMaxLength(64);
+            builder.Property(f => f.Location).HasMaxLength(512);
+            builder.HasIndex(f => new { f.ClientId, f.Code }).IsUnique();
+        });
+
+        modelBuilder.Entity<UserAccess>(builder =>
+        {
+            builder.ToTable("UserAccesses");
+            builder.HasKey(u => u.Id);
+            builder.Property(u => u.Id).HasMaxLength(64);
+            builder.Property(u => u.ClientId).HasMaxLength(64);
+            builder.Property(u => u.UserId).HasMaxLength(128);
+            builder.Property(u => u.Role).HasMaxLength(64);
+            builder.HasIndex(u => new { u.ClientId, u.UserId }).IsUnique();
+        });
+
         modelBuilder.Entity<InspectionReport>(builder =>
         {
             builder.ToTable("InspectionReports");
             builder.HasKey(r => r.Id);
             builder.Property(r => r.Id).HasMaxLength(64);
+            builder.Property(r => r.ClientId).HasMaxLength(64);
+            builder.Property(r => r.FacilityId).HasMaxLength(64);
+            builder.Property(r => r.CreatedByUserId).HasMaxLength(128);
             builder.Property(r => r.TemplateId).HasMaxLength(128);
             builder.Property(r => r.ReportNumber).HasMaxLength(128);
             builder.Property(r => r.EquipmentTag).HasMaxLength(128);
@@ -21,6 +70,18 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
             builder.Property(r => r.CircuitId).HasMaxLength(128);
             builder.Property(r => r.Service).HasMaxLength(256);
             builder.Property(r => r.Status).HasMaxLength(32);
+            builder.HasIndex(r => new { r.ClientId, r.FacilityId, r.ReportNumber }).IsUnique();
+            builder.HasIndex(r => new { r.ClientId, r.FacilityId, r.CreatedAt });
+
+            builder.HasOne<Client>()
+                .WithMany()
+                .HasForeignKey(r => r.ClientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne<Facility>()
+                .WithMany()
+                .HasForeignKey(r => r.FacilityId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.OwnsMany(r => r.Sections, sectionBuilder =>
             {

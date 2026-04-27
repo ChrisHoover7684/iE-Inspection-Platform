@@ -8,8 +8,14 @@ function formatDate(value?: string | null) {
   return new Date(value).toLocaleString();
 }
 
-async function handleDocxExport(id: string, setError: (value: string) => void) {
+async function handleDocxExport(
+  id: string,
+  setError: (value: string) => void,
+  setMessage: (value: string) => void,
+  setExportingId: (value: string) => void
+) {
   try {
+    setExportingId(id);
     const { blob, fileName } = await reportingApi.exportDocx(id);
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
@@ -17,9 +23,12 @@ async function handleDocxExport(id: string, setError: (value: string) => void) {
     anchor.download = fileName;
     anchor.click();
     URL.revokeObjectURL(url);
+    setMessage(`Exported ${fileName}.`);
   } catch (error) {
     const message = error instanceof ApiError ? error.message : 'DOCX export failed.';
     setError(message);
+  } finally {
+    setExportingId('');
   }
 }
 
@@ -28,13 +37,19 @@ export function ReportsTestDashboardPage() {
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [instances, setInstances] = useState<InspectionReport[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+  const [isLoadingReports, setIsLoadingReports] = useState(false);
+  const [isCreatingReport, setIsCreatingReport] = useState(false);
+  const [exportingReportId, setExportingReportId] = useState('');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [apiBaseUrl, setApiBaseUrlInput] = useState(getApiBaseUrl());
 
   const loadData = async () => {
-    setIsLoading(true);
     setError('');
+    setMessage('');
+    setIsLoadingTemplates(true);
+    setIsLoadingReports(true);
     try {
       const [templateData, reportData] = await Promise.all([
         reportingApi.getTemplates(),
@@ -48,7 +63,8 @@ export function ReportsTestDashboardPage() {
     } catch (error) {
       setError(error instanceof Error ? error.message : 'API not reachable.');
     } finally {
-      setIsLoading(false);
+      setIsLoadingTemplates(false);
+      setIsLoadingReports(false);
     }
   };
 
@@ -65,13 +81,19 @@ export function ReportsTestDashboardPage() {
   const onCreateReport = async () => {
     if (!selectedTemplateId) return;
     setError('');
+    setMessage('');
+    setIsCreatingReport(true);
     try {
       const created = await reportingApi.createInstanceFromTemplate(selectedTemplateId);
       navigate(`/reports-test/${created.id}`);
     } catch (error) {
       setError(error instanceof Error ? `Create report failed: ${error.message}` : 'Create report failed.');
+    } finally {
+      setIsCreatingReport(false);
     }
   };
+
+  const isBusy = isLoadingTemplates || isLoadingReports || isCreatingReport;
 
   return (
     <div className="page">
@@ -85,13 +107,15 @@ export function ReportsTestDashboardPage() {
       </div>
 
       {error && <p className="error">{error}</p>}
+      {message && <p className="success">{message}</p>}
 
       <div className="card">
         <h2>Templates</h2>
+        {isLoadingTemplates && <p>Loading templates...</p>}
         <select
           value={selectedTemplateId}
           onChange={(event) => setSelectedTemplateId(event.target.value)}
-          disabled={isLoading}
+          disabled={isBusy}
         >
           {templates.map((template) => (
             <option key={template.id} value={template.id}>
@@ -99,14 +123,15 @@ export function ReportsTestDashboardPage() {
             </option>
           ))}
         </select>
-        <button onClick={onCreateReport} disabled={!selectedTemplateId || isLoading}>
-          Create Report
+        <button onClick={onCreateReport} disabled={!selectedTemplateId || isBusy}>
+          {isCreatingReport ? 'Creating Report...' : 'Create Report'}
         </button>
       </div>
 
       <div className="card">
         <h2>Report Instances</h2>
-        <button onClick={loadData} disabled={isLoading}>Reload</button>
+        {isLoadingReports && <p>Loading reports...</p>}
+        <button onClick={loadData} disabled={isBusy}>Reload</button>
         <table>
           <thead>
             <tr>
@@ -115,6 +140,7 @@ export function ReportsTestDashboardPage() {
               <th>Status</th>
               <th>Created At</th>
               <th>Facility ID</th>
+              <th>Findings</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -126,9 +152,15 @@ export function ReportsTestDashboardPage() {
                 <td>{instance.status}</td>
                 <td>{formatDate(instance.createdAt)}</td>
                 <td>{instance.facilityId}</td>
+                <td>{instance.findings?.length || 0}</td>
                 <td>
                   <button onClick={() => navigate(`/reports-test/${instance.id}`)}>Open</button>
-                  <button onClick={() => handleDocxExport(instance.id, setError)}>Export DOCX</button>
+                  <button
+                    onClick={() => handleDocxExport(instance.id, setError, setMessage, setExportingReportId)}
+                    disabled={exportingReportId === instance.id}
+                  >
+                    {exportingReportId === instance.id ? 'Exporting...' : 'Export DOCX'}
+                  </button>
                 </td>
               </tr>
             ))}

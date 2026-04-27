@@ -108,9 +108,10 @@ function AnswerEditor({
     return (
       <input
         type="text"
-        value={answer.values.join(', ')}
+        value={(answer.values || []).join(', ')}
         onChange={(event) =>
           onChange({
+            value: null,
             values: event.target.value
               .split(',')
               .map((part) => part.trim())
@@ -135,16 +136,22 @@ export function ReportEditPage() {
   const [report, setReport] = useState<InspectionReport | null>(null);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [isLoadingReport, setIsLoadingReport] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncingFindings, setIsSyncingFindings] = useState(false);
+  const [isExportingDocx, setIsExportingDocx] = useState(false);
 
   const loadReport = async () => {
     if (!id) return;
+    setIsLoadingReport(true);
     setError('');
     try {
       const nextReport = await reportingApi.getInstanceById(id);
       setReport(nextReport);
     } catch (error) {
       setError(`API not reachable: ${getErrorMessage(error, 'Load failed')}`);
+    } finally {
+      setIsLoadingReport(false);
     }
   };
 
@@ -160,6 +167,18 @@ export function ReportEditPage() {
         .sort((a, b) => (a.section.order ?? 0) - (b.section.order ?? 0)),
     [report]
   );
+
+  const checklistIssueCount = useMemo(() => {
+    if (!report) return 0;
+    return report.sections.reduce(
+      (count, section) =>
+        count +
+        section.answers.filter(
+          (answer) => answer.dataType.toLowerCase() === 'inspection-status' && answer.value === 'Issue'
+        ).length,
+      0
+    );
+  }, [report]);
 
   const updateAnswer = (
     sectionIndex: number,
@@ -183,6 +202,15 @@ export function ReportEditPage() {
     });
   };
 
+  const deleteFinding = (findingIndex: number) => {
+    setReport((current) => {
+      if (!current) return current;
+      const next = structuredClone(current);
+      next.findings.splice(findingIndex, 1);
+      return next;
+    });
+  };
+
   const onSave = async () => {
     if (!report) return;
     setIsSaving(true);
@@ -191,7 +219,7 @@ export function ReportEditPage() {
     try {
       const updated = await reportingApi.saveInstance(report.id, report);
       setReport(updated);
-      setMessage('Report saved.');
+      setMessage('Report saved successfully.');
     } catch (error) {
       setError(`Save failed: ${getErrorMessage(error, 'Unable to save report.')}`);
     } finally {
@@ -201,19 +229,23 @@ export function ReportEditPage() {
 
   const onSyncFindings = async () => {
     if (!report) return;
+    setIsSyncingFindings(true);
     setError('');
     setMessage('');
     try {
-      await reportingApi.syncFindings(report.id);
-      await loadReport();
-      setMessage('Findings synced.');
+      const updated = await reportingApi.syncFindings(report.id);
+      setReport(updated);
+      setMessage(`Findings synced. Total findings: ${updated.findings.length}.`);
     } catch (error) {
       setError(`Sync failed: ${getErrorMessage(error, 'Unable to sync findings.')}`);
+    } finally {
+      setIsSyncingFindings(false);
     }
   };
 
   const onExportDocx = async () => {
     if (!report) return;
+    setIsExportingDocx(true);
     setError('');
     setMessage('');
     try {
@@ -227,13 +259,15 @@ export function ReportEditPage() {
       setMessage(`Exported ${fileName}.`);
     } catch (error) {
       setError(`Export failed: ${getErrorMessage(error, 'Unable to export DOCX.')}`);
+    } finally {
+      setIsExportingDocx(false);
     }
   };
 
   if (!report) {
     return (
       <div className="page">
-        <p>Loading report...</p>
+        <p>{isLoadingReport ? 'Loading report by ID...' : 'No report loaded.'}</p>
         {error && <p className="error">{error}</p>}
         <Link to="/reports-test">Back</Link>
       </div>
@@ -257,6 +291,8 @@ export function ReportEditPage() {
         <p><strong>FacilityId:</strong> {report.facilityId}</p>
         <p><strong>ProcessUnitId:</strong> {report.processUnitId || '-'}</p>
         <p><strong>AssetId:</strong> {report.assetId || '-'}</p>
+        <p><strong>Finding Count:</strong> <span className="badge">{report.findings.length}</span></p>
+        <p><strong>Checklist Issues:</strong> <span className="badge issue-badge">{checklistIssueCount}</span></p>
       </div>
 
       <div className="card">
@@ -267,24 +303,28 @@ export function ReportEditPage() {
               {section.sectionTitle}
               {section.instanceNumber ? ` #${section.instanceNumber}` : ''}
             </h3>
-            {section.answers.map((answer, answerIndex) => (
-              <div key={answer.fieldId} className="answer-row">
-                <label>
-                  <strong>{answer.label}</strong>
-                  <span className="data-type">({answer.dataType})</span>
-                </label>
-                <AnswerEditor
-                  answer={answer}
-                  onChange={(partial) => updateAnswer(sectionIndex, answerIndex, partial)}
-                />
-              </div>
-            ))}
+            {section.answers.map((answer, answerIndex) => {
+              const isIssue =
+                answer.dataType.toLowerCase() === 'inspection-status' && answer.value === 'Issue';
+              return (
+                <div key={answer.fieldId} className={`answer-row ${isIssue ? 'issue-row' : ''}`}>
+                  <label>
+                    <strong>{answer.label}</strong>
+                    <span className="data-type">({answer.dataType})</span>
+                  </label>
+                  <AnswerEditor
+                    answer={answer}
+                    onChange={(partial) => updateAnswer(sectionIndex, answerIndex, partial)}
+                  />
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
 
       <div className="card">
-        <h2>Findings</h2>
+        <h2>Findings ({report.findings.length})</h2>
         {report.findings.length === 0 && <p>No findings yet.</p>}
         {report.findings.map((finding, findingIndex) => (
           <div key={finding.id || findingIndex} className="finding-grid">
@@ -353,14 +393,26 @@ export function ReportEditPage() {
                 }
               />
             </label>
+            <div>
+              <button type="button" onClick={() => deleteFinding(findingIndex)}>Delete Finding</button>
+            </div>
           </div>
         ))}
       </div>
 
       <div className="row">
-        <button onClick={onSave} disabled={isSaving}>Save Report</button>
-        <button onClick={onSyncFindings}>Sync Findings</button>
-        <button onClick={onExportDocx}>Export DOCX</button>
+        <button onClick={onSave} disabled={isSaving || isLoadingReport}>
+          {isSaving ? 'Saving...' : 'Save Report'}
+        </button>
+        <button onClick={onSyncFindings} disabled={isSyncingFindings || isLoadingReport}>
+          {isSyncingFindings ? 'Syncing Findings...' : 'Sync Findings'}
+        </button>
+        <button onClick={onExportDocx} disabled={isExportingDocx || isLoadingReport}>
+          {isExportingDocx ? 'Exporting DOCX...' : 'Export DOCX'}
+        </button>
+        <button onClick={loadReport} disabled={isLoadingReport}>
+          {isLoadingReport ? 'Loading...' : 'Reload Report'}
+        </button>
       </div>
     </div>
   );

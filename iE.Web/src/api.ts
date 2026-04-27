@@ -18,9 +18,18 @@ export class ApiError extends Error {
   }
 }
 
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+function buildApiUrl(path: string): string {
   const base = getApiBaseUrl().replace(/\/+$/, '');
-  const response = await fetch(`${base}${path}`, {
+  return `${base}${path}`;
+}
+
+async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const url = buildApiUrl(path);
+  const method = init?.method || 'GET';
+
+  console.log(`[reports-test-api] ${method} ${url}`);
+
+  const response = await fetch(url, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -38,6 +47,11 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       // no-op
     }
+
+    console.error(`[reports-test-api] ${method} ${url} failed`, {
+      status: response.status,
+      message: errorMessage
+    });
 
     throw new ApiError(errorMessage, response.status);
   }
@@ -70,17 +84,27 @@ export const reportingApi = {
       body: JSON.stringify({})
     }),
   async exportDocx(id: string): Promise<{ blob: Blob; fileName: string }> {
-    const base = getApiBaseUrl().replace(/\/+$/, '');
-    const response = await fetch(`${base}/api/reports/instances/${id}/export/docx`);
+    const url = buildApiUrl(`/api/reports/instances/${id}/export/docx`);
+    console.log(`[reports-test-api] GET ${url}`);
+
+    const response = await fetch(url);
     if (!response.ok) {
-      throw new ApiError(`DOCX export failed (${response.status})`, response.status);
+      const message = `DOCX export failed (${response.status})`;
+      console.error('[reports-test-api] GET export docx failed', {
+        url,
+        status: response.status,
+        message
+      });
+      throw new ApiError(message, response.status);
     }
 
     const disposition = response.headers.get('content-disposition') || '';
     const match = disposition.match(/filename="?([^";]+)"?/i);
+    const resolvedFileName = match?.[1] || `${id}.docx`;
+
     return {
       blob: await response.blob(),
-      fileName: match?.[1] || `${id}.docx`
+      fileName: resolvedFileName.toLowerCase().endsWith('.docx') ? resolvedFileName : `${resolvedFileName}.docx`
     };
   }
 };

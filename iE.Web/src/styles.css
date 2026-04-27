@@ -57,7 +57,8 @@ td {
 
 .answer-row {
   border-top: 1px solid #eee;
-  padding: 8px 0;
+  padding: 8px;
+  border-radius: 6px;
 }
 
 .answer-fields label {
@@ -91,6 +92,24 @@ label {
   border-top: 1px solid #eee;
   padding-top: 8px;
   margin-top: 8px;
+}
+
+.issue-row {
+  background-color: #fff1f1;
+  border: 1px solid #ffc9c9;
+}
+
+.badge {
+  display: inline-block;
+  min-width: 28px;
+  text-align: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: #e9ecef;
+}
+
+.issue-badge {
+  background: #ffd9d9;
 }
 
 .error {

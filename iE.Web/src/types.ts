@@ -19,18 +19,28 @@ export type InspectionReport = {
   facilityId: string;
   processUnitId?: string | null;
   assetId?: string | null;
+  createdByUserId?: string | null;
+  updatedByUserId?: string | null;
   templateId: string;
+  reportNumber?: string;
+  equipmentTag?: string;
+  unit?: string;
+  systemId?: string;
+  circuitId?: string;
+  service?: string;
   status: string;
   createdAt: string;
   updatedAt?: string | null;
   sections: InspectionReportSection[];
   findings: InspectionFinding[];
+  photos: InspectionPhoto[];
 };
 
 export type InspectionReportSection = {
   sectionId: string;
   sectionTitle: string;
   order: number;
+  isRepeatable?: boolean;
   instanceNumber?: number | null;
   answers: InspectionReportAnswer[];
 };
@@ -57,4 +67,17 @@ export type InspectionFinding = {
   severity: string;
   recommendationRequired: boolean;
   recommendationText?: string | null;
+  photoIds?: string[];
+};
+
+export type InspectionPhoto = {
+  id: string;
+  photoNumber: string;
+  description: string;
+  relatedComponent: string;
+  relatedChecklistItem: string;
+  photoRequired: boolean;
+  photoAttached: boolean;
+  fileName?: string | null;
+  fileUrl?: string | null;
 };

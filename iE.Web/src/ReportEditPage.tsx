@@ -1,0 +1,367 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { ApiError, reportingApi } from './api';
+import type { InspectionFinding, InspectionReport, InspectionReportAnswer } from './types';
+
+const INSPECTION_STATUS_OPTIONS = ['', 'No Issue', 'Issue', 'N/A'];
+
+function toLocalDate(value?: string | null) {
+  if (!value) return '';
+  return value.slice(0, 10);
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
+
+function AnswerEditor({
+  answer,
+  onChange
+}: {
+  answer: InspectionReportAnswer;
+  onChange: (value: Partial<InspectionReportAnswer>) => void;
+}) {
+  const type = answer.dataType.toLowerCase();
+
+  if (type === 'inspection-status') {
+    return (
+      <div className="answer-fields">
+        <select value={answer.value || ''} onChange={(event) => onChange({ value: event.target.value })}>
+          {INSPECTION_STATUS_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option || '(blank)'}
+            </option>
+          ))}
+        </select>
+        <textarea
+          placeholder="Comment"
+          value={answer.comment || ''}
+          onChange={(event) => onChange({ comment: event.target.value })}
+        />
+        <label>
+          <input
+            type="checkbox"
+            checked={answer.photoRequired ?? false}
+            onChange={(event) => onChange({ photoRequired: event.target.checked })}
+          />
+          Photo Required
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={answer.transferToComponentSection ?? false}
+            onChange={(event) => onChange({ transferToComponentSection: event.target.checked })}
+          />
+          Transfer To Component Section
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={answer.recommendationRequired ?? false}
+            onChange={(event) => onChange({ recommendationRequired: event.target.checked })}
+          />
+          Recommendation Required
+        </label>
+      </div>
+    );
+  }
+
+  if (type === 'textarea') {
+    return (
+      <textarea value={answer.value || ''} onChange={(event) => onChange({ value: event.target.value })} />
+    );
+  }
+
+  if (type === 'boolean') {
+    return (
+      <input
+        type="checkbox"
+        checked={(answer.value || '').toLowerCase() === 'true'}
+        onChange={(event) => onChange({ value: event.target.checked ? 'true' : 'false' })}
+      />
+    );
+  }
+
+  if (type === 'date') {
+    return (
+      <input
+        type="date"
+        value={toLocalDate(answer.value)}
+        onChange={(event) => onChange({ value: event.target.value })}
+      />
+    );
+  }
+
+  if (type === 'number') {
+    return (
+      <input
+        type="number"
+        value={answer.value || ''}
+        onChange={(event) => onChange({ value: event.target.value })}
+      />
+    );
+  }
+
+  if (type === 'multiselect') {
+    return (
+      <input
+        type="text"
+        value={answer.values.join(', ')}
+        onChange={(event) =>
+          onChange({
+            values: event.target.value
+              .split(',')
+              .map((part) => part.trim())
+              .filter(Boolean)
+          })
+        }
+      />
+    );
+  }
+
+  return (
+    <input
+      type="text"
+      value={answer.value || ''}
+      onChange={(event) => onChange({ value: event.target.value })}
+    />
+  );
+}
+
+export function ReportEditPage() {
+  const { id } = useParams<{ id: string }>();
+  const [report, setReport] = useState<InspectionReport | null>(null);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const loadReport = async () => {
+    if (!id) return;
+    setError('');
+    try {
+      const nextReport = await reportingApi.getInstanceById(id);
+      setReport(nextReport);
+    } catch (error) {
+      setError(`API not reachable: ${getErrorMessage(error, 'Load failed')}`);
+    }
+  };
+
+  useEffect(() => {
+    loadReport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const sortedSections = useMemo(
+    () =>
+      (report?.sections || [])
+        .map((section, index) => ({ section, index }))
+        .sort((a, b) => (a.section.order ?? 0) - (b.section.order ?? 0)),
+    [report]
+  );
+
+  const updateAnswer = (
+    sectionIndex: number,
+    answerIndex: number,
+    partial: Partial<InspectionReportAnswer>
+  ) => {
+    setReport((current) => {
+      if (!current) return current;
+      const next = structuredClone(current);
+      Object.assign(next.sections[sectionIndex].answers[answerIndex], partial);
+      return next;
+    });
+  };
+
+  const updateFinding = (findingIndex: number, partial: Partial<InspectionFinding>) => {
+    setReport((current) => {
+      if (!current) return current;
+      const next = structuredClone(current);
+      Object.assign(next.findings[findingIndex], partial);
+      return next;
+    });
+  };
+
+  const onSave = async () => {
+    if (!report) return;
+    setIsSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const updated = await reportingApi.saveInstance(report.id, report);
+      setReport(updated);
+      setMessage('Report saved.');
+    } catch (error) {
+      setError(`Save failed: ${getErrorMessage(error, 'Unable to save report.')}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const onSyncFindings = async () => {
+    if (!report) return;
+    setError('');
+    setMessage('');
+    try {
+      await reportingApi.syncFindings(report.id);
+      await loadReport();
+      setMessage('Findings synced.');
+    } catch (error) {
+      setError(`Sync failed: ${getErrorMessage(error, 'Unable to sync findings.')}`);
+    }
+  };
+
+  const onExportDocx = async () => {
+    if (!report) return;
+    setError('');
+    setMessage('');
+    try {
+      const { blob, fileName } = await reportingApi.exportDocx(report.id);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = fileName;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setMessage(`Exported ${fileName}.`);
+    } catch (error) {
+      setError(`Export failed: ${getErrorMessage(error, 'Unable to export DOCX.')}`);
+    }
+  };
+
+  if (!report) {
+    return (
+      <div className="page">
+        <p>Loading report...</p>
+        {error && <p className="error">{error}</p>}
+        <Link to="/reports-test">Back</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page">
+      <h1>Report Editor</h1>
+      <Link to="/reports-test">Back to dashboard</Link>
+
+      {error && <p className="error">{error}</p>}
+      {message && <p className="success">{message}</p>}
+
+      <div className="card">
+        <h2>Header</h2>
+        <p><strong>Report ID:</strong> {report.id}</p>
+        <p><strong>Template ID:</strong> {report.templateId}</p>
+        <p><strong>Status:</strong> {report.status}</p>
+        <p><strong>ClientOrganizationId:</strong> {report.clientOrganizationId}</p>
+        <p><strong>FacilityId:</strong> {report.facilityId}</p>
+        <p><strong>ProcessUnitId:</strong> {report.processUnitId || '-'}</p>
+        <p><strong>AssetId:</strong> {report.assetId || '-'}</p>
+      </div>
+
+      <div className="card">
+        <h2>Sections</h2>
+        {sortedSections.map(({ section, index: sectionIndex }) => (
+          <div key={`${section.sectionId}-${section.instanceNumber ?? 0}`} className="section">
+            <h3>
+              {section.sectionTitle}
+              {section.instanceNumber ? ` #${section.instanceNumber}` : ''}
+            </h3>
+            {section.answers.map((answer, answerIndex) => (
+              <div key={answer.fieldId} className="answer-row">
+                <label>
+                  <strong>{answer.label}</strong>
+                  <span className="data-type">({answer.dataType})</span>
+                </label>
+                <AnswerEditor
+                  answer={answer}
+                  onChange={(partial) => updateAnswer(sectionIndex, answerIndex, partial)}
+                />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <div className="card">
+        <h2>Findings</h2>
+        {report.findings.length === 0 && <p>No findings yet.</p>}
+        {report.findings.map((finding, findingIndex) => (
+          <div key={finding.id || findingIndex} className="finding-grid">
+            <label>
+              ComponentLocation
+              <input
+                value={finding.componentLocation}
+                onChange={(event) => updateFinding(findingIndex, { componentLocation: event.target.value })}
+              />
+            </label>
+            <label>
+              ComponentType
+              <input
+                value={finding.componentType}
+                onChange={(event) => updateFinding(findingIndex, { componentType: event.target.value })}
+              />
+            </label>
+            <label>
+              FindingType
+              <input
+                value={finding.findingType}
+                onChange={(event) => updateFinding(findingIndex, { findingType: event.target.value })}
+              />
+            </label>
+            <label>
+              AssociatedChecklistItem
+              <input
+                value={finding.associatedChecklistItem}
+                onChange={(event) =>
+                  updateFinding(findingIndex, { associatedChecklistItem: event.target.value })
+                }
+              />
+            </label>
+            <label>
+              DetailedDescription
+              <textarea
+                value={finding.detailedDescription}
+                onChange={(event) =>
+                  updateFinding(findingIndex, { detailedDescription: event.target.value })
+                }
+              />
+            </label>
+            <label>
+              Severity
+              <input
+                value={finding.severity}
+                onChange={(event) => updateFinding(findingIndex, { severity: event.target.value })}
+              />
+            </label>
+            <label>
+              RecommendationRequired
+              <input
+                type="checkbox"
+                checked={finding.recommendationRequired}
+                onChange={(event) =>
+                  updateFinding(findingIndex, { recommendationRequired: event.target.checked })
+                }
+              />
+            </label>
+            <label>
+              RecommendationText
+              <textarea
+                value={finding.recommendationText || ''}
+                onChange={(event) =>
+                  updateFinding(findingIndex, { recommendationText: event.target.value })
+                }
+              />
+            </label>
+          </div>
+        ))}
+      </div>
+
+      <div className="row">
+        <button onClick={onSave} disabled={isSaving}>Save Report</button>
+        <button onClick={onSyncFindings}>Sync Findings</button>
+        <button onClick={onExportDocx}>Export DOCX</button>
+      </div>
+    </div>
+  );
+}

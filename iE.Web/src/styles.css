@@ -1,0 +1,102 @@
+:root {
+  font-family: Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f7f7f7;
+}
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.card {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0;
+}
+
+input,
+select,
+textarea,
+button {
+  padding: 6px;
+  font-size: 14px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border: 1px solid #ddd;
+  padding: 6px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.answer-row {
+  border-top: 1px solid #eee;
+  padding: 8px 0;
+}
+
+.answer-fields label {
+  display: flex;
+  gap: 6px;
+  width: auto;
+}
+
+.section {
+  border: 1px solid #ececec;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+label {
+  display: block;
+  margin: 4px 0;
+}
+
+.data-type {
+  font-weight: normal;
+  color: #666;
+  margin-left: 4px;
+}
+
+.finding-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 8px;
+  border-top: 1px solid #eee;
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.error {
+  color: #b00020;
+}
+
+.success {
+  color: #0f7a1d;
+}

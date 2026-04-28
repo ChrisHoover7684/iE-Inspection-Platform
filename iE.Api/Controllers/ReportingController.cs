@@ -84,26 +84,15 @@ public class ReportingController(
             return NotFound(new { error = $"Inspection report instance '{id}' was not found." });
         }
 
-        try
-        {
-            var fileBytes = photoAppendixExportService.Export(report);
-            var safeReportNumber = string.IsNullOrWhiteSpace(report.ReportNumber)
-                ? id
-                : report.ReportNumber.Trim().Replace(' ', '-');
-            var fileName = $"api570-photo-appendix-{safeReportNumber}.docx";
+        var fileBytes = photoAppendixExportService.Export(report);
+        var fileName = string.IsNullOrWhiteSpace(report.ReportNumber)
+            ? $"InspectionReport_{id}_PhotoAppendix.docx"
+            : $"{report.ReportNumber.Trim()}_PhotoAppendix.docx";
 
-            return File(
-                fileBytes,
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                fileName);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Problem(
-                title: "Unable to export photo appendix DOCX.",
-                detail: ex.Message,
-                statusCode: StatusCodes.Status500InternalServerError);
-        }
+        return File(
+            fileBytes,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            fileName);
     }
 
     [HttpPost("instances")]

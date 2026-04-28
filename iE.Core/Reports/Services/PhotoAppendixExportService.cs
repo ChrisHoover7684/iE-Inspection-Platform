@@ -1,4 +1,5 @@
 using System.Text;
+using System.Globalization;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Drawing;
 using DocumentFormat.OpenXml.Packaging;
@@ -12,8 +13,8 @@ public class PhotoAppendixExportService
 {
     private const string PhotoBinaryTag = "{{PhotoBinary}}";
     private const long EmusPerInch = 914400;
-    private static readonly long MaxImageWidthEmus = 6 * EmusPerInch;
-    private static readonly long MaxImageHeightEmus = 4 * EmusPerInch;
+    private static readonly long MaxImageWidthEmus = (long)(3d * EmusPerInch);
+    private static readonly long MaxImageHeightEmus = (long)(2.2d * EmusPerInch);
 
     public byte[] Export(InspectionReport report)
     {
@@ -47,12 +48,12 @@ public class PhotoAppendixExportService
 
         if (report.Photos.Count == 0)
         {
-            templateRow.Remove();
+            ReplaceTextTags(templateRow, BuildEmptyPhotoTagMap());
             mainPart.Document.Save();
             return outputStream.ToArray();
         }
 
-        foreach (var photo in report.Photos)
+        foreach (var photo in SortPhotos(report.Photos))
         {
             var clonedRow = (TableRow)templateRow.CloneNode(true);
             ReplaceTextTags(clonedRow, BuildPhotoTagMap(report, photo));
@@ -68,12 +69,17 @@ public class PhotoAppendixExportService
 
     private static Dictionary<string, string> BuildPhotoTagMap(InspectionReport report, InspectionPhoto photo)
     {
+        var findingType = ResolveFindingType(report, photo);
         return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             ["{{ReportNumber}}"] = Clean(report.ReportNumber),
             ["{{EquipmentTag}}"] = Clean(report.EquipmentTag),
             ["{{PhotoId}}"] = Clean(photo.Id),
             ["{{PhotoNumber}}"] = Clean(photo.PhotoNumber),
+            ["{{ProfileId}}"] = Clean(photo.RelatedChecklistItem),
+            ["{{ComponentLocation}}"] = Clean(photo.RelatedComponent),
+            ["{{FindingType}}"] = Clean(findingType),
+            ["{{Description}}"] = Clean(photo.Description),
             ["{{PhotoDescription}}"] = Clean(photo.Description),
             ["{{RelatedComponent}}"] = Clean(photo.RelatedComponent),
             ["{{RelatedChecklistItem}}"] = Clean(photo.RelatedChecklistItem),
@@ -82,6 +88,58 @@ public class PhotoAppendixExportService
             ["{{FileUrl}}"] = Clean(photo.FileUrl),
             [PhotoBinaryTag] = string.Empty
         };
+    }
+
+    private static Dictionary<string, string> BuildEmptyPhotoTagMap()
+    {
+        return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            [PhotoBinaryTag] = "[No photos attached]",
+            ["{{PhotoNumber}}"] = string.Empty,
+            ["{{ProfileId}}"] = string.Empty,
+            ["{{ComponentLocation}}"] = string.Empty,
+            ["{{FindingType}}"] = string.Empty,
+            ["{{Description}}"] = string.Empty,
+            ["{{PhotoDescription}}"] = string.Empty,
+            ["{{RelatedComponent}}"] = string.Empty,
+            ["{{RelatedChecklistItem}}"] = string.Empty
+        };
+    }
+
+    private static string ResolveFindingType(InspectionReport report, InspectionPhoto photo)
+    {
+        var linkedFinding = report.Findings.FirstOrDefault(f =>
+            f.PhotoIds.Any(photoId => string.Equals(photoId, photo.Id, StringComparison.OrdinalIgnoreCase)));
+
+        if (!string.IsNullOrWhiteSpace(linkedFinding?.FindingType))
+        {
+            return linkedFinding.FindingType;
+        }
+
+        var checklistFinding = report.Findings.FirstOrDefault(f =>
+            string.Equals(f.AssociatedChecklistItem, photo.RelatedChecklistItem, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(checklistFinding?.FindingType))
+        {
+            return checklistFinding.FindingType;
+        }
+
+        var componentFinding = report.Findings.FirstOrDefault(f =>
+            string.Equals(f.ComponentLocation, photo.RelatedComponent, StringComparison.OrdinalIgnoreCase));
+
+        return componentFinding?.FindingType ?? string.Empty;
+    }
+
+    private static IEnumerable<InspectionPhoto> SortPhotos(IEnumerable<InspectionPhoto> photos)
+    {
+        return photos.OrderBy(photo => TryParsePhotoNumber(photo.PhotoNumber, out _) ? 0 : 1)
+            .ThenBy(photo => TryParsePhotoNumber(photo.PhotoNumber, out var number) ? number : int.MaxValue)
+            .ThenBy(photo => Clean(photo.PhotoNumber), StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool TryParsePhotoNumber(string? value, out int number)
+    {
+        return int.TryParse(Clean(value), NumberStyles.Integer, CultureInfo.InvariantCulture, out number);
     }
 
     private static void ReplaceTextTags(OpenXmlElement scope, IReadOnlyDictionary<string, string> tagMap)

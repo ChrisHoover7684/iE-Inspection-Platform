@@ -1,9 +1,9 @@
 using System.Text;
 using System.Globalization;
 using DocumentFormat.OpenXml;
-using DocumentFormat.OpenXml.Drawing;
 using DocumentFormat.OpenXml.Packaging;
-using DocumentFormat.OpenXml.Wordprocessing;
+using W = DocumentFormat.OpenXml.Wordprocessing;
+using A = DocumentFormat.OpenXml.Drawing;
 using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
 using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
 
@@ -37,7 +37,7 @@ public class PhotoAppendixExportService
         var body = mainPart.Document.Body
             ?? throw new InvalidOperationException("Invalid DOCX template: missing document body.");
 
-        var templateRow = body.Descendants<TableRow>()
+        var templateRow = body.Descendants<W.TableRow>()
             .FirstOrDefault(r => r.InnerText.Contains(PhotoBinaryTag, StringComparison.Ordinal));
 
         if (templateRow is null)
@@ -55,7 +55,7 @@ public class PhotoAppendixExportService
 
         foreach (var photo in SortPhotos(report.Photos))
         {
-            var clonedRow = (TableRow)templateRow.CloneNode(true);
+            var clonedRow = (W.TableRow)templateRow.CloneNode(true);
             ReplaceTextTags(clonedRow, BuildPhotoTagMap(report, photo));
             InsertOrReplacePhoto(mainPart, clonedRow, photo);
             templateRow.Parent?.InsertBefore(clonedRow, templateRow);
@@ -141,7 +141,7 @@ public class PhotoAppendixExportService
 
     private static void ReplaceTextTags(OpenXmlElement scope, IReadOnlyDictionary<string, string> tagMap)
     {
-        foreach (var textNode in scope.Descendants<Text>())
+        foreach (var textNode in scope.Descendants<W.Text>())
         {
             var updated = textNode.Text;
             foreach (var (tag, value) in tagMap)
@@ -153,9 +153,9 @@ public class PhotoAppendixExportService
         }
     }
 
-    private static void InsertOrReplacePhoto(MainDocumentPart mainPart, TableRow row, InspectionPhoto photo)
+    private static void InsertOrReplacePhoto(MainDocumentPart mainPart, W.TableRow row, InspectionPhoto photo)
     {
-        var targetCell = row.Descendants<TableCell>()
+        var targetCell = row.Descendants<W.TableCell>()
             .FirstOrDefault(c => c.InnerText.Contains(PhotoBinaryTag, StringComparison.Ordinal));
 
         if (targetCell is null)
@@ -163,7 +163,7 @@ public class PhotoAppendixExportService
             return;
         }
 
-        foreach (var paragraph in targetCell.Elements<Paragraph>().ToList())
+        foreach (var paragraph in targetCell.Elements<W.Paragraph>().ToList())
         {
             paragraph.Remove();
         }
@@ -171,14 +171,14 @@ public class PhotoAppendixExportService
         var imageBytes = TryResolvePhotoBytes(photo);
         if (imageBytes is null)
         {
-            targetCell.AppendChild(new Paragraph(new Run(new Text("Photo not available"))));
+            targetCell.AppendChild(new W.Paragraph(new W.Run(new W.Text("Photo not available"))));
             return;
         }
 
         var imageType = DetectImagePartType(imageBytes, out var extension);
         if (imageType is null)
         {
-            targetCell.AppendChild(new Paragraph(new Run(new Text("Unsupported image format"))));
+            targetCell.AppendChild(new W.Paragraph(new W.Run(new W.Text("Unsupported image format"))));
             return;
         }
 
@@ -194,7 +194,7 @@ public class PhotoAppendixExportService
         var (cx, cy) = ResizeToFit(pixelWidth, pixelHeight, MaxImageWidthEmus, MaxImageHeightEmus);
 
         var drawing = BuildDrawing(relationshipId, cx, cy, extension);
-        targetCell.AppendChild(new Paragraph(new Run(drawing)));
+        targetCell.AppendChild(new W.Paragraph(new W.Run(drawing)));
     }
 
     private static byte[]? TryResolvePhotoBytes(InspectionPhoto photo)
@@ -271,7 +271,7 @@ public class PhotoAppendixExportService
         }
     }
 
-    private static ImagePartType? DetectImagePartType(byte[] bytes, out string extension)
+    private static PartTypeInfo? DetectImagePartType(byte[] bytes, out string extension)
     {
         extension = "bin";
         if (bytes.Length >= 8 && bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47)
@@ -458,12 +458,12 @@ public class PhotoAppendixExportService
         return (resizedCx, resizedCy);
     }
 
-    private static Drawing BuildDrawing(string relationshipId, long cx, long cy, string extension)
+    private static W.Drawing BuildDrawing(string relationshipId, long cx, long cy, string extension)
     {
         var elementId = (uint)Random.Shared.Next(1, int.MaxValue);
         var elementName = $"Photo_{Guid.NewGuid():N}.{extension}";
 
-        return new Drawing(
+        return new W.Drawing(
             new DW.Inline(
                 new DW.Extent { Cx = cx, Cy = cy },
                 new DW.EffectExtent
@@ -475,21 +475,21 @@ public class PhotoAppendixExportService
                 },
                 new DW.DocProperties { Id = elementId, Name = elementName },
                 new DW.NonVisualGraphicFrameDrawingProperties(
-                    new GraphicFrameLocks { NoChangeAspect = true }),
-                new Graphic(
-                    new GraphicData(
+                    new A.GraphicFrameLocks { NoChangeAspect = true }),
+                new A.Graphic(
+                    new A.GraphicData(
                         new PIC.Picture(
                             new PIC.NonVisualPictureProperties(
                                 new PIC.NonVisualDrawingProperties { Id = elementId, Name = elementName },
                                 new PIC.NonVisualPictureDrawingProperties()),
                             new PIC.BlipFill(
-                                new Blip { Embed = relationshipId },
-                                new Stretch(new FillRectangle())),
+                                new A.Blip { Embed = relationshipId },
+                                new A.Stretch(new A.FillRectangle())),
                             new PIC.ShapeProperties(
-                                new Transform2D(
-                                    new Offset { X = 0L, Y = 0L },
-                                    new Extents { Cx = cx, Cy = cy }),
-                                new PresetGeometry(new AdjustValueList()) { Preset = ShapeTypeValues.Rectangle })))
+                                new A.Transform2D(
+                                    new A.Offset { X = 0L, Y = 0L },
+                                    new A.Extents { Cx = cx, Cy = cy }),
+                                new A.PresetGeometry(new A.AdjustValueList()) { Preset = A.ShapeTypeValues.Rectangle })))
                     { Uri = "http://schemas.openxmlformats.org/drawingml/2006/picture" }))
             {
                 DistanceFromTop = 0U,

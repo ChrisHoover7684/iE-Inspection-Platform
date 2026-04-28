@@ -19,6 +19,7 @@ builder.Services.AddDbContext<InspectionReportsDbContext>(options =>
 builder.Services.AddScoped<InspectionReportRepository>();
 builder.Services.AddScoped<InspectionReportFactory>();
 builder.Services.AddScoped<InspectionReportDocxExportService>();
+builder.Services.AddScoped<PhotoAppendixExportService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

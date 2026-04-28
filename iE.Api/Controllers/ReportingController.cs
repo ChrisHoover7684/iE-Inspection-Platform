@@ -10,7 +10,8 @@ namespace iE.Api.Controllers;
 public class ReportingController(
     InspectionReportRepository inspectionReportRepository,
     InspectionReportFactory inspectionReportFactory,
-    InspectionReportDocxExportService inspectionReportDocxExportService) : ControllerBase
+    InspectionReportDocxExportService inspectionReportDocxExportService,
+    PhotoAppendixExportService photoAppendixExportService) : ControllerBase
 {
     [HttpGet("templates")]
     public ActionResult<IReadOnlyList<ReportTemplate>> GetTemplates()
@@ -71,6 +72,38 @@ public class ReportingController(
             fileBytes,
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             fileName);
+    }
+
+
+    [HttpGet("instances/{id}/export/photo-appendix/docx")]
+    public ActionResult ExportPhotoAppendixDocx(string id)
+    {
+        var report = inspectionReportRepository.GetById(id);
+        if (report is null)
+        {
+            return NotFound(new { error = $"Inspection report instance '{id}' was not found." });
+        }
+
+        try
+        {
+            var fileBytes = photoAppendixExportService.Export(report);
+            var safeReportNumber = string.IsNullOrWhiteSpace(report.ReportNumber)
+                ? id
+                : report.ReportNumber.Trim().Replace(' ', '-');
+            var fileName = $"api570-photo-appendix-{safeReportNumber}.docx";
+
+            return File(
+                fileBytes,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                fileName);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Problem(
+                title: "Unable to export photo appendix DOCX.",
+                detail: ex.Message,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
     }
 
     [HttpPost("instances")]

@@ -13,7 +13,7 @@ public class PhotoAppendixExportService
 {
     private const string PhotoBinaryTag = "{{PhotoBinary}}";
     private const long EmusPerInch = 914400;
-    private static readonly long MaxImageWidthEmus = (long)(3d * EmusPerInch);
+    private static readonly long MaxImageWidthEmus = (long)(3.0 * EmusPerInch);
     private static readonly long MaxImageHeightEmus = (long)(2.2d * EmusPerInch);
 
     public byte[] Export(InspectionReport report)
@@ -99,7 +99,7 @@ public class PhotoAppendixExportService
             ["{{ProfileId}}"] = string.Empty,
             ["{{ComponentLocation}}"] = string.Empty,
             ["{{FindingType}}"] = string.Empty,
-            ["{{Description}}"] = string.Empty,
+            ["{{Description}}"] = "No photos attached.",
             ["{{PhotoDescription}}"] = string.Empty,
             ["{{RelatedComponent}}"] = string.Empty,
             ["{{RelatedChecklistItem}}"] = string.Empty
@@ -124,10 +124,7 @@ public class PhotoAppendixExportService
             return checklistFinding.FindingType;
         }
 
-        var componentFinding = report.Findings.FirstOrDefault(f =>
-            string.Equals(f.ComponentLocation, photo.RelatedComponent, StringComparison.OrdinalIgnoreCase));
-
-        return componentFinding?.FindingType ?? string.Empty;
+        return string.Empty;
     }
 
     private static IEnumerable<InspectionPhoto> SortPhotos(IEnumerable<InspectionPhoto> photos)

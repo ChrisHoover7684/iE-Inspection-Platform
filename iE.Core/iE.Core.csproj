@@ -13,13 +13,6 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.8" />
   </ItemGroup>
 
-
-  <ItemGroup>
-    <Content Include="Reports/Templates/*.docx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
   <ItemGroup>
     <Folder Include="Mechanical\Flanges\" />
     <Folder Include="Mechanical\PressureVessels\" />

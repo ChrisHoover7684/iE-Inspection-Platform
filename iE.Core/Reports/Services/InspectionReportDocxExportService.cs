@@ -44,6 +44,12 @@ public class InspectionReportDocxExportService(InspectionSummaryService inspecti
 
         return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
+            ["{{Client}}"] = Clean(report.ClientOrganizationId),
+            ["{{Facility}}"] = Clean(report.FacilityId),
+            ["{{SystemID}}"] = Clean(report.SystemId),
+            ["{{ReportID}}"] = Clean(report.ReportNumber),
+            ["{{InspectionDate}}"] = FormatDate(report.CreatedAt),
+            ["{{Insp_Name}}"] = Clean(report.CreatedByUserId),
             ["{{ReportNumber}}"] = Clean(report.ReportNumber),
             ["{{EquipmentTag}}"] = Clean(report.EquipmentTag),
             ["{{Unit}}"] = Clean(report.Unit),
@@ -92,4 +98,7 @@ public class InspectionReportDocxExportService(InspectionSummaryService inspecti
 
     private static string FormatDateTime(DateTime value) =>
         value.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+
+    private static string FormatDate(DateTime value) =>
+        value == default ? "Not provided" : value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 }

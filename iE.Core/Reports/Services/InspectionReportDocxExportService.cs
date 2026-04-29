@@ -78,15 +78,30 @@ public class InspectionReportDocxExportService(InspectionSummaryService inspecti
 
     private static void ReplaceTextTags(OpenXmlElement scope, IReadOnlyDictionary<string, string> tagMap)
     {
-        foreach (var textNode in scope.Descendants<W.Text>())
+        foreach (var paragraph in scope.Descendants<W.Paragraph>())
         {
-            var updated = textNode.Text;
+            var textNodes = paragraph.Descendants<W.Text>().ToList();
+            if (textNodes.Count == 0)
+            {
+                continue;
+            }
+
+            var fullText = string.Concat(textNodes.Select(t => t.Text));
+            var updated = fullText;
             foreach (var (tag, value) in tagMap)
             {
                 updated = updated.Replace(tag, value, StringComparison.OrdinalIgnoreCase);
             }
 
-            textNode.Text = updated;
+            if (string.Equals(fullText, updated, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            paragraph.RemoveAllChildren<W.Run>();
+            var replacementRun = new W.Run();
+            replacementRun.AppendChild(new W.Text(updated) { Space = SpaceProcessingModeValues.Preserve });
+            paragraph.AppendChild(replacementRun);
         }
     }
 

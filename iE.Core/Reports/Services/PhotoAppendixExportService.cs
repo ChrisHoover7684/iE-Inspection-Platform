@@ -29,42 +29,47 @@ public class PhotoAppendixExportService
         using var outputStream = new MemoryStream();
         templateStream.CopyTo(outputStream);
         outputStream.Position = 0;
+        byte[] result;
 
-        using var document = WordprocessingDocument.Open(outputStream, true);
-        var mainPart = document.MainDocumentPart
-            ?? throw new InvalidOperationException("Invalid DOCX template: missing main document part.");
-
-        var body = mainPart.Document.Body
-            ?? throw new InvalidOperationException("Invalid DOCX template: missing document body.");
-
-        var templateRow = body.Descendants<W.TableRow>()
-            .FirstOrDefault(r => r.InnerText.Contains(PhotoBinaryTag, StringComparison.Ordinal));
-
-        if (templateRow is null)
+        using (var document = WordprocessingDocument.Open(outputStream, true))
         {
-            throw new InvalidOperationException(
-                $"Template row containing '{PhotoBinaryTag}' was not found in API570_External_PhotoAppendix.docx.");
+            var mainPart = document.MainDocumentPart
+                ?? throw new InvalidOperationException("Invalid DOCX template: missing main document part.");
+
+            var body = mainPart.Document.Body
+                ?? throw new InvalidOperationException("Invalid DOCX template: missing document body.");
+
+            var templateRow = body.Descendants<W.TableRow>()
+                .FirstOrDefault(r => r.InnerText.Contains(PhotoBinaryTag, StringComparison.Ordinal));
+
+            if (templateRow is null)
+            {
+                throw new InvalidOperationException(
+                    $"Template row containing '{PhotoBinaryTag}' was not found in API570_External_PhotoAppendix.docx.");
+            }
+
+            if (report.Photos.Count == 0)
+            {
+                ReplaceTextTags(body, BuildEmptyPhotoTagMap(report));
+                mainPart.Document.Save();
+            }
+            else
+            {
+                foreach (var photo in SortPhotos(report.Photos))
+                {
+                    var clonedRow = (W.TableRow)templateRow.CloneNode(true);
+                    ReplaceTextTags(clonedRow, BuildPhotoTagMap(report, photo));
+                    InsertOrReplacePhoto(mainPart, clonedRow, photo);
+                    templateRow.Parent?.InsertBefore(clonedRow, templateRow);
+                }
+
+                templateRow.Remove();
+                mainPart.Document.Save();
+            }
         }
 
-        if (report.Photos.Count == 0)
-        {
-            ReplaceTextTags(body, BuildEmptyPhotoTagMap(report));
-            mainPart.Document.Save();
-            return outputStream.ToArray();
-        }
-
-        foreach (var photo in SortPhotos(report.Photos))
-        {
-            var clonedRow = (W.TableRow)templateRow.CloneNode(true);
-            ReplaceTextTags(clonedRow, BuildPhotoTagMap(report, photo));
-            InsertOrReplacePhoto(mainPart, clonedRow, photo);
-            templateRow.Parent?.InsertBefore(clonedRow, templateRow);
-        }
-
-        templateRow.Remove();
-        mainPart.Document.Save();
-
-        return outputStream.ToArray();
+        result = outputStream.ToArray();
+        return result;
     }
 
     private static Dictionary<string, string> BuildPhotoTagMap(InspectionReport report, InspectionPhoto photo)

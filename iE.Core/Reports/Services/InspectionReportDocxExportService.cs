@@ -177,17 +177,18 @@ public class InspectionReportDocxExportService(InspectionSummaryService inspecti
         var answers = report.Sections
             .SelectMany(section => section.Answers)
             .ToList();
+        var findings = report.Findings ?? new List<InspectionFinding>();
 
         foreach (var (fieldId, prefix) in ChecklistFieldToTemplatePrefixMap)
         {
             var answer = answers.FirstOrDefault(a => string.Equals(a.FieldId, fieldId, StringComparison.OrdinalIgnoreCase));
+            var finding = findings.FirstOrDefault(f =>
+                string.Equals(f.AssociatedChecklistItem, answer?.FieldId, StringComparison.OrdinalIgnoreCase));
 
             tagMap[$"{{{{{prefix}_Status}}}}"] = answer?.Value ?? string.Empty;
             tagMap[$"{{{{{prefix}_Comment}}}}"] = answer?.Comment ?? string.Empty;
             tagMap[$"{{{{{prefix}_PhotoRefs}}}}"] = string.Empty;
-            tagMap[$"{{{{{prefix}_RecommendationText}}}}"] = answer?.RecommendationRequired == true
-                ? answer.Comment ?? string.Empty
-                : string.Empty;
+            tagMap[$"{{{{{prefix}_RecommendationText}}}}"] = finding?.RecommendationText ?? string.Empty;
             tagMap[$"{{{{{prefix}_RepairText}}}}"] = string.Empty;
         }
 

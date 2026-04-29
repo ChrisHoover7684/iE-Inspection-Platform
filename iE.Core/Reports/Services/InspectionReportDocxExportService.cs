@@ -50,6 +50,7 @@ public class InspectionReportDocxExportService(InspectionSummaryService inspecti
             ["{{ReportID}}"] = Clean(report.ReportNumber),
             ["{{InspectionDate}}"] = FormatDate(report.CreatedAt),
             ["{{Insp_Name}}"] = Clean(report.CreatedByUserId),
+            ["{{Reviewer_Name}}"] = Clean(report.UpdatedByUserId),
             ["{{ReportNumber}}"] = Clean(report.ReportNumber),
             ["{{EquipmentTag}}"] = Clean(report.EquipmentTag),
             ["{{Unit}}"] = Clean(report.Unit),

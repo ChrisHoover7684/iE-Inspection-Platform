@@ -43,6 +43,9 @@ public class InspectionReportDocxExportService(InspectionSummaryService inspecti
         var summary = inspectionSummaryService.Build(report);
         var clientTagValue = Clean(report.ClientOrganizationId);
         var facilityTagValue = Clean(report.FacilityId);
+        var pipeCracksOrCorrosionAnswer = report.Sections
+            .SelectMany(section => section.Answers)
+            .FirstOrDefault(answer => string.Equals(answer.FieldId, "pipe-cracks-or-corrosion", StringComparison.OrdinalIgnoreCase));
 
         return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -67,7 +70,9 @@ public class InspectionReportDocxExportService(InspectionSummaryService inspecti
             ["{{RepairSummary}}"] = CleanMultiline(summary.Repairs),
             ["{{RecommendationsSummary}}"] = CleanMultiline(summary.Recommendations),
             ["{{NdeTestingSummary}}"] = CleanMultiline(summary.NdeAndTesting),
-            ["{{ReturnToServiceSummary}}"] = CleanMultiline(summary.ReturnToService)
+            ["{{ReturnToServiceSummary}}"] = CleanMultiline(summary.ReturnToService),
+            ["{{C1_Status}}"] = pipeCracksOrCorrosionAnswer?.Value ?? string.Empty,
+            ["{{C1_Comment}}"] = pipeCracksOrCorrosionAnswer?.Comment ?? string.Empty
         };
     }
 

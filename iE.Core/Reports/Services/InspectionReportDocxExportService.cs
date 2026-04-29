@@ -9,6 +9,8 @@ namespace iE.Core.Reports.Services;
 public class InspectionReportDocxExportService(InspectionSummaryService inspectionSummaryService)
 {
     private static readonly Regex AnyTemplateTagRegex = new("{{[^{}]+}}", RegexOptions.Compiled);
+    private static readonly Regex EmptyChecklistLabelLineRegex =
+        new(@"^\s*(Photos|Recommendation|Repair):\s*$\r?\n?", RegexOptions.Multiline | RegexOptions.Compiled);
 
     public byte[] Export(InspectionReport report)
     {
@@ -261,6 +263,7 @@ public class InspectionReportDocxExportService(InspectionSummaryService inspecti
             }
 
             updated = AnyTemplateTagRegex.Replace(updated, string.Empty);
+            updated = RemoveEmptyChecklistLabelLines(updated);
 
             if (string.Equals(fullText, updated, StringComparison.Ordinal))
             {
@@ -272,6 +275,16 @@ public class InspectionReportDocxExportService(InspectionSummaryService inspecti
             replacementRun.AppendChild(new W.Text(updated) { Space = SpaceProcessingModeValues.Preserve });
             paragraph.AppendChild(replacementRun);
         }
+    }
+
+    private static string RemoveEmptyChecklistLabelLines(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return value;
+        }
+
+        return EmptyChecklistLabelLineRegex.Replace(value, string.Empty);
     }
 
     private static string Clean(string? value) =>

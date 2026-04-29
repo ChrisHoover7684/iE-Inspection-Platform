@@ -38,16 +38,23 @@ public class InspectionReportDocxExportService(InspectionSummaryService inspecti
         return result;
     }
 
+    private static readonly IReadOnlyDictionary<string, string> ChecklistFieldToTemplatePrefixMap =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            // Known mapping from API 570 report template seed data.
+            ["pipe-cracks-or-corrosion"] = "C1"
+
+            // TODO: Add remaining API 570 external checklist mappings (A1-A9, B1-B5, C2-C7, D1-D5, E1-E3, F1-F12, G1-G7, H1-H8, I1-I6)
+            // when their exact fieldId-to-tag assignments are confirmed from template/seed data.
+        };
+
     private Dictionary<string, string> BuildTagMap(InspectionReport report)
     {
         var summary = inspectionSummaryService.Build(report);
         var clientTagValue = Clean(report.ClientOrganizationId);
         var facilityTagValue = Clean(report.FacilityId);
-        var pipeCracksOrCorrosionAnswer = report.Sections
-            .SelectMany(section => section.Answers)
-            .FirstOrDefault(answer => string.Equals(answer.FieldId, "pipe-cracks-or-corrosion", StringComparison.OrdinalIgnoreCase));
 
-        return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        var tagMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             ["{{Client}}"] = clientTagValue,
             ["{{Facility}}"] = facilityTagValue,
@@ -70,10 +77,33 @@ public class InspectionReportDocxExportService(InspectionSummaryService inspecti
             ["{{RepairSummary}}"] = CleanMultiline(summary.Repairs),
             ["{{RecommendationsSummary}}"] = CleanMultiline(summary.Recommendations),
             ["{{NdeTestingSummary}}"] = CleanMultiline(summary.NdeAndTesting),
-            ["{{ReturnToServiceSummary}}"] = CleanMultiline(summary.ReturnToService),
-            ["{{C1_Status}}"] = pipeCracksOrCorrosionAnswer?.Value ?? string.Empty,
-            ["{{C1_Comment}}"] = pipeCracksOrCorrosionAnswer?.Comment ?? string.Empty
+            ["{{ReturnToServiceSummary}}"] = CleanMultiline(summary.ReturnToService)
         };
+
+        AddChecklistAnswerMappings(tagMap, report);
+        return tagMap;
+    }
+
+    private static void AddChecklistAnswerMappings(
+        Dictionary<string, string> tagMap,
+        InspectionReport report)
+    {
+        var answers = report.Sections
+            .SelectMany(section => section.Answers)
+            .ToList();
+
+        foreach (var (fieldId, prefix) in ChecklistFieldToTemplatePrefixMap)
+        {
+            var answer = answers.FirstOrDefault(a => string.Equals(a.FieldId, fieldId, StringComparison.OrdinalIgnoreCase));
+
+            tagMap[$"{{{{{prefix}_Status}}}}"] = answer?.Value ?? string.Empty;
+            tagMap[$"{{{{{prefix}_Comment}}}}"] = answer?.Comment ?? string.Empty;
+            tagMap[$"{{{{{prefix}_PhotoRefs}}}}"] = string.Empty;
+            tagMap[$"{{{{{prefix}_RecommendationText}}}}"] = answer?.RecommendationRequired == true
+                ? answer.Comment ?? string.Empty
+                : string.Empty;
+            tagMap[$"{{{{{prefix}_RepairText}}}}"] = string.Empty;
+        }
     }
 
     private static void ReplaceTextTags(OpenXmlElement scope, IReadOnlyDictionary<string, string> tagMap)

@@ -41,11 +41,44 @@ public class InspectionReportDocxExportService(InspectionSummaryService inspecti
     private static readonly IReadOnlyDictionary<string, string> ChecklistFieldToTemplatePrefixMap =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            // Known mapping from API 570 report template seed data.
-            ["pipe-cracks-or-corrosion"] = "C1"
-
-            // TODO: Add remaining API 570 external checklist mappings (A1-A9, B1-B5, C2-C7, D1-D5, E1-E3, F1-F12, G1-G7, H1-H8, I1-I6)
-            // when their exact fieldId-to-tag assignments are confirmed from template/seed data.
+            ["active-process-leaks"] = "A1",
+            ["leak-repair-devices-clamps"] = "A2",
+            ["pipe-cracks-or-corrosion"] = "C1",
+            ["dead-legs"] = "C2",
+            ["long-horizontal-runs-over-100-ft"] = "C3",
+            ["abnormal-thermal-expansion-deformation"] = "C4",
+            ["vibration-overhung-weight"] = "C5",
+            ["cantilevered-branches-vents-drains"] = "C6",
+            ["piping-misalignment-restricted-movement"] = "C7",
+            ["bolting-inadequate-thread-engagement"] = "D1",
+            ["counterbalance-condition"] = "D2",
+            ["soil-to-air-interface"] = "D3",
+            ["weld-haz-corrosion-damage"] = "D4",
+            ["flange-corrosion-damage"] = "D5",
+            ["other-general-finding"] = "E1",
+            ["insulated-piping-condition"] = "E2",
+            ["approximate-percent-insulated"] = "E3",
+            ["insulation-type-identified"] = "F1",
+            ["cui-temperature-range"] = "F2",
+            ["sweating-service"] = "F3",
+            ["steam-traced"] = "F4",
+            ["evidence-corrosion-under-insulation"] = "F5",
+            ["challenge-need-for-insulation"] = "F6",
+            ["fireproofing-condition"] = "F7",
+            ["other-insulation-fireproofing-finding"] = "F8",
+            ["coating-condition"] = "F9",
+            ["coating-damage"] = "F10",
+            ["coating-failure"] = "F11",
+            ["lead-containing-coating-identified"] = "F12",
+            ["other-coating-finding"] = "G1",
+            ["loose-support-fretting-wear"] = "G2",
+            ["pipe-or-shoe-off-supports"] = "G3",
+            ["support-hanger-brace-condition"] = "G4",
+            ["corrosion-at-supports"] = "G5",
+            ["bottomed-out-spring-hangers"] = "G6",
+            ["support-bolting-condition"] = "G7",
+            ["missing-u-bolts-restraints"] = "H1",
+            ["other-support-finding"] = "H2"
         };
 
     private Dictionary<string, string> BuildTagMap(InspectionReport report)

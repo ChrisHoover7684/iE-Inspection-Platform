@@ -4,7 +4,7 @@ using System.Xml;
 
 namespace iE.Core.Reports.Services;
 
-public class InspectionReportDocxExportService
+public class InspectionReportDocxExportService(InspectionSummaryService inspectionSummaryService)
 {
     public byte[] Export(InspectionReport report)
     {
@@ -52,7 +52,7 @@ public class InspectionReportDocxExportService
         <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships" />
         """;
 
-    private static string BuildDocumentXml(InspectionReport report)
+    private string BuildDocumentXml(InspectionReport report)
     {
         var settings = new XmlWriterSettings
         {
@@ -65,6 +65,17 @@ public class InspectionReportDocxExportService
         using var writer = XmlWriter.Create(stringWriter, settings);
 
         writer.WriteStartDocument();
+        var summary = inspectionSummaryService.Build(report);
+
+        var tagValues = new Dictionary<string, string>
+        {
+            ["{{InspectionSummary}}"] = summary.Summary,
+            ["{{RepairSummary}}"] = summary.Repairs,
+            ["{{RecommendationsSummary}}"] = summary.Recommendations,
+            ["{{NdeTestingSummary}}"] = summary.NdeAndTesting,
+            ["{{ReturnToServiceSummary}}"] = summary.ReturnToService
+        };
+
         writer.WriteStartElement("w", "document", "http://schemas.openxmlformats.org/wordprocessingml/2006/main");
         writer.WriteStartElement("w", "body", null);
 
@@ -110,6 +121,13 @@ public class InspectionReportDocxExportService
                 }
             }
         }
+
+        WriteHeading(writer, "Inspection Summary");
+        WriteParagraph(writer, ResolveTag("{{InspectionSummary}}", tagValues));
+        WriteParagraph(writer, ResolveTag("{{RepairSummary}}", tagValues));
+        WriteParagraph(writer, ResolveTag("{{RecommendationsSummary}}", tagValues));
+        WriteParagraph(writer, ResolveTag("{{NdeTestingSummary}}", tagValues));
+        WriteParagraph(writer, ResolveTag("{{ReturnToServiceSummary}}", tagValues));
 
         WriteHeading(writer, "Findings");
         if (report.Findings.Count == 0)
@@ -162,6 +180,16 @@ public class InspectionReportDocxExportService
         writer.Flush();
 
         return stringWriter.ToString();
+    }
+
+    private static string ResolveTag(string value, IReadOnlyDictionary<string, string> tagValues)
+    {
+        if (tagValues.TryGetValue(value, out var replacement))
+        {
+            return replacement;
+        }
+
+        return value;
     }
 
     private static void WriteHeading(XmlWriter writer, string text)

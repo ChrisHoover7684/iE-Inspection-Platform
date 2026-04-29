@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using W = DocumentFormat.OpenXml.Wordprocessing;
 
@@ -147,10 +148,10 @@ public class InspectionReportDocxExportService(InspectionSummaryService inspecti
         new(
             new W.Run(
                 new W.RunProperties(new W.Bold()),
-                new W.Text(text) { Space = W.SpaceProcessingModeValues.Preserve }));
+                new W.Text(text) { Space = SpaceProcessingModeValues.Preserve }));
 
     private static W.Paragraph Paragraph(string text) =>
-        new(new W.Run(new W.Text(text) { Space = W.SpaceProcessingModeValues.Preserve }));
+        new(new W.Run(new W.Text(text) { Space = SpaceProcessingModeValues.Preserve }));
 
     private static string ValueOrNotProvided(string? value) =>
         string.IsNullOrWhiteSpace(value) ? "Not provided" : value.Trim();

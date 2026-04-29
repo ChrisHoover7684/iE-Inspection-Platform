@@ -41,11 +41,13 @@ public class InspectionReportDocxExportService(InspectionSummaryService inspecti
     private Dictionary<string, string> BuildTagMap(InspectionReport report)
     {
         var summary = inspectionSummaryService.Build(report);
+        var clientTagValue = Clean(report.ClientOrganizationId);
+        var facilityTagValue = Clean(report.FacilityId);
 
         return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            ["{{Client}}"] = Clean(report.ClientOrganizationId),
-            ["{{Facility}}"] = Clean(report.FacilityId),
+            ["{{Client}}"] = clientTagValue,
+            ["{{Facility}}"] = facilityTagValue,
             ["{{SystemID}}"] = Clean(report.SystemId),
             ["{{ReportID}}"] = Clean(report.ReportNumber),
             ["{{InspectionDate}}"] = FormatDate(report.CreatedAt),

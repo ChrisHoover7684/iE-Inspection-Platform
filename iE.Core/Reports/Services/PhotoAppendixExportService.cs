@@ -48,7 +48,7 @@ public class PhotoAppendixExportService
 
         if (report.Photos.Count == 0)
         {
-            ReplaceTextTags(templateRow, BuildEmptyPhotoTagMap());
+            ReplaceTextTags(body, BuildEmptyPhotoTagMap(report));
             mainPart.Document.Save();
             return outputStream.ToArray();
         }
@@ -90,11 +90,20 @@ public class PhotoAppendixExportService
         };
     }
 
-    private static Dictionary<string, string> BuildEmptyPhotoTagMap()
+    private static Dictionary<string, string> BuildEmptyPhotoTagMap(InspectionReport report)
     {
         return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            [PhotoBinaryTag] = "[No photos attached]",
+            ["{{ReportNumber}}"] = Clean(report.ReportNumber),
+            ["{{ReportID}}"] = Clean(report.ReportNumber),
+            ["{{EquipmentTag}}"] = Clean(report.EquipmentTag),
+            ["{{Unit}}"] = Clean(report.Unit),
+            ["{{System}}"] = Clean(report.SystemId),
+            ["{{Client}}"] = Clean(report.ClientOrganizationId),
+            ["{{Facility}}"] = Clean(report.FacilityId),
+            ["{{InspectionDate}}"] = report.CreatedAt == default ? string.Empty : report.CreatedAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            ["{{Insp_Name}}"] = Clean(report.CreatedByUserId),
+            ["{{PhotoId}}"] = string.Empty,
             ["{{PhotoNumber}}"] = string.Empty,
             ["{{ProfileId}}"] = string.Empty,
             ["{{ComponentLocation}}"] = string.Empty,
@@ -102,7 +111,11 @@ public class PhotoAppendixExportService
             ["{{Description}}"] = "No photos attached.",
             ["{{PhotoDescription}}"] = string.Empty,
             ["{{RelatedComponent}}"] = string.Empty,
-            ["{{RelatedChecklistItem}}"] = string.Empty
+            ["{{RelatedChecklistItem}}"] = string.Empty,
+            ["{{PhotoAttached}}"] = string.Empty,
+            ["{{FileName}}"] = string.Empty,
+            ["{{FileUrl}}"] = string.Empty,
+            [PhotoBinaryTag] = "[No photos attached]"
         };
     }
 

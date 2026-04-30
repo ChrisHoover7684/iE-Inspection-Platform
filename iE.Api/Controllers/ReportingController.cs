@@ -14,7 +14,8 @@ public class ReportingController(
     InspectionReportDocxExportService inspectionReportDocxExportService,
     PhotoAppendixExportService photoAppendixExportService,
     ReportDraftBuilder reportDraftBuilder,
-    NoFindingObservationBuilder noFindingObservationBuilder) : ControllerBase
+    NoFindingObservationBuilder noFindingObservationBuilder,
+    ObservationChecklistService observationChecklistService) : ControllerBase
 {
     [HttpGet("templates")]
     public ActionResult<IReadOnlyList<ReportTemplate>> GetTemplates()
@@ -103,6 +104,37 @@ public class ReportingController(
     public ActionResult<ReportDraft> BuildDraft([FromBody] InspectionReport report)
     {
         var draft = reportDraftBuilder.Build(report);
+        return Ok(draft);
+    }
+
+
+    [HttpGet("templates/{templateId}/checklist")]
+    public ActionResult<ObservationChecklistTemplate> GetObservationChecklist(string templateId)
+    {
+        var checklist = observationChecklistService.GetChecklistForTemplate(templateId);
+        return Ok(checklist);
+    }
+
+    [HttpPost("checklist/build-draft")]
+    public ActionResult<ReportDraft> BuildDraftFromChecklist([FromBody] ApplyObservationChecklistRequest request)
+    {
+        if (request.Report is null)
+        {
+            return BadRequest(new { error = "Report payload is required." });
+        }
+
+        var templateId = string.IsNullOrWhiteSpace(request.TemplateId)
+            ? request.Report.TemplateId
+            : request.TemplateId;
+
+        var buildResult = observationChecklistService.BuildObservationsAndFindingsFromChecklist(
+            templateId,
+            request.Responses);
+
+        request.Report.Observations = buildResult.Observations;
+        request.Report.Findings = buildResult.Findings;
+
+        var draft = reportDraftBuilder.Build(request.Report);
         return Ok(draft);
     }
 

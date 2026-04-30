@@ -56,12 +56,12 @@ public class InspectionReportFactory
             {
                 Id = Guid.NewGuid().ToString("N"),
                 AssociatedChecklistItem = answer.FieldId,
-                FindingType = answer.Label,
-                DetailedDescription = answer.Comment ?? string.Empty,
-                RecommendationRequired = answer.RecommendationRequired == true,
-                RecommendationText = string.Empty,
-                Severity = string.Empty,
-                ComponentLocation = string.Empty,
+                FindingType = ParseFindingType(answer.Label),
+                Description = answer.Comment ?? string.Empty,
+                RepairRequired = answer.RecommendationRequired == true,
+                RepairRecommendation = string.Empty,
+                Severity = FindingSeverity.None,
+                Location = string.Empty,
                 ComponentType = string.Empty,
                 PhotoIds = new List<string>()
             });
@@ -88,6 +88,16 @@ public class InspectionReportFactory
             TransferToComponentSection = isChecklist ? false : null,
             RecommendationRequired = isChecklist ? false : null
         };
+    }
+
+    private static FindingType ParseFindingType(string? value)
+    {
+        if (Enum.TryParse<FindingType>(value, true, out var parsed))
+        {
+            return parsed;
+        }
+
+        return FindingType.Other;
     }
 
     private static void HydrateTopLevelFields(InspectionReport report)

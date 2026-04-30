@@ -188,7 +188,7 @@ public class InspectionReportDocxExportService(InspectionSummaryService inspecti
             tagMap[$"{{{{{prefix}_Status}}}}"] = answer?.Value ?? string.Empty;
             tagMap[$"{{{{{prefix}_Comment}}}}"] = answer?.Comment ?? string.Empty;
             tagMap[$"{{{{{prefix}_PhotoRefs}}}}"] = string.Empty;
-            tagMap[$"{{{{{prefix}_RecommendationText}}}}"] = finding?.RecommendationText ?? string.Empty;
+            tagMap[$"{{{{{prefix}_RecommendationText}}}}"] = finding?.RepairRecommendation ?? string.Empty;
             tagMap[$"{{{{{prefix}_RepairText}}}}"] = string.Empty;
         }
 

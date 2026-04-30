@@ -214,13 +214,13 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
                 findingBuilder.WithOwner().HasForeignKey("InspectionReportId");
                 findingBuilder.HasKey(f => f.Id);
                 findingBuilder.Property(f => f.Id).HasMaxLength(64);
-                findingBuilder.Property(f => f.ComponentLocation).HasMaxLength(256);
+                findingBuilder.Property(f => f.Location).HasMaxLength(256);
                 findingBuilder.Property(f => f.ComponentType).HasMaxLength(256);
-                findingBuilder.Property(f => f.FindingType).HasMaxLength(256);
+                findingBuilder.Property(f => f.FindingType).HasConversion<string>().HasMaxLength(64);
                 findingBuilder.Property(f => f.AssociatedChecklistItem).HasMaxLength(256);
-                findingBuilder.Property(f => f.DetailedDescription).HasMaxLength(4000);
-                findingBuilder.Property(f => f.Severity).HasMaxLength(64);
-                findingBuilder.Property(f => f.RecommendationText).HasMaxLength(4000);
+                findingBuilder.Property(f => f.Description).HasMaxLength(4000);
+                findingBuilder.Property(f => f.Severity).HasConversion<string>().HasMaxLength(64);
+                findingBuilder.Property(f => f.RepairRecommendation).HasMaxLength(4000);
                 findingBuilder.PrimitiveCollection(f => f.PhotoIds);
             });
 

@@ -21,6 +21,8 @@ public class ObservationChecklistItemResponse
     public string ItemId { get; set; } = string.Empty;
     public ObservationStatus Status { get; set; } = ObservationStatus.Acceptable;
     public string? Notes { get; set; }
+    public string? LineNumber { get; set; }
+    public double? ApproximateFeetOfFindings { get; set; }
     public List<string> PhotoIds { get; set; } = new();
     public InspectionFinding? Finding { get; set; }
 }

@@ -39,7 +39,8 @@ public class ObservationChecklistService
 
     public ObservationChecklistBuildResult BuildObservationsAndFindingsFromChecklist(
         string templateId,
-        IReadOnlyList<ObservationChecklistItemResponse> checklistResponses)
+        IReadOnlyList<ObservationChecklistItemResponse> checklistResponses,
+        InspectionReport? report = null)
     {
         var checklistTemplate = GetChecklistForTemplate(templateId);
         var itemMap = checklistTemplate.Items.ToDictionary(x => x.Id, StringComparer.OrdinalIgnoreCase);
@@ -59,7 +60,7 @@ public class ObservationChecklistService
                     result.Observations.Add(CreateObservation(item, response, ObservationStatus.Acceptable));
                     break;
                 case ObservationStatus.Finding:
-                    result.Findings.Add(CreateFinding(item, response));
+                    result.Findings.Add(CreateFinding(item, response, report));
                     break;
                 case ObservationStatus.NotInspected:
                     result.Observations.Add(CreateObservation(item, response, ObservationStatus.NotInspected));
@@ -91,13 +92,14 @@ public class ObservationChecklistService
         };
     }
 
-    private static InspectionFinding CreateFinding(ObservationChecklistItem item, ObservationChecklistItemResponse response)
+    private static InspectionFinding CreateFinding(ObservationChecklistItem item, ObservationChecklistItemResponse response, InspectionReport? report)
     {
         var provided = response.Finding;
+        var resolvedLineNumber = ResolveLineNumber(response, report);
 
         if (provided is null)
         {
-            return CreateMinimalFinding(item, response);
+            return CreateMinimalFinding(item, response, resolvedLineNumber);
         }
 
         if (string.IsNullOrWhiteSpace(provided.Id))
@@ -123,10 +125,23 @@ public class ObservationChecklistService
             provided.Severity = FindingSeverity.Medium;
         }
 
+        if (string.IsNullOrWhiteSpace(provided.LineNumber))
+        {
+            provided.LineNumber = resolvedLineNumber;
+        }
+
+        if (!provided.ApproximateFeetOfFindings.HasValue && response.ApproximateFeetOfFindings.HasValue)
+        {
+            provided.ApproximateFeetOfFindings = response.ApproximateFeetOfFindings.Value;
+        }
+
         return provided;
     }
 
-    private static InspectionFinding CreateMinimalFinding(ObservationChecklistItem item, ObservationChecklistItemResponse response)
+    private static InspectionFinding CreateMinimalFinding(
+        ObservationChecklistItem item,
+        ObservationChecklistItemResponse response,
+        string? lineNumber)
     {
         return new InspectionFinding
         {
@@ -137,9 +152,28 @@ public class ObservationChecklistService
             Severity = FindingSeverity.Medium,
             DamageMechanism = DamageMechanismType.None,
             Location = item.Category,
+            LineNumber = lineNumber,
+            ApproximateFeetOfFindings = response.ApproximateFeetOfFindings,
             RepairRequired = false,
             PhotoIds = response.PhotoIds?.Where(x => !string.IsNullOrWhiteSpace(x)).ToList() ?? new List<string>()
         };
+    }
+
+    private static string? ResolveLineNumber(ObservationChecklistItemResponse response, InspectionReport? report)
+    {
+        if (!string.IsNullOrWhiteSpace(response.LineNumber))
+        {
+            return response.LineNumber.Trim();
+        }
+
+        var validLineNumbers = report?.PipingProfile?.LineNumbers
+            ?.Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList()
+            ?? new List<string>();
+
+        return validLineNumbers.Count == 1 ? validLineNumbers[0] : null;
     }
 
     private static ObservationChecklistItem CreateItem(string id, string category, string label)

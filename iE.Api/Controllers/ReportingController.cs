@@ -143,7 +143,8 @@ public class ReportingController(
 
         var buildResult = observationChecklistService.BuildObservationsAndFindingsFromChecklist(
             templateId,
-            request.ChecklistResponses);
+            request.ChecklistResponses,
+            request.Report);
 
         MergeChecklistObservations(request.Report.Observations, buildResult.Observations);
         MergeChecklistFindings(request.Report.Findings, buildResult.Findings);

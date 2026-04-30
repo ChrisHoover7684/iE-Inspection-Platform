@@ -11,9 +11,25 @@ public class SummaryBuilder
         IEnumerable<string>? findings,
         PipingInspectionProfile? pipingProfile = null)
     {
+        return BuildInspectionSummary(thicknessEvaluationResult, null, pipingProfile);
+    }
+
+    public string BuildInspectionSummary(
+        ThicknessEvaluationResult thicknessEvaluationResult,
+        IEnumerable<InspectionFinding>? findings,
+        PipingInspectionProfile? pipingProfile = null,
+        IEnumerable<InspectionObservation>? observations = null)
+    {
         ArgumentNullException.ThrowIfNull(thicknessEvaluationResult);
 
         var summary = new StringBuilder();
+        var findingList = findings?.ToList() ?? new List<InspectionFinding>();
+        var observationList = observations?.ToList() ?? new List<InspectionObservation>();
+
+        if (findingList.Count == 0 && observationList.Count > 0)
+        {
+            return "An external inspection was completed. The inspected components were found to be in acceptable condition with no reportable findings identified.";
+        }
 
         var lowest = thicknessEvaluationResult.LowestThickness;
         var required = thicknessEvaluationResult.RequiredThickness;
@@ -43,13 +59,11 @@ public class SummaryBuilder
             summary.Append($" Estimated remaining life is {FormatYears(thicknessEvaluationResult.RemainingLifeYears.Value)} years based on current conditions.");
         }
 
-        var findingList = findings?
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => x.Trim())
-            .ToList() ?? new List<string>();
-
-        var hasMeasurablePitting = findingList.Any(f => ContainsPittingAboveThreshold(f, 0.030));
-        var hasMinorPitting = !hasMeasurablePitting && findingList.Any(f => ContainsPittingValue(f));
+        var pittingFindings = findingList
+            .Where(x => x.FindingType == FindingType.Pitting && x.PitDepth.HasValue)
+            .ToList();
+        var hasMeasurablePitting = pittingFindings.Any(f => f.PitDepth!.Value > 0.030);
+        var hasMinorPitting = !hasMeasurablePitting && pittingFindings.Any(f => f.PitDepth!.Value <= 0.030);
 
         if (hasMeasurablePitting)
         {
@@ -98,47 +112,11 @@ public class SummaryBuilder
         }
     }
 
+
     private static string FormatMeasurement(double? value) =>
         value.HasValue
             ? $"{value.Value.ToString("0.000", CultureInfo.InvariantCulture)}\""
             : "N/A";
 
     private static string FormatYears(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
-
-    private static bool ContainsPittingValue(string finding)
-    {
-        if (!finding.Contains("pitting", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        return TryExtractFirstDecimal(finding, out _);
-    }
-
-    private static bool ContainsPittingAboveThreshold(string finding, double threshold)
-    {
-        if (!finding.Contains("pitting", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        return TryExtractFirstDecimal(finding, out var value) && value > threshold;
-    }
-
-    private static bool TryExtractFirstDecimal(string input, out double value)
-    {
-        value = 0;
-
-        var chars = input
-            .Where(c => char.IsDigit(c) || c == '.')
-            .ToArray();
-
-        if (chars.Length == 0)
-        {
-            return false;
-        }
-
-        var numeric = new string(chars);
-        return double.TryParse(numeric, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
-    }
 }

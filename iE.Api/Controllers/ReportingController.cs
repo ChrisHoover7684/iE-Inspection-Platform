@@ -14,7 +14,9 @@ public class ReportingController(
     InspectionReportFactory inspectionReportFactory,
     InspectionReportDocxExportService inspectionReportDocxExportService,
     PhotoAppendixExportService photoAppendixExportService,
-    ReportDraftBuilder reportDraftBuilder) : ControllerBase
+    ReportDraftBuilder reportDraftBuilder,
+    NoFindingObservationBuilder noFindingObservationBuilder,
+    ObservationChecklistService observationChecklistService) : ControllerBase
 {
     [HttpGet("templates")]
     public ActionResult<IReadOnlyList<ReportTemplate>> GetTemplates()
@@ -102,6 +104,54 @@ public class ReportingController(
     [HttpPost("draft")]
     public ActionResult<ReportDraft> BuildDraft([FromBody] InspectionReport report)
     {
+        var draft = reportDraftBuilder.Build(report);
+        return Ok(draft);
+    }
+
+
+    [HttpGet("templates/{templateId}/checklist")]
+    public ActionResult<ObservationChecklistTemplate> GetObservationChecklist(string templateId)
+    {
+        var checklist = observationChecklistService.GetChecklistForTemplate(templateId);
+        return Ok(checklist);
+    }
+
+    [HttpPost("checklist/build-draft")]
+    public ActionResult<ReportDraft> BuildDraftFromChecklist([FromBody] ApplyObservationChecklistRequest request)
+    {
+        if (request.Report is null)
+        {
+            return BadRequest(new { error = "Report payload is required." });
+        }
+
+        var templateId = string.IsNullOrWhiteSpace(request.TemplateId)
+            ? request.Report.TemplateId
+            : request.TemplateId;
+
+        var buildResult = observationChecklistService.BuildObservationsAndFindingsFromChecklist(
+            templateId,
+            request.Responses);
+
+        request.Report.Observations = buildResult.Observations;
+        request.Report.Findings = buildResult.Findings;
+
+        var draft = reportDraftBuilder.Build(request.Report);
+        return Ok(draft);
+    }
+
+    [HttpPost("quick-complete-no-findings")]
+    public ActionResult<ReportDraft> QuickCompleteNoFindings([FromBody] InspectionReport report)
+    {
+        if (report.Findings.Count > 0)
+        {
+            return BadRequest(new
+            {
+                error = "Quick complete cannot be used when reportable findings exist. Remove findings before using this action."
+            });
+        }
+
+        report.Observations = noFindingObservationBuilder.BuildDefaultObservations(report.TemplateId, report.PipingProfile);
+
         var draft = reportDraftBuilder.Build(report);
         return Ok(draft);
     }

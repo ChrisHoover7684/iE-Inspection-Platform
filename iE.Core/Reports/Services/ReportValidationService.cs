@@ -13,6 +13,39 @@ public class ReportValidationService
         var normalizedLineNumbers = GetNormalizedLineNumbers(report.PipingProfile);
         var isApi570 = string.Equals(report.TemplateId, Api570PipingTemplateId, StringComparison.OrdinalIgnoreCase);
 
+
+        if (report.Findings.Count == 0)
+        {
+            var hasInspectableObservation = report.Observations.Any(x => x.Status != ObservationStatus.NotApplicable);
+            if (!hasInspectableObservation)
+            {
+                messages.Add(ReportValidationMessage.Error(
+                    null,
+                    "OBSERVATIONS_REQUIRED_WHEN_NO_FINDINGS",
+                    "At least one inspection observation (Acceptable or NotInspected) is required when no findings are documented."));
+            }
+
+            var reportPhotoCount = report.Photos.Count(x => !string.IsNullOrWhiteSpace(x.Id));
+            if (reportPhotoCount == 0)
+            {
+                messages.Add(ReportValidationMessage.Warning(
+                    null,
+                    "GENERAL_CONDITION_PHOTO_RECOMMENDED_WHEN_NO_FINDINGS",
+                    "A general condition photo is recommended when no findings are documented."));
+            }
+        }
+
+        foreach (var observation in report.Observations)
+        {
+            if (observation.Status == ObservationStatus.NotInspected && string.IsNullOrWhiteSpace(observation.Notes))
+            {
+                messages.Add(ReportValidationMessage.Error(
+                    observation.Id,
+                    "OBSERVATION_NOT_INSPECTED_NOTES_REQUIRED",
+                    "Observation notes are required when status is NotInspected."));
+            }
+        }
+
         if (isApi570 && report.Findings.Count > 0 && normalizedLineNumbers.Count == 0)
         {
             messages.Add(ReportValidationMessage.Error(

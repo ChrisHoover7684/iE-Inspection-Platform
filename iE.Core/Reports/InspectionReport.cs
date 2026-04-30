@@ -10,7 +10,10 @@ public static class InspectionReportStatuses
 
 public class PipingInspectionProfile
 {
+    public List<string> LineNumbers { get; set; } = new();
+    // TODO: Remove after API clients migrate to LineNumbers/finding-level LineNumber.
     public string? LineNumber { get; set; }
+    // TODO: Remove after API clients migrate to finding-level ApproximateFeetOfFindings.
     public double? ApproximateFeetOfFindings { get; set; }
     public string? UpstreamEquipment { get; set; }
     public string? DownstreamEquipment { get; set; }
@@ -90,6 +93,8 @@ public class InspectionFinding
     public string? InsulationCondition { get; set; }
     public double? ThicknessResult { get; set; }
     public double? MinimumRequiredThickness { get; set; }
+    public string? LineNumber { get; set; }
+    public double? ApproximateFeetOfFindings { get; set; }
 }
 
 public class InspectionPhoto

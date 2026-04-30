@@ -39,7 +39,7 @@ public class ReportDraftBuilder(
         {
             SummaryText = summaryText,
             Findings = report.Findings
-                .Select(BuildFindingLine)
+                .Select(x => BuildFindingLine(x, report.PipingProfile))
                 .ToList(),
             Repairs = report.Findings
                 .Where(x => x.RepairRequired)
@@ -73,11 +73,36 @@ public class ReportDraftBuilder(
         };
     }
 
-    private static string BuildFindingLine(InspectionFinding finding)
+    private static string BuildFindingLine(InspectionFinding finding, PipingInspectionProfile? pipingProfile)
     {
         var location = string.IsNullOrWhiteSpace(finding.Location) ? "Unknown location" : finding.Location.Trim();
         var description = string.IsNullOrWhiteSpace(finding.Description) ? "No description" : finding.Description.Trim();
-        return $"{location}: {description}";
+        var lineNumber = finding.LineNumber?.Trim();
+        if (string.IsNullOrWhiteSpace(lineNumber))
+        {
+            lineNumber = pipingProfile?.LineNumber?.Trim();
+        }
+
+        var approxFeet = finding.ApproximateFeetOfFindings ?? pipingProfile?.ApproximateFeetOfFindings;
+
+        var parts = new List<string> { $"{location}: {description}" };
+        if (!string.IsNullOrWhiteSpace(lineNumber))
+        {
+            parts.Add($"on Line {lineNumber}");
+        }
+
+        if (approxFeet.HasValue)
+        {
+            parts.Add($"for approximately {approxFeet.Value:0.##} ft");
+        }
+
+        if (!string.IsNullOrWhiteSpace(pipingProfile?.UpstreamEquipment)
+            && !string.IsNullOrWhiteSpace(pipingProfile?.DownstreamEquipment))
+        {
+            parts.Add($"between {pipingProfile.UpstreamEquipment.Trim()} and {pipingProfile.DownstreamEquipment.Trim()}");
+        }
+
+        return string.Join(" ", parts).Trim();
     }
 
     private static List<string> RepairRecommendationsToLines(List<RepairRecommendation> recommendations)

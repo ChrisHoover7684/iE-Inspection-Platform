@@ -70,9 +70,20 @@ public class SummaryBuilder
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(pipingProfile.LineNumber))
+        var lineNumbers = pipingProfile.LineNumbers
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (lineNumbers.Count == 0 && !string.IsNullOrWhiteSpace(pipingProfile.LineNumber))
         {
-            summary.Append($" Findings were observed on Line {pipingProfile.LineNumber.Trim()}.");
+            lineNumbers.Add(pipingProfile.LineNumber.Trim());
+        }
+
+        if (lineNumbers.Count > 0)
+        {
+            summary.Append($" Findings were observed on Line {string.Join(", ", lineNumbers)}.");
         }
 
         if (pipingProfile.ApproximateFeetOfFindings.HasValue)

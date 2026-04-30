@@ -4,6 +4,7 @@ public class ObservationChecklistService
 {
     private const string Api570PipingTemplateId = "api-570-piping-inspection";
     private const string ActiveLeakageItemId = "active-leakage";
+    private const string ActiveLeakageRepairRecommendation = "Repair leaking component and verify integrity following reassembly.";
 
     private static readonly List<ObservationChecklistItem> Api570ChecklistItems = new()
     {
@@ -124,6 +125,10 @@ public class ObservationChecklistService
         if (IsActiveLeakageFinding(item))
         {
             provided.FindingType = FindingType.Leak;
+            provided.RepairRequired = true;
+            provided.Location = ResolveFindingLocation(item, response);
+            provided.Description = string.IsNullOrWhiteSpace(response.Notes) ? item.Label : response.Notes.Trim();
+            provided.RepairRecommendation = ActiveLeakageRepairRecommendation;
         }
 
         if (provided.Severity == FindingSeverity.None)
@@ -139,15 +144,6 @@ public class ObservationChecklistService
         if (!provided.ApproximateFeetOfFindings.HasValue && response.ApproximateFeetOfFindings.HasValue)
         {
             provided.ApproximateFeetOfFindings = response.ApproximateFeetOfFindings.Value;
-        }
-
-        if (IsActiveLeakageFinding(item))
-        {
-            provided.RepairRequired = true;
-            if (string.IsNullOrWhiteSpace(provided.Location))
-            {
-                provided.Location = ResolveFindingLocation(item, response);
-            }
         }
 
         return provided;
@@ -170,6 +166,7 @@ public class ObservationChecklistService
             LineNumber = lineNumber,
             ApproximateFeetOfFindings = response.ApproximateFeetOfFindings,
             RepairRequired = IsActiveLeakageFinding(item),
+            RepairRecommendation = IsActiveLeakageFinding(item) ? ActiveLeakageRepairRecommendation : null,
             PhotoIds = response.PhotoIds?.Where(x => !string.IsNullOrWhiteSpace(x)).ToList() ?? new List<string>()
         };
     }
@@ -181,7 +178,7 @@ public class ObservationChecklistService
 
     private static string ResolveFindingLocation(ObservationChecklistItem item, ObservationChecklistItemResponse response)
     {
-        return string.IsNullOrWhiteSpace(response.Notes) ? item.Category : response.Notes.Trim();
+        return string.IsNullOrWhiteSpace(response.Location) ? item.Category : response.Location.Trim();
     }
 
     private static string? ResolveLineNumber(ObservationChecklistItemResponse response, InspectionReport? report)

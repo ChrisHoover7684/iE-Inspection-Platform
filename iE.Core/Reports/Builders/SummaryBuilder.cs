@@ -6,108 +6,101 @@ namespace iE.Core.Reports.Builders;
 
 public class SummaryBuilder
 {
-    public string BuildInspectionSummary(ReportData reportData)
+    public string BuildInspectionSummary(
+        ThicknessEvaluationResult thicknessEvaluationResult,
+        IEnumerable<string>? findings)
     {
-        ArgumentNullException.ThrowIfNull(reportData);
+        ArgumentNullException.ThrowIfNull(thicknessEvaluationResult);
 
-        var lines = new List<string>();
-        lines.Add(BuildHeader(reportData));
+        var summary = new StringBuilder();
 
-        if (reportData.ThicknessEvaluations.Count == 0)
+        var lowest = thicknessEvaluationResult.LowestThickness;
+        var required = thicknessEvaluationResult.RequiredThickness;
+
+        if (lowest.HasValue && required.HasValue)
         {
-            lines.Add("No thickness evaluation results were provided.");
-            return string.Join("\n", lines);
+            if (lowest.Value < required.Value)
+            {
+                summary.Append(
+                    $"The lowest measured thickness recorded was {FormatMeasurement(lowest)}. The calculated required thickness is {FormatMeasurement(required)}; therefore, the component is below minimum allowable thickness and requires evaluation for repair.");
+            }
+            else
+            {
+                summary.Append(
+                    $"The lowest measured thickness recorded was {FormatMeasurement(lowest)}, which is above the calculated required thickness of {FormatMeasurement(required)}.");
+            }
+        }
+        else
+        {
+            summary.Append("Thickness evaluation values were incomplete for summary generation.");
         }
 
-        var acceptableCount = reportData.ThicknessEvaluations.Count(result => result.IsAcceptable);
-        var nonAcceptableCount = reportData.ThicknessEvaluations.Count - acceptableCount;
-
-        lines.Add($"Thickness evaluations completed: {reportData.ThicknessEvaluations.Count}.");
-        lines.Add($"Acceptable locations: {acceptableCount}. Locations requiring review/action: {nonAcceptableCount}.");
-
-        var governing = reportData.ThicknessEvaluations
-            .Where(r => r.RemainingLifeYears.HasValue)
-            .OrderBy(r => r.RemainingLifeYears)
-            .FirstOrDefault();
-
-        if (governing is not null)
+        if (thicknessEvaluationResult.RemainingLifeYears.HasValue)
         {
-            lines.Add(
-                $"Governing location: {Clean(governing.CmlName)} with estimated remaining life of {FormatNumber(governing.RemainingLifeYears)} years.");
+            summary.Append($" Estimated remaining life is {FormatYears(thicknessEvaluationResult.RemainingLifeYears.Value)} years.");
         }
 
-        lines.Add("Thickness evaluation details:");
+        var findingList = findings?
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .ToList() ?? new List<string>();
 
-        foreach (var result in reportData.ThicknessEvaluations)
+        var hasMeasurablePitting = findingList.Any(f => ContainsPittingAboveThreshold(f, 0.030));
+        var hasMinorPitting = !hasMeasurablePitting && findingList.Any(f => ContainsPittingValue(f));
+
+        if (hasMeasurablePitting)
         {
-            lines.Add(BuildResultLine(result));
+            summary.Append(" Findings indicate measurable pitting.");
+        }
+        else if (hasMinorPitting)
+        {
+            summary.Append(" Findings indicate minor pitting.");
         }
 
-        return string.Join("\n", lines);
+        return summary.ToString().Trim();
     }
 
-    private static string BuildHeader(ReportData reportData)
+    private static string FormatMeasurement(double? value) =>
+        value.HasValue
+            ? $"{value.Value.ToString("0.000", CultureInfo.InvariantCulture)}\""
+            : "N/A";
+
+    private static string FormatYears(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private static bool ContainsPittingValue(string finding)
     {
-        var parts = new List<string>
+        if (!finding.Contains("pitting", StringComparison.OrdinalIgnoreCase))
         {
-            "Inspection thickness summary"
-        };
-
-        if (!string.IsNullOrWhiteSpace(reportData.ReportId))
-        {
-            parts.Add($"Report {reportData.ReportId.Trim()}");
+            return false;
         }
 
-        if (!string.IsNullOrWhiteSpace(reportData.EquipmentTag))
-        {
-            parts.Add($"Equipment {reportData.EquipmentTag.Trim()}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(reportData.CircuitId))
-        {
-            parts.Add($"Circuit {reportData.CircuitId.Trim()}");
-        }
-
-        return string.Join(" | ", parts) + ".";
+        return TryExtractFirstDecimal(finding, out _);
     }
 
-    private static string BuildResultLine(ThicknessEvaluationResult result)
+    private static bool ContainsPittingAboveThreshold(string finding, double threshold)
     {
-        var builder = new StringBuilder();
-
-        builder.Append("- ");
-        builder.Append(Clean(result.CmlName));
-        builder.Append(": ");
-        builder.Append(result.IsAcceptable ? "Acceptable" : "Requires action");
-
-        builder.Append("; Measured=");
-        builder.Append(FormatNumber(result.MeasuredThickness));
-        builder.Append(" in");
-
-        builder.Append(", Required=");
-        builder.Append(FormatNumber(result.RequiredThickness));
-        builder.Append(" in");
-
-        builder.Append(", CR=");
-        builder.Append(FormatNumber(result.CorrosionRate));
-        builder.Append(" in/yr");
-
-        builder.Append(", Remaining life=");
-        builder.Append(FormatNumber(result.RemainingLifeYears));
-        builder.Append(" yr");
-
-        if (!string.IsNullOrWhiteSpace(result.Notes))
+        if (!finding.Contains("pitting", StringComparison.OrdinalIgnoreCase))
         {
-            builder.Append(".");
-            builder.Append(" Notes: ");
-            builder.Append(result.Notes.Trim());
+            return false;
         }
 
-        return builder.ToString();
+        return TryExtractFirstDecimal(finding, out var value) && value > threshold;
     }
 
-    private static string FormatNumber(double? value) =>
-        value.HasValue ? value.Value.ToString("0.###", CultureInfo.InvariantCulture) : "N/A";
+    private static bool TryExtractFirstDecimal(string input, out double value)
+    {
+        value = 0;
 
-    private static string Clean(string? value) => string.IsNullOrWhiteSpace(value) ? "Not documented" : value.Trim();
+        var chars = input
+            .Where(c => char.IsDigit(c) || c == '.')
+            .ToArray();
+
+        if (chars.Length == 0)
+        {
+            return false;
+        }
+
+        var numeric = new string(chars);
+        return double.TryParse(numeric, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+    }
 }

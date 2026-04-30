@@ -24,6 +24,7 @@ builder.Services.AddScoped<SummaryBuilder>();
 builder.Services.AddScoped<ReportValidationService>();
 builder.Services.AddScoped<RepairRecommendationBuilder>();
 builder.Services.AddScoped<ReportDraftBuilder>();
+builder.Services.AddScoped<NoFindingObservationBuilder>();
 builder.Services.AddScoped<InspectionReportDocxExportService>();
 builder.Services.AddScoped<PhotoAppendixExportService>();
 

@@ -24,17 +24,24 @@ public class ReportValidationService
                     "At least one observation is required when no findings are documented."));
             }
 
-            var observationPhotoCount = report.Observations
-                .Where(x => x.PhotoIds is not null)
-                .SelectMany(x => x.PhotoIds)
-                .Count(x => !string.IsNullOrWhiteSpace(x));
+            var reportPhotoCount = report.Photos.Count(x => !string.IsNullOrWhiteSpace(x.Id));
+            if (reportPhotoCount == 0)
+            {
+                messages.Add(ReportValidationMessage.Warning(
+                    null,
+                    "GENERAL_CONDITION_PHOTO_RECOMMENDED_WHEN_NO_FINDINGS",
+                    "A general condition photo is recommended when no findings are documented."));
+            }
+        }
 
-            if (observationPhotoCount == 0)
+        foreach (var observation in report.Observations)
+        {
+            if (observation.Status == ObservationStatus.NotInspected && string.IsNullOrWhiteSpace(observation.Notes))
             {
                 messages.Add(ReportValidationMessage.Error(
-                    null,
-                    "OBSERVATION_PHOTO_REQUIRED_WHEN_NO_FINDINGS",
-                    "At least one observation photo is required when no findings are documented."));
+                    observation.Id,
+                    "OBSERVATION_NOT_INSPECTED_NOTES_REQUIRED",
+                    "Observation notes are required when status is NotInspected."));
             }
         }
 

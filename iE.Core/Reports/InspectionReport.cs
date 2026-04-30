@@ -25,7 +25,7 @@ public class PipingInspectionProfile
 }
 
 
-public enum InspectionObservationStatus
+public enum ObservationStatus
 {
     Acceptable = 1,
     NoIssues = 2,
@@ -34,8 +34,9 @@ public enum InspectionObservationStatus
 
 public class InspectionObservation
 {
+    public string Id { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
-    public InspectionObservationStatus Status { get; set; } = InspectionObservationStatus.Acceptable;
+    public ObservationStatus Status { get; set; } = ObservationStatus.Acceptable;
     public string? Notes { get; set; }
     public List<string> PhotoIds { get; set; } = new();
 }

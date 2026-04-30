@@ -149,6 +149,40 @@ public class ReportingController(
         MergeChecklistObservations(request.Report.Observations, buildResult.Observations);
         MergeChecklistFindings(request.Report.Findings, buildResult.Findings);
 
+        var existingReport = !string.IsNullOrWhiteSpace(request.Report.Id)
+            ? inspectionReportRepository.GetById(request.Report.Id)
+            : null;
+
+        if (existingReport is null)
+        {
+            if (string.IsNullOrWhiteSpace(request.Report.Id))
+            {
+                request.Report.Id = Guid.NewGuid().ToString("N");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Report.Status))
+            {
+                request.Report.Status = InspectionReportStatuses.Draft;
+            }
+
+            request.Report.CreatedAt = DateTime.UtcNow;
+            request.Report.UpdatedAt = null;
+            inspectionReportRepository.Create(request.Report);
+        }
+        else
+        {
+            request.Report.Id = existingReport.Id;
+            request.Report.CreatedAt = existingReport.CreatedAt;
+            request.Report.UpdatedAt = DateTime.UtcNow;
+
+            if (string.IsNullOrWhiteSpace(request.Report.Status))
+            {
+                request.Report.Status = existingReport.Status;
+            }
+
+            inspectionReportRepository.Update(existingReport.Id, request.Report);
+        }
+
         var draft = reportDraftBuilder.Build(request.Report);
         return Ok(draft);
     }

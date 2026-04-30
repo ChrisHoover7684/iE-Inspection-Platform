@@ -78,6 +78,7 @@ public class RepairRecommendationBuilder
     private static string BuildRecommendationText(InspectionFinding finding)
     {
         var recommendationParts = new List<string>();
+        var specificRepairRecommendation = finding.RepairRecommendation?.Trim();
 
         if (finding.RepairRequired)
         {
@@ -90,7 +91,11 @@ public class RepairRecommendationBuilder
                 $"The lowest measured thickness recorded was {FormatMeasurement(finding.ThicknessResult!.Value)}, which is below the required minimum thickness of {FormatMeasurement(finding.MinimumRequiredThickness!.Value)}.");
         }
 
-        if (IsLeakageFound(finding))
+        if (!string.IsNullOrWhiteSpace(specificRepairRecommendation))
+        {
+            recommendationParts.Add(specificRepairRecommendation);
+        }
+        else if (IsLeakageFound(finding))
         {
             recommendationParts.Add("Repair the leaking component at the identified location and verify integrity following reassembly.");
         }
@@ -101,10 +106,10 @@ public class RepairRecommendationBuilder
                 $"Localized measurable pitting up to {FormatMeasurement(finding.PitDepth.Value)} deep was observed and should be evaluated for repair.");
         }
 
-        if (!string.IsNullOrWhiteSpace(finding.RepairRecommendation))
-        {
-            recommendationParts.Add(finding.RepairRecommendation.Trim());
-        }
+        recommendationParts = recommendationParts
+            .Where(part => !string.IsNullOrWhiteSpace(part))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
         if (recommendationParts.Count == 0)
         {

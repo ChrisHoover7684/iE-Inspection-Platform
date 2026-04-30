@@ -7,6 +7,20 @@ public static class InspectionReportStatuses
     public const string Final = "Final";
 }
 
+
+public class PipingInspectionProfile
+{
+    public string? LineNumber { get; set; }
+    public double? ApproximateFeetOfFindings { get; set; }
+    public string? UpstreamEquipment { get; set; }
+    public string? DownstreamEquipment { get; set; }
+    public string? FromLocation { get; set; }
+    public string? ToLocation { get; set; }
+    public string? NominalPipeSize { get; set; }
+    public string? PipingClass { get; set; }
+    public string? InsulatedStatus { get; set; }
+}
+
 public class InspectionReport
 {
     public string Id { get; set; } = string.Empty;
@@ -29,6 +43,7 @@ public class InspectionReport
     public List<InspectionReportSection> Sections { get; set; } = new();
     public List<InspectionFinding> Findings { get; set; } = new();
     public List<InspectionPhoto> Photos { get; set; } = new();
+    public PipingInspectionProfile? PipingProfile { get; set; }
 }
 
 public class InspectionReportSection

@@ -3,12 +3,22 @@ namespace iE.Core.Reports.Services;
 public class ReportValidationService
 {
     private const double MeasurablePittingThresholdInches = 0.030;
+    private const string Api570PipingTemplateId = "api-570-piping-inspection";
 
     public ReportValidationResult Validate(InspectionReport report)
     {
         ArgumentNullException.ThrowIfNull(report);
 
         var messages = new List<ReportValidationMessage>();
+
+        if (string.Equals(report.TemplateId, Api570PipingTemplateId, StringComparison.OrdinalIgnoreCase)
+            && string.IsNullOrWhiteSpace(report.PipingProfile?.LineNumber))
+        {
+            messages.Add(ReportValidationMessage.Error(
+                null,
+                "API570_LINE_NUMBER_REQUIRED",
+                "Line number is required for API 570 piping inspection reports."));
+        }
 
         foreach (var finding in report.Findings)
         {
@@ -79,6 +89,34 @@ public class ReportValidationService
                     "Damage mechanism is CUI, but insulation condition is missing."));
             }
 
+            if (finding.DamageMechanism == DamageMechanismType.CUI && string.IsNullOrWhiteSpace(report.PipingProfile?.InsulatedStatus))
+            {
+                messages.Add(ReportValidationMessage.Error(
+                    finding.Id,
+                    "API570_INSULATED_STATUS_REQUIRED",
+                    "Insulated status is required in the piping profile when damage mechanism is CUI."));
+            }
+
+            var requiresApproxFeet = finding.FindingType is FindingType.Pitting or FindingType.Corrosion or FindingType.MetalLoss
+                                      || finding.DamageMechanism == DamageMechanismType.CUI;
+            if (requiresApproxFeet && !report.PipingProfile?.ApproximateFeetOfFindings.HasValue == true)
+            {
+                messages.Add(ReportValidationMessage.Warning(
+                    finding.Id,
+                    "API570_APPROX_FEET_RECOMMENDED",
+                    "Approximate feet of findings should be provided when available for this finding type/mechanism."));
+            }
+
+            if (IsVagueLocation(finding.Location)
+                && string.IsNullOrWhiteSpace(report.PipingProfile?.UpstreamEquipment)
+                && string.IsNullOrWhiteSpace(report.PipingProfile?.DownstreamEquipment))
+            {
+                messages.Add(ReportValidationMessage.Error(
+                    finding.Id,
+                    "API570_LOCATION_CONTEXT_REQUIRED",
+                    "Finding location is vague; provide upstream or downstream equipment in the piping profile."));
+            }
+
             if (!string.IsNullOrWhiteSpace(finding.NdeMethod) && string.IsNullOrWhiteSpace(finding.NdeResult))
             {
                 messages.Add(ReportValidationMessage.Warning(
@@ -101,6 +139,17 @@ public class ReportValidationService
         }
 
         return new ReportValidationResult(messages);
+    }
+
+    private static bool IsVagueLocation(string? location)
+    {
+        if (string.IsNullOrWhiteSpace(location))
+        {
+            return true;
+        }
+
+        var normalized = location.Trim().ToLowerInvariant();
+        return normalized is "unknown" or "tbd" or "n/a" or "na" or "various" or "multiple";
     }
 
     private static string FormatInches(double value) => $"{value:0.000}\"";

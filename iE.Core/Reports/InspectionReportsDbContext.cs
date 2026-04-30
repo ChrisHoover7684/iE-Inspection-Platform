@@ -237,6 +237,18 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
                 photoBuilder.Property(p => p.FileName).HasMaxLength(512);
                 photoBuilder.Property(p => p.FileUrl).HasMaxLength(2000);
             });
+
+            builder.OwnsOne(r => r.PipingProfile, pipingBuilder =>
+            {
+                pipingBuilder.Property(p => p.LineNumber).HasMaxLength(128);
+                pipingBuilder.Property(p => p.UpstreamEquipment).HasMaxLength(256);
+                pipingBuilder.Property(p => p.DownstreamEquipment).HasMaxLength(256);
+                pipingBuilder.Property(p => p.FromLocation).HasMaxLength(256);
+                pipingBuilder.Property(p => p.ToLocation).HasMaxLength(256);
+                pipingBuilder.Property(p => p.NominalPipeSize).HasMaxLength(64);
+                pipingBuilder.Property(p => p.PipingClass).HasMaxLength(128);
+                pipingBuilder.Property(p => p.InsulatedStatus).HasMaxLength(64);
+            });
         });
     }
 }

@@ -93,6 +93,7 @@ public class InspectionFinding
     public string? InsulationCondition { get; set; }
     public double? ThicknessResult { get; set; }
     public double? MinimumRequiredThickness { get; set; }
+    public double? CorrosionAllowance { get; set; }
     public string? LineNumber { get; set; }
     public double? ApproximateFeetOfFindings { get; set; }
 }

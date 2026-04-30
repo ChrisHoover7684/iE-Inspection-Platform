@@ -11,13 +11,15 @@ public class ReportValidationService
 
         var messages = new List<ReportValidationMessage>();
 
-        if (string.Equals(report.TemplateId, Api570PipingTemplateId, StringComparison.OrdinalIgnoreCase)
-            && string.IsNullOrWhiteSpace(report.PipingProfile?.LineNumber))
+        var normalizedLineNumbers = GetNormalizedLineNumbers(report.PipingProfile);
+        var isApi570 = string.Equals(report.TemplateId, Api570PipingTemplateId, StringComparison.OrdinalIgnoreCase);
+
+        if (isApi570 && report.Findings.Count > 0 && normalizedLineNumbers.Count == 0)
         {
             messages.Add(ReportValidationMessage.Error(
                 null,
-                "API570_LINE_NUMBER_REQUIRED",
-                "Line number is required for API 570 piping inspection reports."));
+                "API570_LINE_NUMBERS_REQUIRED",
+                "At least one piping profile line number is required for API 570 piping inspection reports with findings."));
         }
 
         foreach (var finding in report.Findings)
@@ -98,7 +100,7 @@ public class ReportValidationService
             }
 
             var requiresApproxFeet = finding.FindingType is FindingType.Pitting or FindingType.Corrosion or FindingType.MetalLoss;
-            if (requiresApproxFeet && !report.PipingProfile?.ApproximateFeetOfFindings.HasValue == true)
+            if (requiresApproxFeet && !finding.ApproximateFeetOfFindings.HasValue && !report.PipingProfile?.ApproximateFeetOfFindings.HasValue == true)
             {
                 messages.Add(ReportValidationMessage.Warning(
                     finding.Id,
@@ -116,6 +118,25 @@ public class ReportValidationService
                     finding.Id,
                     "API570_LOCATION_CONTEXT_RECOMMENDED",
                     "Finding location is vague; provide upstream/downstream equipment or from/to location in the piping profile."));
+            }
+
+            if (isApi570 && report.Findings.Count > 0)
+            {
+                var findingLineNumber = finding.LineNumber?.Trim();
+                if (string.IsNullOrWhiteSpace(findingLineNumber))
+                {
+                    messages.Add(ReportValidationMessage.Error(
+                        finding.Id,
+                        "API570_FINDING_LINE_NUMBER_REQUIRED",
+                        "Each finding must include a line number for API 570 piping inspection reports."));
+                }
+                else if (!normalizedLineNumbers.Contains(findingLineNumber, StringComparer.OrdinalIgnoreCase))
+                {
+                    messages.Add(ReportValidationMessage.Error(
+                        finding.Id,
+                        "API570_FINDING_LINE_NUMBER_INVALID",
+                        $"Finding line number '{findingLineNumber}' must exist in piping profile line numbers."));
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(finding.NdeMethod) && string.IsNullOrWhiteSpace(finding.NdeResult))
@@ -154,6 +175,27 @@ public class ReportValidationService
     }
 
     private static string FormatInches(double value) => $"{value:0.000}\"";
+
+    private static List<string> GetNormalizedLineNumbers(PipingInspectionProfile? pipingProfile)
+    {
+        if (pipingProfile is null)
+        {
+            return new List<string>();
+        }
+
+        var normalized = pipingProfile.LineNumbers
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (normalized.Count == 0 && !string.IsNullOrWhiteSpace(pipingProfile.LineNumber))
+        {
+            normalized.Add(pipingProfile.LineNumber.Trim());
+        }
+
+        return normalized;
+    }
 }
 
 public class ReportValidationResult

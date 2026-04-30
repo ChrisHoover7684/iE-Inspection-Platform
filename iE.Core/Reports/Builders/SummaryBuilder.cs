@@ -17,7 +17,8 @@ public class SummaryBuilder
     public string BuildInspectionSummary(
         ThicknessEvaluationResult thicknessEvaluationResult,
         IEnumerable<InspectionFinding>? findings,
-        PipingInspectionProfile? pipingProfile = null)
+        PipingInspectionProfile? pipingProfile = null,
+        IEnumerable<InspectionObservation>? observations = null)
     {
         ArgumentNullException.ThrowIfNull(thicknessEvaluationResult);
 
@@ -52,6 +53,12 @@ public class SummaryBuilder
         }
 
         var findingList = findings?.ToList() ?? new List<InspectionFinding>();
+        var observationList = observations?.ToList() ?? new List<InspectionObservation>();
+
+        if (findingList.Count == 0 && observationList.Count > 0)
+        {
+            AppendObservationSummary(summary, observationList);
+        }
 
         var pittingFindings = findingList
             .Where(x => x.FindingType == FindingType.Pitting && x.PitDepth.HasValue)
@@ -105,6 +112,30 @@ public class SummaryBuilder
             summary.Append($" Location is between {pipingProfile.UpstreamEquipment.Trim()} and {pipingProfile.DownstreamEquipment.Trim()}.");
         }
     }
+
+
+    private static void AppendObservationSummary(StringBuilder summary, List<InspectionObservation> observations)
+    {
+        var acceptableCategories = observations
+            .Where(x => x.Status is InspectionObservationStatus.Acceptable or InspectionObservationStatus.NoIssues)
+            .Select(x => x.Category?.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (acceptableCategories.Count > 0)
+        {
+            summary.Append($" The {string.Join(", ", acceptableCategories)} {GetVerb(acceptableCategories.Count)} found to be in acceptable condition.");
+            return;
+        }
+
+        if (observations.Any(x => x.Status == InspectionObservationStatus.NotInspected))
+        {
+            summary.Append(" Portions of the scope were documented as not inspected.");
+        }
+    }
+
+    private static string GetVerb(int count) => count == 1 ? "was" : "were";
 
     private static string FormatMeasurement(double? value) =>
         value.HasValue

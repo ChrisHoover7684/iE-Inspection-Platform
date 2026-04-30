@@ -221,6 +221,9 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
                 findingBuilder.Property(f => f.Description).HasMaxLength(4000);
                 findingBuilder.Property(f => f.Severity).HasConversion<string>().HasMaxLength(64);
                 findingBuilder.Property(f => f.RepairRecommendation).HasMaxLength(4000);
+                findingBuilder.Property(f => f.LineNumber).HasMaxLength(128);
+                findingBuilder.Property(f => f.ApproximateFeetOfFindings);
+                findingBuilder.Property(f => f.CorrosionAllowance);
                 findingBuilder.PrimitiveCollection(f => f.PhotoIds);
             });
 
@@ -240,7 +243,9 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
 
             builder.OwnsOne(r => r.PipingProfile, pipingBuilder =>
             {
+                pipingBuilder.PrimitiveCollection(p => p.LineNumbers);
                 pipingBuilder.Property(p => p.LineNumber).HasMaxLength(128);
+                pipingBuilder.Property(p => p.ApproximateFeetOfFindings);
                 pipingBuilder.Property(p => p.UpstreamEquipment).HasMaxLength(256);
                 pipingBuilder.Property(p => p.DownstreamEquipment).HasMaxLength(256);
                 pipingBuilder.Property(p => p.FromLocation).HasMaxLength(256);

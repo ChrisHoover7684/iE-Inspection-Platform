@@ -2,7 +2,6 @@ namespace iE.Core.Reports.Services;
 
 public class ReportValidationService
 {
-    private const double MeasurablePittingThresholdInches = 0.030;
     private const string Api570PipingTemplateId = "api-570-piping-inspection";
 
     public ReportValidationResult Validate(InspectionReport report)
@@ -57,22 +56,6 @@ public class ReportValidationService
                         "PITTING_CLASSIFICATION_CONFLICT",
                         "Pitting findings cannot be marked as both localized and general."));
                 }
-            }
-
-            if (finding.PitDepth.HasValue && finding.PitDepth.Value > MeasurablePittingThresholdInches)
-            {
-                messages.Add(ReportValidationMessage.Warning(
-                    finding.Id,
-                    "MEASURABLE_PITTING",
-                    $"Pit depth ({FormatInches(finding.PitDepth.Value)}) exceeds measurable pitting threshold of {FormatInches(MeasurablePittingThresholdInches)}."));
-            }
-
-            if (finding.RepairRequired && string.IsNullOrWhiteSpace(finding.RepairRecommendation))
-            {
-                messages.Add(ReportValidationMessage.Error(
-                    finding.Id,
-                    "REPAIR_RECOMMENDATION_REQUIRED",
-                    "Repair recommendation is required when repair is required."));
             }
 
             if (finding.RepairRequired && (finding.PhotoIds is null || finding.PhotoIds.Count == 0))
@@ -147,16 +130,34 @@ public class ReportValidationService
                     "NDE method is provided, but NDE result is missing."));
             }
 
-            var belowMinimumThickness = finding.ThicknessResult.HasValue
-                && finding.MinimumRequiredThickness.HasValue
-                && finding.ThicknessResult.Value < finding.MinimumRequiredThickness.Value;
+            var remainingWallThicknessAfterPit = finding.ThicknessResult.HasValue
+                ? finding.ThicknessResult.Value - (finding.PitDepth ?? 0d)
+                : (double?)null;
 
-            if (belowMinimumThickness && string.IsNullOrWhiteSpace(finding.RepairRecommendation))
+            var belowMinimumThicknessAfterPit = remainingWallThicknessAfterPit.HasValue
+                && finding.MinimumRequiredThickness.HasValue
+                && remainingWallThicknessAfterPit.Value < finding.MinimumRequiredThickness.Value;
+
+            var pitDepthExceedsCorrosionAllowance = finding.PitDepth.HasValue
+                && finding.CorrosionAllowance.HasValue
+                && finding.PitDepth.Value > finding.CorrosionAllowance.Value;
+
+            var actionablePittingCondition = finding.RepairRequired
+                || belowMinimumThicknessAfterPit
+                || pitDepthExceedsCorrosionAllowance;
+
+            if (actionablePittingCondition && string.IsNullOrWhiteSpace(finding.RepairRecommendation))
             {
+                var reason = finding.RepairRequired
+                    ? "repair is marked as required"
+                    : belowMinimumThicknessAfterPit
+                        ? $"remaining wall thickness after pit ({FormatInches(remainingWallThicknessAfterPit!.Value)}) is below t-min ({FormatInches(finding.MinimumRequiredThickness!.Value)})"
+                        : $"pit depth ({FormatInches(finding.PitDepth!.Value)}) exceeds corrosion allowance ({FormatInches(finding.CorrosionAllowance!.Value)})";
+
                 messages.Add(ReportValidationMessage.Error(
                     finding.Id,
                     "REPAIR_RECOMMENDATION_MISSING",
-                    $"Thickness result ({FormatInches(finding.ThicknessResult!.Value)}) is below t-min ({FormatInches(finding.MinimumRequiredThickness!.Value)}), but no repair recommendation exists."));
+                    $"Repair recommendation is required because {reason}."));
             }
         }
 

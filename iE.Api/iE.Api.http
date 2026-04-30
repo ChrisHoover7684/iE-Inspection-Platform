@@ -12,9 +12,10 @@ Content-Type: application/json
   "templateId": "api-570",
   "checklistResponses": [
     {
-      "itemId": "visual-external-corrosion",
-      "response": "Acceptable",
-      "notes": "No active corrosion observed."
+      "itemId": "active-leakage",
+      "status": "Finding",
+      "location": "Pump discharge flange",
+      "notes": "Active seepage observed."
     }
   ],
   "report": {

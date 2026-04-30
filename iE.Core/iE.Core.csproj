@@ -16,6 +16,7 @@
   <ItemGroup>
     <Folder Include="Mechanical\Flanges\" />
     <Folder Include="Mechanical\PressureVessels\" />
+    <Folder Include="Migrations\" />
     <Folder Include="Reports\" />
   </ItemGroup>
 

@@ -24,6 +24,22 @@ public class PipingInspectionProfile
     public string? InsulatedStatus { get; set; }
 }
 
+
+public enum InspectionObservationStatus
+{
+    Acceptable = 1,
+    NoIssues = 2,
+    NotInspected = 3
+}
+
+public class InspectionObservation
+{
+    public string Category { get; set; } = string.Empty;
+    public InspectionObservationStatus Status { get; set; } = InspectionObservationStatus.Acceptable;
+    public string? Notes { get; set; }
+    public List<string> PhotoIds { get; set; } = new();
+}
+
 public class InspectionReport
 {
     public string Id { get; set; } = string.Empty;
@@ -45,6 +61,7 @@ public class InspectionReport
     public DateTime? UpdatedAt { get; set; }
     public List<InspectionReportSection> Sections { get; set; } = new();
     public List<InspectionFinding> Findings { get; set; } = new();
+    public List<InspectionObservation> Observations { get; set; } = new();
     public List<InspectionPhoto> Photos { get; set; } = new();
     public PipingInspectionProfile? PipingProfile { get; set; }
 }

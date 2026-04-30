@@ -227,6 +227,19 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
                 findingBuilder.PrimitiveCollection(f => f.PhotoIds);
             });
 
+
+            builder.OwnsMany(r => r.Observations, observationBuilder =>
+            {
+                observationBuilder.ToTable("InspectionObservations");
+                observationBuilder.WithOwner().HasForeignKey("InspectionReportId");
+                observationBuilder.Property<int>("Id");
+                observationBuilder.HasKey("Id");
+                observationBuilder.Property(o => o.Category).HasMaxLength(256);
+                observationBuilder.Property(o => o.Status).HasConversion<string>().HasMaxLength(64);
+                observationBuilder.Property(o => o.Notes).HasMaxLength(4000);
+                observationBuilder.PrimitiveCollection(o => o.PhotoIds);
+            });
+
             builder.OwnsMany(r => r.Photos, photoBuilder =>
             {
                 photoBuilder.ToTable("InspectionPhotos");

@@ -124,16 +124,26 @@ public class ReportingController(
             return BadRequest(new { error = "Report payload is required." });
         }
 
+        request.Report.Observations ??= new List<InspectionObservation>();
+        request.Report.Findings ??= new List<InspectionFinding>();
+
+        if ((request.ChecklistResponses is null || request.ChecklistResponses.Count == 0)
+            && request.Report.Observations.Count == 0
+            && request.Report.Findings.Count == 0)
+        {
+            return BadRequest(new
+            {
+                error = "checklistResponses are required when report has no observations or findings."
+            });
+        }
+
         var templateId = string.IsNullOrWhiteSpace(request.TemplateId)
             ? request.Report.TemplateId
             : request.TemplateId;
 
         var buildResult = observationChecklistService.BuildObservationsAndFindingsFromChecklist(
             templateId,
-            request.Responses);
-
-        request.Report.Observations ??= new List<InspectionObservation>();
-        request.Report.Findings ??= new List<InspectionFinding>();
+            request.ChecklistResponses);
 
         MergeChecklistObservations(request.Report.Observations, buildResult.Observations);
         MergeChecklistFindings(request.Report.Findings, buildResult.Findings);

@@ -4,3 +4,24 @@ GET {{iE.Api_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+POST {{iE.Api_HostAddress}}/api/reports/checklist/build-draft
+Content-Type: application/json
+
+{
+  "templateId": "api-570",
+  "checklistResponses": [
+    {
+      "itemId": "visual-external-corrosion",
+      "response": "Acceptable",
+      "notes": "No active corrosion observed."
+    }
+  ],
+  "report": {
+    "templateId": "api-570",
+    "observations": [],
+    "findings": []
+  }
+}
+
+###

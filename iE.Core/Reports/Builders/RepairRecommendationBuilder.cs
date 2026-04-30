@@ -66,7 +66,7 @@ public class RepairRecommendationBuilder
     {
         if (finding.PitDepth.HasValue && finding.PitDepth.Value > 0.030)
         {
-            return $"Measurable pitting observed with pit depth {FormatMeasurement(finding.PitDepth.Value)}. {finding.Description ?? string.Empty}".Trim();
+            return $"Localized measurable pitting up to {FormatMeasurement(finding.PitDepth.Value)} deep was observed. {finding.Description ?? string.Empty}".Trim();
         }
 
         return finding.Description ?? string.Empty;
@@ -78,24 +78,24 @@ public class RepairRecommendationBuilder
 
         if (finding.RepairRequired)
         {
-            recommendationParts.Add("Repair is required based on inspection findings.");
+            recommendationParts.Add("Inspection findings indicate repair is required to restore component integrity.");
         }
 
         if (IsThicknessBelowMinimum(finding))
         {
             recommendationParts.Add(
-                $"Measured thickness {FormatMeasurement(finding.ThicknessResult!.Value)} is below t-min {FormatMeasurement(finding.MinimumRequiredThickness!.Value)}.");
+                $"The lowest measured thickness recorded was {FormatMeasurement(finding.ThicknessResult!.Value)}, which is below the required minimum thickness of {FormatMeasurement(finding.MinimumRequiredThickness!.Value)}.");
         }
 
         if (IsLeakageFound(finding))
         {
-            recommendationParts.Add("Leakage identified; isolate, mitigate, and repair the affected area.");
+            recommendationParts.Add("Repair the leaking component at the identified location and verify integrity following reassembly.");
         }
 
         if (finding.PitDepth.HasValue && finding.PitDepth.Value > 0.030)
         {
             recommendationParts.Add(
-                $"Measurable pitting exceeds screening threshold with pit depth {FormatMeasurement(finding.PitDepth.Value)}.");
+                $"Localized measurable pitting up to {FormatMeasurement(finding.PitDepth.Value)} deep was observed and should be evaluated for repair.");
         }
 
         if (!string.IsNullOrWhiteSpace(finding.RepairRecommendation))

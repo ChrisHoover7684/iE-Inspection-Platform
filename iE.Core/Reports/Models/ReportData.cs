@@ -2,19 +2,15 @@ namespace iE.Core.Reports.Models;
 
 public class ReportData
 {
-    public string? ReportId { get; set; }
-    public string? EquipmentTag { get; set; }
-    public string? CircuitId { get; set; }
-    public List<ThicknessEvaluationResult> ThicknessEvaluations { get; set; } = new();
+    public string SummaryText { get; set; } = string.Empty;
+    public List<string> Findings { get; set; } = new();
+    public List<string> Repairs { get; set; } = new();
+    public List<string> FutureRecommendations { get; set; } = new();
 }
 
 public class ThicknessEvaluationResult
 {
-    public string? CmlName { get; set; }
-    public double? MeasuredThickness { get; set; }
+    public double? LowestThickness { get; set; }
     public double? RequiredThickness { get; set; }
-    public double? CorrosionRate { get; set; }
     public double? RemainingLifeYears { get; set; }
-    public bool IsAcceptable { get; set; }
-    public string? Notes { get; set; }
 }

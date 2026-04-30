@@ -60,7 +60,7 @@ function AnswerEditor({
           <input
             type="checkbox"
             checked={answer.recommendationRequired ?? false}
-            onChange={(event) => onChange({ recommendationRequired: event.target.checked })}
+            onChange={(event) => onChange({ repairRequired: event.target.checked })}
           />
           Recommendation Required
         </label>
@@ -329,10 +329,10 @@ export function ReportEditPage() {
         {report.findings.map((finding, findingIndex) => (
           <div key={finding.id || findingIndex} className="finding-grid">
             <label>
-              ComponentLocation
+              Location
               <input
-                value={finding.componentLocation}
-                onChange={(event) => updateFinding(findingIndex, { componentLocation: event.target.value })}
+                value={finding.location}
+                onChange={(event) => updateFinding(findingIndex, { location: event.target.value })}
               />
             </label>
             <label>
@@ -359,11 +359,11 @@ export function ReportEditPage() {
               />
             </label>
             <label>
-              DetailedDescription
+              Description
               <textarea
-                value={finding.detailedDescription}
+                value={finding.description}
                 onChange={(event) =>
-                  updateFinding(findingIndex, { detailedDescription: event.target.value })
+                  updateFinding(findingIndex, { description: event.target.value })
                 }
               />
             </label>
@@ -375,21 +375,21 @@ export function ReportEditPage() {
               />
             </label>
             <label>
-              RecommendationRequired
+              RepairRequired
               <input
                 type="checkbox"
-                checked={finding.recommendationRequired}
+                checked={finding.repairRequired}
                 onChange={(event) =>
-                  updateFinding(findingIndex, { recommendationRequired: event.target.checked })
+                  updateFinding(findingIndex, { repairRequired: event.target.checked })
                 }
               />
             </label>
             <label>
-              RecommendationText
+              RepairRecommendation
               <textarea
-                value={finding.recommendationText || ''}
+                value={finding.repairRecommendation || ''}
                 onChange={(event) =>
-                  updateFinding(findingIndex, { recommendationText: event.target.value })
+                  updateFinding(findingIndex, { repairRecommendation: event.target.value })
                 }
               />
             </label>

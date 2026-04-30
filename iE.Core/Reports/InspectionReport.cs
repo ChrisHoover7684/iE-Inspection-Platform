@@ -64,6 +64,8 @@ public class InspectionFinding
     public FindingSeverity Severity { get; set; } = FindingSeverity.None;
     public bool RepairRequired { get; set; }
     public string? RepairRecommendation { get; set; }
+    public string? ComponentType { get; set; }
+    public string? AssociatedChecklistItem { get; set; }
     public double? PitDepth { get; set; }
     public bool IsLocalized { get; set; }
     public bool IsGeneral { get; set; }

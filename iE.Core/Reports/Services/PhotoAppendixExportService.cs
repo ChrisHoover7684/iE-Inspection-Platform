@@ -129,17 +129,17 @@ public class PhotoAppendixExportService
         var linkedFinding = report.Findings.FirstOrDefault(f =>
             f.PhotoIds.Any(photoId => string.Equals(photoId, photo.Id, StringComparison.OrdinalIgnoreCase)));
 
-        if (!string.IsNullOrWhiteSpace(linkedFinding?.FindingType))
+        if (linkedFinding is not null && linkedFinding.FindingType != FindingType.Other)
         {
-            return linkedFinding.FindingType;
+            return linkedFinding.FindingType.ToString();
         }
 
         var checklistFinding = report.Findings.FirstOrDefault(f =>
             string.Equals(f.AssociatedChecklistItem, photo.RelatedChecklistItem, StringComparison.OrdinalIgnoreCase));
 
-        if (!string.IsNullOrWhiteSpace(checklistFinding?.FindingType))
+        if (checklistFinding is not null && checklistFinding.FindingType != FindingType.Other)
         {
-            return checklistFinding.FindingType;
+            return checklistFinding.FindingType.ToString();
         }
 
         return string.Empty;

@@ -16,7 +16,7 @@ public class InspectionSummaryService
             .ToList();
 
         var recommendationFindings = findings
-            .Where(f => f.RecommendationRequired)
+            .Where(f => f.RepairRequired)
             .ToList();
 
         var recommendationAnswers = answers
@@ -50,7 +50,7 @@ public class InspectionSummaryService
         }
 
         var lines = repairFindings
-            .Select(f => $"- {Clean(f.ComponentLocation)} ({Clean(f.ComponentType)}): {Clean(f.DetailedDescription)}")
+            .Select(f => $"- {Clean(f.Location)} ({Clean(f.ComponentType)}): {Clean(f.Description)}")
             .ToList();
 
         return "Repairs/corrective actions identified:\n" + string.Join("\n", lines);
@@ -64,10 +64,10 @@ public class InspectionSummaryService
 
         lines.AddRange(recommendationFindings.Select(f =>
         {
-            var recommendation = string.IsNullOrWhiteSpace(f.RecommendationText)
-                ? Clean(f.DetailedDescription)
-                : Clean(f.RecommendationText);
-            return $"- Finding ({Clean(f.ComponentLocation)}): {recommendation}";
+            var recommendation = string.IsNullOrWhiteSpace(f.RepairRecommendation)
+                ? Clean(f.Description)
+                : Clean(f.RepairRecommendation);
+            return $"- Finding ({Clean(f.Location)}): {recommendation}";
         }));
 
         lines.AddRange(recommendationAnswers.Select(a =>
@@ -115,7 +115,7 @@ public class InspectionSummaryService
 
     private static bool RequiresRepair(InspectionFinding finding)
     {
-        var text = $"{finding.FindingType} {finding.Severity} {finding.DetailedDescription}".ToLowerInvariant();
+        var text = $"{finding.FindingType} {finding.Severity} {finding.Description}".ToLowerInvariant();
         return text.Contains("repair")
                || text.Contains("corrective")
                || text.Contains("replace")

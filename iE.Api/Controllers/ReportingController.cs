@@ -1,5 +1,6 @@
 using iE.Api.Contracts;
 using iE.Core.Reports;
+using iE.Core.Reports.Models;
 using iE.Core.Reports.Builders;
 using iE.Core.Reports.Services;
 using Microsoft.AspNetCore.Mvc;

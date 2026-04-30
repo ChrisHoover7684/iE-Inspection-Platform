@@ -57,15 +57,22 @@ public class InspectionReportAnswer
 public class InspectionFinding
 {
     public string Id { get; set; } = string.Empty;
-    public string ComponentLocation { get; set; } = string.Empty;
-    public string ComponentType { get; set; } = string.Empty;
-    public string FindingType { get; set; } = string.Empty;
-    public string AssociatedChecklistItem { get; set; } = string.Empty;
-    public string DetailedDescription { get; set; } = string.Empty;
-    public string Severity { get; set; } = string.Empty;
-    public bool RecommendationRequired { get; set; }
-    public string? RecommendationText { get; set; }
+    public FindingType FindingType { get; set; } = FindingType.Other;
+    public DamageMechanismType DamageMechanism { get; set; } = DamageMechanismType.None;
+    public string Location { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public FindingSeverity Severity { get; set; } = FindingSeverity.None;
+    public bool RepairRequired { get; set; }
+    public string? RepairRecommendation { get; set; }
+    public double? PitDepth { get; set; }
+    public bool IsLocalized { get; set; }
+    public bool IsGeneral { get; set; }
     public List<string> PhotoIds { get; set; } = new();
+    public string? NdeMethod { get; set; }
+    public string? NdeResult { get; set; }
+    public string? InsulationCondition { get; set; }
+    public double? ThicknessResult { get; set; }
+    public double? MinimumRequiredThickness { get; set; }
 }
 
 public class InspectionPhoto

@@ -30,8 +30,8 @@ public class InspectionSummaryService
         return new InspectionSummaryResult
         {
             Summary = BuildSummary(findings),
-            Repairs = BuildRepairSummary(repairFindings),
-            Recommendations = BuildRecommendationSummary(recommendationFindings, recommendationAnswers),
+            Repairs = BuildRepairSummary(report, repairFindings),
+            Recommendations = BuildRecommendationSummary(report, recommendationFindings, recommendationAnswers),
             NdeAndTesting = BuildNdeSummary(ndeAnswers),
             ReturnToService = BuildReturnToServiceSummary(repairFindings, recommendationFindings, recommendationAnswers)
         };
@@ -42,7 +42,7 @@ public class InspectionSummaryService
             ? "Based on the inspection scope completed, no conditions requiring immediate repair were identified at the time of inspection."
             : "Inspection findings were identified during execution and are summarized in the findings section of this report.";
 
-    private static string BuildRepairSummary(List<InspectionFinding> repairFindings)
+    private static string BuildRepairSummary(InspectionReport report, List<InspectionFinding> repairFindings)
     {
         if (repairFindings.Count == 0)
         {
@@ -50,13 +50,14 @@ public class InspectionSummaryService
         }
 
         var lines = repairFindings
-            .Select(f => $"- {Clean(f.Location)} ({Clean(f.ComponentType)}): {Clean(f.Description)}")
+            .Select(f => $"- {BuildFindingLocationLabel(report, f)} ({Clean(f.ComponentType)}): {Clean(f.Description)}")
             .ToList();
 
         return "Repairs/corrective actions identified:\n" + string.Join("\n", lines);
     }
 
     private static string BuildRecommendationSummary(
+        InspectionReport report,
         List<InspectionFinding> recommendationFindings,
         List<InspectionReportAnswer> recommendationAnswers)
     {
@@ -67,7 +68,7 @@ public class InspectionSummaryService
             var recommendation = string.IsNullOrWhiteSpace(f.RepairRecommendation)
                 ? Clean(f.Description)
                 : Clean(f.RepairRecommendation);
-            return $"- Finding ({Clean(f.Location)}): {recommendation}";
+            return $"- Finding ({BuildFindingLocationLabel(report, f)}): {recommendation}";
         }));
 
         lines.AddRange(recommendationAnswers.Select(a =>
@@ -139,6 +140,38 @@ public class InspectionSummaryService
                || text.Contains("hardness")
                || text.Contains("hydrotest")
                || text.Contains("pmi");
+    }
+
+
+
+    private static string BuildFindingLocationLabel(InspectionReport report, InspectionFinding finding)
+    {
+        var segments = new List<string> { Clean(finding.Location) };
+
+        if (!string.IsNullOrWhiteSpace(report.PipingProfile?.LineNumber))
+        {
+            segments.Add($"Line {report.PipingProfile.LineNumber.Trim()}");
+        }
+
+        if (report.PipingProfile?.ApproximateFeetOfFindings is double feet)
+        {
+            segments.Add($"~{feet:0.##} ft affected");
+        }
+
+        if (!string.IsNullOrWhiteSpace(report.PipingProfile?.UpstreamEquipment)
+            || !string.IsNullOrWhiteSpace(report.PipingProfile?.DownstreamEquipment))
+        {
+            var upstream = string.IsNullOrWhiteSpace(report.PipingProfile?.UpstreamEquipment)
+                ? "unknown upstream"
+                : report.PipingProfile!.UpstreamEquipment!.Trim();
+            var downstream = string.IsNullOrWhiteSpace(report.PipingProfile?.DownstreamEquipment)
+                ? "unknown downstream"
+                : report.PipingProfile!.DownstreamEquipment!.Trim();
+
+            segments.Add($"between {upstream} and {downstream}");
+        }
+
+        return string.Join(" | ", segments);
     }
 
     private static string Clean(string? value) => string.IsNullOrWhiteSpace(value) ? "Not documented" : value.Trim();

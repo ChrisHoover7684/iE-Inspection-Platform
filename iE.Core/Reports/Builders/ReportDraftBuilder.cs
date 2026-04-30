@@ -32,7 +32,8 @@ public class ReportDraftBuilder(
 
         var summaryText = summaryBuilder.BuildInspectionSummary(
             thicknessEvaluationResult,
-            findingDescriptions);
+            findingDescriptions,
+            report.PipingProfile);
 
         return new ReportData
         {

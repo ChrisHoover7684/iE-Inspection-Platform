@@ -8,7 +8,8 @@ public class SummaryBuilder
 {
     public string BuildInspectionSummary(
         ThicknessEvaluationResult thicknessEvaluationResult,
-        IEnumerable<string>? findings)
+        IEnumerable<string>? findings,
+        PipingInspectionProfile? pipingProfile = null)
     {
         ArgumentNullException.ThrowIfNull(thicknessEvaluationResult);
 
@@ -35,6 +36,8 @@ public class SummaryBuilder
             summary.Append("Thickness evaluation data was incomplete for summary assessment.");
         }
 
+        AppendPipingContext(summary, pipingProfile);
+
         if (thicknessEvaluationResult.RemainingLifeYears.HasValue)
         {
             summary.Append($" Estimated remaining life is {FormatYears(thicknessEvaluationResult.RemainingLifeYears.Value)} years based on current conditions.");
@@ -58,6 +61,30 @@ public class SummaryBuilder
         }
 
         return summary.ToString().Trim();
+    }
+
+    private static void AppendPipingContext(StringBuilder summary, PipingInspectionProfile? pipingProfile)
+    {
+        if (pipingProfile is null)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(pipingProfile.LineNumber))
+        {
+            summary.Append($" Findings were observed on Line {pipingProfile.LineNumber.Trim()}.");
+        }
+
+        if (pipingProfile.ApproximateFeetOfFindings.HasValue)
+        {
+            summary.Append($" Affected area extends for approximately {pipingProfile.ApproximateFeetOfFindings.Value:0.##} ft.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(pipingProfile.UpstreamEquipment)
+            && !string.IsNullOrWhiteSpace(pipingProfile.DownstreamEquipment))
+        {
+            summary.Append($" Location is between {pipingProfile.UpstreamEquipment.Trim()} and {pipingProfile.DownstreamEquipment.Trim()}.");
+        }
     }
 
     private static string FormatMeasurement(double? value) =>

@@ -360,4 +360,34 @@ public class ReportingController(
         inspectionReportRepository.Update(id, updatedReport);
         return Ok(updatedReport);
     }
+
+    [HttpPost("{id}/submit-for-review")]
+    public ActionResult SubmitForReview(string id)
+    {
+        var report = inspectionReportRepository.GetById(id);
+        if (report is null)
+        {
+            return NotFound();
+        }
+
+        var draft = reportDraftBuilder.Build(report);
+        if (!draft.CanSubmitForReview)
+        {
+            return BadRequest(new
+            {
+                message = "Report cannot be submitted",
+                validationMessages = draft.ValidationResult.Messages
+            });
+        }
+
+        report.Status = InspectionReportStatuses.ReadyForReview;
+        report.UpdatedAt = DateTime.UtcNow;
+        inspectionReportRepository.Update(id, report);
+
+        return Ok(new
+        {
+            message = "Report submitted for review",
+            status = report.Status
+        });
+    }
 }

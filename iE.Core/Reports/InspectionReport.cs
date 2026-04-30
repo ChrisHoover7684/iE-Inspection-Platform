@@ -3,6 +3,7 @@ namespace iE.Core.Reports;
 public static class InspectionReportStatuses
 {
     public const string Draft = "Draft";
+    public const string ReadyForReview = "ReadyForReview";
     public const string InReview = "InReview";
     public const string Final = "Final";
 }

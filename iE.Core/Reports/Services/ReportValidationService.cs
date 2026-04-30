@@ -16,12 +16,13 @@ public class ReportValidationService
 
         if (report.Findings.Count == 0)
         {
-            if (report.Observations.Count == 0)
+            var hasInspectableObservation = report.Observations.Any(x => x.Status != ObservationStatus.NotApplicable);
+            if (!hasInspectableObservation)
             {
                 messages.Add(ReportValidationMessage.Error(
                     null,
                     "OBSERVATIONS_REQUIRED_WHEN_NO_FINDINGS",
-                    "At least one observation is required when no findings are documented."));
+                    "At least one inspection observation (Acceptable or NotInspected) is required when no findings are documented."));
             }
 
             var reportPhotoCount = report.Photos.Count(x => !string.IsNullOrWhiteSpace(x.Id));

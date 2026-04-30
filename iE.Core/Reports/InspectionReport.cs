@@ -28,8 +28,9 @@ public class PipingInspectionProfile
 public enum ObservationStatus
 {
     Acceptable = 1,
-    NoIssues = 2,
-    NotInspected = 3
+    Finding = 2,
+    NotInspected = 3,
+    NotApplicable = 4
 }
 
 public class InspectionObservation

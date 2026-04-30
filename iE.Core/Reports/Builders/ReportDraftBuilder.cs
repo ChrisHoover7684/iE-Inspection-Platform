@@ -92,7 +92,7 @@ public class ReportDraftBuilder(
     private static string BuildFindingLine(InspectionFinding finding, PipingInspectionProfile? pipingProfile)
     {
         var location = string.IsNullOrWhiteSpace(finding.Location) ? "Unknown location" : finding.Location.Trim();
-        var description = string.IsNullOrWhiteSpace(finding.Description) ? "No description" : finding.Description.Trim();
+        var description = string.IsNullOrWhiteSpace(finding.Description) ? "No description" : finding.Description.Trim().TrimEnd('.');
         var lineNumber = finding.LineNumber?.Trim();
         if (string.IsNullOrWhiteSpace(lineNumber))
         {
@@ -118,7 +118,7 @@ public class ReportDraftBuilder(
             parts.Add($"between {pipingProfile.UpstreamEquipment.Trim()} and {pipingProfile.DownstreamEquipment.Trim()}");
         }
 
-        return string.Join(" ", parts).Trim();
+        return $"{string.Join(" ", parts).TrimEnd('.')}.";
     }
 
     private static List<string> RepairRecommendationsToLines(List<RepairRecommendation> recommendations)

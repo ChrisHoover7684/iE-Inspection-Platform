@@ -3,6 +3,7 @@ namespace iE.Core.Reports.Services;
 public class ObservationChecklistService
 {
     private const string Api570PipingTemplateId = "api-570-piping-inspection";
+    private const string ActiveLeakageItemId = "active-leakage";
 
     private static readonly List<ObservationChecklistItem> Api570ChecklistItems = new()
     {
@@ -120,6 +121,11 @@ public class ObservationChecklistService
             provided.FindingType = FindingType.Other;
         }
 
+        if (IsActiveLeakageFinding(item))
+        {
+            provided.FindingType = FindingType.Leak;
+        }
+
         if (provided.Severity == FindingSeverity.None)
         {
             provided.Severity = FindingSeverity.Medium;
@@ -135,6 +141,15 @@ public class ObservationChecklistService
             provided.ApproximateFeetOfFindings = response.ApproximateFeetOfFindings.Value;
         }
 
+        if (IsActiveLeakageFinding(item))
+        {
+            provided.RepairRequired = true;
+            if (string.IsNullOrWhiteSpace(provided.Location))
+            {
+                provided.Location = ResolveFindingLocation(item, response);
+            }
+        }
+
         return provided;
     }
 
@@ -148,15 +163,25 @@ public class ObservationChecklistService
             Id = Guid.NewGuid().ToString("N"),
             AssociatedChecklistItem = item.Id,
             Description = string.IsNullOrWhiteSpace(response.Notes) ? item.Label : response.Notes,
-            FindingType = FindingType.Other,
+            FindingType = IsActiveLeakageFinding(item) ? FindingType.Leak : FindingType.Other,
             Severity = FindingSeverity.Medium,
             DamageMechanism = DamageMechanismType.None,
-            Location = item.Category,
+            Location = ResolveFindingLocation(item, response),
             LineNumber = lineNumber,
             ApproximateFeetOfFindings = response.ApproximateFeetOfFindings,
-            RepairRequired = false,
+            RepairRequired = IsActiveLeakageFinding(item),
             PhotoIds = response.PhotoIds?.Where(x => !string.IsNullOrWhiteSpace(x)).ToList() ?? new List<string>()
         };
+    }
+
+    private static bool IsActiveLeakageFinding(ObservationChecklistItem item)
+    {
+        return string.Equals(item.Id, ActiveLeakageItemId, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ResolveFindingLocation(ObservationChecklistItem item, ObservationChecklistItemResponse response)
+    {
+        return string.IsNullOrWhiteSpace(response.Notes) ? item.Category : response.Notes.Trim();
     }
 
     private static string? ResolveLineNumber(ObservationChecklistItemResponse response, InspectionReport? report)

@@ -59,7 +59,10 @@ public class RepairRecommendationBuilder
             return true;
         }
 
-        return (finding.Description ?? string.Empty).Contains("leak", StringComparison.OrdinalIgnoreCase);
+        var description = finding.Description ?? string.Empty;
+        return description.Contains("leak", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("leakage", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("seepage", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string BuildDefectDescription(InspectionFinding finding)

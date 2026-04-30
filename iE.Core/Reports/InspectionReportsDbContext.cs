@@ -232,8 +232,8 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
             {
                 observationBuilder.ToTable("InspectionObservations");
                 observationBuilder.WithOwner().HasForeignKey("InspectionReportId");
-                observationBuilder.Property<int>("Id");
-                observationBuilder.HasKey("Id");
+                observationBuilder.HasKey(o => o.Id);
+                observationBuilder.Property(o => o.Id).HasMaxLength(64);
                 observationBuilder.Property(o => o.Category).HasMaxLength(256);
                 observationBuilder.Property(o => o.Status).HasConversion<string>().HasMaxLength(64);
                 observationBuilder.Property(o => o.Notes).HasMaxLength(4000);

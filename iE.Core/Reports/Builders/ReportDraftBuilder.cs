@@ -32,14 +32,24 @@ public class ReportDraftBuilder(
         var summaryText = summaryBuilder.BuildInspectionSummary(
             thicknessEvaluationResult,
             report.Findings,
-            report.PipingProfile);
+            report.PipingProfile,
+            report.Observations);
+
+        var findingLines = report.Findings
+            .Select(x => BuildFindingLine(x, report.PipingProfile))
+            .ToList();
+
+        if (findingLines.Count == 0)
+        {
+            findingLines.Add("No reportable findings were identified during this inspection.");
+        }
+
+        findingLines.AddRange(report.Observations.Select(BuildObservationLine));
 
         return new ReportData
         {
             SummaryText = summaryText,
-            Findings = report.Findings
-                .Select(x => BuildFindingLine(x, report.PipingProfile))
-                .ToList(),
+            Findings = findingLines,
             Repairs = report.Findings
                 .Where(x => x.RepairRequired)
                 .Select(x => string.IsNullOrWhiteSpace(x.RepairRecommendation)
@@ -48,6 +58,13 @@ public class ReportDraftBuilder(
                 .ToList(),
             FutureRecommendations = RepairRecommendationsToLines(repairRecommendations)
         };
+    }
+
+    private static string BuildObservationLine(InspectionObservation observation)
+    {
+        var category = string.IsNullOrWhiteSpace(observation.Category) ? "General" : observation.Category.Trim();
+        var notes = string.IsNullOrWhiteSpace(observation.Notes) ? string.Empty : $": {observation.Notes.Trim()}";
+        return $"Observation - {category}: {observation.Status}{notes}";
     }
 
     private static ThicknessEvaluationResult BuildThicknessEvaluationResult(InspectionReport report)

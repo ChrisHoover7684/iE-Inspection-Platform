@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using iE.Core.Reports;
+using iE.Core.Reports.Builders;
 using iE.Core.Reports.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,6 +20,10 @@ builder.Services.AddDbContext<InspectionReportsDbContext>(options =>
 builder.Services.AddScoped<InspectionReportRepository>();
 builder.Services.AddScoped<InspectionReportFactory>();
 builder.Services.AddScoped<InspectionSummaryService>();
+builder.Services.AddScoped<SummaryBuilder>();
+builder.Services.AddScoped<ReportValidationService>();
+builder.Services.AddScoped<RepairRecommendationBuilder>();
+builder.Services.AddScoped<ReportDraftBuilder>();
 builder.Services.AddScoped<InspectionReportDocxExportService>();
 builder.Services.AddScoped<PhotoAppendixExportService>();
 

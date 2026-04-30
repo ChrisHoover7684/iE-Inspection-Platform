@@ -1,5 +1,6 @@
 using iE.Api.Contracts;
 using iE.Core.Reports;
+using iE.Core.Reports.Builders;
 using iE.Core.Reports.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,7 +12,8 @@ public class ReportingController(
     InspectionReportRepository inspectionReportRepository,
     InspectionReportFactory inspectionReportFactory,
     InspectionReportDocxExportService inspectionReportDocxExportService,
-    PhotoAppendixExportService photoAppendixExportService) : ControllerBase
+    PhotoAppendixExportService photoAppendixExportService,
+    ReportDraftBuilder reportDraftBuilder) : ControllerBase
 {
     [HttpGet("templates")]
     public ActionResult<IReadOnlyList<ReportTemplate>> GetTemplates()
@@ -93,6 +95,14 @@ public class ReportingController(
             fileBytes,
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             fileName);
+    }
+
+
+    [HttpPost("draft")]
+    public ActionResult<ReportDraft> BuildDraft([FromBody] InspectionReport report)
+    {
+        var draft = reportDraftBuilder.Build(report);
+        return Ok(draft);
     }
 
     [HttpPost("instances")]

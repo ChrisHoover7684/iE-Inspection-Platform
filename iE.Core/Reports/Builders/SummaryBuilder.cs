@@ -22,7 +22,7 @@ public class SummaryBuilder
             if (lowest.Value < required.Value)
             {
                 summary.Append(
-                    $"The lowest measured thickness recorded was {FormatMeasurement(lowest)}. The calculated required thickness is {FormatMeasurement(required)}; therefore, the component is below minimum allowable thickness and requires evaluation for repair.");
+                    $"The lowest measured thickness recorded was {FormatMeasurement(lowest)}, which is below the calculated required thickness of {FormatMeasurement(required)}. The component does not meet minimum thickness requirements and requires evaluation for repair.");
             }
             else
             {
@@ -32,12 +32,12 @@ public class SummaryBuilder
         }
         else
         {
-            summary.Append("Thickness evaluation values were incomplete for summary generation.");
+            summary.Append("Thickness evaluation data was incomplete for summary assessment.");
         }
 
         if (thicknessEvaluationResult.RemainingLifeYears.HasValue)
         {
-            summary.Append($" Estimated remaining life is {FormatYears(thicknessEvaluationResult.RemainingLifeYears.Value)} years.");
+            summary.Append($" Estimated remaining life is {FormatYears(thicknessEvaluationResult.RemainingLifeYears.Value)} years based on current conditions.");
         }
 
         var findingList = findings?

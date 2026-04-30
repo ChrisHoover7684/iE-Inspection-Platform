@@ -28,11 +28,10 @@ public class ReportDraftBuilder(
     private ReportData BuildReportData(InspectionReport report, List<RepairRecommendation> repairRecommendations)
     {
         var thicknessEvaluationResult = BuildThicknessEvaluationResult(report);
-        var findingDescriptions = report.Findings.Select(x => x.Description);
 
         var summaryText = summaryBuilder.BuildInspectionSummary(
             thicknessEvaluationResult,
-            findingDescriptions,
+            report.Findings,
             report.PipingProfile);
 
         return new ReportData

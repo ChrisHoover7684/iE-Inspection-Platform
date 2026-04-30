@@ -30,7 +30,7 @@ public class RepairRecommendationBuilder
                 RecommendationText = BuildRecommendationText(finding),
                 Priority = MapPriority(finding.Severity),
                 Basis = BuildBasis(finding),
-                RelatedPhotoIds = finding.PhotoIds.ToList(),
+                RelatedPhotoIds = finding.PhotoIds?.ToList() ?? new List<string>(),
                 Status = RepairRecommendationStatus.Draft
             });
         }
@@ -59,17 +59,17 @@ public class RepairRecommendationBuilder
             return true;
         }
 
-        return finding.Description.Contains("leak", StringComparison.OrdinalIgnoreCase);
+        return (finding.Description ?? string.Empty).Contains("leak", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string BuildDefectDescription(InspectionFinding finding)
     {
         if (finding.PitDepth.HasValue && finding.PitDepth.Value > 0.030)
         {
-            return $"Measurable pitting observed with pit depth {FormatMeasurement(finding.PitDepth.Value)}. {finding.Description}".Trim();
+            return $"Measurable pitting observed with pit depth {FormatMeasurement(finding.PitDepth.Value)}. {finding.Description ?? string.Empty}".Trim();
         }
 
-        return finding.Description;
+        return finding.Description ?? string.Empty;
     }
 
     private static string BuildRecommendationText(InspectionFinding finding)

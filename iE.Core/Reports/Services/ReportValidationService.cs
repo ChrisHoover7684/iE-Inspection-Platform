@@ -91,14 +91,13 @@ public class ReportValidationService
 
             if (finding.DamageMechanism == DamageMechanismType.CUI && string.IsNullOrWhiteSpace(report.PipingProfile?.InsulatedStatus))
             {
-                messages.Add(ReportValidationMessage.Error(
+                messages.Add(ReportValidationMessage.Warning(
                     finding.Id,
-                    "API570_INSULATED_STATUS_REQUIRED",
-                    "Insulated status is required in the piping profile when damage mechanism is CUI."));
+                    "API570_INSULATED_STATUS_RECOMMENDED",
+                    "Insulated status should be provided in the piping profile when damage mechanism is CUI."));
             }
 
-            var requiresApproxFeet = finding.FindingType is FindingType.Pitting or FindingType.Corrosion or FindingType.MetalLoss
-                                      || finding.DamageMechanism == DamageMechanismType.CUI;
+            var requiresApproxFeet = finding.FindingType is FindingType.Pitting or FindingType.Corrosion or FindingType.MetalLoss;
             if (requiresApproxFeet && !report.PipingProfile?.ApproximateFeetOfFindings.HasValue == true)
             {
                 messages.Add(ReportValidationMessage.Warning(
@@ -109,12 +108,14 @@ public class ReportValidationService
 
             if (IsVagueLocation(finding.Location)
                 && string.IsNullOrWhiteSpace(report.PipingProfile?.UpstreamEquipment)
-                && string.IsNullOrWhiteSpace(report.PipingProfile?.DownstreamEquipment))
+                && string.IsNullOrWhiteSpace(report.PipingProfile?.DownstreamEquipment)
+                && string.IsNullOrWhiteSpace(report.PipingProfile?.FromLocation)
+                && string.IsNullOrWhiteSpace(report.PipingProfile?.ToLocation))
             {
-                messages.Add(ReportValidationMessage.Error(
+                messages.Add(ReportValidationMessage.Warning(
                     finding.Id,
-                    "API570_LOCATION_CONTEXT_REQUIRED",
-                    "Finding location is vague; provide upstream or downstream equipment in the piping profile."));
+                    "API570_LOCATION_CONTEXT_RECOMMENDED",
+                    "Finding location is vague; provide upstream/downstream equipment or from/to location in the piping profile."));
             }
 
             if (!string.IsNullOrWhiteSpace(finding.NdeMethod) && string.IsNullOrWhiteSpace(finding.NdeResult))

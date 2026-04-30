@@ -75,6 +75,13 @@ public class InspectionReportRepository(InspectionReportsDbContext dbContext)
             existing.Findings.Add(finding);
         }
 
+        dbContext.Entry(existing).Collection(r => r.Observations).Load();
+        existing.Observations.Clear();
+        foreach (var observation in report.Observations)
+        {
+            existing.Observations.Add(observation);
+        }
+
         dbContext.Entry(existing).Collection(r => r.Photos).Load();
         existing.Photos.Clear();
         foreach (var photo in report.Photos)

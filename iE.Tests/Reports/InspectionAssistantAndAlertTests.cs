@@ -76,6 +76,58 @@ public class InspectionAssistantAndAlertTests
         Assert.Empty(suggestions);
     }
 
+    [Fact]
+    public void InlineAssistant_Pitting_ReturnsDepthAndLocalizedSuggestion()
+    {
+        var response = _assistant.GetInlineSuggestions(new InlineAssistantRequest
+        {
+            CurrentFieldId = "finding-description",
+            CurrentText = "Observed pitting on the elbow"
+        });
+
+        Assert.Contains(response.Suggestions, s => s.PromptType == "MissingData" && s.Suggestion.Contains("pit depth", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(response.Suggestions, s => s.Suggestion.Contains("localized or general", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void InlineAssistant_Leak_ReturnsRepairPhotoLocationSuggestions()
+    {
+        var response = _assistant.GetInlineSuggestions(new InlineAssistantRequest
+        {
+            CurrentFieldId = "finding-description",
+            CurrentText = "Small leak noted"
+        });
+
+        Assert.Contains(response.Suggestions, s => s.PromptType == "PhotoRequired");
+        Assert.Contains(response.Suggestions, s => s.PromptType == "RepairSuggestion");
+        Assert.Contains(response.Suggestions, s => s.Suggestion.Contains("location", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void InlineAssistant_Crack_ReturnsNdeSuggestion()
+    {
+        var response = _assistant.GetInlineSuggestions(new InlineAssistantRequest
+        {
+            CurrentFieldId = "finding-description",
+            CurrentText = "Possible crack at weld toe"
+        });
+
+        Assert.Contains(response.Suggestions, s => s.PromptType == "NdeSuggestion" && s.Suggestion.Contains("PT/MT", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void InlineAssistant_CleanText_ReturnsNoRequiredActionAlert()
+    {
+        var response = _assistant.GetInlineSuggestions(new InlineAssistantRequest
+        {
+            CurrentFieldId = "finding-description",
+            CurrentText = "No visible damage was observed at this time."
+        });
+
+        Assert.DoesNotContain(response.Suggestions, s => s.Severity.Equals("critical", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(response.Suggestions, s => s.PromptType is "MissingData" or "PhotoRequired" or "RepairSuggestion" or "NdeSuggestion");
+    }
+
     private static InspectionReport Api570ReportWithAnswer(string fieldId, string value)
     {
         var report = new InspectionReport { TemplateId = "api-570-piping-external" };

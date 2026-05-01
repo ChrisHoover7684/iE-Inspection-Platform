@@ -18,6 +18,28 @@ public class ReportingController(
     NoFindingObservationBuilder noFindingObservationBuilder,
     ObservationChecklistService observationChecklistService) : ControllerBase
 {
+    [HttpGet]
+    public ActionResult<List<ReportListItemDto>> GetReports(
+        [FromQuery] string? status,
+        [FromQuery] string? facilityId,
+        [FromQuery] string? unit)
+    {
+        var reports = inspectionReportRepository.GetReports(status, facilityId, unit)
+            .Select(report => new ReportListItemDto
+            {
+                Id = report.Id,
+                ReportNumber = report.ReportNumber,
+                EquipmentTag = report.EquipmentTag,
+                Unit = report.Unit,
+                Status = report.Status,
+                CreatedAt = report.CreatedAt,
+                UpdatedAt = report.UpdatedAt
+            })
+            .ToList();
+
+        return Ok(reports);
+    }
+
     [HttpGet("templates")]
     public ActionResult<IReadOnlyList<ReportTemplate>> GetTemplates()
     {

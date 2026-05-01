@@ -1,4 +1,4 @@
-namespace iE.Core.Reports.Services;
+namespace iE.Core.Reports.Checklists;
 
 public class ObservationChecklistService
 {

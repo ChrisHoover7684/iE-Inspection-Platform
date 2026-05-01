@@ -1,4 +1,4 @@
-namespace iE.Core.Reports;
+namespace iE.Core.Reports.Checklists;
 
 public class ObservationChecklistTemplate
 {

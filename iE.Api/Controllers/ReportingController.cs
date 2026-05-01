@@ -455,6 +455,34 @@ public class ReportingController(
         });
     }
 
+    [HttpPost("{id}/start-review")]
+    public ActionResult StartReview(string id)
+    {
+        var report = inspectionReportRepository.GetById(id);
+        if (report is null)
+        {
+            return NotFound();
+        }
+
+        if (!string.Equals(report.Status, InspectionReportStatuses.ReadyForReview, StringComparison.Ordinal))
+        {
+            return BadRequest(new
+            {
+                message = "Invalid report status for this action"
+            });
+        }
+
+        report.Status = InspectionReportStatuses.InReview;
+        report.UpdatedAt = DateTime.UtcNow;
+        inspectionReportRepository.Update(id, report);
+
+        return Ok(new
+        {
+            message = "Review started",
+            status = report.Status
+        });
+    }
+
     [HttpPost("{id}/approve")]
     public ActionResult ApproveReport(string id)
     {
@@ -464,13 +492,11 @@ public class ReportingController(
             return NotFound();
         }
 
-        if (!string.Equals(report.Status, InspectionReportStatuses.ReadyForReview, StringComparison.Ordinal)
-            && !string.Equals(report.Status, InspectionReportStatuses.InReview, StringComparison.Ordinal))
+        if (!string.Equals(report.Status, InspectionReportStatuses.InReview, StringComparison.Ordinal))
         {
             return BadRequest(new
             {
-                message = "Report cannot be approved in its current status",
-                status = report.Status
+                message = "Invalid report status for this action"
             });
         }
 
@@ -502,13 +528,11 @@ public class ReportingController(
             return NotFound();
         }
 
-        if (!string.Equals(report.Status, InspectionReportStatuses.ReadyForReview, StringComparison.Ordinal)
-            && !string.Equals(report.Status, InspectionReportStatuses.InReview, StringComparison.Ordinal))
+        if (!string.Equals(report.Status, InspectionReportStatuses.InReview, StringComparison.Ordinal))
         {
             return BadRequest(new
             {
-                message = "Report cannot be returned for revision in its current status",
-                status = report.Status
+                message = "Invalid report status for this action"
             });
         }
 

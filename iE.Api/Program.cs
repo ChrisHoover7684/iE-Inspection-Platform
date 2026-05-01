@@ -18,6 +18,7 @@ builder.Services.AddDbContext<InspectionReportsDbContext>(options =>
         ?? "Host=localhost;Port=5432;Database=inspection_reports;Username=postgres;Password=postgres"));
 
 builder.Services.AddScoped<InspectionReportRepository>();
+builder.Services.AddScoped<PhotoMarkupRepository>();
 builder.Services.AddScoped<InspectionReportFactory>();
 builder.Services.AddScoped<InspectionSummaryService>();
 builder.Services.AddScoped<SummaryBuilder>();

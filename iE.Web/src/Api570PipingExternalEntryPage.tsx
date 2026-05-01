@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ApiError, reportingApi } from './api';
-import type { InlineSuggestion, InspectionReport, InspectionReportAnswer, NarrativeResult, UiAlert } from './types';
+import type { InlineSuggestion, InspectionReport, InspectionReportAnswer, NarrativeResult, ReportTemplate, UiAlert } from './types';
 
 const TEMPLATE_ID = 'api-570-piping-external';
 const ACTIVE_REPORT_ID_STORAGE_KEY = 'ie_api570_active_report_id';
@@ -25,6 +25,7 @@ const findNarrativeSection = (narrative: NarrativeResult, title: string) =>
 export function Api570PipingExternalEntryPage() {
   const location = useLocation();
   const [report, setReport] = useState<InspectionReport | null>(null);
+  const [template, setTemplate] = useState<ReportTemplate | null>(null);
   const [ieAssistEnabled, setIeAssistEnabled] = useState(true);
   const [alerts, setAlerts] = useState<UiAlert[]>([]);
   const [narrative, setNarrative] = useState<NarrativeResult | null>(null);
@@ -37,7 +38,8 @@ export function Api570PipingExternalEntryPage() {
   useEffect(() => {
     (async () => {
       try {
-        await reportingApi.getTemplateById(TEMPLATE_ID);
+        const loadedTemplate = await reportingApi.getTemplateById(TEMPLATE_ID);
+        setTemplate(loadedTemplate);
 
         const routeState = (location.state as { reportId?: string; report?: InspectionReport } | null) ?? null;
         const routeReport = routeState?.report;
@@ -118,6 +120,7 @@ export function Api570PipingExternalEntryPage() {
       setIsDirty(false);
       setMessage(`Report ${saved.id} saved.`);
       localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, saved.id);
+      await refreshAlerts(saved);
     } catch (error) {
       setError(getErrorMessage(error, 'Unable to save report.'));
     } finally {
@@ -126,7 +129,13 @@ export function Api570PipingExternalEntryPage() {
   };
 
   const renderAnswerInput = (sectionIndex: number, answerIndex: number, answer: InspectionReportAnswer) => {
-    const optionValues = answer.values ?? [];
+    const templateField = template?.sections
+      .find((section) => section.id === report?.sections[sectionIndex]?.sectionId)
+      ?.fields?.find((field) => field.id === answer.fieldId);
+
+    const metadataOptions = templateField?.options ?? [];
+    const answerValues = answer.values ?? [];
+    const optionValues = answerValues.length > 0 ? answerValues : metadataOptions;
     const currentValue = answer.value || '';
     const currentMultiValues = answer.values ?? [];
 
@@ -183,14 +192,32 @@ export function Api570PipingExternalEntryPage() {
     }
   };
 
-  const refreshAlerts = async () => {
-    if (!report) return;
+  const refreshAlerts = async (reportToUse?: InspectionReport) => {
+    const targetReport = reportToUse ?? report;
+    if (!targetReport) return;
     try {
-      const nextAlerts = await reportingApi.getAlerts(report);
+      const nextAlerts = await reportingApi.getAlerts(targetReport);
       setAlerts(nextAlerts);
       setMessage(`Loaded ${nextAlerts.length} alerts.`);
     } catch (error) {
       setError(getErrorMessage(error, 'Unable to load alerts.'));
+    }
+  };
+
+  const createNewReport = async () => {
+    try {
+      setError('');
+      const created = await reportingApi.createInstanceFromTemplate(TEMPLATE_ID);
+      localStorage.removeItem(ACTIVE_REPORT_ID_STORAGE_KEY);
+      localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, created.id);
+      setReport(created);
+      setAlerts([]);
+      setNarrative(null);
+      setFieldSuggestions({});
+      setIsDirty(false);
+      setMessage(`Created new report ${created.id}.`);
+    } catch (error) {
+      setError(getErrorMessage(error, 'Unable to create new report.'));
     }
   };
 
@@ -220,6 +247,7 @@ export function Api570PipingExternalEntryPage() {
           <button type="button" onClick={() => void saveReport()} disabled={isSaving || !isDirty}>
             {isSaving ? 'Saving...' : 'Save Report'}
           </button>
+          <button type="button" onClick={() => void createNewReport()}>New Report</button>
           <span className="muted">Status: {isDirty ? 'Dirty (unsaved changes)' : 'Saved'}</span>
         </div>
       </div>
@@ -236,13 +264,15 @@ export function Api570PipingExternalEntryPage() {
                 <div className="answer-row" key={`${section.sectionId}-${answer.fieldId}-${answerIndex}`}>
                   <label><strong>{answer.label}</strong> <span className="data-type">({answer.dataType})</span></label>
                   {renderAnswerInput(sectionIndex, answerIndex, answer)}
-                  <div className="row">
-                    <button
-                      type="button"
-                      onClick={() => void updateAnswer(sectionIndex, answerIndex, {}, true)}>
-                      Verify This Note
-                    </button>
-                  </div>
+                  {(answer.dataType.toLowerCase() === 'text' || answer.dataType.toLowerCase() === 'textarea') && (
+                    <div className="row">
+                      <button
+                        type="button"
+                        onClick={() => void updateAnswer(sectionIndex, answerIndex, {}, true)}>
+                        Verify This Note
+                      </button>
+                    </div>
+                  )}
                   {(fieldSuggestions[answer.fieldId] || []).length > 0 && (
                     <ul className="suggestions">
                       {fieldSuggestions[answer.fieldId].map((suggestion, idx) => (
@@ -260,7 +290,7 @@ export function Api570PipingExternalEntryPage() {
 
         <aside className="card alerts-panel">
           <h3>Alerts</h3>
-          <button type="button" onClick={refreshAlerts}>Refresh Alerts</button>
+          <button type="button" onClick={() => void refreshAlerts()}>Refresh Alerts</button>
           {alerts.length === 0 ? <p className="muted">No alerts loaded.</p> : (
             <ul>
               {alerts.map((alert) => (

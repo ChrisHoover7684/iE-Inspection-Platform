@@ -1,4 +1,5 @@
 using iE.Api.Contracts;
+using iE.Core.Reports;
 using iE.Core.Reports.Domain;
 using iE.Core.Reports.Drafting;
 using iE.Core.Reports.Models;

@@ -119,3 +119,49 @@ label {
 .success {
   color: #0f7a1d;
 }
+
+.workflow-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 12px;
+}
+
+.alerts-panel {
+  align-self: start;
+  position: sticky;
+  top: 8px;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.muted {
+  color: #666;
+}
+
+.suggestions {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: #1f3a5f;
+}
+
+.narrative-preview {
+  white-space: pre-wrap;
+  background: #f3f6fa;
+  border: 1px solid #dbe3ef;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+@media (max-width: 900px) {
+  .workflow-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .alerts-panel {
+    position: static;
+  }
+}

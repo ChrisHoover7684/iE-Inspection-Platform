@@ -3,6 +3,7 @@ export type ReportTemplate = {
   name: string;
   standard: string;
   equipmentType: string;
+  description?: string;
   sections: TemplateSection[];
 };
 
@@ -11,6 +12,22 @@ export type TemplateSection = {
   title: string;
   order: number;
   isRepeatable: boolean;
+  fields?: TemplateField[];
+};
+
+export type TemplateField = {
+  id: string;
+  label: string;
+  dataType: string;
+  isRequired: boolean;
+  defaultValue?: string | null;
+  isChecklistItem?: boolean;
+  allowsComment?: boolean;
+  allowsPhotoFlag?: boolean;
+  allowsTransferToComponentSection?: boolean;
+  allowsRecommendationFlag?: boolean;
+  helpText?: string | null;
+  options?: string[];
 };
 
 export type InspectionReport = {
@@ -55,18 +72,19 @@ export type InspectionReportAnswer = {
   photoRequired?: boolean | null;
   transferToComponentSection?: boolean | null;
   recommendationRequired?: boolean | null;
+  repairRequired?: boolean | null;
 };
 
 export type InspectionFinding = {
   id: string;
-  componentLocation: string;
+  location: string;
   componentType: string;
   findingType: string;
   associatedChecklistItem: string;
-  detailedDescription: string;
+  description: string;
   severity: string;
-  recommendationRequired: boolean;
-  recommendationText?: string | null;
+  repairRequired: boolean;
+  repairRecommendation?: string | null;
   photoIds?: string[];
 };
 
@@ -80,4 +98,34 @@ export type InspectionPhoto = {
   photoAttached: boolean;
   fileName?: string | null;
   fileUrl?: string | null;
+};
+
+export type InlineSuggestion = {
+  promptType: string;
+  suggestion: string;
+  severity: string;
+  replacementText?: string | null;
+};
+
+export type InlineSuggestionsResponse = {
+  suggestions: InlineSuggestion[];
+  severity: string;
+  wasEvaluated: boolean;
+  mode: string;
+};
+
+export type UiAlert = {
+  id: string;
+  severity: string;
+  title: string;
+  message: string;
+  fieldId?: string | null;
+  sectionId?: string | null;
+  findingId?: string | null;
+};
+
+export type NarrativeResult = {
+  summary: string;
+  sections: { title: string; narrative: string }[];
+  recommendedActions: string[];
 };

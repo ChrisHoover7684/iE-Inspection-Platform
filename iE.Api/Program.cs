@@ -31,6 +31,7 @@ builder.Services.AddScoped<SummaryBuilder>();
 builder.Services.AddScoped<IInspectionTagRuleEngine, InspectionTagRuleEngine>();
 builder.Services.AddScoped<InspectionAlertMapper>();
 builder.Services.AddScoped<IInspectionAssistantService, InspectionAssistantService>();
+builder.Services.AddScoped<IReportNarrativeGenerator, ReportNarrativeGenerator>();
 builder.Services.AddScoped<ReportValidationService>();
 builder.Services.AddScoped<RepairRecommendationBuilder>();
 builder.Services.AddScoped<ReportDraftBuilder>();

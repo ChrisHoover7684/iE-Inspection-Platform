@@ -11,7 +11,7 @@ public class InspectionTagRuleEngineTests
     [Fact]
     public void ActiveLeakage_CreatesActiveLeak_AndRequiresRepairAndPhoto()
     {
-        var report = Api570ReportWithAnswer("active-leakage", "true");
+        var report = Api570ReportWithAnswer("api-570-piping-external", "active-leakage", "true");
         var result = _engine.Evaluate(report);
         Assert.Contains(result.Tags, t => t.Id == "active-leak");
         Assert.Contains(result.Tags, t => t.Id == "repair-recommendation-missing");
@@ -39,7 +39,7 @@ public class InspectionTagRuleEngineTests
     [Fact]
     public void WetInsulation_CreatesCuiAndWetInsulationAndPhotoRequirement()
     {
-        var report = Api570ReportWithAnswer("wet-insulation-indicators", "true");
+        var report = Api570ReportWithAnswer("api-570-piping-cui-external", "wet-insulation-indicators", "true");
         var result = _engine.Evaluate(report);
         Assert.Contains(result.Tags, t => t.Id == "wet-insulation");
         Assert.Contains(result.Tags, t => t.Id == "cui-concern");
@@ -73,12 +73,13 @@ public class InspectionTagRuleEngineTests
         var result = _engine.Evaluate(report);
         Assert.Contains(result.Tags, t => t.Message.Contains("repair action", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(result.Tags, t => t.Message.Contains("priority", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(result.Tags, t => t.SourceFieldId == "repair-priority");
     }
 
     [Fact]
     public void CompleteReport_HasNoFalsePositives()
     {
-        var report = Api570ReportWithAnswer("active-leakage", "false");
+        var report = Api570ReportWithAnswer("api-570-piping-external", "active-leakage", "false");
         report.Findings.Add(new InspectionFinding
         {
             Id = "f1",
@@ -95,9 +96,9 @@ public class InspectionTagRuleEngineTests
         Assert.DoesNotContain(result.Tags, t => t.Id == "repair-recommendation-missing");
     }
 
-    private static InspectionReport Api570ReportWithAnswer(string fieldId, string value)
+    private static InspectionReport Api570ReportWithAnswer(string templateId, string fieldId, string value)
     {
-        var report = NewReport("api-570-piping-inspection");
+        var report = NewReport(templateId);
         report.Sections.Add(new InspectionReportSection
         {
             Id = "s1",

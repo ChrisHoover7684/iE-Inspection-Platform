@@ -29,6 +29,8 @@ builder.Services.AddScoped<NoFindingObservationBuilder>();
 builder.Services.AddScoped<ObservationChecklistService>();
 builder.Services.AddScoped<InspectionReportDocxExportService>();
 builder.Services.AddScoped<PhotoAppendixExportService>();
+builder.Services.AddScoped<IPhotoMarkupRenderer, PlaceholderPhotoMarkupRenderer>();
+builder.Services.AddScoped<AnnotatedPhotoExportService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

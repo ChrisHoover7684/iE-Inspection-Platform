@@ -14,12 +14,13 @@ public class ReportNarrativeGeneratorTests
 
         var result = _generator.Generate(report);
 
-        Assert.Contains("No reportable findings", result.Sections.Summary, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("external visual inspection completed", result.Sections.Summary, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("No reportable conditions", result.Sections.Summary, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("No reportable findings were recorded.", result.Sections.Findings);
     }
 
     [Fact]
-    public void ReportWithRepairFinding_GeneratesRepairRecommendationText()
+    public void ReportWithRepairFinding_GeneratesRepairRecommendationReportWording()
     {
         var report = NewReport();
         report.Findings.Add(new InspectionFinding
@@ -72,6 +73,21 @@ public class ReportNarrativeGeneratorTests
 
         Assert.Contains("leak-related repairs", result.Sections.Recommendations, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("verification", result.Sections.ReturnToService, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Renew gasket and torque flange", result.Sections.Repairs, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void MissingUnitAndService_ReturnsWarningsWithoutFabricatingValues()
+    {
+        var report = NewReport();
+        report.Unit = string.Empty;
+        report.Service = string.Empty;
+
+        var result = _generator.Generate(report);
+
+        Assert.Contains(result.MissingDataWarnings, w => w.Contains("Missing unit", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(result.MissingDataWarnings, w => w.Contains("Missing service", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("not provided unit, not provided service", result.Sections.Inspection, StringComparison.OrdinalIgnoreCase);
     }
 
     private static InspectionReport NewReport() => new()

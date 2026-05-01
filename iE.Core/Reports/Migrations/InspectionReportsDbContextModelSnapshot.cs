@@ -667,6 +667,43 @@ namespace iE.Core.Reports.Migrations
                             b1.Navigation("Answers");
                         });
 
+
+                    b.OwnsMany("iE.Core.Reports.ReportReviewHistory", "ReviewHistory", b1 =>
+                        {
+                            b1.Property<string>("Id")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)");
+
+                            b1.Property<string>("ReportId")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)");
+
+                            b1.Property<string>("Action")
+                                .IsRequired()
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)");
+
+                            b1.Property<string>("Comments")
+                                .HasMaxLength(4000)
+                                .HasColumnType("character varying(4000)");
+
+                            b1.Property<DateTime>("PerformedAt")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<string>("PerformedByUserId")
+                                .HasMaxLength(128)
+                                .HasColumnType("character varying(128)");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("ReportId", "PerformedAt");
+
+                            b1.ToTable("ReportReviewHistory", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("ReportId");
+                        });
+
                     b.OwnsOne("iE.Core.Reports.PipingInspectionProfile", "PipingProfile", b1 =>
                         {
                             b1.Property<string>("InspectionReportId")
@@ -726,6 +763,8 @@ namespace iE.Core.Reports.Migrations
                     b.Navigation("Photos");
 
                     b.Navigation("PipingProfile");
+
+                    b.Navigation("ReviewHistory");
 
                     b.Navigation("Sections");
                 });

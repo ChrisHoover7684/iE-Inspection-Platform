@@ -67,7 +67,25 @@ public class InspectionReport
     public List<InspectionFinding> Findings { get; set; } = new();
     public List<InspectionObservation> Observations { get; set; } = new();
     public List<InspectionPhoto> Photos { get; set; } = new();
+    public List<ReportReviewHistory> ReviewHistory { get; set; } = new();
     public PipingInspectionProfile? PipingProfile { get; set; }
+}
+
+public enum ReviewAction
+{
+    SubmittedForReview = 1,
+    Approved = 2,
+    ReturnedForRevision = 3
+}
+
+public class ReportReviewHistory
+{
+    public string Id { get; set; } = string.Empty;
+    public string ReportId { get; set; } = string.Empty;
+    public ReviewAction Action { get; set; }
+    public string? Comments { get; set; }
+    public string? PerformedByUserId { get; set; }
+    public DateTime PerformedAt { get; set; } = DateTime.UtcNow;
 }
 
 public class InspectionReportSection

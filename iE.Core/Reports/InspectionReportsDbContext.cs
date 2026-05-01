@@ -254,6 +254,20 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
                 photoBuilder.Property(p => p.FileUrl).HasMaxLength(2000);
             });
 
+            builder.OwnsMany(r => r.ReviewHistory, reviewHistoryBuilder =>
+            {
+                reviewHistoryBuilder.ToTable("ReportReviewHistory");
+                reviewHistoryBuilder.WithOwner().HasForeignKey("ReportId");
+                reviewHistoryBuilder.HasKey(h => h.Id);
+                reviewHistoryBuilder.Property(h => h.Id).HasMaxLength(64);
+                reviewHistoryBuilder.Property(h => h.ReportId).HasMaxLength(64);
+                reviewHistoryBuilder.Property(h => h.Action).HasConversion<string>().HasMaxLength(64);
+                reviewHistoryBuilder.Property(h => h.Comments).HasMaxLength(4000);
+                reviewHistoryBuilder.Property(h => h.PerformedByUserId).HasMaxLength(128);
+                reviewHistoryBuilder.Property(h => h.PerformedAt);
+                reviewHistoryBuilder.HasIndex("ReportId", nameof(ReportReviewHistory.PerformedAt));
+            });
+
             builder.OwnsOne(r => r.PipingProfile, pipingBuilder =>
             {
                 pipingBuilder.PrimitiveCollection(p => p.LineNumbers);

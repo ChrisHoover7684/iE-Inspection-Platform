@@ -41,6 +41,7 @@ builder.Services.AddScoped<ReportWorkflowService>();
 builder.Services.AddScoped<InspectionReportDocxExportService>();
 builder.Services.AddScoped<PhotoAppendixExportService>();
 builder.Services.AddScoped<IPhotoMarkupRenderer, PlaceholderPhotoMarkupRenderer>();
+builder.Services.AddScoped<IPhotoDetectionService, PhotoDetectionService>();
 builder.Services.AddScoped<AnnotatedPhotoExportService>();
 builder.Services.AddSingleton<IReportTemplateRegistry, InMemoryReportTemplateRegistry>();
 

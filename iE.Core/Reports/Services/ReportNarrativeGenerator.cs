@@ -1,0 +1,179 @@
+using iE.Core.Reports.Domain;
+
+namespace iE.Core.Reports.Services;
+
+public interface IReportNarrativeGenerator
+{
+    ReportNarrativeResult Generate(InspectionReport report);
+}
+
+public class ReportNarrativeGenerator : IReportNarrativeGenerator
+{
+    public ReportNarrativeResult Generate(InspectionReport report)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+
+        var warnings = ValidateRequiredFields(report);
+
+        var summary = BuildSummary(report);
+        var inspection = BuildInspection(report);
+        var findings = BuildFindings(report);
+        var nde = BuildNde(report);
+        var repairs = BuildRepairs(report);
+        var recommendations = BuildRecommendations(report);
+        var returnToService = BuildReturnToService(report);
+
+        return new ReportNarrativeResult
+        {
+            Sections = new ReportNarrativeSections
+            {
+                Summary = summary,
+                Inspection = inspection,
+                Findings = findings,
+                NdeTesting = nde,
+                Repairs = repairs,
+                Recommendations = recommendations,
+                ReturnToService = returnToService
+            },
+            MissingDataWarnings = warnings
+        };
+    }
+
+    private static List<string> ValidateRequiredFields(InspectionReport report)
+    {
+        var warnings = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(report.TemplateId)) warnings.Add("Missing template ID.");
+        if (string.IsNullOrWhiteSpace(report.EquipmentTag) && string.IsNullOrWhiteSpace(report.AssetId)) warnings.Add("Missing equipment tag or tank/asset ID.");
+        if (string.IsNullOrWhiteSpace(report.Unit)) warnings.Add("Missing unit.");
+        if (string.IsNullOrWhiteSpace(report.Service)) warnings.Add("Missing service.");
+
+        return warnings;
+    }
+
+    private static string BuildSummary(InspectionReport report)
+    {
+        var hasFindings = report.Findings.Count > 0;
+        var noFindings = !hasFindings;
+
+        if (noFindings)
+        {
+            return "External visual inspection completed. No reportable findings were documented for the inspected scope.";
+        }
+
+        var repairCount = report.Findings.Count(f => f.RepairRequired || !string.IsNullOrWhiteSpace(f.RepairRecommendation));
+        return repairCount > 0
+            ? $"External visual inspection completed. {report.Findings.Count} finding(s) were documented, including {repairCount} requiring repair action."
+            : $"External visual inspection completed. {report.Findings.Count} finding(s) were documented.";
+    }
+
+    private static string BuildInspection(InspectionReport report)
+    {
+        var id = FirstNonEmpty(report.EquipmentTag, report.PipingProfile?.LineNumber, report.AssetId, "unspecified equipment");
+        return $"Inspection performed for {id} in unit {DefaultText(report.Unit)} on service {DefaultText(report.Service)} under template {DefaultText(report.TemplateId)}.";
+    }
+
+    private static string BuildFindings(InspectionReport report)
+    {
+        if (report.Findings.Count == 0)
+            return "No reportable findings were recorded.";
+
+        var lines = report.Findings.Select(f =>
+        {
+            var location = DefaultText(f.Location, "location not provided");
+            var description = DefaultText(f.Description, "description not provided");
+            var type = f.FindingType.ToString();
+            return $"Finding {DefaultText(f.Id, "N/A")}: {type} at {location}. {description}.";
+        });
+
+        return string.Join(" ", lines);
+    }
+
+    private static string BuildNde(InspectionReport report)
+    {
+        var ndeFindings = report.Findings
+            .Where(f => !string.IsNullOrWhiteSpace(f.NdeMethod) || !string.IsNullOrWhiteSpace(f.NdeResult))
+            .ToList();
+
+        if (ndeFindings.Count == 0)
+            return "No NDE or additional testing data was documented.";
+
+        return string.Join(" ", ndeFindings.Select(f =>
+            $"Finding {DefaultText(f.Id, "N/A")}: NDE method {DefaultText(f.NdeMethod, "not specified")}, result {DefaultText(f.NdeResult, "not specified")}."));
+    }
+
+    private static string BuildRepairs(InspectionReport report)
+    {
+        var repairFindings = report.Findings
+            .Where(f => f.RepairRequired || !string.IsNullOrWhiteSpace(f.RepairRecommendation))
+            .ToList();
+
+        if (repairFindings.Count == 0)
+            return "No repairs were identified in this report.";
+
+        return string.Join(" ", repairFindings.Select(f =>
+            $"Finding {DefaultText(f.Id, "N/A")}: {DefaultText(f.RepairRecommendation, "Repair required; recommendation not provided")}."));
+    }
+
+    private static string BuildRecommendations(InspectionReport report)
+    {
+        if (report.Findings.Count == 0)
+            return "Continue routine monitoring and inspection per applicable program requirements.";
+
+        var activeLeak = report.Findings.Any(f => f.FindingType == FindingType.Leak);
+        if (activeLeak)
+        {
+            return "Prioritize leak-related repairs and verify leak resolution after corrective work, when verification data is documented.";
+        }
+
+        var recs = report.Findings
+            .Where(f => !string.IsNullOrWhiteSpace(f.RepairRecommendation))
+            .Select(f => f.RepairRecommendation!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return recs.Count > 0
+            ? string.Join(" ", recs.Select(r => $"Recommended action: {r}."))
+            : "Address documented findings based on severity and applicable integrity requirements.";
+    }
+
+    private static string BuildReturnToService(InspectionReport report)
+    {
+        var hasLeak = report.Findings.Any(f => f.FindingType == FindingType.Leak);
+        var hasRepairRequired = report.Findings.Any(f => f.RepairRequired);
+
+        if (!hasRepairRequired && !hasLeak)
+            return "No conditions were documented that would prevent continued service based on reported data.";
+
+        if (hasLeak)
+            return "Return to service should follow completion of leak-related repairs and documented verification, where required.";
+
+        return "Return to service should follow completion of required repairs and standard verification.";
+    }
+
+    private static string DefaultText(string? value, string fallback = "not provided") =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+
+    private static string FirstNonEmpty(params string?[] values)
+    {
+        var found = values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+        return string.IsNullOrWhiteSpace(found) ? "not provided" : found.Trim();
+    }
+}
+
+public class ReportNarrativeResult
+{
+    public ReportNarrativeSections Sections { get; set; } = new();
+    public List<string> MissingDataWarnings { get; set; } = [];
+}
+
+public class ReportNarrativeSections
+{
+    public string Summary { get; set; } = string.Empty;
+    public string Inspection { get; set; } = string.Empty;
+    public string Findings { get; set; } = string.Empty;
+    public string NdeTesting { get; set; } = string.Empty;
+    public string Repairs { get; set; } = string.Empty;
+    public string Recommendations { get; set; } = string.Empty;
+    public string ReturnToService { get; set; } = string.Empty;
+}

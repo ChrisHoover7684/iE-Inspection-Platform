@@ -29,7 +29,8 @@ public class ReportingController(
     IReportTemplateRegistry reportTemplateRegistry,
     IInspectionTagRuleEngine inspectionTagRuleEngine,
     InspectionAlertMapper inspectionAlertMapper,
-    IInspectionAssistantService inspectionAssistantService) : ControllerBase
+    IInspectionAssistantService inspectionAssistantService,
+    IReportNarrativeGenerator reportNarrativeGenerator) : ControllerBase
 {
     [HttpGet]
     public ActionResult<List<ReportListItemDto>> GetReports(
@@ -355,6 +356,13 @@ public class ReportingController(
     {
         var rules = inspectionTagRuleEngine.Evaluate(report);
         return Ok(inspectionAssistantService.GetSuggestions(report, rules));
+    }
+
+
+    [HttpPost("generate-narrative")]
+    public ActionResult<ReportNarrativeResult> GenerateNarrative([FromBody] InspectionReport report)
+    {
+        return Ok(reportNarrativeGenerator.Generate(report));
     }
 
     [HttpPost("assistant/improve-text")]

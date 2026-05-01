@@ -129,27 +129,3 @@ public class InspectionAssistantService : IInspectionAssistantService
         return !hasPunctuation && wordCount < 6;
     }
 }
-
-public class InlineAssistantRequest
-{
-    public InspectionReport Report { get; set; } = new();
-    public string CurrentFieldId { get; set; } = string.Empty;
-    public string CurrentText { get; set; } = string.Empty;
-    public string? SectionId { get; set; }
-    public string? FindingId { get; set; }
-    public int? CursorPosition { get; set; }
-}
-
-public class InlineAssistantSuggestion(string promptType, string suggestion, string severity, string? replacementText = null)
-{
-    public string PromptType { get; set; } = promptType;
-    public string Suggestion { get; set; } = suggestion;
-    public string Severity { get; set; } = severity;
-    public string? ReplacementText { get; set; } = replacementText;
-}
-
-public class InlineAssistantResponse
-{
-    public List<InlineAssistantSuggestion> Suggestions { get; set; } = [];
-    public string Severity { get; set; } = "none";
-}

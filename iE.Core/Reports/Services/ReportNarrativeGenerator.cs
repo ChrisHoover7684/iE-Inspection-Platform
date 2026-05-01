@@ -53,24 +53,25 @@ public class ReportNarrativeGenerator : IReportNarrativeGenerator
 
     private static string BuildSummary(InspectionReport report)
     {
-        var hasFindings = report.Findings.Count > 0;
-        var noFindings = !hasFindings;
+        var lineId = FirstNonEmpty(report.EquipmentTag, report.PipingProfile?.LineNumber, report.AssetId, "the inspected equipment");
+        var hasObservations = report.Findings.Count > 0;
+        var noObservations = !hasObservations;
 
-        if (noFindings)
+        if (noObservations)
         {
-            return "External visual inspection completed. No reportable findings were documented for the inspected scope.";
+            return $"External visual inspection completed for {lineId}. No reportable conditions were documented in this scope.";
         }
 
         var repairCount = report.Findings.Count(f => f.RepairRequired || !string.IsNullOrWhiteSpace(f.RepairRecommendation));
         return repairCount > 0
-            ? $"External visual inspection completed. {report.Findings.Count} finding(s) were documented, including {repairCount} requiring repair action."
-            : $"External visual inspection completed. {report.Findings.Count} finding(s) were documented.";
+            ? $"External visual inspection completed for {lineId}. {report.Findings.Count} reportable condition(s) were documented, with {repairCount} requiring repair action."
+            : $"External visual inspection completed for {lineId}. {report.Findings.Count} reportable condition(s) were documented.";
     }
 
     private static string BuildInspection(InspectionReport report)
     {
         var id = FirstNonEmpty(report.EquipmentTag, report.PipingProfile?.LineNumber, report.AssetId, "unspecified equipment");
-        return $"Inspection performed for {id} in unit {DefaultText(report.Unit)} on service {DefaultText(report.Service)} under template {DefaultText(report.TemplateId)}.";
+        return $"Inspection performed on {id} in {DefaultText(report.Unit)} unit, {DefaultText(report.Service)} service.";
     }
 
     private static string BuildFindings(InspectionReport report)
@@ -83,7 +84,7 @@ public class ReportNarrativeGenerator : IReportNarrativeGenerator
             var location = DefaultText(f.Location, "location not provided");
             var description = DefaultText(f.Description, "description not provided");
             var type = f.FindingType.ToString();
-            return $"Finding {DefaultText(f.Id, "N/A")}: {type} at {location}. {description}.";
+            return $"Item {DefaultText(f.Id, "N/A")}: {type} at {location}. {description}.";
         });
 
         return string.Join(" ", lines);
@@ -99,7 +100,7 @@ public class ReportNarrativeGenerator : IReportNarrativeGenerator
             return "No NDE or additional testing data was documented.";
 
         return string.Join(" ", ndeFindings.Select(f =>
-            $"Finding {DefaultText(f.Id, "N/A")}: NDE method {DefaultText(f.NdeMethod, "not specified")}, result {DefaultText(f.NdeResult, "not specified")}."));
+            $"Item {DefaultText(f.Id, "N/A")}: NDE method {DefaultText(f.NdeMethod, "not specified")}, result {DefaultText(f.NdeResult, "not specified")}."));
     }
 
     private static string BuildRepairs(InspectionReport report)
@@ -112,7 +113,7 @@ public class ReportNarrativeGenerator : IReportNarrativeGenerator
             return "No repairs were identified in this report.";
 
         return string.Join(" ", repairFindings.Select(f =>
-            $"Finding {DefaultText(f.Id, "N/A")}: {DefaultText(f.RepairRecommendation, "Repair required; recommendation not provided")}."));
+            $"Item {DefaultText(f.Id, "N/A")}: {DefaultText(f.RepairRecommendation, "Repair required; recommendation not provided")}."));
     }
 
     private static string BuildRecommendations(InspectionReport report)
@@ -159,21 +160,4 @@ public class ReportNarrativeGenerator : IReportNarrativeGenerator
         var found = values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
         return string.IsNullOrWhiteSpace(found) ? "not provided" : found.Trim();
     }
-}
-
-public class ReportNarrativeResult
-{
-    public ReportNarrativeSections Sections { get; set; } = new();
-    public List<string> MissingDataWarnings { get; set; } = [];
-}
-
-public class ReportNarrativeSections
-{
-    public string Summary { get; set; } = string.Empty;
-    public string Inspection { get; set; } = string.Empty;
-    public string Findings { get; set; } = string.Empty;
-    public string NdeTesting { get; set; } = string.Empty;
-    public string Repairs { get; set; } = string.Empty;
-    public string Recommendations { get; set; } = string.Empty;
-    public string ReturnToService { get; set; } = string.Empty;
 }

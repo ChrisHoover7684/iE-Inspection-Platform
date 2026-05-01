@@ -4,6 +4,9 @@ public class PhotoDetectionService : IPhotoDetectionService
 {
     public PhotoDetectionResult Detect(PhotoDetectionRequest request)
     {
+        // Scaffold implementation:
+        // This service classifies photo context from text metadata only (name/url/description/checklist fields).
+        // It does NOT perform image-content analysis or call any AI/computer-vision model.
         var result = new PhotoDetectionResult
         {
             PhotoId = request.PhotoId
@@ -34,6 +37,7 @@ public class PhotoDetectionService : IPhotoDetectionService
         PhotoDetectionType type,
         string rationale)
     {
+        // Keyword matching is intentionally simple to keep this as a deterministic metadata scaffold.
         if (!keywords.Any(searchableText.Contains))
         {
             return;

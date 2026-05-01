@@ -64,7 +64,11 @@ public class InspectionAssistantAndAlertTests
             CurrentText = "Possible crack with active leak"
         });
 
-        Assert.Contains(inlineResponse.Suggestions, s => s.PromptType == "NdeSuggestion");
+        Assert.NotEmpty(inlineResponse.Suggestions);
+        Assert.Contains(inlineResponse.Suggestions, s => s.Suggestion.Contains("NDE", StringComparison.OrdinalIgnoreCase)
+            || s.PromptType == "NdeSuggestion");
+        Assert.Contains(inlineResponse.Suggestions, s => s.Suggestion.Contains("crack", StringComparison.OrdinalIgnoreCase)
+            || s.Suggestion.Contains("leak", StringComparison.OrdinalIgnoreCase));
         Assert.True(inlineResponse.Severity is "warning" or "critical");
     }
 

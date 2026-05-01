@@ -364,6 +364,12 @@ public class ReportingController(
         return Ok(new { improvedText });
     }
 
+    [HttpPost("assistant/inline-suggestions")]
+    public ActionResult<InlineAssistantResponse> GetInlineSuggestions([FromBody] InlineAssistantRequest request)
+    {
+        return Ok(inspectionAssistantService.GetInlineSuggestions(request));
+    }
+
     [HttpPost("rules/evaluate")]
     public ActionResult<InspectionRuleResult> EvaluateRules([FromBody] InspectionReport report)
     {

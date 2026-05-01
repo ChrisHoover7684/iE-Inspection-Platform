@@ -6,6 +6,7 @@ public interface IInspectionAssistantService
 {
     List<string> GetSuggestions(InspectionReport report, InspectionRuleResult rules);
     string ImproveText(string input, string? context);
+    InlineAssistantResponse GetInlineSuggestions(InlineAssistantRequest request);
 }
 
 public class InspectionAssistantService : IInspectionAssistantService
@@ -68,4 +69,87 @@ public class InspectionAssistantService : IInspectionAssistantService
 
         return $"{cleaned} ({context.Trim()})";
     }
+
+    public InlineAssistantResponse GetInlineSuggestions(InlineAssistantRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var response = new InlineAssistantResponse();
+        var text = request.CurrentText?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(text))
+            return response;
+
+        var suggestions = new List<InlineAssistantSuggestion>();
+        var lowered = text.ToLowerInvariant();
+
+        if (lowered.Contains("pitting"))
+            suggestions.Add(new InlineAssistantSuggestion("MissingData", "Include pit depth and indicate if pitting is localized or general.", "warning"));
+
+        if (lowered.Contains("leak"))
+        {
+            suggestions.Add(new InlineAssistantSuggestion("MissingData", "Add precise leak location in the component/system.", "warning"));
+            suggestions.Add(new InlineAssistantSuggestion("PhotoRequired", "Attach at least one supporting leak photo.", "critical"));
+            suggestions.Add(new InlineAssistantSuggestion("RepairSuggestion", "Add a repair recommendation for the leak condition.", "critical"));
+        }
+
+        if (lowered.Contains("crack") || lowered.Contains("cracking"))
+            suggestions.Add(new InlineAssistantSuggestion("NdeSuggestion", "Consider PT/MT (or equivalent NDE) and include crack location.", "warning"));
+
+        if (lowered.Contains("cui"))
+        {
+            suggestions.Add(new InlineAssistantSuggestion("MissingData", "Document insulation condition and whether CUI is suspected.", "warning"));
+            suggestions.Add(new InlineAssistantSuggestion("PhotoRequired", "Attach a photo showing insulation/jacketing condition for CUI context.", "warning"));
+        }
+
+        if (lowered.Contains("repair"))
+            suggestions.Add(new InlineAssistantSuggestion("RepairSuggestion", "Reference WSA, IWR, or work order number for the repair action.", "warning"));
+
+        if (LooksIncompleteSentence(text))
+        {
+            var improved = ImproveText(text, null);
+            suggestions.Add(new InlineAssistantSuggestion("WordingImprovement", "Improve wording for a complete inspection statement.", "info", improved));
+        }
+
+        response.Suggestions = suggestions;
+        response.Severity = suggestions.Any(s => s.Severity.Equals("critical", StringComparison.OrdinalIgnoreCase))
+            ? "critical"
+            : suggestions.Any(s => s.Severity.Equals("warning", StringComparison.OrdinalIgnoreCase)) ? "warning" : "info";
+
+        return response;
+    }
+
+    private static bool LooksIncompleteSentence(string input)
+    {
+        if (input.Length < 12)
+            return true;
+
+        var hasPunctuation = input.EndsWith('.') || input.EndsWith('!') || input.EndsWith('?');
+        var wordCount = input.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+        return !hasPunctuation && wordCount < 6;
+    }
+}
+
+public class InlineAssistantRequest
+{
+    public InspectionReport Report { get; set; } = new();
+    public string CurrentFieldId { get; set; } = string.Empty;
+    public string CurrentText { get; set; } = string.Empty;
+    public string? SectionId { get; set; }
+    public string? FindingId { get; set; }
+    public int? CursorPosition { get; set; }
+}
+
+public class InlineAssistantSuggestion(string promptType, string suggestion, string severity, string? replacementText = null)
+{
+    public string PromptType { get; set; } = promptType;
+    public string Suggestion { get; set; } = suggestion;
+    public string Severity { get; set; } = severity;
+    public string? ReplacementText { get; set; } = replacementText;
+}
+
+public class InlineAssistantResponse
+{
+    public List<InlineAssistantSuggestion> Suggestions { get; set; } = [];
+    public string Severity { get; set; } = "none";
 }

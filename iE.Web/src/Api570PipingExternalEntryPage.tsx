@@ -5,6 +5,7 @@ import type { InlineSuggestion, InspectionReport, InspectionReportAnswer, Narrat
 
 const TEMPLATE_ID = 'api-570-piping-external';
 const ACTIVE_REPORT_ID_STORAGE_KEY = 'ie_api570_active_report_id';
+const IE_ASSIST_STORAGE_KEY = 'ie_dashboard_ie_assist_enabled';
 
 const NARRATIVE_SECTION_ORDER = [
   'Summary',
@@ -26,7 +27,7 @@ export function Api570PipingExternalEntryPage() {
   const location = useLocation();
   const [report, setReport] = useState<InspectionReport | null>(null);
   const [template, setTemplate] = useState<ReportTemplate | null>(null);
-  const [ieAssistEnabled, setIeAssistEnabled] = useState(true);
+  const [ieAssistEnabled, setIeAssistEnabled] = useState(() => localStorage.getItem(IE_ASSIST_STORAGE_KEY) !== 'false');
   const [alerts, setAlerts] = useState<UiAlert[]>([]);
   const [narrative, setNarrative] = useState<NarrativeResult | null>(null);
   const [fieldSuggestions, setFieldSuggestions] = useState<Record<string, InlineSuggestion[]>>({});
@@ -41,10 +42,14 @@ export function Api570PipingExternalEntryPage() {
         const loadedTemplate = await reportingApi.getTemplateById(TEMPLATE_ID);
         setTemplate(loadedTemplate);
 
-        const routeState = (location.state as { reportId?: string; report?: InspectionReport } | null) ?? null;
+        const routeState = (location.state as { reportId?: string; report?: InspectionReport; ieAssistEnabled?: boolean } | null) ?? null;
         const routeReport = routeState?.report;
         const routeReportId = routeState?.reportId;
         const storedId = localStorage.getItem(ACTIVE_REPORT_ID_STORAGE_KEY);
+        if (typeof routeState?.ieAssistEnabled === 'boolean') {
+          setIeAssistEnabled(routeState.ieAssistEnabled);
+          localStorage.setItem(IE_ASSIST_STORAGE_KEY, String(routeState.ieAssistEnabled));
+        }
 
         if (routeReport?.id) {
           setReport(routeReport);
@@ -72,6 +77,11 @@ export function Api570PipingExternalEntryPage() {
       }
     })();
   }, [location.state]);
+
+
+  useEffect(() => {
+    localStorage.setItem(IE_ASSIST_STORAGE_KEY, String(ieAssistEnabled));
+  }, [ieAssistEnabled]);
 
   const sortedSections = useMemo(
     () => (report?.sections || []).map((section, i) => ({ section, i })).sort((a, b) => a.section.order - b.section.order),

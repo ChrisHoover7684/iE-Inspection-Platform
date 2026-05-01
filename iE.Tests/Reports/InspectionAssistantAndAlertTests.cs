@@ -61,7 +61,8 @@ public class InspectionAssistantAndAlertTests
         var inlineResponse = _assistant.GetInlineSuggestions(new InlineAssistantRequest
         {
             CurrentFieldId = "finding-description",
-            CurrentText = "Possible crack with active leak"
+            CurrentText = "Possible crack with active leak",
+            IeAssistEnabled = true
         });
 
         Assert.NotEmpty(inlineResponse.Suggestions);
@@ -94,13 +95,63 @@ public class InspectionAssistantAndAlertTests
         Assert.Empty(suggestions);
     }
 
+
+    [Fact]
+    public void IeAssist_DisabledWithoutManualVerification_ReturnsEmptyResponse()
+    {
+        var response = _assistant.GetInlineSuggestions(new InlineAssistantRequest
+        {
+            CurrentFieldId = "finding-description",
+            CurrentText = "Observed pitting on the elbow",
+            IeAssistEnabled = false,
+            ManualVerificationRequested = false
+        });
+
+        Assert.Empty(response.Suggestions);
+        Assert.Equal("Disabled", response.Mode);
+        Assert.False(response.WasEvaluated);
+    }
+
+    [Fact]
+    public void IeAssist_Enabled_ReturnsLiveSuggestions()
+    {
+        var response = _assistant.GetInlineSuggestions(new InlineAssistantRequest
+        {
+            CurrentFieldId = "finding-description",
+            CurrentText = "Observed pitting on the elbow",
+            IeAssistEnabled = true,
+            ManualVerificationRequested = false
+        });
+
+        Assert.NotEmpty(response.Suggestions);
+        Assert.Equal("Live", response.Mode);
+        Assert.True(response.WasEvaluated);
+    }
+
+    [Fact]
+    public void ManualVerification_Requested_ReturnsSuggestionsWhenIeAssistDisabled()
+    {
+        var response = _assistant.GetInlineSuggestions(new InlineAssistantRequest
+        {
+            CurrentFieldId = "finding-description",
+            CurrentText = "Small leak noted",
+            IeAssistEnabled = false,
+            ManualVerificationRequested = true
+        });
+
+        Assert.NotEmpty(response.Suggestions);
+        Assert.Equal("ManualVerification", response.Mode);
+        Assert.True(response.WasEvaluated);
+    }
+
     [Fact]
     public void InlineAssistant_Pitting_ReturnsDepthAndLocalizedSuggestion()
     {
         var response = _assistant.GetInlineSuggestions(new InlineAssistantRequest
         {
             CurrentFieldId = "finding-description",
-            CurrentText = "Observed pitting on the elbow"
+            CurrentText = "Observed pitting on the elbow",
+            IeAssistEnabled = true
         });
 
         Assert.Contains(response.Suggestions, s => s.PromptType == "MissingData" && s.Suggestion.Contains("pit depth", StringComparison.OrdinalIgnoreCase));
@@ -113,7 +164,8 @@ public class InspectionAssistantAndAlertTests
         var response = _assistant.GetInlineSuggestions(new InlineAssistantRequest
         {
             CurrentFieldId = "finding-description",
-            CurrentText = "Small leak noted"
+            CurrentText = "Small leak noted",
+            IeAssistEnabled = true
         });
 
         Assert.Contains(response.Suggestions, s => s.PromptType == "PhotoRequired");
@@ -127,7 +179,8 @@ public class InspectionAssistantAndAlertTests
         var response = _assistant.GetInlineSuggestions(new InlineAssistantRequest
         {
             CurrentFieldId = "finding-description",
-            CurrentText = "Possible crack at weld toe"
+            CurrentText = "Possible crack at weld toe",
+            IeAssistEnabled = true
         });
 
         Assert.Contains(response.Suggestions, s => s.PromptType == "NdeSuggestion" && s.Suggestion.Contains("PT/MT", StringComparison.OrdinalIgnoreCase));
@@ -139,7 +192,8 @@ public class InspectionAssistantAndAlertTests
         var response = _assistant.GetInlineSuggestions(new InlineAssistantRequest
         {
             CurrentFieldId = "finding-description",
-            CurrentText = "No visible damage was observed at this time."
+            CurrentText = "No visible damage was observed at this time.",
+            IeAssistEnabled = true
         });
 
         Assert.DoesNotContain(response.Suggestions, s => s.Severity.Equals("critical", StringComparison.OrdinalIgnoreCase));

@@ -74,7 +74,19 @@ public class InspectionAssistantService : IInspectionAssistantService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var response = new InlineAssistantResponse();
+        var mode = request.ManualVerificationRequested
+            ? "ManualVerification"
+            : request.IeAssistEnabled ? "Live" : "Disabled";
+
+        var response = new InlineAssistantResponse
+        {
+            Mode = mode,
+            WasEvaluated = mode != "Disabled"
+        };
+
+        if (mode == "Disabled")
+            return response;
+
         var text = request.CurrentText?.Trim() ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(text))

@@ -446,4 +446,73 @@ public class ReportingController(
             status = report.Status
         });
     }
+
+    [HttpPost("{id}/approve")]
+    public ActionResult ApproveReport(string id)
+    {
+        var report = inspectionReportRepository.GetById(id);
+        if (report is null)
+        {
+            return NotFound();
+        }
+
+        if (!string.Equals(report.Status, InspectionReportStatuses.ReadyForReview, StringComparison.Ordinal)
+            && !string.Equals(report.Status, InspectionReportStatuses.InReview, StringComparison.Ordinal))
+        {
+            return BadRequest(new
+            {
+                message = "Report cannot be approved in its current status",
+                status = report.Status
+            });
+        }
+
+        report.Status = InspectionReportStatuses.Final;
+        report.UpdatedAt = DateTime.UtcNow;
+        inspectionReportRepository.Update(id, report);
+
+        return Ok(new
+        {
+            message = "Report approved",
+            status = report.Status
+        });
+    }
+
+    [HttpPost("{id}/return-for-revision")]
+    public ActionResult ReturnForRevision(string id, [FromBody] ReturnForRevisionRequest request)
+    {
+        var report = inspectionReportRepository.GetById(id);
+        if (report is null)
+        {
+            return NotFound();
+        }
+
+        if (!string.Equals(report.Status, InspectionReportStatuses.ReadyForReview, StringComparison.Ordinal)
+            && !string.Equals(report.Status, InspectionReportStatuses.InReview, StringComparison.Ordinal))
+        {
+            return BadRequest(new
+            {
+                message = "Report cannot be returned for revision in its current status",
+                status = report.Status
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.ReviewerComments))
+        {
+            return BadRequest(new
+            {
+                message = "reviewerComments is required"
+            });
+        }
+
+        report.Status = InspectionReportStatuses.ReturnedForRevision;
+        report.UpdatedAt = DateTime.UtcNow;
+        inspectionReportRepository.Update(id, report);
+
+        return Ok(new
+        {
+            message = "Report returned for revision",
+            status = report.Status,
+            reviewerComments = request.ReviewerComments.Trim()
+        });
+    }
 }

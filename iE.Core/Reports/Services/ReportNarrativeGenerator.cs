@@ -175,7 +175,7 @@ public class ReportNarrativeGenerator : IReportNarrativeGenerator
     private static string ToPhrase(FindingType findingType) => findingType switch
     {
         FindingType.Corrosion => "Localized corrosion",
-        FindingType.Crack => "Cracking",
+        FindingType.Cracking => "Cracking",
         FindingType.Leak => "Leak indication",
         FindingType.Deformation => "Deformation",
         FindingType.Other => "Anomaly",

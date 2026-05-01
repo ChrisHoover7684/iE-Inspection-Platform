@@ -1,4 +1,10 @@
-import type { InspectionReport, ReportTemplate } from './types';
+import type {
+  InlineSuggestionsResponse,
+  InspectionReport,
+  NarrativeResult,
+  ReportTemplate,
+  UiAlert
+} from './types';
 
 const DEFAULT_API_BASE_URL = 'http://localhost:5229';
 const API_BASE_KEY = 'ie_reports_test_api_base_url';
@@ -24,87 +30,38 @@ function buildApiUrl(path: string): string {
 }
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const url = buildApiUrl(path);
-  const method = init?.method || 'GET';
-
-  console.log(`[reports-test-api] ${method} ${url}`);
-
-  const response = await fetch(url, {
+  const response = await fetch(buildApiUrl(path), {
     ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers || {})
-    }
+    headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) }
   });
-
-  if (!response.ok) {
-    let errorMessage = `Request failed (${response.status})`;
-    try {
-      const body = await response.json();
-      if (body?.error) {
-        errorMessage = body.error;
-      }
-    } catch {
-      // no-op
-    }
-
-    console.error(`[reports-test-api] ${method} ${url} failed`, {
-      status: response.status,
-      message: errorMessage
-    });
-
-    throw new ApiError(errorMessage, response.status);
-  }
-
+  if (!response.ok) throw new ApiError(`Request failed (${response.status})`, response.status);
   return (await response.json()) as T;
 }
 
 export const reportingApi = {
   getTemplates: () => apiFetch<ReportTemplate[]>('/api/reports/templates'),
+  getTemplateById: (templateId: string) => apiFetch<ReportTemplate>(`/api/reports/templates/${templateId}`),
   getInstances: () => apiFetch<InspectionReport[]>('/api/reports/instances'),
   getInstanceById: (id: string) => apiFetch<InspectionReport>(`/api/reports/instances/${id}`),
   createInstanceFromTemplate: (templateId: string) =>
     apiFetch<InspectionReport>(`/api/reports/templates/${templateId}/instances`, {
       method: 'POST',
-      body: JSON.stringify({
-        clientOrganizationId: 'client-demo-refining',
-        facilityId: 'facility-demo-gulf-coast',
-        processUnitId: 'unit-demo-crude',
-        assetId: 'asset-demo-piping-system'
-      })
+      body: JSON.stringify({ clientOrganizationId: 'client-demo-refining', facilityId: 'facility-demo-gulf-coast' })
     }),
   saveInstance: (id: string, report: InspectionReport) =>
-    apiFetch<InspectionReport>(`/api/reports/instances/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(report)
-    }),
+    apiFetch<InspectionReport>(`/api/reports/instances/${id}`, { method: 'PUT', body: JSON.stringify(report) }),
   syncFindings: (id: string) =>
-    apiFetch<InspectionReport>(`/api/reports/instances/${id}/sync-findings`, {
-      method: 'POST',
-      body: JSON.stringify({})
-    }),
+    apiFetch<InspectionReport>(`/api/reports/instances/${id}/sync-findings`, { method: 'POST', body: '{}' }),
   async exportDocx(id: string): Promise<{ blob: Blob; fileName: string }> {
-    const url = buildApiUrl(`/api/reports/instances/${id}/export/docx`);
-    console.log(`[reports-test-api] GET ${url}`);
-
-    const response = await fetch(url);
-    if (!response.ok) {
-      const message = `DOCX export failed (${response.status})`;
-      console.error('[reports-test-api] GET export docx failed', {
-        url,
-        status: response.status,
-        message
-      });
-      throw new ApiError(message, response.status);
-    }
-
-    const disposition = response.headers.get('content-disposition') || '';
-    const match = disposition.match(/filename="?([^";]+)"?/i);
-    const resolvedFileName = match?.[1] || `${id}.docx`;
-
-    return {
-      blob: await response.blob(),
-      fileName: resolvedFileName.toLowerCase().endsWith('.docx') ? resolvedFileName : `${resolvedFileName}.docx`
-    };
-  }
+    const response = await fetch(buildApiUrl(`/api/reports/instances/${id}/export/docx`));
+    if (!response.ok) throw new ApiError(`DOCX export failed (${response.status})`, response.status);
+    return { blob: await response.blob(), fileName: `${id}.docx` };
+  },
+  inlineSuggestions: (report: InspectionReport, currentFieldId: string, currentText: string, ieAssistEnabled: boolean, manualVerificationRequested: boolean, sectionId?: string) =>
+    apiFetch<InlineSuggestionsResponse>('/api/reports/assistant/inline-suggestions', {
+      method: 'POST',
+      body: JSON.stringify({ report, currentFieldId, currentText, sectionId, ieAssistEnabled, manualVerificationRequested })
+    }),
+  getAlerts: (report: InspectionReport) => apiFetch<UiAlert[]>('/api/reports/alerts', { method: 'POST', body: JSON.stringify(report) }),
+  generateNarrative: (report: InspectionReport) => apiFetch<NarrativeResult>('/api/reports/generate-narrative', { method: 'POST', body: JSON.stringify(report) })
 };

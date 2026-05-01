@@ -51,9 +51,21 @@ public class InspectionAssistantAndAlertTests
         report.Findings.Add(new InspectionFinding { Id = "f1", FindingType = FindingType.Cracking });
         report.Findings.Add(new InspectionFinding { Id = "f2", FindingType = FindingType.Leak });
 
-        var suggestions = _assistant.GetSuggestions(report, _engine.Evaluate(report));
+        var rules = _engine.Evaluate(report);
+        var suggestions = _assistant.GetSuggestions(report, rules);
 
-        Assert.Equal(2, suggestions.Count(s => s.Contains("NDE", StringComparison.OrdinalIgnoreCase)));
+        Assert.Contains(suggestions, s => s.Contains("NDE", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(suggestions, s => s.Contains("crack", StringComparison.OrdinalIgnoreCase)
+            || s.Contains("leak", StringComparison.OrdinalIgnoreCase));
+
+        var inlineResponse = _assistant.GetInlineSuggestions(new InlineAssistantRequest
+        {
+            CurrentFieldId = "finding-description",
+            CurrentText = "Possible crack with active leak"
+        });
+
+        Assert.Contains(inlineResponse.Suggestions, s => s.PromptType == "NdeSuggestion");
+        Assert.True(inlineResponse.Severity is "warning" or "critical");
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using iE.Api.Contracts;
 using iE.Core.Reports;
+using iE.Core.Reports.Persistence;
 using Microsoft.AspNetCore.Mvc;
 
 namespace iE.Api.Controllers;

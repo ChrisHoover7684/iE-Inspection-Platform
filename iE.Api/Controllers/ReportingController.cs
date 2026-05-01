@@ -9,6 +9,7 @@ using iE.Core.Reports.Exports;
 using iE.Core.Reports.Review;
 using iE.Core.Reports.Services;
 using iE.Core.Reports.Templates;
+using iE.Core.Reports.Rules;
 using Microsoft.AspNetCore.Mvc;
 
 namespace iE.Api.Controllers;
@@ -25,7 +26,8 @@ public class ReportingController(
     ObservationChecklistService observationChecklistService,
     ChecklistMergeService checklistMergeService,
     ReportWorkflowService reportWorkflowService,
-    IReportTemplateRegistry reportTemplateRegistry) : ControllerBase
+    IReportTemplateRegistry reportTemplateRegistry,
+    IInspectionTagRuleEngine inspectionTagRuleEngine) : ControllerBase
 {
     [HttpGet]
     public ActionResult<List<ReportListItemDto>> GetReports(
@@ -335,6 +337,13 @@ public class ReportingController(
         updatedReport.UpdatedAt = DateTime.UtcNow;
         inspectionReportRepository.Update(id, updatedReport);
         return Ok(updatedReport);
+    }
+
+
+    [HttpPost("rules/evaluate")]
+    public ActionResult<InspectionRuleResult> EvaluateRules([FromBody] InspectionReport report)
+    {
+        return Ok(inspectionTagRuleEngine.Evaluate(report));
     }
 
     [HttpPost("{id}/submit-for-review")]

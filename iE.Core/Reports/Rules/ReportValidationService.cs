@@ -1,6 +1,6 @@
 namespace iE.Core.Reports.Rules;
 
-public class ReportValidationService
+public class ReportValidationService(IInspectionTagRuleEngine inspectionTagRuleEngine)
 {
     private const string Api570PipingTemplateId = "api-570-piping-inspection";
 
@@ -194,7 +194,8 @@ public class ReportValidationService
             }
         }
 
-        return new ReportValidationResult(messages);
+        var ruleResult = inspectionTagRuleEngine.Evaluate(report);
+        return new ReportValidationResult(messages, ruleResult);
     }
 
     private static bool IsVagueLocation(string? location)
@@ -234,12 +235,14 @@ public class ReportValidationService
 
 public class ReportValidationResult
 {
-    public ReportValidationResult(List<ReportValidationMessage> messages)
+    public ReportValidationResult(List<ReportValidationMessage> messages, InspectionRuleResult? ruleResult = null)
     {
         Messages = messages;
+        RuleResult = ruleResult ?? new InspectionRuleResult();
     }
 
     public List<ReportValidationMessage> Messages { get; }
+    public InspectionRuleResult RuleResult { get; }
     public bool HasErrors => Messages.Any(x => x.Level == ReportValidationLevel.Error);
     public bool HasWarnings => Messages.Any(x => x.Level == ReportValidationLevel.Warning);
 }

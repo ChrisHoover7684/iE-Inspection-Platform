@@ -1,6 +1,6 @@
 using iE.Core.Reports.Models;
 
-namespace iE.Core.Reports.Services;
+namespace iE.Core.Reports.Photos;
 
 public class AnnotatedPhotoExportService(IPhotoMarkupRenderer photoMarkupRenderer)
 {

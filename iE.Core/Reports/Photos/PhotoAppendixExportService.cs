@@ -7,7 +7,7 @@ using A = DocumentFormat.OpenXml.Drawing;
 using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
 using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
 
-namespace iE.Core.Reports.Services;
+namespace iE.Core.Reports.Photos;
 
 public class PhotoAppendixExportService
 {

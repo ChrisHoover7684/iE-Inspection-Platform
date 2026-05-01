@@ -1,7 +1,7 @@
 using iE.Core.Reports.Models;
 using iE.Core.Reports.Services;
 
-namespace iE.Core.Reports.Builders;
+namespace iE.Core.Reports.Drafting;
 
 public class ReportDraftBuilder(
     SummaryBuilder summaryBuilder,

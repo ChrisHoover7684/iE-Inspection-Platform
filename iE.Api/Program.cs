@@ -1,7 +1,10 @@
 using System.Text.Json.Serialization;
-using iE.Core.Reports;
-using iE.Core.Reports.Builders;
+using iE.Core.Reports.Drafting;
+using iE.Core.Reports.Persistence;
+using iE.Core.Reports.Photos;
+using iE.Core.Reports.Rules;
 using iE.Core.Reports.Services;
+using iE.Core.Reports.Templates;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

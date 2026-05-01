@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace iE.Core.Reports.Builders;
+namespace iE.Core.Reports.Drafting;
 
 public class RepairRecommendationBuilder
 {

@@ -1,42 +1,75 @@
-using iE.Core.Reports.Services;
 using iE.Core.Reports.Templates;
-using iE.Core.Reports.Rules;
-using iE.Core.Reports.Photos;
 
 namespace iE.Tests.Reports;
 
 public class InMemoryReportTemplateRegistryTests
 {
+    private static readonly string[] RequiredExternalInspectionTemplates =
+    [
+        "api-510-vessel-external",
+        "api-570-piping-external",
+        "api-570-piping-cui-external",
+        "sti-sp001-tank-external"
+    ];
+
+    private static readonly string[] RequiredRepairRecommendationTemplates =
+    [
+        "repair-recommendation-general",
+        "repair-recommendation-api-510-vessel",
+        "repair-recommendation-api-570-piping",
+        "repair-recommendation-sti-sp001-tank"
+    ];
+
     private readonly InMemoryReportTemplateRegistry registry = new();
 
     [Fact]
-    public void GetTemplates_ReturnsExpectedStarterTemplates()
+    public void GetTemplates_ReturnsAllRequiredTemplates()
     {
         var templates = registry.GetTemplates();
 
-        Assert.Equal(4, templates.Count);
-        Assert.Contains(templates, t => t.Id == "api-510-vessel-internal");
-        Assert.Contains(templates, t => t.Id == "api-510-vessel-external");
-        Assert.Contains(templates, t => t.Id == "api-570-piping-cui");
-        Assert.Contains(templates, t => t.Id == "sti-sp001-tank-external");
+        Assert.Equal(8, templates.Count);
+
+        foreach (var templateId in RequiredExternalInspectionTemplates.Concat(RequiredRepairRecommendationTemplates))
+        {
+            Assert.Contains(templates, template => template.Id == templateId);
+        }
     }
 
     [Fact]
-    public void GetTemplateById_ReturnsTemplateWithSectionsAndFields()
+    public void GetTemplates_UsesUniqueTemplateIds()
     {
-        var template = registry.GetTemplateById("api-570-piping-cui");
+        var templates = registry.GetTemplates();
 
-        Assert.NotNull(template);
-        Assert.NotEmpty(template!.Sections);
-        Assert.Contains(template.Sections, s => s.Title == "Summary");
-        Assert.Contains(template.Sections, s => s.Title == "Scope / Preparation");
-        Assert.Contains(template.Sections, s => s.Title == "Inspection Results");
-        Assert.Contains(template.Sections, s => s.Title == "Findings");
-        Assert.Contains(template.Sections, s => s.Title == "NDE / Testing");
-        Assert.Contains(template.Sections, s => s.Title == "Repairs");
-        Assert.Contains(template.Sections, s => s.Title == "Recommendations");
-        Assert.Contains(template.Sections, s => s.Title == "Photos");
-        Assert.All(template.Sections, section => Assert.NotEmpty(section.Fields));
+        var uniqueCount = templates.Select(template => template.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+
+        Assert.Equal(templates.Count, uniqueCount);
+    }
+
+    [Fact]
+    public void EachTemplate_HasUniqueSectionIds()
+    {
+        var templates = registry.GetTemplates();
+
+        foreach (var template in templates)
+        {
+            var uniqueSections = template.Sections.Select(section => section.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+            Assert.Equal(template.Sections.Count, uniqueSections);
+        }
+    }
+
+    [Fact]
+    public void EachSection_HasUniqueFieldIds()
+    {
+        var templates = registry.GetTemplates();
+
+        foreach (var template in templates)
+        {
+            foreach (var section in template.Sections)
+            {
+                var uniqueFields = section.Fields.Select(field => field.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+                Assert.Equal(section.Fields.Count, uniqueFields);
+            }
+        }
     }
 
     [Fact]

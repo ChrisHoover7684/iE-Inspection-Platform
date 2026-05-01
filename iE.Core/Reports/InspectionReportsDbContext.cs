@@ -10,6 +10,7 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
     public DbSet<Asset> Assets => Set<Asset>();
     public DbSet<UserFacilityAccess> UserFacilityAccesses => Set<UserFacilityAccess>();
     public DbSet<InspectionReport> InspectionReports => Set<InspectionReport>();
+    public DbSet<PhotoMarkup> PhotoMarkups => Set<PhotoMarkup>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -281,6 +282,19 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
                 pipingBuilder.Property(p => p.PipingClass).HasMaxLength(128);
                 pipingBuilder.Property(p => p.InsulatedStatus).HasMaxLength(64);
             });
+        });
+
+
+        modelBuilder.Entity<PhotoMarkup>(builder =>
+        {
+            builder.ToTable("PhotoMarkups");
+            builder.HasKey(pm => pm.Id);
+            builder.Property(pm => pm.Id).HasMaxLength(64);
+            builder.Property(pm => pm.PhotoId).HasMaxLength(64);
+            builder.Property(pm => pm.MarkupJson).HasMaxLength(16000);
+            builder.Property(pm => pm.CreatedAt);
+            builder.HasIndex(pm => pm.PhotoId);
+            builder.HasIndex(pm => pm.CreatedAt);
         });
     }
 }

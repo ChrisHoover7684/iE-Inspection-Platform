@@ -1,4 +1,5 @@
-using iE.Core.Reports;
+using iE.Core.Reports.Checklists;
+using iE.Core.Reports.Domain;
 using System.Text.Json.Serialization;
 
 namespace iE.Api.Contracts;

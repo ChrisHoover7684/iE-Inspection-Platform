@@ -16,7 +16,8 @@ public class ReportingController(
     PhotoAppendixExportService photoAppendixExportService,
     ReportDraftBuilder reportDraftBuilder,
     NoFindingObservationBuilder noFindingObservationBuilder,
-    ObservationChecklistService observationChecklistService) : ControllerBase
+    ObservationChecklistService observationChecklistService,
+    IReportTemplateRegistry reportTemplateRegistry) : ControllerBase
 {
     [HttpGet]
     public ActionResult<List<ReportListItemDto>> GetReports(
@@ -43,16 +44,16 @@ public class ReportingController(
     [HttpGet("templates")]
     public ActionResult<IReadOnlyList<ReportTemplate>> GetTemplates()
     {
-        return Ok(ReportingSeedData.GetTemplates());
+        return Ok(reportTemplateRegistry.GetTemplates());
     }
 
-    [HttpGet("templates/{id}")]
-    public ActionResult<ReportTemplate> GetTemplateById(string id)
+    [HttpGet("templates/{templateId}")]
+    public ActionResult<ReportTemplate> GetTemplateById(string templateId)
     {
-        var template = ReportingSeedData.GetTemplateById(id);
+        var template = reportTemplateRegistry.GetTemplateById(templateId);
         if (template is null)
         {
-            return NotFound(new { error = $"Report template '{id}' was not found." });
+            return NotFound(new { error = $"Report template '{templateId}' was not found." });
         }
 
         return Ok(template);

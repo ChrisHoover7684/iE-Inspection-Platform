@@ -10,4 +10,6 @@ public class InlineAssistantRequest
     public string? SectionId { get; set; }
     public string? FindingId { get; set; }
     public int? CursorPosition { get; set; }
+    public bool IeAssistEnabled { get; set; } = true;
+    public bool ManualVerificationRequested { get; set; }
 }

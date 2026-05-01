@@ -438,6 +438,14 @@ public class ReportingController(
 
         report.Status = InspectionReportStatuses.ReadyForReview;
         report.UpdatedAt = DateTime.UtcNow;
+        report.ReviewHistory.Add(new ReportReviewHistory
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            ReportId = report.Id,
+            Action = ReviewAction.SubmittedForReview,
+            PerformedByUserId = ResolvePerformedByUserId(report),
+            PerformedAt = DateTime.UtcNow
+        });
         inspectionReportRepository.Update(id, report);
 
         return Ok(new
@@ -468,6 +476,14 @@ public class ReportingController(
 
         report.Status = InspectionReportStatuses.Final;
         report.UpdatedAt = DateTime.UtcNow;
+        report.ReviewHistory.Add(new ReportReviewHistory
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            ReportId = report.Id,
+            Action = ReviewAction.Approved,
+            PerformedByUserId = ResolvePerformedByUserId(report),
+            PerformedAt = DateTime.UtcNow
+        });
         inspectionReportRepository.Update(id, report);
 
         return Ok(new
@@ -506,6 +522,15 @@ public class ReportingController(
 
         report.Status = InspectionReportStatuses.ReturnedForRevision;
         report.UpdatedAt = DateTime.UtcNow;
+        report.ReviewHistory.Add(new ReportReviewHistory
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            ReportId = report.Id,
+            Action = ReviewAction.ReturnedForRevision,
+            Comments = request.ReviewerComments.Trim(),
+            PerformedByUserId = ResolvePerformedByUserId(report),
+            PerformedAt = DateTime.UtcNow
+        });
         inspectionReportRepository.Update(id, report);
 
         return Ok(new
@@ -514,5 +539,28 @@ public class ReportingController(
             status = report.Status,
             reviewerComments = request.ReviewerComments.Trim()
         });
+    }
+
+    [HttpGet("{id}/review-history")]
+    public ActionResult<IReadOnlyList<ReportReviewHistory>> GetReviewHistory(string id)
+    {
+        var report = inspectionReportRepository.GetById(id);
+        if (report is null)
+        {
+            return NotFound();
+        }
+
+        var history = report.ReviewHistory
+            .OrderByDescending(x => x.PerformedAt)
+            .ToList();
+
+        return Ok(history);
+    }
+
+    private static string ResolvePerformedByUserId(InspectionReport report)
+    {
+        return report.UpdatedByUserId
+            ?? report.CreatedByUserId
+            ?? "system";
     }
 }

@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iE.Core", "..\iE.Core\iE.Co
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iE.Tools.StressImporter", "..\iE.Tools.StressImporter\iE.Tools.StressImporter.csproj", "{5E6D0A5E-4524-45B5-87B7-B078259BB3DC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iE.Tests", "..\iE.Tests\iE.Tests.csproj", "{410F992C-DD7D-A8FB-E4FB-51C0B8F5776E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{5E6D0A5E-4524-45B5-87B7-B078259BB3DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E6D0A5E-4524-45B5-87B7-B078259BB3DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5E6D0A5E-4524-45B5-87B7-B078259BB3DC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{410F992C-DD7D-A8FB-E4FB-51C0B8F5776E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{410F992C-DD7D-A8FB-E4FB-51C0B8F5776E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{410F992C-DD7D-A8FB-E4FB-51C0B8F5776E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{410F992C-DD7D-A8FB-E4FB-51C0B8F5776E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

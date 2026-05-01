@@ -101,7 +101,7 @@ public class InspectionTagRuleEngineTests
         var report = NewReport(templateId);
         report.Sections.Add(new InspectionReportSection
         {
-            Id = "s1",
+            SectionId = "s1",
             Answers =
             [
                 new InspectionReportAnswer { FieldId = fieldId, Value = value }

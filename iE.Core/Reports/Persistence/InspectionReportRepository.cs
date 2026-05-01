@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace iE.Core.Reports;
+namespace iE.Core.Reports.Persistence;
 
 public class InspectionReportRepository(InspectionReportsDbContext dbContext)
 {

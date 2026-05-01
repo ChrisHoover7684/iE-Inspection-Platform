@@ -1,4 +1,7 @@
 using iE.Core.Reports.Services;
+using iE.Core.Reports.Templates;
+using iE.Core.Reports.Rules;
+using iE.Core.Reports.Photos;
 
 namespace iE.Tests.Reports;
 

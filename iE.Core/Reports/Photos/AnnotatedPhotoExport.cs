@@ -1,4 +1,4 @@
-namespace iE.Core.Reports.Models;
+namespace iE.Core.Reports.Photos;
 
 public class AnnotatedPhotoExport
 {

@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using iE.Core.Reports.Models;
 
-namespace iE.Core.Reports.Builders;
+namespace iE.Core.Reports.Drafting;
 
 public class SummaryBuilder
 {

@@ -1,8 +1,11 @@
 using iE.Api.Contracts;
-using iE.Core.Reports;
+using iE.Core.Reports.Domain;
+using iE.Core.Reports.Drafting;
 using iE.Core.Reports.Models;
-using iE.Core.Reports.Builders;
+using iE.Core.Reports.Persistence;
+using iE.Core.Reports.Photos;
 using iE.Core.Reports.Services;
+using iE.Core.Reports.Templates;
 using Microsoft.AspNetCore.Mvc;
 
 namespace iE.Api.Controllers;

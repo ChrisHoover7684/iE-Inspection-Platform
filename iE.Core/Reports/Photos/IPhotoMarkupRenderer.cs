@@ -1,4 +1,4 @@
-namespace iE.Core.Reports.Services;
+namespace iE.Core.Reports.Photos;
 
 public interface IPhotoMarkupRenderer
 {

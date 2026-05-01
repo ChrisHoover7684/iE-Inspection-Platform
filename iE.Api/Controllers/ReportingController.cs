@@ -27,7 +27,9 @@ public class ReportingController(
     ChecklistMergeService checklistMergeService,
     ReportWorkflowService reportWorkflowService,
     IReportTemplateRegistry reportTemplateRegistry,
-    IInspectionTagRuleEngine inspectionTagRuleEngine) : ControllerBase
+    IInspectionTagRuleEngine inspectionTagRuleEngine,
+    InspectionAlertMapper inspectionAlertMapper,
+    IInspectionAssistantService inspectionAssistantService) : ControllerBase
 {
     [HttpGet]
     public ActionResult<List<ReportListItemDto>> GetReports(
@@ -339,6 +341,28 @@ public class ReportingController(
         return Ok(updatedReport);
     }
 
+
+
+    [HttpPost("alerts")]
+    public ActionResult<List<UiAlert>> GetAlerts([FromBody] InspectionReport report)
+    {
+        var rules = inspectionTagRuleEngine.Evaluate(report);
+        return Ok(inspectionAlertMapper.Map(rules));
+    }
+
+    [HttpPost("assistant/suggestions")]
+    public ActionResult<List<string>> GetAssistantSuggestions([FromBody] InspectionReport report)
+    {
+        var rules = inspectionTagRuleEngine.Evaluate(report);
+        return Ok(inspectionAssistantService.GetSuggestions(report, rules));
+    }
+
+    [HttpPost("assistant/improve-text")]
+    public ActionResult<object> ImproveText([FromBody] ImproveTextRequest request)
+    {
+        var improvedText = inspectionAssistantService.ImproveText(request.Text, request.Context);
+        return Ok(new { improvedText });
+    }
 
     [HttpPost("rules/evaluate")]
     public ActionResult<InspectionRuleResult> EvaluateRules([FromBody] InspectionReport report)

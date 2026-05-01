@@ -1,9 +1,10 @@
 using System.Globalization;
+using iE.Core.Reports.Services;
 using System.Text.RegularExpressions;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using W = DocumentFormat.OpenXml.Wordprocessing;
-using iE.Core.Reports.Services;
+
 
 namespace iE.Core.Reports.Exports;
 

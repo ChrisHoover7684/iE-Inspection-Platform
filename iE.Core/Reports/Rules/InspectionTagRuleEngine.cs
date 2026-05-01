@@ -9,7 +9,12 @@ public interface IInspectionTagRuleEngine
 
 public class InspectionTagRuleEngine : IInspectionTagRuleEngine
 {
-    private const string Api570PipingTemplateId = "api-570-piping-inspection";
+    private static readonly string[] Api570PipingTemplateIds =
+    [
+        "api-570-piping-inspection",
+        "api-570-piping-external",
+        "api-570-piping-cui-external"
+    ];
 
     public InspectionRuleResult Evaluate(InspectionReport report)
     {
@@ -25,7 +30,7 @@ public class InspectionTagRuleEngine : IInspectionTagRuleEngine
             .GroupBy(x => x.FieldId.Trim(), StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.Last(), StringComparer.OrdinalIgnoreCase);
 
-        bool isApi570 = string.Equals(report.TemplateId, Api570PipingTemplateId, StringComparison.OrdinalIgnoreCase);
+        bool isApi570 = Api570PipingTemplateIds.Contains(report.TemplateId, StringComparer.OrdinalIgnoreCase);
 
         if (isApi570)
         {
@@ -143,8 +148,8 @@ public class InspectionTagRuleEngine : IInspectionTagRuleEngine
         if (string.IsNullOrWhiteSpace(GetValue(answerLookup, "recommended-repair-action")))
             AddTag(result, "repair-recommendation-missing", "Recommended Repair Action Missing", "repair", InspectionRuleSeverity.Error, "recommended-repair-action", null, "Repair recommendation template requires recommended repair action.", true);
 
-        if (string.IsNullOrWhiteSpace(GetValue(answerLookup, "priority")))
-            AddTag(result, "repair-required", "Priority Missing", "repair", InspectionRuleSeverity.Error, "priority", null, "Repair recommendation template requires priority.", true);
+        if (string.IsNullOrWhiteSpace(GetValue(answerLookup, "repair-priority")))
+            AddTag(result, "repair-required", "Priority Missing", "repair", InspectionRuleSeverity.Error, "repair-priority", null, "Repair recommendation template requires priority.", true);
 
         if (IsTrue(answerLookup, "engineering-review-required"))
             AddTag(result, "engineering-review", "Engineering Review", "repair", InspectionRuleSeverity.Warning, "engineering-review-required", null, "Engineering review required.", true);

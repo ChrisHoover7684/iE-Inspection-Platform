@@ -58,14 +58,13 @@ public class ReportNarrativeGenerator : IReportNarrativeGenerator
         var noObservations = !hasObservations;
 
         if (noObservations)
-        {
-            return $"External visual inspection completed for {lineId}. No reportable conditions were documented in this scope.";
-        }
+            return $"External visual inspection completed for {lineId}. No reportable conditions were identified during this inspection.";
 
         var repairCount = report.Findings.Count(f => f.RepairRequired || !string.IsNullOrWhiteSpace(f.RepairRecommendation));
+        var findingCountText = CountNoun(report.Findings.Count, "reportable finding");
         return repairCount > 0
-            ? $"External visual inspection completed for {lineId}. {report.Findings.Count} reportable condition(s) were documented, with {repairCount} requiring repair action."
-            : $"External visual inspection completed for {lineId}. {report.Findings.Count} reportable condition(s) were documented.";
+            ? $"External visual inspection completed for {lineId}. {findingCountText} were documented, with {repairCount} requiring repair action."
+            : $"External visual inspection completed for {lineId}. {findingCountText} were documented.";
     }
 
     private static string BuildInspection(InspectionReport report)
@@ -77,14 +76,14 @@ public class ReportNarrativeGenerator : IReportNarrativeGenerator
     private static string BuildFindings(InspectionReport report)
     {
         if (report.Findings.Count == 0)
-            return "No reportable findings were recorded.";
+            return "No reportable conditions were identified during this inspection.";
 
         var lines = report.Findings.Select(f =>
         {
             var location = DefaultText(f.Location, "location not provided");
             var description = DefaultText(f.Description, "description not provided");
-            var type = f.FindingType.ToString();
-            return $"Item {DefaultText(f.Id, "N/A")}: {type} at {location}. {description}.";
+            var type = ToPhrase(f.FindingType);
+            return $"{type} was documented at {location}. {EnsureSentence(description)}";
         });
 
         return string.Join(" ", lines);
@@ -134,7 +133,7 @@ public class ReportNarrativeGenerator : IReportNarrativeGenerator
             .ToList();
 
         return recs.Count > 0
-            ? string.Join(" ", recs.Select(r => $"Recommended action: {r}."))
+            ? string.Join(" ", recs.Select(EnsureSentence))
             : "Address documented findings based on severity and applicable integrity requirements.";
     }
 
@@ -144,7 +143,7 @@ public class ReportNarrativeGenerator : IReportNarrativeGenerator
         var hasRepairRequired = report.Findings.Any(f => f.RepairRequired);
 
         if (!hasRepairRequired && !hasLeak)
-            return "No conditions were documented that would prevent continued service based on reported data.";
+            return "No reportable conditions were identified that would prevent continued service.";
 
         if (hasLeak)
             return "Return to service should follow completion of leak-related repairs and documented verification, where required.";
@@ -160,4 +159,26 @@ public class ReportNarrativeGenerator : IReportNarrativeGenerator
         var found = values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
         return string.IsNullOrWhiteSpace(found) ? "not provided" : found.Trim();
     }
+
+    private static string CountNoun(int count, string singularNoun) =>
+        count == 1 ? $"1 {singularNoun}" : $"{count} {singularNoun}s";
+
+    private static string EnsureSentence(string value)
+    {
+        var trimmed = value.Trim();
+        if (trimmed.EndsWith('.') || trimmed.EndsWith('!') || trimmed.EndsWith('?'))
+            return trimmed;
+
+        return $"{trimmed}.";
+    }
+
+    private static string ToPhrase(FindingType findingType) => findingType switch
+    {
+        FindingType.Corrosion => "Localized corrosion",
+        FindingType.Crack => "Cracking",
+        FindingType.Leak => "Leak indication",
+        FindingType.Deformation => "Deformation",
+        FindingType.Other => "Anomaly",
+        _ => "Finding"
+    };
 }

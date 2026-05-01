@@ -16,7 +16,7 @@ public class ReportNarrativeGeneratorTests
 
         Assert.Contains("external visual inspection completed", result.Sections.Summary, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("No reportable conditions", result.Sections.Summary, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal("No reportable findings were recorded.", result.Sections.Findings);
+        Assert.Equal("No reportable conditions were identified during this inspection.", result.Sections.Findings);
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public class ReportNarrativeGeneratorTests
 
         Assert.Contains("requiring repair action", result.Sections.Summary, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Replace affected spool", result.Sections.Repairs, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Recommended action", result.Sections.Recommendations, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Replace affected spool", result.Sections.Recommendations, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

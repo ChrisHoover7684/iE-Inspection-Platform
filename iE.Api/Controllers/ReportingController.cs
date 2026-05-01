@@ -4,6 +4,9 @@ using iE.Core.Reports.Drafting;
 using iE.Core.Reports.Models;
 using iE.Core.Reports.Persistence;
 using iE.Core.Reports.Photos;
+using iE.Core.Reports.Checklists;
+using iE.Core.Reports.Exports;
+using iE.Core.Reports.Review;
 using iE.Core.Reports.Services;
 using iE.Core.Reports.Templates;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +23,8 @@ public class ReportingController(
     ReportDraftBuilder reportDraftBuilder,
     NoFindingObservationBuilder noFindingObservationBuilder,
     ObservationChecklistService observationChecklistService,
+    ChecklistMergeService checklistMergeService,
+    ReportWorkflowService reportWorkflowService,
     IReportTemplateRegistry reportTemplateRegistry) : ControllerBase
 {
     [HttpGet]
@@ -172,8 +177,7 @@ public class ReportingController(
             request.ChecklistResponses,
             request.Report);
 
-        MergeChecklistObservations(request.Report.Observations, buildResult.Observations);
-        MergeChecklistFindings(request.Report.Findings, buildResult.Findings);
+        checklistMergeService.Merge(request.Report, buildResult);
 
         var existingReport = !string.IsNullOrWhiteSpace(request.Report.Id)
             ? inspectionReportRepository.GetById(request.Report.Id)
@@ -211,94 +215,6 @@ public class ReportingController(
 
         var draft = reportDraftBuilder.Build(request.Report);
         return Ok(draft);
-    }
-
-    private static void MergeChecklistObservations(
-        List<InspectionObservation> existingObservations,
-        IReadOnlyList<InspectionObservation> generatedObservations)
-    {
-        foreach (var generated in generatedObservations)
-        {
-            var hasDuplicate = existingObservations.Any(existing =>
-                (!string.IsNullOrWhiteSpace(existing.Id) &&
-                 string.Equals(existing.Id, generated.Id, StringComparison.OrdinalIgnoreCase))
-                || (string.Equals(existing.Category, generated.Category, StringComparison.OrdinalIgnoreCase)
-                    && existing.Status == generated.Status
-                    && string.Equals(existing.Notes?.Trim(), generated.Notes?.Trim(), StringComparison.OrdinalIgnoreCase)
-                    && HaveEquivalentPhotoIds(existing.PhotoIds, generated.PhotoIds)));
-
-            if (hasDuplicate)
-            {
-                continue;
-            }
-
-            if (string.IsNullOrWhiteSpace(generated.Id)
-                || existingObservations.Any(o => string.Equals(o.Id, generated.Id, StringComparison.OrdinalIgnoreCase)))
-            {
-                generated.Id = Guid.NewGuid().ToString("N");
-            }
-
-            existingObservations.Add(generated);
-        }
-    }
-
-    private static void MergeChecklistFindings(
-        List<InspectionFinding> existingFindings,
-        IReadOnlyList<InspectionFinding> generatedFindings)
-    {
-        foreach (var generated in generatedFindings)
-        {
-            var hasDuplicate = existingFindings.Any(existing =>
-                (!string.IsNullOrWhiteSpace(existing.Id) &&
-                 string.Equals(existing.Id, generated.Id, StringComparison.OrdinalIgnoreCase))
-                || (string.Equals(existing.AssociatedChecklistItem, generated.AssociatedChecklistItem, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(existing.Description?.Trim(), generated.Description?.Trim(), StringComparison.OrdinalIgnoreCase)
-                    && existing.FindingType == generated.FindingType
-                    && existing.Severity == generated.Severity));
-
-            if (hasDuplicate)
-            {
-                continue;
-            }
-
-            if (string.IsNullOrWhiteSpace(generated.Id)
-                || existingFindings.Any(f => string.Equals(f.Id, generated.Id, StringComparison.OrdinalIgnoreCase)))
-            {
-                generated.Id = Guid.NewGuid().ToString("N");
-            }
-
-            existingFindings.Add(generated);
-        }
-    }
-
-    private static bool HaveEquivalentPhotoIds(IReadOnlyList<string>? left, IReadOnlyList<string>? right)
-    {
-        var leftNormalized = (left ?? Array.Empty<string>())
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => x.Trim())
-            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-
-        var rightNormalized = (right ?? Array.Empty<string>())
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => x.Trim())
-            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-
-        if (leftNormalized.Length != rightNormalized.Length)
-        {
-            return false;
-        }
-
-        for (var i = 0; i < leftNormalized.Length; i++)
-        {
-            if (!string.Equals(leftNormalized[i], rightNormalized[i], StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     [HttpPost("quick-complete-no-findings")]
@@ -440,16 +356,7 @@ public class ReportingController(
             });
         }
 
-        report.Status = InspectionReportStatuses.ReadyForReview;
-        report.UpdatedAt = DateTime.UtcNow;
-        report.ReviewHistory.Add(new ReportReviewHistory
-        {
-            Id = Guid.NewGuid().ToString("N"),
-            ReportId = report.Id,
-            Action = ReviewAction.SubmittedForReview,
-            PerformedByUserId = ResolvePerformedByUserId(report),
-            PerformedAt = DateTime.UtcNow
-        });
+        reportWorkflowService.SubmitForReview(report);
         inspectionReportRepository.Update(id, report);
 
         return Ok(new
@@ -468,7 +375,7 @@ public class ReportingController(
             return NotFound();
         }
 
-        if (!string.Equals(report.Status, InspectionReportStatuses.ReadyForReview, StringComparison.Ordinal))
+        if (!reportWorkflowService.TryStartReview(report))
         {
             return BadRequest(new
             {
@@ -476,8 +383,7 @@ public class ReportingController(
             });
         }
 
-        report.Status = InspectionReportStatuses.InReview;
-        report.UpdatedAt = DateTime.UtcNow;
+        reportWorkflowService.StartReview(report);
         inspectionReportRepository.Update(id, report);
 
         return Ok(new
@@ -496,7 +402,7 @@ public class ReportingController(
             return NotFound();
         }
 
-        if (!string.Equals(report.Status, InspectionReportStatuses.InReview, StringComparison.Ordinal))
+        if (!reportWorkflowService.TryApprove(report))
         {
             return BadRequest(new
             {
@@ -504,16 +410,7 @@ public class ReportingController(
             });
         }
 
-        report.Status = InspectionReportStatuses.Final;
-        report.UpdatedAt = DateTime.UtcNow;
-        report.ReviewHistory.Add(new ReportReviewHistory
-        {
-            Id = Guid.NewGuid().ToString("N"),
-            ReportId = report.Id,
-            Action = ReviewAction.Approved,
-            PerformedByUserId = ResolvePerformedByUserId(report),
-            PerformedAt = DateTime.UtcNow
-        });
+        reportWorkflowService.Approve(report);
         inspectionReportRepository.Update(id, report);
 
         return Ok(new
@@ -532,7 +429,7 @@ public class ReportingController(
             return NotFound();
         }
 
-        if (!string.Equals(report.Status, InspectionReportStatuses.InReview, StringComparison.Ordinal))
+        if (!reportWorkflowService.TryReturnForRevision(report))
         {
             return BadRequest(new
             {
@@ -548,17 +445,7 @@ public class ReportingController(
             });
         }
 
-        report.Status = InspectionReportStatuses.ReturnedForRevision;
-        report.UpdatedAt = DateTime.UtcNow;
-        report.ReviewHistory.Add(new ReportReviewHistory
-        {
-            Id = Guid.NewGuid().ToString("N"),
-            ReportId = report.Id,
-            Action = ReviewAction.ReturnedForRevision,
-            Comments = request.ReviewerComments.Trim(),
-            PerformedByUserId = ResolvePerformedByUserId(report),
-            PerformedAt = DateTime.UtcNow
-        });
+        reportWorkflowService.ReturnForRevision(report, request.ReviewerComments);
         inspectionReportRepository.Update(id, report);
 
         return Ok(new
@@ -585,10 +472,4 @@ public class ReportingController(
         return Ok(history);
     }
 
-    private static string ResolvePerformedByUserId(InspectionReport report)
-    {
-        return report.UpdatedByUserId
-            ?? report.CreatedByUserId
-            ?? "system";
-    }
 }

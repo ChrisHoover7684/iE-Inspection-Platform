@@ -1,4 +1,4 @@
-namespace iE.Core.Reports.Domain;
+namespace iE.Core.Reports.Review;
 
 public enum ReviewAction
 {

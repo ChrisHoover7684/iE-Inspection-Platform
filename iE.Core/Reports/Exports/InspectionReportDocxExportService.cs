@@ -4,7 +4,7 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using W = DocumentFormat.OpenXml.Wordprocessing;
 
-namespace iE.Core.Reports.Services;
+namespace iE.Core.Reports.Exports;
 
 public class InspectionReportDocxExportService(InspectionSummaryService inspectionSummaryService)
 {

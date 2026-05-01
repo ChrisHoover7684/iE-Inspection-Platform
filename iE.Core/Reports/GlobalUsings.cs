@@ -1,7 +1,9 @@
 global using iE.Core.Reports;
+global using iE.Core.Reports.Checklists;
 global using iE.Core.Reports.Domain;
 global using iE.Core.Reports.Drafting;
 global using iE.Core.Reports.Persistence;
 global using iE.Core.Reports.Photos;
+global using iE.Core.Reports.Review;
 global using iE.Core.Reports.Rules;
 global using iE.Core.Reports.Templates;

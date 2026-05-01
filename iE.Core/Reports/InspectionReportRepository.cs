@@ -37,6 +37,34 @@ public class InspectionReportRepository(InspectionReportsDbContext dbContext)
             .ToList();
     }
 
+
+    public List<InspectionReport> GetReports(
+        string? status = null,
+        string? facilityId = null,
+        string? unit = null)
+    {
+        var query = dbContext.InspectionReports.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query = query.Where(r => r.Status == status);
+        }
+
+        if (!string.IsNullOrWhiteSpace(facilityId))
+        {
+            query = query.Where(r => r.FacilityId == facilityId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(unit))
+        {
+            query = query.Where(r => r.Unit == unit);
+        }
+
+        return query
+            .OrderByDescending(r => r.CreatedAt)
+            .ToList();
+    }
+
     public InspectionReport? GetById(string id)
     {
         return dbContext.InspectionReports

@@ -1,4 +1,5 @@
 using iE.Core.Reports;
+using FindingType = iE.Core.Reports.FindingType;
 using iE.Core.Reports.Domain;
 using iE.Core.Reports.Services;
 

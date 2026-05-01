@@ -28,6 +28,7 @@ builder.Services.AddScoped<PhotoMarkupRepository>();
 builder.Services.AddScoped<InspectionReportFactory>();
 builder.Services.AddScoped<InspectionSummaryService>();
 builder.Services.AddScoped<SummaryBuilder>();
+builder.Services.AddScoped<IInspectionTagRuleEngine, InspectionTagRuleEngine>();
 builder.Services.AddScoped<ReportValidationService>();
 builder.Services.AddScoped<RepairRecommendationBuilder>();
 builder.Services.AddScoped<ReportDraftBuilder>();

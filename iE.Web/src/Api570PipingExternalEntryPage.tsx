@@ -1,13 +1,29 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ApiError, reportingApi } from './api';
 import type { InlineSuggestion, InspectionReport, InspectionReportAnswer, NarrativeResult, UiAlert } from './types';
 
 const TEMPLATE_ID = 'api-570-piping-external';
+const ACTIVE_REPORT_ID_STORAGE_KEY = 'ie_api570_active_report_id';
+
+const NARRATIVE_SECTION_ORDER = [
+  'Summary',
+  'Inspection',
+  'Findings',
+  'NDE/Testing',
+  'Repairs',
+  'Recommendations',
+  'Return to Service'
+] as const;
 
 const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof ApiError ? error.message : error instanceof Error ? error.message : fallback;
 
+const findNarrativeSection = (narrative: NarrativeResult, title: string) =>
+  narrative.sections.find((section) => section.title.trim().toLowerCase() === title.toLowerCase());
+
 export function Api570PipingExternalEntryPage() {
+  const location = useLocation();
   const [report, setReport] = useState<InspectionReport | null>(null);
   const [ieAssistEnabled, setIeAssistEnabled] = useState(true);
   const [alerts, setAlerts] = useState<UiAlert[]>([]);
@@ -15,18 +31,45 @@ export function Api570PipingExternalEntryPage() {
   const [fieldSuggestions, setFieldSuggestions] = useState<Record<string, InlineSuggestion[]>>({});
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
         await reportingApi.getTemplateById(TEMPLATE_ID);
+
+        const routeState = (location.state as { reportId?: string; report?: InspectionReport } | null) ?? null;
+        const routeReport = routeState?.report;
+        const routeReportId = routeState?.reportId;
+        const storedId = localStorage.getItem(ACTIVE_REPORT_ID_STORAGE_KEY);
+
+        if (routeReport?.id) {
+          setReport(routeReport);
+          localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, routeReport.id);
+          return;
+        }
+
+        const existingId = routeReportId || storedId;
+        if (existingId) {
+          try {
+            const existing = await reportingApi.getInstanceById(existingId);
+            setReport(existing);
+            localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, existing.id);
+            return;
+          } catch {
+            localStorage.removeItem(ACTIVE_REPORT_ID_STORAGE_KEY);
+          }
+        }
+
         const created = await reportingApi.createInstanceFromTemplate(TEMPLATE_ID);
         setReport(created);
+        localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, created.id);
       } catch (error) {
         setError(getErrorMessage(error, 'Failed to initialize report.'));
       }
     })();
-  }, []);
+  }, [location.state]);
 
   const sortedSections = useMemo(
     () => (report?.sections || []).map((section, i) => ({ section, i })).sort((a, b) => a.section.order - b.section.order),
@@ -43,6 +86,7 @@ export function Api570PipingExternalEntryPage() {
     const latest: InspectionReport = structuredClone(report);
     Object.assign(latest.sections[sectionIndex].answers[answerIndex], partial);
     setReport(latest);
+    setIsDirty(true);
 
     const answer = latest.sections[sectionIndex].answers[answerIndex];
     const text = answer.value || answer.comment || '';
@@ -61,6 +105,81 @@ export function Api570PipingExternalEntryPage() {
       setFieldSuggestions((current) => ({ ...current, [answer.fieldId]: res.suggestions }));
     } catch {
       // optional UX call; do not block typing
+    }
+  };
+
+  const saveReport = async () => {
+    if (!report) return;
+    setIsSaving(true);
+    setError('');
+    try {
+      const saved = await reportingApi.saveInstance(report.id, report);
+      setReport(saved);
+      setIsDirty(false);
+      setMessage(`Report ${saved.id} saved.`);
+      localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, saved.id);
+    } catch (error) {
+      setError(getErrorMessage(error, 'Unable to save report.'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const renderAnswerInput = (sectionIndex: number, answerIndex: number, answer: InspectionReportAnswer) => {
+    const optionValues = answer.values ?? [];
+    const currentValue = answer.value || '';
+    const currentMultiValues = answer.values ?? [];
+
+    switch (answer.dataType.toLowerCase()) {
+      case 'textarea':
+        return <textarea value={currentValue} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value })} />;
+      case 'boolean':
+        return (
+          <select value={currentValue} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value })}>
+            <option value="">Select...</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        );
+      case 'date':
+        return <input type="date" value={currentValue} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value })} />;
+      case 'number':
+        return <input type="number" value={currentValue} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value })} />;
+      case 'select':
+        return (
+          <select value={currentValue} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value })}>
+            <option value="">Select...</option>
+            {optionValues.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+        );
+      case 'multiselect':
+        return (
+          <div className="checkbox-group">
+            {optionValues.map((option) => {
+              const checked = currentMultiValues.includes(option);
+              return (
+                <label key={option} className="toggle-row">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(e) => {
+                      const nextValues = e.target.checked
+                        ? [...currentMultiValues, option]
+                        : currentMultiValues.filter((value) => value !== option);
+                      void updateAnswer(sectionIndex, answerIndex, { values: nextValues, value: nextValues.join(', ') });
+                    }}
+                  />
+                  <span>{option}</span>
+                </label>
+              );
+            })}
+          </div>
+        );
+      case 'text':
+      default:
+        return <input type="text" value={currentValue} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value })} />;
     }
   };
 
@@ -97,6 +216,12 @@ export function Api570PipingExternalEntryPage() {
           <span>iE Assist</span>
         </label>
         <p className="muted">Live inline suggestions while typing when enabled.</p>
+        <div className="row">
+          <button type="button" onClick={() => void saveReport()} disabled={isSaving || !isDirty}>
+            {isSaving ? 'Saving...' : 'Save Report'}
+          </button>
+          <span className="muted">Status: {isDirty ? 'Dirty (unsaved changes)' : 'Saved'}</span>
+        </div>
       </div>
 
       {error && <p className="error">{error}</p>}
@@ -110,10 +235,7 @@ export function Api570PipingExternalEntryPage() {
               {section.answers.map((answer, answerIndex) => (
                 <div className="answer-row" key={`${section.sectionId}-${answer.fieldId}-${answerIndex}`}>
                   <label><strong>{answer.label}</strong> <span className="data-type">({answer.dataType})</span></label>
-                  <textarea
-                    value={answer.value || ''}
-                    onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value })}
-                  />
+                  {renderAnswerInput(sectionIndex, answerIndex, answer)}
                   <div className="row">
                     <button
                       type="button"
@@ -148,7 +270,20 @@ export function Api570PipingExternalEntryPage() {
           )}
           <hr />
           <button type="button" onClick={onGeneratePreview}>Generate Preview</button>
-          {narrative && <pre className="narrative-preview">{narrative.summary}</pre>}
+          {narrative && (
+            <div className="narrative-preview">
+              {NARRATIVE_SECTION_ORDER.map((sectionTitle) => {
+                const section = findNarrativeSection(narrative, sectionTitle);
+                const text = sectionTitle === 'Summary' ? narrative.summary : section?.narrative || '(No content generated yet)';
+                return (
+                  <div key={sectionTitle}>
+                    <h4>{sectionTitle}</h4>
+                    <pre>{text}</pre>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </aside>
       </div>
     </div>

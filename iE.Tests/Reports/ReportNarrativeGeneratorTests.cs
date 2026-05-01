@@ -1,3 +1,4 @@
+using iE.Core.Reports;
 using iE.Core.Reports.Domain;
 using iE.Core.Reports.Services;
 

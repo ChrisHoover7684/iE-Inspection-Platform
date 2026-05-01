@@ -72,6 +72,41 @@ public class InMemoryReportTemplateRegistryTests
         }
     }
 
+    [Theory]
+    [InlineData("api-570-piping-external")]
+    [InlineData("api-570-piping-cui-external")]
+    public void Api570PipingTemplates_ContainChecklistCriteriaFields(string templateId)
+    {
+        var template = registry.GetTemplateById(templateId);
+
+        Assert.NotNull(template);
+
+        var fieldIds = template!.Sections
+            .SelectMany(section => section.Fields)
+            .Select(field => field.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var requiredChecklistFieldIds = new[]
+        {
+            "external-condition",
+            "active-leakage",
+            "supports",
+            "brackets-attachments",
+            "gaskets",
+            "bolting",
+            "flanges",
+            "coating",
+            "insulation-jacketing",
+            "mechanical-damage",
+            "external-corrosion"
+        };
+
+        foreach (var fieldId in requiredChecklistFieldIds)
+        {
+            Assert.Contains(fieldId, fieldIds);
+        }
+    }
+
     [Fact]
     public void GetTemplateById_IsCaseInsensitive()
     {

@@ -74,6 +74,10 @@ internal static class ExternalInspectionTemplates
             ? "CUI-focused external inspection summary"
             : "External inspection summary";
 
+        var insulationConditionHelpText = cuiFocused
+            ? "Capture jacketing breaches, seal failures, wet insulation indicators, and degraded insulation condition."
+            : "Capture insulation/jacketing condition and any missing, damaged, or degraded areas.";
+
         return
         [
             CommonTemplateSections.ReportHeader(1, "Line Number(s)"),
@@ -84,18 +88,38 @@ internal static class ExternalInspectionTemplates
                 CommonTemplateSections.Field("piping-class", "Piping Class", "text"),
                 CommonTemplateSections.Field("nps", "NPS", "text"),
                 CommonTemplateSections.Field("insulated", "Insulated Status", "select", true, null, "Insulated", "Uninsulated", "Partially Insulated"),
-                CommonTemplateSections.Field("external-corrosion", "External Corrosion", "textarea"),
-                CommonTemplateSections.Field("supports-hangers-condition", "Supports/Hangers Condition", "textarea"),
+                CommonTemplateSections.Field("external-condition", "External Condition", "select", true, null, "Acceptable", "Monitor", "Finding"),
+                CommonTemplateSections.Field("external-condition-notes", "External Condition Notes", "textarea", false, "Describe general condition concerns and notable areas inspected."),
+                CommonTemplateSections.Field("active-leakage", "Active Leakage Observed", "boolean", true, "Capture active leaks, weeps, drips, or process staining at components and joints."),
+                CommonTemplateSections.Field("active-leakage-notes", "Active Leakage Notes", "textarea"),
+                CommonTemplateSections.Field("supports", "Supports Condition", "select", true, null, "Acceptable", "Monitor", "Finding"),
+                CommonTemplateSections.Field("supports-notes", "Supports Notes", "textarea", false, "Include supports, hangers, shoes, guides, and anchors."),
+                CommonTemplateSections.Field("brackets-attachments", "Brackets / Attachments Condition", "select", true, null, "Acceptable", "Monitor", "Finding"),
+                CommonTemplateSections.Field("brackets-attachments-notes", "Brackets / Attachments Notes", "textarea"),
+                CommonTemplateSections.Field("gaskets", "Gaskets Condition", "select", true, null, "Acceptable", "Monitor", "Finding"),
+                CommonTemplateSections.Field("gaskets-notes", "Gaskets Notes", "textarea", false, "Document gasket extrusion, seepage, or visible degradation."),
+                CommonTemplateSections.Field("bolting", "Bolting Condition", "select", true, null, "Acceptable", "Monitor", "Finding"),
+                CommonTemplateSections.Field("bolting-notes", "Bolting Notes", "textarea", false, "Document loose, missing, damaged, or corroded bolting."),
+                CommonTemplateSections.Field("flanges", "Flanges Condition", "select", true, null, "Acceptable", "Monitor", "Finding"),
+                CommonTemplateSections.Field("flanges-notes", "Flanges Notes", "textarea"),
+                CommonTemplateSections.Field("coating", "Coating Condition", "select", true, null, "Acceptable", "Monitor", "Finding"),
+                CommonTemplateSections.Field("coating-notes", "Coating Notes", "textarea", false, "Record coating breakdown, blistering, peeling, or underfilm corrosion evidence."),
+                CommonTemplateSections.Field("insulation-jacketing", "Insulation / Jacketing Condition", "select", true, null, "Acceptable", "Monitor", "Finding", "Not Applicable"),
+                CommonTemplateSections.Field("insulation-jacketing-notes", "Insulation / Jacketing Notes", "textarea", false, insulationConditionHelpText),
+                CommonTemplateSections.Field("mechanical-damage", "Mechanical Damage Observed", "boolean", true, "Capture dents, gouges, distortion, vibration damage, or impact marks."),
+                CommonTemplateSections.Field("mechanical-damage-notes", "Mechanical Damage Notes", "textarea"),
+                CommonTemplateSections.Field("external-corrosion", "External Corrosion Condition", "select", true, null, "Acceptable", "Monitor", "Finding"),
+                CommonTemplateSections.Field("external-corrosion-notes", "External Corrosion Notes", "textarea", false, "Describe corrosion locations, extent, and affected components."),
                 CommonTemplateSections.Field("deadlegs-injection-points", "Deadlegs/Injection Points Observed Externally", "textarea"),
-                CommonTemplateSections.Field("flange-bolting-condition", "Flange / Bolting Condition", "textarea", false, "Document evidence of leakage, corrosion, loose or missing bolting, and gasket extrusion."),
                 CommonTemplateSections.Field("small-bore-branch-condition", "Small Bore / Branch Connection Condition", "textarea", false, "Capture vibration cracking, corrosion at weldolets, and support adequacy."),
                 CommonTemplateSections.Field("temporary-repairs-observed", "Temporary Repairs Observed", "textarea", false, "Identify clamps, wraps, or other temporary repairs and remaining serviceability concerns."),
                 CommonTemplateSections.Field("approximate-feet-findings", "Approximate Feet of Findings", "number"),
                 CommonTemplateSections.Field("external-summary", "External Summary", "textarea", true, externalSummary)),
             CommonTemplateSections.CreateSection("coating-insulation-condition", "Coating / Insulation Condition", 5, false,
-                CommonTemplateSections.Field("coating-condition", "Coating Condition", "textarea"),
-                CommonTemplateSections.Field("insulation-condition", "Insulation Condition", "textarea"),
+                CommonTemplateSections.Field("coating-condition", "Coating Detail", "textarea"),
+                CommonTemplateSections.Field("insulation-condition", "Insulation Detail", "textarea"),
                 CommonTemplateSections.Field("insulation-jacketing-seal-condition", "Insulation Jacketing / Seal Condition", "textarea", false, "Record broken jacketing, open seams, wet insulation indicators, and damaged weather seals."),
+                CommonTemplateSections.Field("wet-insulation-indicators", "Wet Insulation Indicators", "boolean", false, "Mark yes when moisture intrusion indicators are present (staining, corrosion products, dampness, ice)."),
                 CommonTemplateSections.Field("cui-concern", "CUI Concern", "select", false, null, "Low", "Moderate", "High")),
             CommonTemplateSections.CreateSection("thickness-cml-review", "Thickness / CML Review", 6, false,
                 CommonTemplateSections.Field("thickness-review-summary", "Thickness Review Summary", "textarea")),

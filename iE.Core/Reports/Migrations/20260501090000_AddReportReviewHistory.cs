@@ -1,10 +1,14 @@
 ﻿using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using iE.Core.Reports;
 
 #nullable disable
 
 namespace iE.Core.Reports.Migrations
 {
+    [DbContext(typeof(InspectionReportsDbContext))]
+    [Migration("20260501090000_AddReportReviewHistory")]
     /// <inheritdoc />
     public partial class AddReportReviewHistory : Migration
     {

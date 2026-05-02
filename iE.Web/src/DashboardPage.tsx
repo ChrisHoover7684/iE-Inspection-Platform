@@ -58,8 +58,8 @@ export function DashboardPage() {
   const [error, setError] = useState('');
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
+  const [statusFilters, setStatusFilters] = useState<string[]>([]);
+  const [typeFilters, setTypeFilters] = useState<string[]>([]);
   const [sortColumn, setSortColumn] = useState<SortColumn>('updatedAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [columnFilters, setColumnFilters] = useState({
@@ -144,6 +144,25 @@ export function DashboardPage() {
 
   const typeOptions = useMemo(() => ['all', ...Array.from(new Set(reports.map(getReportType)))], [reports]);
 
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setStatusFilters([]);
+    setTypeFilters([]);
+    setColumnFilters({
+      reportNumber: '',
+      reportType: '',
+      client: '',
+      facility: '',
+      unit: '',
+      systemId: '',
+      circuitId: '',
+      service: '',
+      status: '',
+      updatedDate: ''
+    });
+    setActiveSlicer('all');
+  };
+
   const filteredReports = useMemo(() => {
     const loweredSearch = searchTerm.toLowerCase().trim();
     const matchesColumnFilter = (value: string | number | undefined | null, filter: string) => {
@@ -152,7 +171,9 @@ export function DashboardPage() {
     };
 
     return reports
-      .filter((report) => (statusFilter === 'all' ? true : (report.status || 'Unknown') === statusFilter))
+      .filter((report) => (
+        statusFilters.length === 0 ? true : statusFilters.includes(report.status || 'Unknown')
+      ))
       .filter((report) => {
         const normalized = normalizeStatus(report.status);
         if (activeSlicer === 'all') return true;
@@ -161,7 +182,9 @@ export function DashboardPage() {
         if (activeSlicer === 'completed') return ['approved', 'complete'].includes(normalized);
         return ['rejectedwithcomments', 'returnedforrevision', 'rejected'].includes(normalized);
       })
-      .filter((report) => (typeFilter === 'all' ? true : getReportType(report) === typeFilter))
+      .filter((report) => (
+        typeFilters.length === 0 ? true : typeFilters.includes(getReportType(report))
+      ))
       .filter((report) => {
         if (!loweredSearch) return true;
         const rowText = [
@@ -227,7 +250,7 @@ export function DashboardPage() {
           : String(left).localeCompare(String(right));
         return sortDirection === 'asc' ? comparison : -comparison;
       });
-  }, [reports, searchTerm, statusFilter, typeFilter, activeSlicer, columnFilters, sortColumn, sortDirection]);
+  }, [reports, searchTerm, statusFilters, typeFilters, activeSlicer, columnFilters, sortColumn, sortDirection]);
 
   const renderResizeHandle = (column: ReportColumnKey) => (
     <span
@@ -331,12 +354,29 @@ export function DashboardPage() {
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
               />
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              <select
+                multiple
+                aria-label="Status filter"
+                value={statusFilters}
+                onChange={(event) => {
+                  const selected = Array.from(event.target.selectedOptions).map((option) => option.value).filter((value) => value !== 'all');
+                  setStatusFilters(selected);
+                }}
+              >
                 {statusOptions.map((status) => <option key={status} value={status}>{status === 'all' ? 'All Statuses' : status}</option>)}
               </select>
-              <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+              <select
+                multiple
+                aria-label="Report type filter"
+                value={typeFilters}
+                onChange={(event) => {
+                  const selected = Array.from(event.target.selectedOptions).map((option) => option.value).filter((value) => value !== 'all');
+                  setTypeFilters(selected);
+                }}
+              >
                 {typeOptions.map((type) => <option key={type} value={type}>{type === 'all' ? 'All Report Types' : type}</option>)}
               </select>
+              <button type="button" className="clear-filters-btn" onClick={clearAllFilters}>Clear All Filters</button>
             </div>
             <div className="bulk-action-toolbar">
               <span>{selectedReportIds.length} selected</span>

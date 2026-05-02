@@ -331,9 +331,17 @@ label {
 
 .reports-filters {
     display: grid;
-    grid-template-columns: minmax(220px, 1fr) 180px 180px;
+    grid-template-columns: minmax(220px, 1fr) 180px 180px auto;
     gap: 10px;
     margin-bottom: 10px;
+}
+
+.reports-filters select[multiple] {
+    min-height: 84px;
+}
+
+.clear-filters-btn {
+    white-space: nowrap;
 }
 
 .reports-table-wrap {

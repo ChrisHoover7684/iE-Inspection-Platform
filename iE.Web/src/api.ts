@@ -29,25 +29,28 @@ function buildApiUrl(path: string): string {
   return `${base}${path}`;
 }
 
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+async function apiFetch<T>(path: string, init?: RequestInit, operation?: string): Promise<T> {
   const response = await fetch(buildApiUrl(path), {
     ...init,
     headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) }
   });
-  if (!response.ok) throw new ApiError(`Request failed (${response.status})`, response.status);
+  if (!response.ok) {
+    const op = operation ?? `${init?.method ?? 'GET'} ${path}`;
+    throw new ApiError(`${op} failed with status ${response.status}`, response.status);
+  }
   return (await response.json()) as T;
 }
 
 export const reportingApi = {
-  getTemplates: () => apiFetch<ReportTemplate[]>('/api/reports/templates'),
-  getTemplateById: (templateId: string) => apiFetch<ReportTemplate>(`/api/reports/templates/${templateId}`),
+  getTemplates: () => apiFetch<ReportTemplate[]>('/api/reports/templates', undefined, 'GET /api/reports/templates'),
+  getTemplateById: (templateId: string) => apiFetch<ReportTemplate>(`/api/reports/templates/${templateId}`, undefined, `GET /api/reports/templates/${templateId}`),
   getInstances: () => apiFetch<InspectionReport[]>('/api/reports/instances'),
   getInstanceById: (id: string) => apiFetch<InspectionReport>(`/api/reports/instances/${id}`),
   createInstanceFromTemplate: (templateId: string) =>
     apiFetch<InspectionReport>(`/api/reports/templates/${templateId}/instances`, {
       method: 'POST',
       body: JSON.stringify({ clientOrganizationId: 'client-demo-refining', facilityId: 'facility-demo-gulf-coast' })
-    }),
+    }, `POST /api/reports/templates/${templateId}/instances`),
   saveInstance: (id: string, report: InspectionReport) =>
     apiFetch<InspectionReport>(`/api/reports/instances/${id}`, { method: 'PUT', body: JSON.stringify(report) }),
   syncFindings: (id: string) =>

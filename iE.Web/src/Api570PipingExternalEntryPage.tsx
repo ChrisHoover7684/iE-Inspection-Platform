@@ -142,7 +142,7 @@ export function Api570PipingExternalEntryPage() {
     </div>
 
     <div className="workflow-layout report-content-layout">
-      <div>
+      <div className="report-main-column">
         <div className="card accordion-card" key="report-header">
           <button className="accordion-toggle" onClick={() => setCollapsedSections((s) => ({ ...s, reportHeader: !s.reportHeader }))}>Report Header <span>{collapsedSections.reportHeader ? '+' : '−'}</span></button>
           {!collapsedSections.reportHeader && <div className="report-header-grid">

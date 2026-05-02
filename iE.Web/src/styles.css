@@ -13,6 +13,19 @@ body {
   padding: 16px;
 }
 
+.page.report-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 20px 24px;
+}
+
+@media (max-width: 900px) {
+  .page.report-page {
+    padding: 16px;
+  }
+}
+
 .card {
   background: white;
   border: 1px solid #ddd;
@@ -266,9 +279,9 @@ label {
 .header-chip span { font-size: 12px; color: #5a6780; }
 .header-chip.metric strong { color: #0d3b82; font-size: 20px; }
 
-.report-content-layout { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; gap: 16px; }
+.report-content-layout { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; gap: 20px; }
 .sticky-panel-group { position: sticky; top: 88px; max-height: calc(100vh - 96px); overflow: auto; display: grid; gap: 12px; }
-.right-sidebar { width: 300px; max-width: 100%; }
+.right-sidebar { width: 320px; max-width: 100%; }
 
 .accordion-toggle { width: 100%; display: flex; justify-content: space-between; background: transparent; border: none; font-weight: 700; padding: 6px 0; }
 .section-card { border-top: 1px solid #eef1f6; padding-top: 8px; margin-top: 8px; }
@@ -286,3 +299,6 @@ label {
 @media (max-width: 760px) {
   .inspection-row { grid-template-columns: 1fr; }
 }
+
+.report-main-column { min-width: 0; }
+

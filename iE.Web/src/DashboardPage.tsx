@@ -1,10 +1,21 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ApiError, reportingApi } from './api';
 import type { InspectionReport } from './types';
 
-const ACTIVE_REPORT_ID_STORAGE_KEY = 'ie_api570_active_report_id';
-const IE_ASSIST_STORAGE_KEY = 'ie_dashboard_ie_assist_enabled';
+type SortColumn =
+  | 'reportNumber'
+  | 'templateId'
+  | 'facilityId'
+  | 'equipmentTag'
+  | 'circuitId'
+  | 'service'
+  | 'status'
+  | 'findings'
+  | 'recommendations'
+  | 'updatedAt';
+
+type SortDirection = 'asc' | 'desc';
 
 const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof ApiError ? error.message : error instanceof Error ? error.message : fallback;
@@ -14,20 +25,26 @@ const formatDateTime = (value?: string | null) => {
   return new Date(value).toLocaleString();
 };
 
-const normalizeStatus = (status: string) => status.replace(/[^a-z]/gi, '').toLowerCase();
+const normalizeStatus = (status?: string | null) => (status || '').replace(/[^a-z]/gi, '').toLowerCase();
+
+const getReportType = (report: InspectionReport) => {
+  if (report.templateId?.toLowerCase().includes('570')) return 'API 570';
+  if (report.templateId?.toLowerCase().includes('510')) return 'API 510';
+  if (report.templateId?.toLowerCase().includes('sti')) return 'STI-SP001';
+  return report.templateId || 'General';
+};
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  const toolsSectionRef = useRef<HTMLElement | null>(null);
   const [reports, setReports] = useState<InspectionReport[]>([]);
-  const [ieAssistEnabled, setIeAssistEnabled] = useState(() => localStorage.getItem(IE_ASSIST_STORAGE_KEY) !== 'false');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    localStorage.setItem(IE_ASSIST_STORAGE_KEY, String(ieAssistEnabled));
-  }, [ieAssistEnabled]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [sortColumn, setSortColumn] = useState<SortColumn>('updatedAt');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   useEffect(() => {
     (async () => {
@@ -45,151 +62,204 @@ export function DashboardPage() {
   }, []);
 
   const statusCounts = useMemo(() => {
-    const grouped = reports.reduce(
-      (counts, report) => {
-        const status = normalizeStatus(report.status || '');
-        if (status === 'draft') counts.drafts += 1;
-        if (status === 'returned' || status === 'returnedforrevision') counts.returned += 1;
-        if (status === 'inreview' || status === 'submittedforreview') counts.inReview += 1;
-        if (status === 'approved' || status === 'complete') counts.approved += 1;
-        return counts;
-      },
-      { drafts: 0, returned: 0, inReview: 0, approved: 0 }
-    );
+    const totalReports = reports.length;
+    const draftReports = reports.filter((r) => normalizeStatus(r.status) === 'draft').length;
+    const inReview = reports.filter((r) => ['inreview', 'submittedforreview'].includes(normalizeStatus(r.status))).length;
+    const completed = reports.filter((r) => ['approved', 'complete'].includes(normalizeStatus(r.status))).length;
+    const openFindings = reports.reduce((sum, r) => sum + (r.findings?.length || 0), 0);
+    const recommendations = reports.reduce((sum, r) => sum + (r.findings?.filter((finding) => Boolean(finding.repairRecommendation)).length || 0), 0);
 
-    return grouped;
+    return { totalReports, draftReports, inReview, completed, openFindings, recommendations };
   }, [reports]);
 
-  const goToApi570Entry = (reportId?: string) => {
-    navigate('/reports/api-570-piping-external', {
-      state: { reportId, ieAssistEnabled }
-    });
-  };
+  const statusOptions = useMemo(
+    () => ['all', ...Array.from(new Set(reports.map((r) => r.status || 'Unknown')))],
+    [reports]
+  );
 
-  const continueLastReport = () => {
-    const activeId = localStorage.getItem(ACTIVE_REPORT_ID_STORAGE_KEY);
-    if (activeId) {
-      goToApi570Entry(activeId);
+  const typeOptions = useMemo(() => ['all', ...Array.from(new Set(reports.map(getReportType)))], [reports]);
+
+  const filteredReports = useMemo(() => {
+    const loweredSearch = searchTerm.toLowerCase().trim();
+    return reports
+      .filter((report) => (statusFilter === 'all' ? true : (report.status || 'Unknown') === statusFilter))
+      .filter((report) => (typeFilter === 'all' ? true : getReportType(report) === typeFilter))
+      .filter((report) => {
+        if (!loweredSearch) return true;
+        const rowText = [
+          report.reportNumber,
+          getReportType(report),
+          report.clientOrganizationId,
+          report.facilityId,
+          report.unit || report.processUnitId,
+          report.systemId,
+          report.circuitId,
+          report.service,
+          report.status,
+          report.equipmentTag
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return rowText.includes(loweredSearch);
+      })
+      .sort((a, b) => {
+        const valueFor = (report: InspectionReport) => {
+          switch (sortColumn) {
+            case 'reportNumber':
+              return report.reportNumber || report.id;
+            case 'templateId':
+              return getReportType(report);
+            case 'facilityId':
+              return report.facilityId || '';
+            case 'equipmentTag':
+              return report.equipmentTag || '';
+            case 'circuitId':
+              return report.circuitId || '';
+            case 'service':
+              return report.service || '';
+            case 'status':
+              return report.status || '';
+            case 'findings':
+              return report.findings?.length || 0;
+            case 'recommendations':
+              return report.findings?.filter((finding) => Boolean(finding.repairRecommendation)).length || 0;
+            case 'updatedAt':
+            default:
+              return report.updatedAt || report.createdAt || '';
+          }
+        };
+
+        const left = valueFor(a);
+        const right = valueFor(b);
+        const comparison = typeof left === 'number' && typeof right === 'number'
+          ? left - right
+          : String(left).localeCompare(String(right));
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+  }, [reports, searchTerm, statusFilter, typeFilter, sortColumn, sortDirection]);
+
+  const onSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
       return;
     }
-
-    const latest = [...reports].sort((a, b) => (b.updatedAt || b.createdAt).localeCompare(a.updatedAt || a.createdAt))[0];
-    if (latest) {
-      localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, latest.id);
-      goToApi570Entry(latest.id);
-      return;
-    }
-
-    goToApi570Entry();
+    setSortColumn(column);
+    setSortDirection('asc');
   };
 
-  const verifyDrafts = async () => {
-    const drafts = reports.filter((report) => normalizeStatus(report.status || '') === 'draft');
-    if (drafts.length === 0) {
-      setMessage('No draft reports available to verify.');
-      return;
-    }
-
-    try {
-      await reportingApi.getAlerts(drafts[0]);
-      setMessage('Bulk draft verification is coming soon. Open a draft report to verify alerts now.');
-    } catch {
-      setMessage('Verify Drafts is coming soon.');
-    }
-  };
-
-  const openTools = () => {
-    toolsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    toolsSectionRef.current?.focus({ preventScroll: true });
+  const openReport = (report: InspectionReport) => {
+    navigate('/reports/api-570-piping-external', { state: { reportId: report.id } });
   };
 
   return (
-    <div className="page dashboard-page">
-      <div className="dashboard-layout">
-        <main>
-          <section className="card">
-            <p className="muted">Site / Facility: Gulf Coast Refinery (placeholder)</p>
-            <h1>Good afternoon, Chris</h1>
-            <p>What are you working on today?</p>
+    <div className="dashboard-shell">
+      <aside className="dashboard-sidebar">
+        <h2>iE Inspection Platform</h2>
+        <nav>
+          {['Dashboard', 'Reports', 'API 570', 'API 510', 'STI-SP001', 'Settings'].map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={`sidebar-link ${item === 'Dashboard' ? 'active' : ''}`}
+            >
+              {item}
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      <section className="dashboard-content">
+        <header className="dashboard-topbar card">
+          <h1>Dashboard</h1>
+          <input
+            type="search"
+            placeholder="Search reports, client, facility..."
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+          />
+          <button type="button" className="new-report-btn" onClick={() => navigate('/reports/api-570-piping-external')}>
+            New Report
+          </button>
+          <div className="profile-pill">Inspector User</div>
+        </header>
+
+        <main className="dashboard-main">
+          <section className="dashboard-card-grid">
+            <article className="card"><h3>Total Reports</h3><p>{statusCounts.totalReports}</p></article>
+            <article className="card"><h3>Draft Reports</h3><p>{statusCounts.draftReports}</p></article>
+            <article className="card"><h3>In Review</h3><p>{statusCounts.inReview}</p></article>
+            <article className="card"><h3>Completed</h3><p>{statusCounts.completed}</p></article>
+            <article className="card"><h3>Open Findings</h3><p>{statusCounts.openFindings}</p></article>
+            <article className="card"><h3>Recommendations</h3><p>{statusCounts.recommendations}</p></article>
           </section>
 
-          <section className="quick-actions-grid">
-            <Link className="card action-card" to="/reports/api-570-piping-external" state={{ ieAssistEnabled }}>Start New Report</Link>
-            <button className="card action-card" type="button" onClick={continueLastReport}>Continue Last Report</button>
-            <button className="card action-card" type="button" onClick={() => void verifyDrafts()}>Verify Drafts</button>
-            <button className="card action-card" type="button" onClick={openTools}>Open Tools</button>
-          </section>
+          <section className="card reports-panel">
+            <div className="reports-filters">
+              <input
+                type="search"
+                placeholder="Filter table..."
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                {statusOptions.map((status) => <option key={status} value={status}>{status === 'all' ? 'All Statuses' : status}</option>)}
+              </select>
+              <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+                {typeOptions.map((type) => <option key={type} value={type}>{type === 'all' ? 'All Report Types' : type}</option>)}
+              </select>
+            </div>
 
-          {message && <p className="muted">{message}</p>}
-
-          <section className="status-grid">
-            <div className="card"><h3>Drafts</h3><p className="status-count">{statusCounts.drafts}</p></div>
-            <div className="card"><h3>Returned</h3><p className="status-count">{statusCounts.returned}</p></div>
-            <div className="card"><h3>In Review</h3><p className="status-count">{statusCounts.inReview}</p></div>
-            <div className="card"><h3>Approved</h3><p className="status-count">{statusCounts.approved}</p></div>
-          </section>
-
-          <section className="card">
-            <h2>My Reports</h2>
             {error && <p className="error">{error}</p>}
             {isLoading ? <p>Loading reports...</p> : (
-              <table>
-                <thead>
-                  <tr><th>Report #</th><th>Equipment Tag / Line</th><th>Template</th><th>Status</th><th>Last Updated</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                  {reports.map((report) => (
-                    <tr key={report.id}>
-                      <td>{report.reportNumber || report.id}</td>
-                      <td>{report.equipmentTag || report.circuitId || '—'}</td>
-                      <td>{report.templateId}</td>
-                      <td>{report.status}</td>
-                      <td>{formatDateTime(report.updatedAt || report.createdAt)}</td>
-                      <td>
-                        <div className="row">
-                          <button type="button" onClick={() => goToApi570Entry(report.id)}>Open</button>
-                          <Link to={`/reports-test/${report.id}`}>Preview</Link>
-                          <button type="button" onClick={() => void reportingApi.getAlerts(report).then(() => setMessage(`Verified ${report.reportNumber || report.id}.`)).catch(() => setMessage('Verification unavailable.'))}>Verify</button>
-                        </div>
-                      </td>
+              <div className="reports-table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th><button type="button" onClick={() => onSort('reportNumber')}>Report Number</button></th>
+                      <th><button type="button" onClick={() => onSort('templateId')}>Report Type</button></th>
+                      <th>Client</th>
+                      <th><button type="button" onClick={() => onSort('facilityId')}>Facility</button></th>
+                      <th>Unit</th>
+                      <th>System ID</th>
+                      <th><button type="button" onClick={() => onSort('circuitId')}>Circuit ID</button></th>
+                      <th><button type="button" onClick={() => onSort('service')}>Service</button></th>
+                      <th><button type="button" onClick={() => onSort('status')}>Status</button></th>
+                      <th><button type="button" onClick={() => onSort('findings')}>Findings</button></th>
+                      <th><button type="button" onClick={() => onSort('recommendations')}>Recommendations</button></th>
+                      <th><button type="button" onClick={() => onSort('updatedAt')}>Updated Date</button></th>
+                      <th>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filteredReports.map((report) => (
+                      <tr key={report.id} onClick={() => openReport(report)} role="button" tabIndex={0}>
+                        <td>{report.reportNumber || report.id}</td>
+                        <td>{getReportType(report)}</td>
+                        <td>{report.clientOrganizationId || '—'}</td>
+                        <td>{report.facilityId || '—'}</td>
+                        <td>{report.unit || report.processUnitId || '—'}</td>
+                        <td>{report.systemId || '—'}</td>
+                        <td>{report.circuitId || '—'}</td>
+                        <td>{report.service || '—'}</td>
+                        <td>{report.status || 'Unknown'}</td>
+                        <td>{report.findings?.length || 0}</td>
+                        <td>{report.findings?.filter((finding) => Boolean(finding.repairRecommendation)).length || 0}</td>
+                        <td>{formatDateTime(report.updatedAt || report.createdAt)}</td>
+                        <td>
+                          <button type="button" onClick={(event) => { event.stopPropagation(); openReport(report); }}>
+                            Open/Edit
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </section>
-
-          <section className="dashboard-two-col">
-            <div className="card">
-              <h2>Start New Report</h2>
-              <div className="feature-grid">
-                <Link to="/reports/api-570-piping-external" state={{ ieAssistEnabled }} className="card feature-card">API 570 Piping External</Link>
-                <span className="card feature-card feature-card-disabled">API 510 Vessel External <small>Coming Soon</small></span>
-                <span className="card feature-card feature-card-disabled">STI SP001 Tank External <small>Coming Soon</small></span>
-                <span className="card feature-card feature-card-disabled">Repair Recommendation <small>Coming Soon</small></span>
-              </div>
-            </div>
-            <section className="card" ref={toolsSectionRef} tabIndex={-1} aria-label="Tools section">
-              <h2>Tools</h2>
-              <div className="feature-grid">
-                {['T-Min Calculator', 'Material Stress Lookup', 'API 571 Damage Mechanisms', 'HTHA Checker', 'PCC-1 / Flange Tools', 'STI SP001 Helper'].map((tool) => (
-                  <button key={tool} className="card feature-card" type="button">{tool}</button>
-                ))}
-              </div>
-            </section>
-          </section>
         </main>
-
-        <aside className="card assist-panel">
-          <h2>iE Assist</h2>
-          <label className="toggle-row">
-            <input type="checkbox" checked={ieAssistEnabled} onChange={(e) => setIeAssistEnabled(e.target.checked)} />
-            <span>{ieAssistEnabled ? 'ON' : 'OFF'}</span>
-          </label>
-          <p><strong>Trust but Verify</strong></p>
-          <button type="button" onClick={() => void verifyDrafts()}>Verify Drafts</button>
-        </aside>
-      </div>
+      </section>
     </div>
   );
 }

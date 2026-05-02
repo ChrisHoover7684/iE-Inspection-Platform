@@ -16,7 +16,7 @@ type SortColumn =
   | 'updatedAt';
 
 type SortDirection = 'asc' | 'desc';
-type DashboardSlicer = 'all' | 'draft' | 'inreview' | 'completed';
+type DashboardSlicer = 'all' | 'draft' | 'inreview' | 'completed' | 'rejected';
 type ReportColumnKey =
   | 'select'
   | 'reportNumber'
@@ -28,8 +28,6 @@ type ReportColumnKey =
   | 'circuitId'
   | 'service'
   | 'status'
-  | 'findings'
-  | 'recommendations'
   | 'updatedDate'
   | 'actions';
 
@@ -74,15 +72,13 @@ export function DashboardPage() {
     circuitId: '',
     service: '',
     status: '',
-    findings: '',
-    recommendations: '',
     updatedDate: ''
   });
   const [selectedReportIds, setSelectedReportIds] = useState<string[]>([]);
   const [activeSlicer, setActiveSlicer] = useState<DashboardSlicer>('all');
   const [columnWidths, setColumnWidths] = useState<Record<ReportColumnKey, number>>({
     select: 72, reportNumber: 260, reportType: 130, client: 150, facility: 150, unit: 140,
-    systemId: 120, circuitId: 120, service: 120, status: 120, findings: 120, recommendations: 150,
+    systemId: 120, circuitId: 120, service: 120, status: 120,
     updatedDate: 180, actions: 96
   });
 
@@ -92,7 +88,7 @@ export function DashboardPage() {
     let initialWidth = 0;
     const onPointerMove = (event: PointerEvent) => {
       if (!activeColumn) return;
-      const width = Math.max(80, initialWidth + event.clientX - startX);
+      const width = initialWidth + event.clientX - startX;
       setColumnWidths((prev) => ({ ...prev, [activeColumn as ReportColumnKey]: width }));
     };
     const onPointerUp = () => { activeColumn = null; };
@@ -133,10 +129,9 @@ export function DashboardPage() {
     const draftReports = reports.filter((r) => normalizeStatus(r.status) === 'draft').length;
     const inReview = reports.filter((r) => ['inreview', 'submittedforreview'].includes(normalizeStatus(r.status))).length;
     const completed = reports.filter((r) => ['approved', 'complete'].includes(normalizeStatus(r.status))).length;
-    const openFindings = reports.reduce((sum, r) => sum + (r.findings?.length || 0), 0);
-    const recommendations = reports.reduce((sum, r) => sum + (r.findings?.filter((finding) => Boolean(finding.repairRecommendation)).length || 0), 0);
+    const rejected = reports.filter((r) => ['rejectedwithcomments', 'returnedforrevision', 'rejected'].includes(normalizeStatus(r.status))).length;
 
-    return { totalReports, draftReports, inReview, completed, openFindings, recommendations };
+    return { totalReports, draftReports, inReview, completed, rejected };
   }, [reports]);
 
   const statusOptions = useMemo(
@@ -160,7 +155,8 @@ export function DashboardPage() {
         if (activeSlicer === 'all') return true;
         if (activeSlicer === 'draft') return normalized === 'draft';
         if (activeSlicer === 'inreview') return ['inreview', 'submittedforreview'].includes(normalized);
-        return ['approved', 'complete'].includes(normalized);
+        if (activeSlicer === 'completed') return ['approved', 'complete'].includes(normalized);
+        return ['rejectedwithcomments', 'returnedforrevision', 'rejected'].includes(normalized);
       })
       .filter((report) => (typeFilter === 'all' ? true : getReportType(report) === typeFilter))
       .filter((report) => {
@@ -192,8 +188,6 @@ export function DashboardPage() {
         && matchesColumnFilter(report.circuitId || '—', columnFilters.circuitId)
         && matchesColumnFilter(report.service || '—', columnFilters.service)
         && matchesColumnFilter(report.status || 'Unknown', columnFilters.status)
-        && matchesColumnFilter(report.findings?.length || 0, columnFilters.findings)
-        && matchesColumnFilter(report.findings?.filter((finding) => Boolean(finding.repairRecommendation)).length || 0, columnFilters.recommendations)
         && matchesColumnFilter(formatDateTime(report.updatedAt || report.createdAt), columnFilters.updatedDate)
       ))
       .sort((a, b) => {
@@ -319,8 +313,7 @@ export function DashboardPage() {
             <article className={`card slicer-card ${activeSlicer === 'draft' ? 'active' : ''}`} onClick={() => setActiveSlicer('draft')}><h3>Draft Reports</h3><p>{statusCounts.draftReports}</p></article>
             <article className={`card slicer-card ${activeSlicer === 'inreview' ? 'active' : ''}`} onClick={() => setActiveSlicer('inreview')}><h3>In Review</h3><p>{statusCounts.inReview}</p></article>
             <article className={`card slicer-card ${activeSlicer === 'completed' ? 'active' : ''}`} onClick={() => setActiveSlicer('completed')}><h3>Completed</h3><p>{statusCounts.completed}</p></article>
-            <article className="card"><h3>Open Findings</h3><p>{statusCounts.openFindings}</p></article>
-            <article className="card"><h3>Recommendations</h3><p>{statusCounts.recommendations}</p></article>
+            <article className={`card slicer-card ${activeSlicer === 'rejected' ? 'active' : ''}`} onClick={() => setActiveSlicer('rejected')}><h3>Rejected w/ Comments</h3><p>{statusCounts.rejected}</p></article>
           </section>
 
           <section className="card reports-panel">
@@ -364,8 +357,6 @@ export function DashboardPage() {
                       <th><input type="search" placeholder="Filter..." value={columnFilters.circuitId} onChange={(event) => setColumnFilters((prev) => ({ ...prev, circuitId: event.target.value }))} />{renderResizeHandle('circuitId')}</th>
                       <th><input type="search" placeholder="Filter..." value={columnFilters.service} onChange={(event) => setColumnFilters((prev) => ({ ...prev, service: event.target.value }))} />{renderResizeHandle('service')}</th>
                       <th><input type="search" placeholder="Filter..." value={columnFilters.status} onChange={(event) => setColumnFilters((prev) => ({ ...prev, status: event.target.value }))} />{renderResizeHandle('status')}</th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.findings} onChange={(event) => setColumnFilters((prev) => ({ ...prev, findings: event.target.value }))} />{renderResizeHandle('findings')}</th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.recommendations} onChange={(event) => setColumnFilters((prev) => ({ ...prev, recommendations: event.target.value }))} />{renderResizeHandle('recommendations')}</th>
                       <th><input type="search" placeholder="Filter..." value={columnFilters.updatedDate} onChange={(event) => setColumnFilters((prev) => ({ ...prev, updatedDate: event.target.value }))} />{renderResizeHandle('updatedDate')}</th>
                       <th>{renderResizeHandle('actions')}</th>
                     </tr>
@@ -387,8 +378,6 @@ export function DashboardPage() {
                       <th><button type="button" onClick={() => onSort('circuitId')}>Circuit ID</button></th>
                       <th><button type="button" onClick={() => onSort('service')}>Service</button></th>
                       <th><button type="button" onClick={() => onSort('status')}>Status</button></th>
-                      <th><button type="button" onClick={() => onSort('findings')}>Findings</button></th>
-                      <th><button type="button" onClick={() => onSort('recommendations')}>Recommendations</button></th>
                       <th><button type="button" onClick={() => onSort('updatedAt')}>Updated Date</button></th>
                       <th>Actions</th>
                     </tr>
@@ -414,8 +403,6 @@ export function DashboardPage() {
                         <td>{report.circuitId || '—'}</td>
                         <td>{report.service || '—'}</td>
                         <td>{report.status || 'Unknown'}</td>
-                        <td>{report.findings?.length || 0}</td>
-                        <td>{report.findings?.filter((finding) => Boolean(finding.repairRecommendation)).length || 0}</td>
                         <td>{formatDateTime(report.updatedAt || report.createdAt)}</td>
                         <td>
                           <div className="row-action-toolbar">

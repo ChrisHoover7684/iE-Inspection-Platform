@@ -16,6 +16,22 @@ type SortColumn =
   | 'updatedAt';
 
 type SortDirection = 'asc' | 'desc';
+type DashboardSlicer = 'all' | 'draft' | 'inreview' | 'completed';
+type ReportColumnKey =
+  | 'select'
+  | 'reportNumber'
+  | 'reportType'
+  | 'client'
+  | 'facility'
+  | 'unit'
+  | 'systemId'
+  | 'circuitId'
+  | 'service'
+  | 'status'
+  | 'findings'
+  | 'recommendations'
+  | 'updatedDate'
+  | 'actions';
 
 const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof ApiError ? error.message : error instanceof Error ? error.message : fallback;
@@ -63,6 +79,39 @@ export function DashboardPage() {
     updatedDate: ''
   });
   const [selectedReportIds, setSelectedReportIds] = useState<string[]>([]);
+  const [activeSlicer, setActiveSlicer] = useState<DashboardSlicer>('all');
+  const [columnWidths, setColumnWidths] = useState<Record<ReportColumnKey, number>>({
+    select: 72, reportNumber: 260, reportType: 130, client: 150, facility: 150, unit: 140,
+    systemId: 120, circuitId: 120, service: 120, status: 120, findings: 120, recommendations: 150,
+    updatedDate: 180, actions: 96
+  });
+
+  useEffect(() => {
+    let activeColumn: ReportColumnKey | null = null;
+    let startX = 0;
+    let initialWidth = 0;
+    const onPointerMove = (event: PointerEvent) => {
+      if (!activeColumn) return;
+      const width = Math.max(80, initialWidth + event.clientX - startX);
+      setColumnWidths((prev) => ({ ...prev, [activeColumn as ReportColumnKey]: width }));
+    };
+    const onPointerUp = () => { activeColumn = null; };
+    const onResizeStart = (event: Event) => {
+      const customEvent = event as CustomEvent<{ column: ReportColumnKey; startX: number }>;
+      activeColumn = customEvent.detail.column;
+      startX = customEvent.detail.startX;
+      initialWidth = columnWidths[activeColumn];
+    };
+
+    window.addEventListener('report-col-resize-start', onResizeStart);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    return () => {
+      window.removeEventListener('report-col-resize-start', onResizeStart);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  }, [columnWidths]);
 
   useEffect(() => {
     (async () => {
@@ -106,6 +155,13 @@ export function DashboardPage() {
 
     return reports
       .filter((report) => (statusFilter === 'all' ? true : (report.status || 'Unknown') === statusFilter))
+      .filter((report) => {
+        const normalized = normalizeStatus(report.status);
+        if (activeSlicer === 'all') return true;
+        if (activeSlicer === 'draft') return normalized === 'draft';
+        if (activeSlicer === 'inreview') return ['inreview', 'submittedforreview'].includes(normalized);
+        return ['approved', 'complete'].includes(normalized);
+      })
       .filter((report) => (typeFilter === 'all' ? true : getReportType(report) === typeFilter))
       .filter((report) => {
         if (!loweredSearch) return true;
@@ -174,7 +230,20 @@ export function DashboardPage() {
           : String(left).localeCompare(String(right));
         return sortDirection === 'asc' ? comparison : -comparison;
       });
-  }, [reports, searchTerm, statusFilter, typeFilter, columnFilters, sortColumn, sortDirection]);
+  }, [reports, searchTerm, statusFilter, typeFilter, activeSlicer, columnFilters, sortColumn, sortDirection]);
+
+  const renderResizeHandle = (column: ReportColumnKey) => (
+    <span
+      className="column-resize-handle"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={`Resize ${column} column`}
+      onPointerDown={(event) => {
+        event.preventDefault();
+        window.dispatchEvent(new CustomEvent('report-col-resize-start', { detail: { column, startX: event.clientX } }));
+      }}
+    />
+  );
 
   const onSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -246,10 +315,10 @@ export function DashboardPage() {
 
         <main className="dashboard-main">
           <section className="dashboard-card-grid">
-            <article className="card"><h3>Total Reports</h3><p>{statusCounts.totalReports}</p></article>
-            <article className="card"><h3>Draft Reports</h3><p>{statusCounts.draftReports}</p></article>
-            <article className="card"><h3>In Review</h3><p>{statusCounts.inReview}</p></article>
-            <article className="card"><h3>Completed</h3><p>{statusCounts.completed}</p></article>
+            <article className={`card slicer-card ${activeSlicer === 'all' ? 'active' : ''}`} onClick={() => setActiveSlicer('all')}><h3>Total Reports</h3><p>{statusCounts.totalReports}</p></article>
+            <article className={`card slicer-card ${activeSlicer === 'draft' ? 'active' : ''}`} onClick={() => setActiveSlicer('draft')}><h3>Draft Reports</h3><p>{statusCounts.draftReports}</p></article>
+            <article className={`card slicer-card ${activeSlicer === 'inreview' ? 'active' : ''}`} onClick={() => setActiveSlicer('inreview')}><h3>In Review</h3><p>{statusCounts.inReview}</p></article>
+            <article className={`card slicer-card ${activeSlicer === 'completed' ? 'active' : ''}`} onClick={() => setActiveSlicer('completed')}><h3>Completed</h3><p>{statusCounts.completed}</p></article>
             <article className="card"><h3>Open Findings</h3><p>{statusCounts.openFindings}</p></article>
             <article className="card"><h3>Recommendations</h3><p>{statusCounts.recommendations}</p></article>
           </section>
@@ -280,22 +349,25 @@ export function DashboardPage() {
             {isLoading ? <p>Loading reports...</p> : (
               <div className="reports-table-wrap">
                 <table>
+                  <colgroup>
+                    {Object.values(columnWidths).map((width, index) => <col key={index} style={{ width }} />)}
+                  </colgroup>
                   <thead>
                     <tr className="column-filter-row">
-                      <th className="select-column select-all-label">Select All</th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.reportNumber} onChange={(event) => setColumnFilters((prev) => ({ ...prev, reportNumber: event.target.value }))} /></th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.reportType} onChange={(event) => setColumnFilters((prev) => ({ ...prev, reportType: event.target.value }))} /></th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.client} onChange={(event) => setColumnFilters((prev) => ({ ...prev, client: event.target.value }))} /></th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.facility} onChange={(event) => setColumnFilters((prev) => ({ ...prev, facility: event.target.value }))} /></th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.unit} onChange={(event) => setColumnFilters((prev) => ({ ...prev, unit: event.target.value }))} /></th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.systemId} onChange={(event) => setColumnFilters((prev) => ({ ...prev, systemId: event.target.value }))} /></th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.circuitId} onChange={(event) => setColumnFilters((prev) => ({ ...prev, circuitId: event.target.value }))} /></th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.service} onChange={(event) => setColumnFilters((prev) => ({ ...prev, service: event.target.value }))} /></th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.status} onChange={(event) => setColumnFilters((prev) => ({ ...prev, status: event.target.value }))} /></th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.findings} onChange={(event) => setColumnFilters((prev) => ({ ...prev, findings: event.target.value }))} /></th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.recommendations} onChange={(event) => setColumnFilters((prev) => ({ ...prev, recommendations: event.target.value }))} /></th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.updatedDate} onChange={(event) => setColumnFilters((prev) => ({ ...prev, updatedDate: event.target.value }))} /></th>
-                      <th />
+                      <th className="select-column select-all-label">Select All{renderResizeHandle('select')}</th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.reportNumber} onChange={(event) => setColumnFilters((prev) => ({ ...prev, reportNumber: event.target.value }))} />{renderResizeHandle('reportNumber')}</th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.reportType} onChange={(event) => setColumnFilters((prev) => ({ ...prev, reportType: event.target.value }))} />{renderResizeHandle('reportType')}</th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.client} onChange={(event) => setColumnFilters((prev) => ({ ...prev, client: event.target.value }))} />{renderResizeHandle('client')}</th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.facility} onChange={(event) => setColumnFilters((prev) => ({ ...prev, facility: event.target.value }))} />{renderResizeHandle('facility')}</th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.unit} onChange={(event) => setColumnFilters((prev) => ({ ...prev, unit: event.target.value }))} />{renderResizeHandle('unit')}</th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.systemId} onChange={(event) => setColumnFilters((prev) => ({ ...prev, systemId: event.target.value }))} />{renderResizeHandle('systemId')}</th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.circuitId} onChange={(event) => setColumnFilters((prev) => ({ ...prev, circuitId: event.target.value }))} />{renderResizeHandle('circuitId')}</th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.service} onChange={(event) => setColumnFilters((prev) => ({ ...prev, service: event.target.value }))} />{renderResizeHandle('service')}</th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.status} onChange={(event) => setColumnFilters((prev) => ({ ...prev, status: event.target.value }))} />{renderResizeHandle('status')}</th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.findings} onChange={(event) => setColumnFilters((prev) => ({ ...prev, findings: event.target.value }))} />{renderResizeHandle('findings')}</th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.recommendations} onChange={(event) => setColumnFilters((prev) => ({ ...prev, recommendations: event.target.value }))} />{renderResizeHandle('recommendations')}</th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.updatedDate} onChange={(event) => setColumnFilters((prev) => ({ ...prev, updatedDate: event.target.value }))} />{renderResizeHandle('updatedDate')}</th>
+                      <th>{renderResizeHandle('actions')}</th>
                     </tr>
                     <tr>
                       <th className="select-column">

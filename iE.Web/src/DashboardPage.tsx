@@ -45,6 +45,20 @@ export function DashboardPage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [sortColumn, setSortColumn] = useState<SortColumn>('updatedAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [columnFilters, setColumnFilters] = useState({
+    reportNumber: '',
+    reportType: '',
+    client: '',
+    facility: '',
+    unit: '',
+    systemId: '',
+    circuitId: '',
+    service: '',
+    status: '',
+    findings: '',
+    recommendations: '',
+    updatedDate: ''
+  });
 
   useEffect(() => {
     (async () => {
@@ -81,6 +95,11 @@ export function DashboardPage() {
 
   const filteredReports = useMemo(() => {
     const loweredSearch = searchTerm.toLowerCase().trim();
+    const matchesColumnFilter = (value: string | number | undefined | null, filter: string) => {
+      if (!filter.trim()) return true;
+      return String(value || '').toLowerCase().includes(filter.toLowerCase().trim());
+    };
+
     return reports
       .filter((report) => (statusFilter === 'all' ? true : (report.status || 'Unknown') === statusFilter))
       .filter((report) => (typeFilter === 'all' ? true : getReportType(report) === typeFilter))
@@ -103,6 +122,20 @@ export function DashboardPage() {
           .toLowerCase();
         return rowText.includes(loweredSearch);
       })
+      .filter((report) => (
+        matchesColumnFilter(report.reportNumber || report.id, columnFilters.reportNumber)
+        && matchesColumnFilter(getReportType(report), columnFilters.reportType)
+        && matchesColumnFilter(report.clientOrganizationId || '—', columnFilters.client)
+        && matchesColumnFilter(report.facilityId || '—', columnFilters.facility)
+        && matchesColumnFilter(report.unit || report.processUnitId || '—', columnFilters.unit)
+        && matchesColumnFilter(report.systemId || '—', columnFilters.systemId)
+        && matchesColumnFilter(report.circuitId || '—', columnFilters.circuitId)
+        && matchesColumnFilter(report.service || '—', columnFilters.service)
+        && matchesColumnFilter(report.status || 'Unknown', columnFilters.status)
+        && matchesColumnFilter(report.findings?.length || 0, columnFilters.findings)
+        && matchesColumnFilter(report.findings?.filter((finding) => Boolean(finding.repairRecommendation)).length || 0, columnFilters.recommendations)
+        && matchesColumnFilter(formatDateTime(report.updatedAt || report.createdAt), columnFilters.updatedDate)
+      ))
       .sort((a, b) => {
         const valueFor = (report: InspectionReport) => {
           switch (sortColumn) {
@@ -137,7 +170,7 @@ export function DashboardPage() {
           : String(left).localeCompare(String(right));
         return sortDirection === 'asc' ? comparison : -comparison;
       });
-  }, [reports, searchTerm, statusFilter, typeFilter, sortColumn, sortDirection]);
+  }, [reports, searchTerm, statusFilter, typeFilter, columnFilters, sortColumn, sortDirection]);
 
   const onSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -215,6 +248,21 @@ export function DashboardPage() {
               <div className="reports-table-wrap">
                 <table>
                   <thead>
+                    <tr className="column-filter-row">
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.reportNumber} onChange={(event) => setColumnFilters((prev) => ({ ...prev, reportNumber: event.target.value }))} /></th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.reportType} onChange={(event) => setColumnFilters((prev) => ({ ...prev, reportType: event.target.value }))} /></th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.client} onChange={(event) => setColumnFilters((prev) => ({ ...prev, client: event.target.value }))} /></th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.facility} onChange={(event) => setColumnFilters((prev) => ({ ...prev, facility: event.target.value }))} /></th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.unit} onChange={(event) => setColumnFilters((prev) => ({ ...prev, unit: event.target.value }))} /></th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.systemId} onChange={(event) => setColumnFilters((prev) => ({ ...prev, systemId: event.target.value }))} /></th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.circuitId} onChange={(event) => setColumnFilters((prev) => ({ ...prev, circuitId: event.target.value }))} /></th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.service} onChange={(event) => setColumnFilters((prev) => ({ ...prev, service: event.target.value }))} /></th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.status} onChange={(event) => setColumnFilters((prev) => ({ ...prev, status: event.target.value }))} /></th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.findings} onChange={(event) => setColumnFilters((prev) => ({ ...prev, findings: event.target.value }))} /></th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.recommendations} onChange={(event) => setColumnFilters((prev) => ({ ...prev, recommendations: event.target.value }))} /></th>
+                      <th><input type="search" placeholder="Filter..." value={columnFilters.updatedDate} onChange={(event) => setColumnFilters((prev) => ({ ...prev, updatedDate: event.target.value }))} /></th>
+                      <th />
+                    </tr>
                     <tr>
                       <th><button type="button" onClick={() => onSort('reportNumber')}>Report Number</button></th>
                       <th><button type="button" onClick={() => onSort('templateId')}>Report Type</button></th>

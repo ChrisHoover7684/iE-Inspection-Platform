@@ -48,6 +48,15 @@ builder.Services.AddSingleton<IReportTemplateRegistry, InMemoryReportTemplateReg
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("LocalDevelopmentCors", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
 
 var app = builder.Build();
 
@@ -61,6 +70,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseCors("LocalDevelopmentCors");
 }
 
 app.UseHttpsRedirection();

@@ -20,7 +20,6 @@ body {
   padding: 20px 24px;
   padding-right: 24px;
   box-sizing: border-box;
-  overflow-x: hidden;
 }
 
 @media (max-width: 900px) {
@@ -263,7 +262,6 @@ label {
 .toolbar-metrics { display: flex; gap: 12px; flex-wrap: wrap; }
 .toolbar-actions { display: flex; gap: 8px; align-items: center; }
 
-.report-header-card { position: sticky; top: 0; z-index: 1000; background: white; padding: 8px 10px; border: 1px solid #cfd9ea; box-shadow: 0 8px 20px rgba(20, 40, 80, 0.12); }
 .report-header-title { font-weight: 700; margin-bottom: 4px; }
 
 .report-header-grid {
@@ -289,9 +287,31 @@ label {
 .report-header-field span { font-size: 12px; color: #11437f; background: #d6e8ff; padding: 8px; display:flex; align-items:center; font-weight: 700; }
 .report-header-field input { border: none; border-left: 1px solid #cbd9ef; border-radius: 0; padding: 8px; background: #fff; }
 
-.report-content-layout { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; gap: 16px; overflow-x: hidden; }
-.right-sidebar { width: 340px; min-width: 340px; max-width: 340px; box-sizing: border-box; }
-.assist-alerts-panel { position: sticky; top: 120px; align-self: start; }
+.report-header-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: white;
+  border-bottom: 1px solid #d1d5db;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.report-page-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 12px 20px 24px 20px;
+}
+
+.report-sidebar {
+  position: sticky;
+  top: 110px;
+  align-self: start;
+  width: 340px;
+}
 
 .accordion-toggle { width: 100%; display: flex; justify-content: space-between; background: transparent; border: none; font-weight: 700; padding: 6px 0; }
 .section-card { border-top: 1px solid #eef1f6; padding-top: 8px; margin-top: 8px; }
@@ -302,9 +322,8 @@ label {
 
 @media (max-width: 1100px) {
   .report-sticky-toolbar { grid-template-columns: 1fr; }
-  .report-content-layout { grid-template-columns: 1fr; }
-  .assist-alerts-panel { position: static; }
-  .right-sidebar { width: 100%; }
+  .report-page-body { grid-template-columns: 1fr; padding: 12px 0 24px 0; }
+  .report-sidebar { position: static; width: 100%; }
 }
 
 @media (max-width: 760px) {

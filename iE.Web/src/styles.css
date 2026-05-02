@@ -253,6 +253,7 @@ label {
 .dashboard-content {
     padding: 16px;
     min-width: 0;
+    overflow-x: hidden;
 }
 
 .dashboard-topbar {
@@ -281,34 +282,21 @@ label {
 .dashboard-main {
     display: grid;
     gap: 12px;
+    min-width: 0;
+}
+
+.dashboard-status-section,
+.dashboard-reports-section {
+    min-width: 0;
 }
 
 /* ===== RESPONSIVE CARD GRID ===== */
 .dashboard-card-grid {
     display: grid;
-    grid-template-columns: repeat(1, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
     width: 100%;
-    max-width: none;
     min-width: 0;
-}
-
-@media (min-width: 640px) {
-    .dashboard-card-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (min-width: 768px) {
-    .dashboard-card-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-}
-
-@media (min-width: 1024px) {
-    .dashboard-card-grid {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-    }
 }
 
 .slicer-card {
@@ -351,6 +339,7 @@ label {
 .reports-table-wrap {
     overflow-x: auto;
     overflow-y: auto;
+    width: 100%;
     max-height: min(62vh, 560px);
 }
 

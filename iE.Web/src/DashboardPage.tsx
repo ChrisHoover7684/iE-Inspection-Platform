@@ -129,9 +129,12 @@ export function DashboardPage() {
     const draftReports = reports.filter((r) => normalizeStatus(r.status) === 'draft').length;
     const inReview = reports.filter((r) => ['inreview', 'submittedforreview'].includes(normalizeStatus(r.status))).length;
     const completed = reports.filter((r) => ['approved', 'complete'].includes(normalizeStatus(r.status))).length;
-    const rejected = reports.filter((r) => ['rejectedwithcomments', 'returnedforrevision', 'rejected'].includes(normalizeStatus(r.status))).length;
+    const openFindings = reports.reduce((count, report) => count + (report.findings?.length || 0), 0);
+    const recommendations = reports.reduce((count, report) => (
+      count + (report.findings?.filter((finding) => Boolean(finding.repairRecommendation)).length || 0)
+    ), 0);
 
-    return { totalReports, draftReports, inReview, completed, rejected };
+    return { totalReports, draftReports, inReview, completed, openFindings, recommendations };
   }, [reports]);
 
   const statusOptions = useMemo(
@@ -309,15 +312,18 @@ export function DashboardPage() {
         </header>
 
         <main className="dashboard-main">
-          <section className="dashboard-card-grid">
+          <section className="dashboard-status-section">
+            <div className="dashboard-card-grid">
             <article className={`card slicer-card ${activeSlicer === 'all' ? 'active' : ''}`} onClick={() => setActiveSlicer('all')}><h3>Total Reports</h3><p>{statusCounts.totalReports}</p></article>
             <article className={`card slicer-card ${activeSlicer === 'draft' ? 'active' : ''}`} onClick={() => setActiveSlicer('draft')}><h3>Draft Reports</h3><p>{statusCounts.draftReports}</p></article>
             <article className={`card slicer-card ${activeSlicer === 'inreview' ? 'active' : ''}`} onClick={() => setActiveSlicer('inreview')}><h3>In Review</h3><p>{statusCounts.inReview}</p></article>
             <article className={`card slicer-card ${activeSlicer === 'completed' ? 'active' : ''}`} onClick={() => setActiveSlicer('completed')}><h3>Completed</h3><p>{statusCounts.completed}</p></article>
-            <article className={`card slicer-card ${activeSlicer === 'rejected' ? 'active' : ''}`} onClick={() => setActiveSlicer('rejected')}><h3>Rejected w/ Comments</h3><p>{statusCounts.rejected}</p></article>
+            <article className="card"><h3>Open Findings</h3><p>{statusCounts.openFindings}</p></article>
+            <article className="card"><h3>Recommendations</h3><p>{statusCounts.recommendations}</p></article>
+            </div>
           </section>
 
-          <section className="card reports-panel">
+          <section className="card reports-panel dashboard-reports-section">
             <div className="reports-filters">
               <input
                 type="search"

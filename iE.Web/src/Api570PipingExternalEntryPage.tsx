@@ -164,7 +164,7 @@ export function Api570PipingExternalEntryPage() {
 
   if (!report) return <div className="page">{error || 'Loading API 570 Piping External report...'}</div>;
 
-  return <div className="page report-page">
+  return <div className="page report-page page-wrapper">
     <h1>API 570 Piping External - Report Entry</h1>
     <div className="card">
       <div className="toolbar-title"><strong>API 570 Piping External - Report Entry</strong></div>
@@ -183,7 +183,7 @@ export function Api570PipingExternalEntryPage() {
           <div className="report-header-title">Report Header</div>
           <div className="report-header-grid">
             {HEADER_GRID_COLUMNS.map((column, columnIndex) => <div key={`header-col-${columnIndex}`} className="report-header-column">
-              {column.map((field) => <div key={`${field.key}-${field.label}`} className="report-header-field"><span>{field.label}</span><input type={field.key === 'inspectionDate' ? 'date' : 'text'} value={(report[field.key as keyof InspectionReport] as string) || ''} onChange={(e) => updateHeaderField(field.key as keyof InspectionReport, e.target.value)} placeholder={`Enter ${field.label.toLowerCase()}...`} /></div>)}
+              {column.map((field) => <div key={`${field.key}-${field.label}`} className="report-header-field input-container"><span>{field.label}</span><input type={field.key === 'inspectionDate' ? 'date' : 'text'} value={(report[field.key as keyof InspectionReport] as string) || ''} onChange={(e) => updateHeaderField(field.key as keyof InspectionReport, e.target.value)} placeholder={`Enter ${field.label.toLowerCase()}...`} /></div>)}
             </div>)}
           </div>
         </div>

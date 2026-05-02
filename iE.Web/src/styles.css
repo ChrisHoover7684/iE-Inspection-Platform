@@ -234,6 +234,13 @@ label {
     flex-direction: column;
     gap: 6px;
 }
+.sidebar-section-title {
+    margin: 14px 6px 4px;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
 
 .sidebar-link {
     width: 100%;
@@ -315,6 +322,16 @@ label {
 
 .reports-panel tbody tr { cursor: pointer; }
 .reports-panel tbody tr:hover { background: #f8fafc; }
+.select-column { width: 68px; text-align: center; }
+.row-action-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.row-action-toolbar button {
+    font-size: 12px;
+    padding: 4px 7px;
+}
 
 @media (max-width: 1024px) {
     .dashboard-shell { grid-template-columns: 1fr; }

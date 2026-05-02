@@ -34,6 +34,9 @@ const getReportType = (report: InspectionReport) => {
   return report.templateId || 'General';
 };
 
+const engineeringTools = ['B31.3 Pressure Calcs', 'Pressure Vessel Calcs', 'Damage Mechanisms'];
+const reportMenuActions = ['Create', 'View', 'Edit'];
+
 export function DashboardPage() {
   const navigate = useNavigate();
   const [reports, setReports] = useState<InspectionReport[]>([]);
@@ -190,7 +193,7 @@ export function DashboardPage() {
       <aside className="dashboard-sidebar">
         <h2>iE Inspection Platform</h2>
         <nav>
-          {['Dashboard', 'Reports', 'API 570', 'API 510', 'STI-SP001', 'Settings'].map((item) => (
+          {['Dashboard', 'Reports'].map((item) => (
             <button
               key={item}
               type="button"
@@ -199,6 +202,11 @@ export function DashboardPage() {
               {item}
             </button>
           ))}
+          <p className="sidebar-section-title">Engineering Tools</p>
+          {engineeringTools.map((item) => <button key={item} type="button" className="sidebar-link">{item}</button>)}
+          <p className="sidebar-section-title">Report Actions</p>
+          {reportMenuActions.map((item) => <button key={item} type="button" className="sidebar-link">{item}</button>)}
+          <button type="button" className="sidebar-link">Settings</button>
         </nav>
       </aside>
 
@@ -249,6 +257,7 @@ export function DashboardPage() {
                 <table>
                   <thead>
                     <tr className="column-filter-row">
+                      <th />
                       <th><input type="search" placeholder="Filter..." value={columnFilters.reportNumber} onChange={(event) => setColumnFilters((prev) => ({ ...prev, reportNumber: event.target.value }))} /></th>
                       <th><input type="search" placeholder="Filter..." value={columnFilters.reportType} onChange={(event) => setColumnFilters((prev) => ({ ...prev, reportType: event.target.value }))} /></th>
                       <th><input type="search" placeholder="Filter..." value={columnFilters.client} onChange={(event) => setColumnFilters((prev) => ({ ...prev, client: event.target.value }))} /></th>
@@ -264,6 +273,7 @@ export function DashboardPage() {
                       <th />
                     </tr>
                     <tr>
+                      <th className="select-column">Select</th>
                       <th><button type="button" onClick={() => onSort('reportNumber')}>Report Number</button></th>
                       <th><button type="button" onClick={() => onSort('templateId')}>Report Type</button></th>
                       <th>Client</th>
@@ -282,6 +292,9 @@ export function DashboardPage() {
                   <tbody>
                     {filteredReports.map((report) => (
                       <tr key={report.id} onClick={() => openReport(report)} role="button" tabIndex={0}>
+                        <td className="select-column">
+                          <input type="checkbox" aria-label={`Select report ${report.reportNumber || report.id}`} onClick={(event) => event.stopPropagation()} />
+                        </td>
                         <td>{report.reportNumber || report.id}</td>
                         <td>{getReportType(report)}</td>
                         <td>{report.clientOrganizationId || '—'}</td>
@@ -295,9 +308,13 @@ export function DashboardPage() {
                         <td>{report.findings?.filter((finding) => Boolean(finding.repairRecommendation)).length || 0}</td>
                         <td>{formatDateTime(report.updatedAt || report.createdAt)}</td>
                         <td>
-                          <button type="button" onClick={(event) => { event.stopPropagation(); openReport(report); }}>
-                            Open/Edit
-                          </button>
+                          <div className="row-action-toolbar">
+                            <button type="button" onClick={(event) => { event.stopPropagation(); openReport(report); }}>Preview</button>
+                            <button type="button" onClick={(event) => event.stopPropagation()}>Edit</button>
+                            <button type="button" onClick={(event) => event.stopPropagation()}>Download</button>
+                            <button type="button" onClick={(event) => event.stopPropagation()}>Export</button>
+                            <button type="button" onClick={(event) => event.stopPropagation()}>Change Status</button>
+                          </div>
                         </td>
                       </tr>
                     ))}

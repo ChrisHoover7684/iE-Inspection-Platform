@@ -30,7 +30,7 @@ body {
     background: var(--color-bg-page);
 }
 
-/* ===== ACCESSIBILITY – FOCUS INDICATORS ===== */
+/* ===== ACCESSIBILITY â€“ FOCUS INDICATORS ===== */
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
@@ -318,12 +318,14 @@ label {
     top: var(--toolbar-height);
     z-index: 999;
     background: var(--color-bg-page);
+    overflow: visible;
     padding: 8px 0 10px;
     border-bottom: 1px solid #d1d5db;
 }
 
 .api570-report .report-header-shell {
     padding: 4px 0;
+    overflow: visible;
 }
 
 .api570-report .report-header-title {
@@ -379,9 +381,13 @@ label {
     padding: 12px 0 0;
     width: 100%;
     box-sizing: border-box;
+    overflow: visible;
 }
 
-/* Sidebar sticky – uses variables for consistent offset */
+
+    max-height: calc(100vh - var(--toolbar-height) - var(--report-header-height) - 24px);
+    overflow-y: auto;
+/* Sidebar sticky â€“ uses variables for consistent offset */
 .api570-report .report-sidebar {
     position: sticky;
     top: calc(var(--toolbar-height) + var(--report-header-height) + 12px);
@@ -456,7 +462,7 @@ label {
     margin-top: 8px;
 }
 
-/* Improved inspection row – flexible first column */
+/* Improved inspection row â€“ flexible first column */
 .api570-report .inspection-row {
     display: grid;
     grid-template-columns: minmax(200px, 360px) 150px minmax(0, 1fr);
@@ -491,7 +497,11 @@ label {
 html,
 body,
 #root {
-    overflow: auto;
+    min-height: 100%;
+}
+
+body {
+    overflow-x: hidden;
 }
 
 /* ===== RESPONSIVE BREAKPOINTS ===== */

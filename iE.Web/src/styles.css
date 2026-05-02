@@ -302,6 +302,17 @@ label {
     font-weight: 600;
     cursor: pointer;
 }
+.reports-panel .column-filter-row th {
+    padding: 6px 4px;
+}
+
+.reports-panel .column-filter-row input {
+    width: 100%;
+    min-width: 90px;
+    padding: 4px 6px;
+    font: inherit;
+}
+
 .reports-panel tbody tr { cursor: pointer; }
 .reports-panel tbody tr:hover { background: #f8fafc; }
 

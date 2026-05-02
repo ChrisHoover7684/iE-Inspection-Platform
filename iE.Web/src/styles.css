@@ -337,7 +337,19 @@ label {
 }
 
 .reports-filters select[multiple] {
-    min-height: 84px;
+    min-height: 68px;
+    padding: 2px 4px;
+}
+
+.reports-filters select[multiple] option {
+    padding: 0;
+    line-height: 1.15;
+}
+
+.reports-panel th,
+.reports-panel td {
+    padding-top: 4px;
+    padding-bottom: 4px;
 }
 
 .clear-filters-btn {

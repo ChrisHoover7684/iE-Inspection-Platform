@@ -285,8 +285,11 @@ label {
 .dashboard-main { display: grid; gap: 12px; }
 .dashboard-card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(1, minmax(0, 1fr));
     gap: 10px;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
 }
 .slicer-card {
     cursor: pointer;
@@ -390,14 +393,23 @@ label {
         grid-template-columns: 1fr;
     }
     .reports-filters { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 640px) {
     .dashboard-card-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
-@media (max-width: 600px) {
+@media (min-width: 768px) {
     .dashboard-card-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .dashboard-card-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
     }
 }
 

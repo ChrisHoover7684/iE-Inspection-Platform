@@ -11,6 +11,9 @@ body {
 .page {
   margin: 0;
   padding: 16px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .page.report-page {
@@ -274,7 +277,7 @@ label {
   align-items: center;
 }
 
-/* API 570 report page */
+/* API 570 Report Entry */
 .page.report-page.api570-report {
   width: 100%;
   max-width: none;
@@ -303,6 +306,10 @@ label {
   background: #f7f7f7;
   padding: 8px 0 10px;
   border-bottom: 1px solid #d1d5db;
+}
+
+.api570-report .report-header-shell {
+  padding: 4px 0;
 }
 
 .api570-report .report-header-title {

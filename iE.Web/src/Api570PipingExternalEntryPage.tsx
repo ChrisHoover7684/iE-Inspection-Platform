@@ -164,7 +164,7 @@ export function Api570PipingExternalEntryPage() {
 
   if (!report) return <div className="page">{error || 'Loading API 570 Piping External report...'}</div>;
 
-  return <div className="page report-page page-wrapper api570-report">
+  return <div className="page report-page api570-report">
     <h1>API 570 Piping External - Report Entry</h1>
     <div className="api570-toolbar" >
       <div className="toolbar-title"><strong>API 570 Piping External - Report Entry</strong></div>

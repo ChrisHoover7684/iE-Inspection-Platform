@@ -183,7 +183,7 @@ export function Api570PipingExternalEntryPage() {
           <div className="report-header-title">Report Header</div>
           <div className="report-header-grid">
             {HEADER_GRID_COLUMNS.map((column, columnIndex) => <div key={`header-col-${columnIndex}`} className="report-header-column">
-              {column.map((field) => <div key={`${field.key}-${field.label}`} className="report-header-field input-container"><span>{field.label}</span><input type={field.key === 'inspectionDate' ? 'date' : 'text'} value={(report[field.key as keyof InspectionReport] as string) || ''} onChange={(e) => updateHeaderField(field.key as keyof InspectionReport, e.target.value)} placeholder={`Enter ${field.label.toLowerCase()}...`} /></div>)}
+              {column.map((field) => <div key={`${field.key}-${field.label}`} className="report-header-field"><span className="report-header-label">{field.label}</span><input className="report-header-input" type={field.key === 'inspectionDate' ? 'date' : 'text'} value={(report[field.key as keyof InspectionReport] as string) || ''} onChange={(e) => updateHeaderField(field.key as keyof InspectionReport, e.target.value)} placeholder={`Enter ${field.label.toLowerCase()}...`} /></div>)}
             </div>)}
           </div>
         </div>

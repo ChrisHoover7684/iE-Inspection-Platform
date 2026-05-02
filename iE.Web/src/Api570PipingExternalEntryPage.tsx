@@ -28,16 +28,18 @@ const HEADER_GRID_COLUMNS = [
 
 const NARRATIVE_SECTION_ORDER = ['Summary', 'Inspection', 'Findings', 'NDE/Testing', 'Repairs', 'Recommendations', 'Return to Service'] as const;
 
-const SECTION_GROUPS: Record<string, string[]> = {
-  'General Information': ['general', 'service', 'tag', 'line', 'system', 'circuit'],
-  'External Inspection': ['external', 'visual', 'surface', 'shell'],
-  Supports: ['support', 'hanger', 'guide', 'anchor'],
-  'Insulation / CUI': ['insulation', 'cui', 'jacketing', 'moisture'],
-  'Corrosion / Damage': ['corrosion', 'damage', 'pitting', 'thinning', 'deformation'],
-  'NDE / Testing': ['nde', 'ut', 'pt', 'mt', 'rt', 'test'],
-  Recommendations: ['recommend', 'repair', 'action'],
-  'Photos / Attachments': ['photo', 'attachment', 'image']
-};
+const REPORT_FLOW = [
+  { name: 'Inspection Context', keywords: ['general', 'context', 'service', 'tag', 'line', 'system', 'circuit'], defaultCollapsed: false },
+  { name: 'Scope / Preparation', keywords: ['scope', 'prep', 'preparation', 'access', 'safety'], defaultCollapsed: true },
+  { name: 'External Visual Inspection', keywords: ['external', 'visual', 'surface', 'shell', 'insulation', 'cui', 'support', 'hanger', 'guide', 'anchor', 'flange', 'bolt', 'gasket', 'valve', 'component'], defaultCollapsed: false },
+  { name: 'Findings', keywords: ['finding', 'corrosion', 'damage', 'pitting', 'thinning', 'deformation'], defaultCollapsed: true },
+  { name: 'Thickness / CML Review', keywords: ['thickness', 'cml', 'ut', 'nde', 'test'], defaultCollapsed: true },
+  { name: 'Recommendations', keywords: ['recommend', 'repair', 'action'], defaultCollapsed: true },
+  { name: 'Photos / Attachments', keywords: ['photo', 'attachment', 'image'], defaultCollapsed: true },
+  { name: 'Final Review', keywords: ['final', 'review', 'approval', 'sign'], defaultCollapsed: true }
+] as const;
+
+const DUPLICATE_HEADER_LABELS = new Set(['client','facility','unit','system id','circuit id','service','line numbers','pipe class','inspector name','inspection date']);
 
 const getErrorMessage = (error: unknown, fallback: string) => (error instanceof ApiError ? error.message : error instanceof Error ? error.message : fallback);
 const findNarrativeSection = (narrative: NarrativeResult, title: string) => narrative.sections.find((section) => section.title.trim().toLowerCase() === title.toLowerCase());
@@ -121,14 +123,32 @@ export function Api570PipingExternalEntryPage() {
   };
 
   const sectionBuckets = useMemo(() => {
-    const buckets = Object.keys(SECTION_GROUPS).map((name) => ({ name, entries: [] as typeof sortedSections }));
+    const buckets = REPORT_FLOW.map((group) => ({ ...group, entries: [] as typeof sortedSections }));
     sortedSections.forEach((entry) => {
       const lower = entry.section.sectionTitle.toLowerCase();
-      const bucket = buckets.find((b) => SECTION_GROUPS[b.name].some((k) => lower.includes(k))) ?? buckets[0];
+      const bucket = buckets.find((b) => b.keywords.some((k) => lower.includes(k))) ?? buckets[0];
       bucket.entries.push(entry);
     });
     return buckets.filter((b) => b.entries.length > 0);
   }, [sortedSections]);
+
+  useEffect(() => {
+    setCollapsedSections((current) => {
+      const next = { ...current };
+      sectionBuckets.forEach((bucket) => {
+        if (!(bucket.name in next)) next[bucket.name] = bucket.defaultCollapsed;
+      });
+      return next;
+    });
+  }, [sectionBuckets]);
+
+  const updateHeaderField = (key: keyof InspectionReport, value: string) => {
+    if (!report) return;
+    const latest = structuredClone(report);
+    (latest[key] as string | undefined) = value;
+    setReport(latest);
+    setIsDirty(true);
+  };
 
   if (!report) return <div className="page">{error || 'Loading API 570 Piping External report...'}</div>;
 
@@ -152,7 +172,7 @@ export function Api570PipingExternalEntryPage() {
           <div className="report-header-title">Report Header</div>
           <div className="report-header-grid">
             {HEADER_GRID_COLUMNS.map((column, columnIndex) => <div key={`header-col-${columnIndex}`} className="report-header-column">
-              {column.map((field) => <div key={`${field.key}-${field.label}`} className="report-header-field"><span>{field.label}</span><strong>{(report[field.key as keyof InspectionReport] as string) || '—'}</strong></div>)}
+              {column.map((field) => <div key={`${field.key}-${field.label}`} className="report-header-field"><span>{field.label}</span><input type={field.key === 'inspectionDate' ? 'date' : 'text'} value={(report[field.key as keyof InspectionReport] as string) || ''} onChange={(e) => updateHeaderField(field.key as keyof InspectionReport, e.target.value)} placeholder={`Enter ${field.label.toLowerCase()}...`} /></div>)}
             </div>)}
           </div>
         </div>
@@ -160,7 +180,7 @@ export function Api570PipingExternalEntryPage() {
           <button className="accordion-toggle" onClick={() => setCollapsedSections((s) => ({ ...s, [bucket.name]: !s[bucket.name] }))}>{bucket.name} <span>{collapsedSections[bucket.name] ? '+' : '−'}</span></button>
           {!collapsedSections[bucket.name] && bucket.entries.map(({ section, i: sectionIndex }) => <div className="section-card" key={`${section.sectionId}-${section.instanceNumber ?? 0}`}>
             <h3>{section.sectionTitle}</h3>
-            {section.answers.map((answer, answerIndex) => {
+            {section.answers.filter((answer) => !DUPLICATE_HEADER_LABELS.has(answer.label.trim().toLowerCase())).map((answer, answerIndex) => {
               const suggestions = [...localSuggestionsFor(answer), ...(fieldSuggestions[answer.fieldId] || [])];
               return <div className="inspection-row" key={`${section.sectionId}-${answer.fieldId}-${answerIndex}`}>
                 <div><label><strong>{answer.label}</strong></label></div>

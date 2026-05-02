@@ -269,42 +269,71 @@ label {
 
 .report-header-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
 }
 
 .report-header-column {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
 }
 
 .report-header-field {
   display: grid;
   grid-template-columns: 120px minmax(0, 1fr);
-  align-items: stretch;
-  border: 1px solid #9db5dc;
+  min-height: 34px;
+  align-items: center;
+  border: 1px solid #93c5fd;
   border-radius: 4px;
   overflow: visible;
+  background: white;
 }
 
-.report-header-field span { font-size: 12px; color: #11437f; background: #d6e8ff; padding: 8px; display:flex; align-items:center; font-weight: 700; }
-.report-header-field input { border: none; border-left: 1px solid #cbd9ef; border-radius: 0; padding: 8px; background: #fff; }
+.report-header-label {
+  background: #dbeafe;
+  font-weight: 600;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+}
+
+.report-header-input {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 0;
+  outline: none;
+  box-sizing: border-box;
+  background: #f8fff8;
+}
+
+.report-header-input[type="date"] {
+  padding-right: 32px;
+  min-width: 150px;
+}
 
 .report-header-sticky {
   position: sticky;
   top: 0;
   z-index: 1000;
   background: white;
-  border-bottom: 1px solid #d1d5db;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 8px 12px 12px 12px;
   overflow: visible;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
 }
 
 
 .report-header-sticky .card,
 .report-header-sticky .accordion-card,
-.report-header-sticky .input-container {
+.report-header-sticky .report-header-grid,
+.report-header-sticky .report-header-column,
+.report-header-sticky .report-header-field {
   overflow: visible;
+  max-height: none;
 }
 
 .report-page-body {
@@ -318,7 +347,7 @@ label {
 
 .report-sidebar {
   position: sticky;
-  top: calc(var(--report-header-sticky-height) + 16px);
+  top: 180px;
   align-self: start;
   width: 340px;
   min-width: 340px;
@@ -395,7 +424,3 @@ label {
 
 .report-main-column { min-width: 0; }
 
-.input-container {
-  position: relative;
-  overflow: visible;
-}

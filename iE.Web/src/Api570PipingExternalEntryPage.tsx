@@ -210,14 +210,26 @@ export function Api570PipingExternalEntryPage() {
       <aside className="report-sidebar">
         <div className="card assist-alerts-panel">
           <h3>iE Assist &amp; Alerts</h3>
-          <label className="toggle-row">
-            <input type="checkbox" checked={ieAssistEnabled} onChange={(e) => setIeAssistEnabled(e.target.checked)} />
-            <span>iE Assist enabled</span>
-          </label>
-          <p className="muted">Active inline suggestions are shown within note fields.</p>
-          <h4>Alerts</h4>
-          <button type="button" onClick={async () => { if (!report) return; const next = await reportingApi.getAlerts(report); setAlerts(next); }}>Refresh Alerts</button>
-          {alerts.length === 0 ? <p className="muted">No alerts loaded.</p> : <ul>{alerts.map((a) => <li key={a.id}><strong>{a.severity}:</strong> {a.title}</li>)}</ul>}
+          <section className="sidebar-section">
+            <h4>iE Assist</h4>
+            <label className="toggle-row assist-toggle-row">
+              <span className="assist-toggle-label">iE Assist</span>
+              <span className="assist-toggle-control">
+                <input type="checkbox" checked={ieAssistEnabled} onChange={(e) => setIeAssistEnabled(e.target.checked)} />
+                <span>{ieAssistEnabled ? 'Enabled' : 'Disabled'}</span>
+              </span>
+            </label>
+            <p className="muted">Active inline suggestions are shown within note fields.</p>
+          </section>
+          <section className="sidebar-section">
+            <h4>Active Suggestions</h4>
+            <p className="muted">Inline recommendations appear next to inspection note fields as you type.</p>
+          </section>
+          <section className="sidebar-section">
+            <h4>Alerts</h4>
+            <button className="refresh-alerts-btn" type="button" onClick={async () => { if (!report) return; const next = await reportingApi.getAlerts(report); setAlerts(next); }}>Refresh Alerts</button>
+            {alerts.length === 0 ? <p className="muted">No alerts loaded.</p> : <ul>{alerts.map((a) => <li key={a.id}><strong>{a.severity}:</strong> {a.title}</li>)}</ul>}
+          </section>
         </div>
       </aside>
     </div>

@@ -88,7 +88,7 @@ export function DashboardPage() {
     let initialWidth = 0;
     const onPointerMove = (event: PointerEvent) => {
       if (!activeColumn) return;
-      const width = initialWidth + event.clientX - startX;
+      const width = Math.max(80, initialWidth + event.clientX - startX);
       setColumnWidths((prev) => ({ ...prev, [activeColumn as ReportColumnKey]: width }));
     };
     const onPointerUp = () => { activeColumn = null; };
@@ -234,6 +234,7 @@ export function DashboardPage() {
       aria-label={`Resize ${column} column`}
       onPointerDown={(event) => {
         event.preventDefault();
+        event.currentTarget.setPointerCapture(event.pointerId);
         window.dispatchEvent(new CustomEvent('report-col-resize-start', { detail: { column, startX: event.clientX } }));
       }}
     />

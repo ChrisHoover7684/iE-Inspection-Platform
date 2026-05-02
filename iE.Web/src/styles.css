@@ -285,7 +285,7 @@ label {
 .dashboard-main { display: grid; gap: 12px; }
 .dashboard-card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(max(220px, 18vw), 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 10px;
 }
 .slicer-card {
@@ -316,6 +316,7 @@ label {
 .reports-table-wrap table {
     width: max-content;
     min-width: 100%;
+    table-layout: fixed;
 }
 .reports-panel th,
 .reports-panel td {

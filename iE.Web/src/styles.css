@@ -666,7 +666,7 @@ label {
 
 .api570-report .inspection-row {
     display: grid;
-    grid-template-columns: minmax(200px, 360px) 150px minmax(0, 1fr);
+    grid-template-columns: minmax(200px, 280px) 130px 130px minmax(170px, 220px) minmax(220px,1fr) minmax(220px,280px);
     gap: 8px;
     align-items: start;
     border: 1px solid #ebeff6;
@@ -680,6 +680,12 @@ label {
     .api570-report .inspection-row select {
         width: 150px;
         max-width: 150px;
+        box-sizing: border-box;
+    }
+
+    .api570-report .inspection-row input,
+    .api570-report .inspection-row select {
+        width: 100%;
         box-sizing: border-box;
     }
 
@@ -788,3 +794,6 @@ body {
         background: transparent;
     }
 }
+
+.api570-report .inspection-row-flags { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+.api570-report .inspection-row-flags label { font-size: 0.9rem; }

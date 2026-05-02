@@ -22,21 +22,23 @@ const HEADER_GRID_COLUMNS = [
     { key: 'lineNumbers', label: 'Line Numbers' },
     { key: 'equipmentTag', label: 'Pipe Class' },
     { key: 'inspectorName', label: 'Inspector Name' },
-    { key: 'inspectionDate', label: 'Inspection Date' }
+    { key: 'inspectionDate', label: 'Inspection Date' },
+    { key: 'operatingState', label: 'Operating State' },
+    { key: 'insulated', label: 'Insulated' }
   ]
 ] as const;
 
 const NARRATIVE_SECTION_ORDER = ['Summary', 'Inspection', 'Findings', 'NDE/Testing', 'Repairs', 'Recommendations', 'Return to Service'] as const;
 
 const REPORT_FLOW = [
-  { name: 'Inspection Context', keywords: ['general', 'context', 'service', 'tag', 'line', 'system', 'circuit'], defaultCollapsed: false },
-  { name: 'Scope / Preparation', keywords: ['scope', 'prep', 'preparation', 'access', 'safety'], defaultCollapsed: true },
-  { name: 'External Visual Inspection', keywords: ['external', 'visual', 'surface', 'shell', 'insulation', 'cui', 'support', 'hanger', 'guide', 'anchor', 'flange', 'bolt', 'gasket', 'valve', 'component'], defaultCollapsed: false },
-  { name: 'Findings', keywords: ['finding', 'corrosion', 'damage', 'pitting', 'thinning', 'deformation'], defaultCollapsed: true },
-  { name: 'Thickness / CML Review', keywords: ['thickness', 'cml', 'ut', 'nde', 'test'], defaultCollapsed: true },
+  { name: 'Inspection Context', keywords: ['general', 'context', 'scope', 'access', 'method', 'reference', 'history'], defaultCollapsed: false },
+  { name: 'Pressure Boundary', keywords: ['corrosion', 'pitting', 'weld', 'haz', 'damage', 'distortion', 'leak', 'vibration', 'wear', 'cml', 'thickness', 'injection', 'mix point'], defaultCollapsed: false },
+  { name: 'Corrosion Protection & Environment', keywords: ['coating', 'insulation', 'jacketing', 'cui', 'soil-to-air', 'environment', 'drainage'], defaultCollapsed: true },
+  { name: 'Supports & Structural Integrity', keywords: ['support', 'shoe', 'guide', 'anchor', 'spring', 'hanger', 'rack', 'structural', 'settlement', 'misalignment', 'movement', 'sliding'], defaultCollapsed: true },
+  { name: 'Connections & Components', keywords: ['flange', 'bolt', 'gasket', 'valve', 'prd', 'psv', 'vent', 'drain', 'small-bore', 'instrument', 'tracing', 'flex hose'], defaultCollapsed: true },
+  { name: 'Findings', keywords: ['finding', 'issue', 'defect', 'severity'], defaultCollapsed: true },
   { name: 'Recommendations', keywords: ['recommend', 'repair', 'action'], defaultCollapsed: true },
-  { name: 'Photos / Attachments', keywords: ['photo', 'attachment', 'image'], defaultCollapsed: true },
-  { name: 'Final Review', keywords: ['final', 'review', 'approval', 'sign'], defaultCollapsed: true }
+  { name: 'Summary / Final Review', keywords: ['summary', 'final', 'review', 'suitability', 'nde', 'thickness'], defaultCollapsed: true }
 ] as const;
 
 const DUPLICATE_HEADER_LABELS = new Set([
@@ -56,9 +58,10 @@ const DUPLICATE_HEADER_LABELS = new Set([
 const getErrorMessage = (error: unknown, fallback: string) => (error instanceof ApiError ? error.message : error instanceof Error ? error.message : fallback);
 const findNarrativeSection = (narrative: NarrativeResult, title: string) => narrative.sections.find((section) => section.title.trim().toLowerCase() === title.toLowerCase());
 
-const toCondition = (answer: InspectionReportAnswer): 'acceptable' | 'issue' | 'na' => {
+const toCondition = (answer: InspectionReportAnswer): 'acceptable' | 'issue' | 'na' | 'monitor' => {
   const value = `${answer.value ?? ''} ${answer.comment ?? ''}`.toLowerCase();
   if (value.includes('n/a') || value.includes('na')) return 'na';
+  if (value.includes('monitor')) return 'monitor';
   if (answer.recommendationRequired || answer.repairRequired || answer.photoRequired || value.includes('issue') || value.includes('defect')) return 'issue';
   return 'acceptable';
 };
@@ -199,9 +202,12 @@ export function Api570PipingExternalEntryPage() {
               const suggestions = [...localSuggestionsFor(answer), ...(fieldSuggestions[answer.fieldId] || [])];
               return <div className="inspection-row" key={`${section.sectionId}-${answer.fieldId}-${answerIndex}`}>
                 <div><label><strong>{answer.label}</strong></label></div>
-                <div><select value={toCondition(answer)} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value === 'na' ? 'N/A' : answer.value, recommendationRequired: e.target.value === 'issue' ? answer.recommendationRequired ?? false : false })}><option value="acceptable">Acceptable</option><option value="issue">Issue</option><option value="na">N/A</option></select></div>
-                <div><textarea placeholder="Enter inspection notes..." value={answer.comment ?? ''} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { comment: e.target.value })} />
+                <div><select value={toCondition(answer)} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value === 'na' ? 'N/A' : e.target.value, recommendationRequired: e.target.value === 'issue' ? answer.recommendationRequired ?? false : false })}><option value="na">N/A</option><option value="acceptable">Acceptable</option><option value="monitor">Monitor</option><option value="issue">Issue</option></select></div>
+                <div><select value={answer.values?.[0] || ''} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { values: [e.target.value] })}><option value="">Severity</option><option value="Low">Low</option><option value="Medium">Medium</option><option value="High">High</option><option value="Critical">Critical</option></select></div>
+                <div><input type="text" value={answer.value ?? ''} placeholder="Location / Component" onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value })} /></div>
+                <div><textarea placeholder="Notes" value={answer.comment ?? ''} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { comment: e.target.value })} />
                 {suggestions.length > 0 && <ul className="suggestions">{suggestions.map((s, idx) => <li key={`${s.promptType}-${idx}`}><strong>{s.severity.toUpperCase()}:</strong> {s.suggestion}</li>)}</ul>}</div>
+                <div className="inspection-row-flags"><label><input type="checkbox" checked={!!answer.photoRequired} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { photoRequired: e.target.checked })} /> Photo Required</label><label><input type="checkbox" checked={!!answer.recommendationRequired} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { recommendationRequired: e.target.checked })} /> Recommendation Required</label></div>
               </div>;
             })}
           </div>)}

@@ -73,7 +73,7 @@ export function Api570PipingExternalEntryPage() {
         setReport(created);
         localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, created.id);
       } catch (error) {
-        setError(getErrorMessage(error, 'Failed to initialize report.'));
+        setError(getErrorMessage(error, 'Failed to initialize report. Check GET /api/reports/templates/:templateId and POST /api/reports/templates/:templateId/instances.'));
       }
     })();
   }, [location.state]);

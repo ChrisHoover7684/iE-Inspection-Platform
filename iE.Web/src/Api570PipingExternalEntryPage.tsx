@@ -166,7 +166,7 @@ export function Api570PipingExternalEntryPage() {
 
   return <div className="page report-page">
     <h1>API 570 Piping External - Report Entry</h1>
-    <div className="report-sticky-toolbar card">
+    <div className="card">
       <div className="toolbar-title"><strong>API 570 Piping External - Report Entry</strong></div>
       <div className="toolbar-metrics">
         <span>Findings: <strong>{findingsCount}</strong></span>
@@ -178,9 +178,8 @@ export function Api570PipingExternalEntryPage() {
       </div>
     </div>
 
-    <div className="workflow-layout report-content-layout">
-      <div className="report-main-column">
-        <div className="card accordion-card report-header-card" key="report-header">
+    <div className="report-header-sticky" key="report-header">
+      <div className="card accordion-card">
           <div className="report-header-title">Report Header</div>
           <div className="report-header-grid">
             {HEADER_GRID_COLUMNS.map((column, columnIndex) => <div key={`header-col-${columnIndex}`} className="report-header-column">
@@ -188,6 +187,10 @@ export function Api570PipingExternalEntryPage() {
             </div>)}
           </div>
         </div>
+    </div>
+
+    <div className="report-page-body">
+      <div className="report-main-column">
         {sectionBuckets.map((bucket) => <div className="card accordion-card" key={bucket.name}>
           <button className="accordion-toggle" onClick={() => setCollapsedSections((s) => ({ ...s, [bucket.name]: !s[bucket.name] }))}>{bucket.name} <span>{collapsedSections[bucket.name] ? '+' : '−'}</span></button>
           {!collapsedSections[bucket.name] && bucket.entries.map(({ section, i: sectionIndex }) => <div className="section-card" key={`${section.sectionId}-${section.instanceNumber ?? 0}`}>
@@ -204,7 +207,7 @@ export function Api570PipingExternalEntryPage() {
           </div>)}
         </div>)}
       </div>
-      <aside className="right-sidebar">
+      <aside className="report-sidebar">
         <div className="card assist-alerts-panel">
           <h3>iE Assist &amp; Alerts</h3>
           <label className="toggle-row">

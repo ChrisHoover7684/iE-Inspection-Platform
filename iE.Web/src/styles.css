@@ -285,7 +285,7 @@ label {
 .dashboard-main { display: grid; gap: 12px; }
 .dashboard-card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(max(220px, 18vw), 1fr));
     gap: 10px;
 }
 .slicer-card {
@@ -358,14 +358,13 @@ label {
 
 .reports-panel .column-filter-row input {
     width: 100%;
-    min-width: 90px;
     padding: 4px 6px;
     font: inherit;
 }
 
 .reports-panel tbody tr { cursor: pointer; }
 .reports-panel tbody tr:hover { background: #f8fafc; }
-.select-column { width: 68px; text-align: center; }
+.select-column { text-align: center; }
 .select-all-label {
     font-size: 11px;
     font-weight: 600;

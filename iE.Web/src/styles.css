@@ -274,18 +274,45 @@ label {
   align-items: center;
 }
 
-.api570-report .report-header-shell {
-  overflow: visible;
+/* API 570 report page */
+.page.report-page.api570-report {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 20px 24px;
+  box-sizing: border-box;
+}
+
+.api570-report .api570-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  margin: 0;
+  padding: 8px 0;
+  background: #f7f7f7;
+}
+
+.api570-report .report-header-sticky {
+  position: sticky;
+  top: 48px;
+  z-index: 999;
+  background: #f7f7f7;
+  padding: 8px 0 10px;
+  border-bottom: 1px solid #d1d5db;
 }
 
 .api570-report .report-header-title {
   font-weight: 700;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .api570-report .report-header-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -301,88 +328,52 @@ label {
   grid-template-columns: 120px minmax(0, 1fr);
   min-height: 34px;
   align-items: center;
-  border: 1px solid #93c5fd;
-  border-radius: 4px;
-  overflow: visible;
-  background: white;
 }
 
 .api570-report .report-header-label {
-  background: #dbeafe;
   font-weight: 600;
-  padding: 6px 8px;
-  display: flex;
-  align-items: center;
+  padding: 6px 8px 6px 0;
 }
 
 .api570-report .report-header-input {
   width: 100%;
   min-width: 0;
-  height: 100%;
   min-height: 34px;
   padding: 6px 10px;
-  border: 0;
-  outline: none;
+  border: 1px solid #d0d7e2;
+  border-radius: 4px;
   box-sizing: border-box;
-  background: #f8fff8;
+  background: #fff;
 }
 
-.api570-report .report-header-input[type="date"] {
-  padding-right: 8px;
-  min-width: 170px;
-}
-
-.api570-report .report-header-input[type="date"]::-webkit-calendar-picker-indicator {
-  margin-right: 2px;
-}
-
-.api570-report .report-header-sticky {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background: white;
-  padding: 6px 12px 8px 12px;
-  overflow: visible;
-  border-bottom: 1px solid #d1d5db;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-
-.api570-report .report-header-sticky .report-header-shell,
-.api570-report .report-header-sticky .report-header-grid,
-.api570-report .report-header-sticky .report-header-column,
-.api570-report .report-header-sticky .report-header-field {
-  overflow: visible;
-  max-height: none;
+.api570-report .report-header-input[type='date'] {
+  min-width: 0;
+  padding-right: 30px;
 }
 
 .api570-report .report-page-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
   gap: 16px;
-  padding: 12px 20px 24px 20px;
-  overflow: visible;
+  padding: 12px 0 0;
   width: 100%;
   box-sizing: border-box;
 }
 
 .api570-report .report-sidebar {
   position: sticky;
-  top: calc(var(--report-header-height, 150px) + 16px);
+  top: calc(48px + var(--report-header-height, 150px) + 12px);
   align-self: start;
   width: 340px;
   min-width: 340px;
   max-width: 340px;
-  max-height: none;
-  overflow: visible;
 }
 
 .api570-report .assist-alerts-panel {
-  background: #ffffff;
+  background: #fff;
   border: 1px solid #d1d5db;
-  border-radius: 10px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-radius: 6px;
+  padding: 14px;
 }
 
 .api570-report .sidebar-section + .sidebar-section {
@@ -473,33 +464,9 @@ label {
 html,
 body,
 #root {
-  overflow-y: auto;
+  overflow: visible;
 }
 
-.api570-report .api570-toolbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 12px;
-  align-items: center;
-  margin: 0 0 8px;
-  padding: 4px 0;
-}
-
-.api570-report .report-header-sticky .report-header-shell {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.api570-report .report-header-sticky {
-  padding: 4px 12px 6px;
-}
-
-.api570-report .assist-alerts-panel {
-  border-radius: 6px;
-  box-shadow: none;
-}
 @media (max-width: 1100px) {
   .api570-report .api570-toolbar {
     grid-template-columns: 1fr;
@@ -507,7 +474,7 @@ body,
 
   .api570-report .report-page-body {
     grid-template-columns: 1fr;
-    padding: 12px 0 24px;
+    padding: 12px 0 0;
   }
 
   .api570-report .report-sidebar {
@@ -519,6 +486,14 @@ body,
 }
 
 @media (max-width: 760px) {
+  .page.report-page.api570-report {
+    padding: 0 12px 20px;
+  }
+
+  .api570-report .report-header-sticky {
+    top: 76px;
+  }
+
   .api570-report .report-header-grid {
     grid-template-columns: 1fr;
   }

@@ -7,18 +7,22 @@ const TEMPLATE_ID = 'api-570-piping-external';
 const ACTIVE_REPORT_ID_STORAGE_KEY = 'ie_api570_active_report_id';
 const IE_ASSIST_STORAGE_KEY = 'ie_dashboard_ie_assist_enabled';
 
-const HEADER_FIELDS = [
-  { key: 'clientOrganizationId', label: 'Client' },
-  { key: 'facilityId', label: 'Facility' },
-  { key: 'templateId', label: 'Inspection Report Type' },
-  { key: 'systemId', label: 'System ID' },
-  { key: 'circuitId', label: 'Circuit ID' },
-  { key: 'service', label: 'Service' },
-  { key: 'unit', label: 'Line Numbers' },
-  { key: 'equipmentTag', label: 'Pipe Class' },
-  { key: 'inspectionDate', label: 'Inspection Date' },
-  { key: 'inspectorName', label: 'Inspector' },
-  { key: 'unit', label: 'Unit' }
+const HEADER_GRID_COLUMNS = [
+  [
+    { key: 'clientOrganizationId', label: 'Client' },
+    { key: 'facilityId', label: 'Facility' }
+  ],
+  [
+    { key: 'systemId', label: 'System ID' },
+    { key: 'circuitId', label: 'Circuit ID' },
+    { key: 'service', label: 'Service' },
+    { key: 'unit', label: 'Unit' }
+  ],
+  [
+    { key: 'unit', label: 'Line Numbers' },
+    { key: 'equipmentTag', label: 'Pipe Class' },
+    { key: 'inspectionDate', label: 'Inspection Date' }
+  ]
 ] as const;
 
 const NARRATIVE_SECTION_ORDER = ['Summary', 'Inspection', 'Findings', 'NDE/Testing', 'Repairs', 'Recommendations', 'Return to Service'] as const;
@@ -143,11 +147,13 @@ export function Api570PipingExternalEntryPage() {
 
     <div className="workflow-layout report-content-layout">
       <div className="report-main-column">
-        <div className="card accordion-card" key="report-header">
-          <button className="accordion-toggle" onClick={() => setCollapsedSections((s) => ({ ...s, reportHeader: !s.reportHeader }))}>Report Header <span>{collapsedSections.reportHeader ? '+' : '−'}</span></button>
-          {!collapsedSections.reportHeader && <div className="report-header-grid">
-            {HEADER_FIELDS.map((field) => <div key={`${field.key}-${field.label}`} className="header-chip"><span>{field.label}</span><strong>{(report[field.key as keyof InspectionReport] as string) || '—'}</strong></div>)}
-          </div>}
+        <div className="card accordion-card report-header-card" key="report-header">
+          <div className="report-header-title">Report Header</div>
+          <div className="report-header-grid">
+            {HEADER_GRID_COLUMNS.map((column, columnIndex) => <div key={`header-col-${columnIndex}`} className="report-header-column">
+              {column.map((field) => <div key={`${field.key}-${field.label}`} className="report-header-field"><span>{field.label}</span><strong>{(report[field.key as keyof InspectionReport] as string) || '—'}</strong></div>)}
+            </div>)}
+          </div>
         </div>
         {sectionBuckets.map((bucket) => <div className="card accordion-card" key={bucket.name}>
           <button className="accordion-toggle" onClick={() => setCollapsedSections((s) => ({ ...s, [bucket.name]: !s[bucket.name] }))}>{bucket.name} <span>{collapsedSections[bucket.name] ? '+' : '−'}</span></button>

@@ -300,17 +300,72 @@ label {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
   gap: 16px;
+  padding: 16px 20px 32px 20px;
   width: 100%;
-  max-width: 100%;
   box-sizing: border-box;
-  padding: 12px 20px 24px 20px;
+  overflow-x: hidden;
 }
 
 .report-sidebar {
   position: sticky;
-  top: 110px;
+  top: 155px;
   align-self: start;
   width: 340px;
+  min-width: 340px;
+  max-width: 340px;
+  box-sizing: border-box;
+  max-height: calc(100vh - 175px);
+  overflow-y: auto;
+}
+
+.assist-alerts-panel {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.sidebar-section + .sidebar-section {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #eef1f6;
+}
+
+.sidebar-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+.assist-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 12px;
+}
+
+.assist-toggle-label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.assist-toggle-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.assist-toggle-control input {
+  width: auto;
+}
+
+.refresh-alerts-btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
 .accordion-toggle { width: 100%; display: flex; justify-content: space-between; background: transparent; border: none; font-weight: 700; padding: 6px 0; }

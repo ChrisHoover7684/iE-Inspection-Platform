@@ -13,14 +13,15 @@ const HEADER_GRID_COLUMNS = [
     { key: 'facilityId', label: 'Facility' }
   ],
   [
+    { key: 'unit', label: 'Unit' },
     { key: 'systemId', label: 'System ID' },
     { key: 'circuitId', label: 'Circuit ID' },
-    { key: 'service', label: 'Service' },
-    { key: 'unit', label: 'Unit' }
+    { key: 'service', label: 'Service' }
   ],
   [
-    { key: 'unit', label: 'Line Numbers' },
+    { key: 'lineNumbers', label: 'Line Numbers' },
     { key: 'equipmentTag', label: 'Pipe Class' },
+    { key: 'inspectorName', label: 'Inspector Name' },
     { key: 'inspectionDate', label: 'Inspection Date' }
   ]
 ] as const;

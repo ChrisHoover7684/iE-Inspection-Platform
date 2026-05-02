@@ -334,6 +334,14 @@ label {
 .reports-panel tbody tr { cursor: pointer; }
 .reports-panel tbody tr:hover { background: #f8fafc; }
 .select-column { width: 68px; text-align: center; }
+.select-all-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    color: #475569;
+    white-space: nowrap;
+}
+
 .row-action-toolbar {
     display: flex;
     gap: 6px;

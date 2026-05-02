@@ -282,7 +282,7 @@ export function DashboardPage() {
                 <table>
                   <thead>
                     <tr className="column-filter-row">
-                      <th />
+                      <th className="select-column select-all-label">Select All</th>
                       <th><input type="search" placeholder="Filter..." value={columnFilters.reportNumber} onChange={(event) => setColumnFilters((prev) => ({ ...prev, reportNumber: event.target.value }))} /></th>
                       <th><input type="search" placeholder="Filter..." value={columnFilters.reportType} onChange={(event) => setColumnFilters((prev) => ({ ...prev, reportType: event.target.value }))} /></th>
                       <th><input type="search" placeholder="Filter..." value={columnFilters.client} onChange={(event) => setColumnFilters((prev) => ({ ...prev, client: event.target.value }))} /></th>

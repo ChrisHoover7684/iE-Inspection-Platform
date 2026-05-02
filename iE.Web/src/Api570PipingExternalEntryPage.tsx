@@ -15,7 +15,10 @@ const HEADER_FIELDS = [
   { key: 'circuitId', label: 'Circuit ID' },
   { key: 'service', label: 'Service' },
   { key: 'unit', label: 'Line Numbers' },
-  { key: 'equipmentTag', label: 'Pipe Class' }
+  { key: 'equipmentTag', label: 'Pipe Class' },
+  { key: 'inspectionDate', label: 'Inspection Date' },
+  { key: 'inspectorName', label: 'Inspector' },
+  { key: 'unit', label: 'Unit' }
 ] as const;
 
 const NARRATIVE_SECTION_ORDER = ['Summary', 'Inspection', 'Findings', 'NDE/Testing', 'Repairs', 'Recommendations', 'Return to Service'] as const;
@@ -88,6 +91,22 @@ export function Api570PipingExternalEntryPage() {
     } catch {}
   };
 
+  const saveReport = async () => {
+    if (!report) return;
+    setIsSaving(true);
+    setError('');
+    try {
+      const saved = await reportingApi.saveInstance(report.id, report);
+      setReport(saved);
+      setIsDirty(false);
+      setMessage('Report saved.');
+    } catch (e) {
+      setError(getErrorMessage(e, 'Failed to save report.'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const localSuggestionsFor = (answer: InspectionReportAnswer): InlineSuggestion[] => {
     const condition = toCondition(answer); const notes = (answer.comment || answer.value || '').toLowerCase(); const suggestions: InlineSuggestion[] = [];
     if (notes.includes('pitting')) suggestions.push({ promptType: 'keyword', severity: 'warning', suggestion: 'Add pit depth and whether pitting is general or localized.' });
@@ -110,16 +129,26 @@ export function Api570PipingExternalEntryPage() {
 
   return <div className="page report-page">
     <h1>API 570 Piping External - Report Entry</h1>
-    <div className="report-sticky-header card">
-      <div className="report-header-grid">
-        {HEADER_FIELDS.map((field) => <div key={field.key} className="header-chip"><span>{field.label}</span><strong>{(report[field.key as keyof InspectionReport] as string) || '—'}</strong></div>)}
-        <div className="header-chip metric"><span>Findings</span><strong>{findingsCount}</strong></div>
-        <div className="header-chip metric"><span>Recommendations</span><strong>{recommendationsCount}</strong></div>
+    <div className="report-sticky-toolbar card">
+      <div className="toolbar-title"><strong>API 570 Piping External - Report Entry</strong></div>
+      <div className="toolbar-metrics">
+        <span>Findings: <strong>{findingsCount}</strong></span>
+        <span>Recommendations: <strong>{recommendationsCount}</strong></span>
+      </div>
+      <div className="toolbar-actions">
+        <span className="muted">{isSaving ? 'Saving…' : isDirty ? 'Unsaved changes' : 'Saved'}</span>
+        <button type="button" onClick={() => void saveReport()} disabled={isSaving || !isDirty}>{isSaving ? 'Saving…' : 'Save'}</button>
       </div>
     </div>
 
-    <div className="workflow-layout three-col-layout">
+    <div className="workflow-layout report-content-layout">
       <div>
+        <div className="card accordion-card" key="report-header">
+          <button className="accordion-toggle" onClick={() => setCollapsedSections((s) => ({ ...s, reportHeader: !s.reportHeader }))}>Report Header <span>{collapsedSections.reportHeader ? '+' : '−'}</span></button>
+          {!collapsedSections.reportHeader && <div className="report-header-grid">
+            {HEADER_FIELDS.map((field) => <div key={`${field.key}-${field.label}`} className="header-chip"><span>{field.label}</span><strong>{(report[field.key as keyof InspectionReport] as string) || '—'}</strong></div>)}
+          </div>}
+        </div>
         {sectionBuckets.map((bucket) => <div className="card accordion-card" key={bucket.name}>
           <button className="accordion-toggle" onClick={() => setCollapsedSections((s) => ({ ...s, [bucket.name]: !s[bucket.name] }))}>{bucket.name} <span>{collapsedSections[bucket.name] ? '+' : '−'}</span></button>
           {!collapsedSections[bucket.name] && bucket.entries.map(({ section, i: sectionIndex }) => <div className="section-card" key={`${section.sectionId}-${section.instanceNumber ?? 0}`}>
@@ -136,8 +165,10 @@ export function Api570PipingExternalEntryPage() {
           </div>)}
         </div>)}
       </div>
-      <aside className="card assist-panel sticky-panel"><h3>iE Assist</h3><label className="toggle-row"><input type="checkbox" checked={ieAssistEnabled} onChange={(e) => setIeAssistEnabled(e.target.checked)} /><span>Enabled</span></label><p className="muted">Active inline suggestions are shown within note fields.</p></aside>
-      <aside className="card alerts-panel sticky-panel"><h3>Alerts</h3><button type="button" onClick={async () => { if (!report) return; const next = await reportingApi.getAlerts(report); setAlerts(next); }}>Refresh Alerts</button>{alerts.length === 0 ? <p className="muted">No alerts loaded.</p> : <ul>{alerts.map((a) => <li key={a.id}><strong>{a.severity}:</strong> {a.title}</li>)}</ul>}</aside>
+      <aside className="right-sidebar sticky-panel-group">
+        <div className="card assist-panel"><h3>iE Assist</h3><label className="toggle-row"><input type="checkbox" checked={ieAssistEnabled} onChange={(e) => setIeAssistEnabled(e.target.checked)} /><span>Enabled</span></label><p className="muted">Active inline suggestions are shown within note fields.</p></div>
+        <div className="card alerts-panel"><h3>Alerts</h3><button type="button" onClick={async () => { if (!report) return; const next = await reportingApi.getAlerts(report); setAlerts(next); }}>Refresh Alerts</button>{alerts.length === 0 ? <p className="muted">No alerts loaded.</p> : <ul>{alerts.map((a) => <li key={a.id}><strong>{a.severity}:</strong> {a.title}</li>)}</ul>}</div>
+      </aside>
     </div>
   </div>;
 }

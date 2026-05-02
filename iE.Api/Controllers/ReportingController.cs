@@ -303,7 +303,7 @@ public class ReportingController(
         [FromQuery] string? assetId,
         [FromBody] CreateReportInstanceRequest? request)
     {
-        var template = ReportingSeedData.GetTemplateById(templateId);
+        var template = reportTemplateRegistry.GetTemplateById(templateId);
         if (template is null)
         {
             return NotFound(new { error = $"Report template '{templateId}' was not found." });

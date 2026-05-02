@@ -233,17 +233,25 @@ label {
   color: #555;
 }
 
-.report-sticky-header {
+.report-sticky-toolbar {
   position: sticky;
   top: 0;
   z-index: 20;
   border-color: #d4ddea;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
 }
+
+.toolbar-metrics { display: flex; gap: 12px; flex-wrap: wrap; }
+.toolbar-actions { display: flex; gap: 8px; align-items: center; }
 
 .report-header-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 8px;
+  margin-top: 8px;
 }
 
 .header-chip {
@@ -258,17 +266,21 @@ label {
 .header-chip span { font-size: 12px; color: #5a6780; }
 .header-chip.metric strong { color: #0d3b82; font-size: 20px; }
 
-.three-col-layout { grid-template-columns: minmax(0, 2.2fr) minmax(220px, 0.9fr) minmax(220px, 0.9fr); align-items: start; }
-.sticky-panel { position: sticky; top: 88px; max-height: calc(100vh - 96px); overflow: auto; }
+.report-content-layout { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; gap: 16px; }
+.sticky-panel-group { position: sticky; top: 88px; max-height: calc(100vh - 96px); overflow: auto; display: grid; gap: 12px; }
+.right-sidebar { width: 300px; max-width: 100%; }
 
 .accordion-toggle { width: 100%; display: flex; justify-content: space-between; background: transparent; border: none; font-weight: 700; padding: 6px 0; }
 .section-card { border-top: 1px solid #eef1f6; padding-top: 8px; margin-top: 8px; }
 
-.inspection-row { display: grid; grid-template-columns: minmax(220px, 1fr) 180px minmax(260px, 2fr); gap: 8px; align-items: start; border: 1px solid #ebeff6; padding: 8px; border-radius: 8px; margin: 8px 0; }
+.inspection-row { display: grid; grid-template-columns: minmax(220px, 1.2fr) minmax(140px, 180px) minmax(220px, 1.8fr); gap: 8px; align-items: start; border: 1px solid #ebeff6; padding: 8px; border-radius: 8px; margin: 8px 0; }
+.inspection-row select, .inspection-row textarea { width: 100%; max-width: 100%; }
 
 @media (max-width: 1100px) {
-  .three-col-layout { grid-template-columns: 1fr; }
-  .sticky-panel { position: static; max-height: none; }
+  .report-sticky-toolbar { grid-template-columns: 1fr; }
+  .report-content-layout { grid-template-columns: 1fr; }
+  .sticky-panel-group { position: static; max-height: none; }
+  .right-sidebar { width: 100%; }
 }
 
 @media (max-width: 760px) {

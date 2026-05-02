@@ -62,6 +62,7 @@ export function DashboardPage() {
     recommendations: '',
     updatedDate: ''
   });
+  const [selectedReportIds, setSelectedReportIds] = useState<string[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -184,6 +185,24 @@ export function DashboardPage() {
     setSortDirection('asc');
   };
 
+  const isAllVisibleSelected = filteredReports.length > 0
+    && filteredReports.every((report) => selectedReportIds.includes(report.id));
+
+  const toggleReportSelection = (reportId: string, checked: boolean) => {
+    setSelectedReportIds((prev) => {
+      if (checked) return prev.includes(reportId) ? prev : [...prev, reportId];
+      return prev.filter((id) => id !== reportId);
+    });
+  };
+
+  const toggleSelectAllVisible = (checked: boolean) => {
+    if (!checked) {
+      setSelectedReportIds((prev) => prev.filter((id) => !filteredReports.some((report) => report.id === id)));
+      return;
+    }
+    setSelectedReportIds((prev) => Array.from(new Set([...prev, ...filteredReports.map((report) => report.id)])));
+  };
+
   const openReport = (report: InspectionReport) => {
     navigate('/reports/api-570-piping-external', { state: { reportId: report.id } });
   };
@@ -250,6 +269,12 @@ export function DashboardPage() {
                 {typeOptions.map((type) => <option key={type} value={type}>{type === 'all' ? 'All Report Types' : type}</option>)}
               </select>
             </div>
+            <div className="bulk-action-toolbar">
+              <span>{selectedReportIds.length} selected</span>
+              <button type="button" disabled={selectedReportIds.length === 0}>Download</button>
+              <button type="button" disabled={selectedReportIds.length === 0}>Edit</button>
+              <button type="button" disabled={selectedReportIds.length === 0}>Change Status</button>
+            </div>
 
             {error && <p className="error">{error}</p>}
             {isLoading ? <p>Loading reports...</p> : (
@@ -273,7 +298,14 @@ export function DashboardPage() {
                       <th />
                     </tr>
                     <tr>
-                      <th className="select-column">Select</th>
+                      <th className="select-column">
+                        <input
+                          type="checkbox"
+                          aria-label="Select all visible reports"
+                          checked={isAllVisibleSelected}
+                          onChange={(event) => toggleSelectAllVisible(event.target.checked)}
+                        />
+                      </th>
                       <th><button type="button" onClick={() => onSort('reportNumber')}>Report Number</button></th>
                       <th><button type="button" onClick={() => onSort('templateId')}>Report Type</button></th>
                       <th>Client</th>
@@ -293,7 +325,13 @@ export function DashboardPage() {
                     {filteredReports.map((report) => (
                       <tr key={report.id} onClick={() => openReport(report)} role="button" tabIndex={0}>
                         <td className="select-column">
-                          <input type="checkbox" aria-label={`Select report ${report.reportNumber || report.id}`} onClick={(event) => event.stopPropagation()} />
+                          <input
+                            type="checkbox"
+                            aria-label={`Select report ${report.reportNumber || report.id}`}
+                            checked={selectedReportIds.includes(report.id)}
+                            onClick={(event) => event.stopPropagation()}
+                            onChange={(event) => toggleReportSelection(report.id, event.target.checked)}
+                          />
                         </td>
                         <td>{report.reportNumber || report.id}</td>
                         <td>{getReportType(report)}</td>
@@ -309,11 +347,7 @@ export function DashboardPage() {
                         <td>{formatDateTime(report.updatedAt || report.createdAt)}</td>
                         <td>
                           <div className="row-action-toolbar">
-                            <button type="button" onClick={(event) => { event.stopPropagation(); openReport(report); }}>Preview</button>
-                            <button type="button" onClick={(event) => event.stopPropagation()}>Edit</button>
-                            <button type="button" onClick={(event) => event.stopPropagation()}>Download</button>
-                            <button type="button" onClick={(event) => event.stopPropagation()}>Export</button>
-                            <button type="button" onClick={(event) => event.stopPropagation()}>Change Status</button>
+                            <button type="button" onClick={(event) => { event.stopPropagation(); openReport(report); }}>Open</button>
                           </div>
                         </td>
                       </tr>

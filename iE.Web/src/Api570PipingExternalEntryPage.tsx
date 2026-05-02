@@ -39,7 +39,19 @@ const REPORT_FLOW = [
   { name: 'Final Review', keywords: ['final', 'review', 'approval', 'sign'], defaultCollapsed: true }
 ] as const;
 
-const DUPLICATE_HEADER_LABELS = new Set(['client','facility','unit','system id','circuit id','service','line numbers','pipe class','inspector name','inspection date']);
+const DUPLICATE_HEADER_LABELS = new Set([
+  'inspector',
+  'inspector name',
+  'line number(s)',
+  'line numbers',
+  'circuit',
+  'circuit id',
+  'piping class',
+  'pipe class',
+  'service',
+  'unit',
+  'inspection date'
+]);
 
 const getErrorMessage = (error: unknown, fallback: string) => (error instanceof ApiError ? error.message : error instanceof Error ? error.message : fallback);
 const findNarrativeSection = (narrative: NarrativeResult, title: string) => narrative.sections.find((section) => section.title.trim().toLowerCase() === title.toLowerCase());
@@ -192,9 +204,18 @@ export function Api570PipingExternalEntryPage() {
           </div>)}
         </div>)}
       </div>
-      <aside className="right-sidebar sticky-panel-group">
-        <div className="card assist-panel"><h3>iE Assist</h3><label className="toggle-row"><input type="checkbox" checked={ieAssistEnabled} onChange={(e) => setIeAssistEnabled(e.target.checked)} /><span>Enabled</span></label><p className="muted">Active inline suggestions are shown within note fields.</p></div>
-        <div className="card alerts-panel"><h3>Alerts</h3><button type="button" onClick={async () => { if (!report) return; const next = await reportingApi.getAlerts(report); setAlerts(next); }}>Refresh Alerts</button>{alerts.length === 0 ? <p className="muted">No alerts loaded.</p> : <ul>{alerts.map((a) => <li key={a.id}><strong>{a.severity}:</strong> {a.title}</li>)}</ul>}</div>
+      <aside className="right-sidebar">
+        <div className="card assist-alerts-panel">
+          <h3>iE Assist &amp; Alerts</h3>
+          <label className="toggle-row">
+            <input type="checkbox" checked={ieAssistEnabled} onChange={(e) => setIeAssistEnabled(e.target.checked)} />
+            <span>iE Assist enabled</span>
+          </label>
+          <p className="muted">Active inline suggestions are shown within note fields.</p>
+          <h4>Alerts</h4>
+          <button type="button" onClick={async () => { if (!report) return; const next = await reportingApi.getAlerts(report); setAlerts(next); }}>Refresh Alerts</button>
+          {alerts.length === 0 ? <p className="muted">No alerts loaded.</p> : <ul>{alerts.map((a) => <li key={a.id}><strong>{a.severity}:</strong> {a.title}</li>)}</ul>}
+        </div>
       </aside>
     </div>
   </div>;

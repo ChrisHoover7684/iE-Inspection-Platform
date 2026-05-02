@@ -1,5 +1,6 @@
 :root {
   font-family: Arial, sans-serif;
+  --report-header-sticky-height: 150px;
 }
 
 body {
@@ -21,8 +22,7 @@ body {
 }
 
 .page-wrapper {
-  padding: 12px 24px 24px 24px;
-  overflow-x: hidden;
+  padding: 12px 32px 24px 24px;
 }
 
 @media (max-width: 900px) {
@@ -300,6 +300,13 @@ label {
   overflow: visible;
 }
 
+
+.report-header-sticky .card,
+.report-header-sticky .accordion-card,
+.report-header-sticky .input-container {
+  overflow: visible;
+}
+
 .report-page-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
@@ -311,7 +318,7 @@ label {
 
 .report-sidebar {
   position: sticky;
-  top: 140px;
+  top: calc(var(--report-header-sticky-height) + 16px);
   align-self: start;
   width: 340px;
   min-width: 340px;

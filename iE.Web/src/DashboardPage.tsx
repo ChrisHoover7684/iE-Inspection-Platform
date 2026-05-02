@@ -58,8 +58,8 @@ export function DashboardPage() {
   const [error, setError] = useState('');
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilters, setStatusFilters] = useState<string[]>([]);
-  const [typeFilters, setTypeFilters] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [sortColumn, setSortColumn] = useState<SortColumn>('updatedAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [columnFilters, setColumnFilters] = useState({
@@ -146,8 +146,8 @@ export function DashboardPage() {
 
   const clearAllFilters = () => {
     setSearchTerm('');
-    setStatusFilters([]);
-    setTypeFilters([]);
+    setStatusFilter('all');
+    setTypeFilter('all');
     setColumnFilters({
       reportNumber: '',
       reportType: '',
@@ -172,7 +172,7 @@ export function DashboardPage() {
 
     return reports
       .filter((report) => (
-        statusFilters.length === 0 ? true : statusFilters.includes(report.status || 'Unknown')
+        statusFilter === 'all' ? true : statusFilter === (report.status || 'Unknown')
       ))
       .filter((report) => {
         const normalized = normalizeStatus(report.status);
@@ -183,7 +183,7 @@ export function DashboardPage() {
         return ['rejectedwithcomments', 'returnedforrevision', 'rejected'].includes(normalized);
       })
       .filter((report) => (
-        typeFilters.length === 0 ? true : typeFilters.includes(getReportType(report))
+        typeFilter === 'all' ? true : typeFilter === getReportType(report)
       ))
       .filter((report) => {
         if (!loweredSearch) return true;
@@ -250,7 +250,7 @@ export function DashboardPage() {
           : String(left).localeCompare(String(right));
         return sortDirection === 'asc' ? comparison : -comparison;
       });
-  }, [reports, searchTerm, statusFilters, typeFilters, activeSlicer, columnFilters, sortColumn, sortDirection]);
+  }, [reports, searchTerm, statusFilter, typeFilter, activeSlicer, columnFilters, sortColumn, sortDirection]);
 
   const renderResizeHandle = (column: ReportColumnKey) => (
     <span
@@ -355,24 +355,16 @@ export function DashboardPage() {
                 onChange={(event) => setSearchTerm(event.target.value)}
               />
               <select
-                multiple
                 aria-label="Status filter"
-                value={statusFilters}
-                onChange={(event) => {
-                  const selected = Array.from(event.target.selectedOptions).map((option) => option.value).filter((value) => value !== 'all');
-                  setStatusFilters(selected);
-                }}
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
               >
                 {statusOptions.map((status) => <option key={status} value={status}>{status === 'all' ? 'All Statuses' : status}</option>)}
               </select>
               <select
-                multiple
                 aria-label="Report type filter"
-                value={typeFilters}
-                onChange={(event) => {
-                  const selected = Array.from(event.target.selectedOptions).map((option) => option.value).filter((value) => value !== 'all');
-                  setTypeFilters(selected);
-                }}
+                value={typeFilter}
+                onChange={(event) => setTypeFilter(event.target.value)}
               >
                 {typeOptions.map((type) => <option key={type} value={type}>{type === 'all' ? 'All Report Types' : type}</option>)}
               </select>

@@ -62,7 +62,7 @@ const toCondition = (answer: InspectionReportAnswer): 'acceptable' | 'issue' | '
   const value = `${answer.value ?? ''} ${answer.comment ?? ''}`.toLowerCase();
   if (value.includes('n/a') || value.includes('na')) return 'na';
   if (value.includes('monitor')) return 'monitor';
-  if (answer.recommendationRequired || answer.repairRequired || answer.photoRequired || value.includes('issue') || value.includes('defect')) return 'issue';
+  if (value.includes('issue') || value.includes('defect')) return 'issue';
   return 'acceptable';
 };
 
@@ -206,7 +206,7 @@ export function Api570PipingExternalEntryPage() {
               const showMonitorDetails = condition === 'monitor';
               return <div className="inspection-row" key={`${section.sectionId}-${answer.fieldId}-${answerIndex}`}>
                 <div><label><strong>{answer.label}</strong></label></div>
-                <div><select value={toCondition(answer)} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value === 'na' ? 'N/A' : e.target.value, recommendationRequired: e.target.value === 'issue' ? answer.recommendationRequired ?? false : false })}><option value="na">N/A</option><option value="acceptable">Acceptable</option><option value="monitor">Monitor</option><option value="issue">Issue</option></select></div>
+                <div><select value={toCondition(answer)} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value === 'na' ? 'N/A' : e.target.value, recommendationRequired: e.target.value === 'issue' ? answer.recommendationRequired ?? false : false, photoRequired: e.target.value === 'issue' ? answer.photoRequired ?? false : false })}><option value="na">N/A</option><option value="acceptable">Acceptable</option><option value="monitor">Monitor</option><option value="issue">Issue</option></select></div>
                 <div><textarea placeholder="Notes" value={answer.comment ?? ''} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { comment: e.target.value })} />
                 {suggestions.length > 0 && <ul className="suggestions">{suggestions.map((s, idx) => <li key={`${s.promptType}-${idx}`}><strong>{s.severity.toUpperCase()}:</strong> {s.suggestion}</li>)}</ul>}</div>
                 {(showIssueDetails || showMonitorDetails) && <div className="inspection-row-details">

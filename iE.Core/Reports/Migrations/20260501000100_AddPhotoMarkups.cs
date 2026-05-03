@@ -1,14 +1,12 @@
 using System;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
-using iE.Core.Reports;
+
 
 #nullable disable
 
 namespace iE.Core.Reports.Migrations
 {
-    [DbContext(typeof(InspectionReportsDbContext))]
-    [Migration("20260501000100_AddPhotoMarkups")]
+    
     public partial class AddPhotoMarkups : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using iE.Core.Inspection.CorrosionRate;
+using iE.Core.Calculators.Corrosion;
 
 namespace iE.Api.Controllers
 {

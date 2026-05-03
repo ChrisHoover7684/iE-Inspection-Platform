@@ -3,7 +3,9 @@ import type {
   InspectionReport,
   NarrativeResult,
   ReportTemplate,
-  UiAlert
+  UiAlert,
+  CorrosionRateInput,
+  CorrosionRateResult
 } from './types';
 
 const DEFAULT_API_BASE_URL = 'http://localhost:5229';
@@ -67,4 +69,13 @@ export const reportingApi = {
     }),
   getAlerts: (report: InspectionReport) => apiFetch<UiAlert[]>('/api/reports/alerts', { method: 'POST', body: JSON.stringify(report) }),
   generateNarrative: (report: InspectionReport) => apiFetch<NarrativeResult>('/api/reports/generate-narrative', { method: 'POST', body: JSON.stringify(report) })
+};
+
+
+export const corrosionRateApi = {
+  calculate: (input: CorrosionRateInput) =>
+    apiFetch<CorrosionRateResult>('/api/inspection/corrosion-rate/calculate', {
+      method: 'POST',
+      body: JSON.stringify(input)
+    }, 'POST /api/inspection/corrosion-rate/calculate')
 };

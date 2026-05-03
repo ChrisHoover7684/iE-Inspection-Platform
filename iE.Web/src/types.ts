@@ -129,3 +129,29 @@ export type NarrativeResult = {
   sections: { title: string; narrative: string }[];
   recommendedActions: string[];
 };
+
+
+export type CorrosionRateInput = {
+  initialThicknessInches: number;
+  finalThicknessInches: number;
+  useDates: boolean;
+  exposureTimeYears?: number | null;
+  initialDate?: string | null;
+  finalDate?: string | null;
+  inspectionFactor: number;
+  currentThicknessInches: number;
+  tminInches: number;
+};
+
+export type CorrosionRateResult = {
+  thicknessLossInches: number;
+  exposureTimeYears: number;
+  corrosionRateInchesPerYear: number;
+  corrosionRateMpy: number;
+  corrosionRateMmPerYear: number;
+  remainingLifeYears?: number | null;
+  nextInspectionYears?: number | null;
+  nextInspectionDate?: string | null;
+  warnings: string[];
+  display: string;
+};

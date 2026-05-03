@@ -7,9 +7,9 @@ public sealed class PressureVesselAllowableStressResolver
 {
     private readonly MaterialStressService _materialStressService;
 
-    public PressureVesselAllowableStressResolver(MaterialStressService? materialStressService = null)
+    public PressureVesselAllowableStressResolver(MaterialStressService materialStressService)
     {
-        _materialStressService = materialStressService ?? new MaterialStressService();
+        _materialStressService = materialStressService ?? throw new ArgumentNullException(nameof(materialStressService));
     }
 
     public ResolvedAllowableStress Resolve(PressureVesselMaterialStressInput input)

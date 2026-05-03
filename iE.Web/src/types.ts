@@ -191,5 +191,9 @@ export type NozzleThicknessResult = { isValid:boolean; errorMessage:string; join
 export type Ug45TableEntry = { nps:string; minimumThicknessIn:number|null; isAvailable:boolean; };
 
 export type PressureVesselMaterialStressInput = { designCode:string; stressEra:string; designTemperatureF:number; materialSpec:string; materialGrade:string; productForm:string; alloyUNS:string; classConditionTemper:string; manualAllowableStress:boolean; allowableStressPsi:number|null; };
-export type ShellCalculationRequest = { input:CylindricalShellInput; materialStress:PressureVesselMaterialStressInput; };
+export type CylindricalShellCalculationRequest = { input:CylindricalShellInput; materialStress:PressureVesselMaterialStressInput; };
+export type SphericalShellCalculationRequest = { input:SphericalShellInput; materialStress:PressureVesselMaterialStressInput; };
+export type ConicalShellCalculationRequest = { input:ConicalShellInput; materialStress:PressureVesselMaterialStressInput|null; };
+export type HeadCalculationRequest = { input:HeadThicknessInput; materialStress:PressureVesselMaterialStressInput|null; };
+export type NozzleCalculationRequest = { input:NozzleThicknessInput; materialStress:PressureVesselMaterialStressInput|null; };
 export type CalculationEnvelope<T> = { resolvedAllowableStressPsi:number; materialMatched:string|null; temperatureUsed:number; wasInterpolated:boolean; wasExtrapolated:boolean; stressSourceMessage:string; result:T; warnings:string[]; };

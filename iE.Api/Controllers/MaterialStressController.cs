@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using iE.Core.MaterialStress.Models;
 using iE.Core.MaterialStress.Services;
-using iE.Core.MaterialStress.Importers;
 
 namespace iE.Api.Controllers
 
@@ -10,19 +9,11 @@ namespace iE.Api.Controllers
     [Route("api/material-stress")]
     public class MaterialStressController : ControllerBase
     {
-        private static readonly MaterialStressService _service;
+        private readonly MaterialStressService _service;
 
-        // Static constructor → runs once when API starts
-        static MaterialStressController()
+        public MaterialStressController(MaterialStressService service)
         {
-            _service = new MaterialStressService();
-
-            // Existing
-            NewStressDataImporter.ImportAll(_service);
-            OldStressDataImporter.ImportAll(_service);
-
-            // 🔥 ADD THIS
-            B313StressImporter.Import(_service);
+            _service = service;
         }
 
         [HttpPost("lookup")]

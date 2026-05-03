@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace iE.Core.Inspection.CorrosionRate
 {
@@ -14,6 +15,33 @@ namespace iE.Core.Inspection.CorrosionRate
             double corrosionRateInPerYr = thicknessLoss / exposureTime;
             double corrosionRateMpy = corrosionRateInPerYr * 1000.0;
             double corrosionRateMmPerYr = corrosionRateInPerYr * 25.4;
+            var warnings = new List<string>();
+
+            if (corrosionRateInPerYr <= 0)
+            {
+                warnings.Add("No measurable corrosion rate");
+            }
+
+            if (input.CurrentThicknessInches <= input.TminInches)
+            {
+                warnings.Add("Current thickness below Tmin");
+            }
+
+            double? remainingLifeYears = null;
+            double? nextInspectionYears = null;
+            DateTime? nextInspectionDate = null;
+
+            if (input.CurrentThicknessInches > input.TminInches && corrosionRateInPerYr > 0)
+            {
+                remainingLifeYears = (input.CurrentThicknessInches - input.TminInches) / corrosionRateInPerYr;
+                nextInspectionYears = remainingLifeYears.Value * input.InspectionFactor;
+                nextInspectionDate = DateTime.UtcNow.Date.AddDays(nextInspectionYears.Value * 365.25);
+            }
+            else
+            {
+                warnings.Add("Remaining life not calculable");
+                warnings.Add("Remaining life cannot be calculated");
+            }
 
             return new CorrosionRateResult
             {
@@ -22,6 +50,10 @@ namespace iE.Core.Inspection.CorrosionRate
                 CorrosionRateInchesPerYear = Math.Round(corrosionRateInPerYr, 5),
                 CorrosionRateMpy = Math.Round(corrosionRateMpy, 2),
                 CorrosionRateMmPerYear = Math.Round(corrosionRateMmPerYr, 4),
+                RemainingLifeYears = remainingLifeYears.HasValue ? Math.Round(remainingLifeYears.Value, 2) : null,
+                NextInspectionYears = nextInspectionYears.HasValue ? Math.Round(nextInspectionYears.Value, 2) : null,
+                NextInspectionDate = nextInspectionDate,
+                Warnings = warnings,
                 Display =
                     $"Corrosion Rate:\n" +
                     $"{corrosionRateInPerYr:F5} inches/year\n" +
@@ -61,6 +93,15 @@ namespace iE.Core.Inspection.CorrosionRate
 
             if (input.InitialThicknessInches <= input.FinalThicknessInches)
                 throw new Exception("Initial thickness must be greater than final thickness.");
+
+            if (input.CurrentThicknessInches <= 0)
+                throw new Exception("Current thickness must be > 0.");
+
+            if (input.TminInches <= 0)
+                throw new Exception("Tmin must be > 0.");
+
+            if (input.InspectionFactor <= 0)
+                throw new Exception("Inspection factor must be > 0.");
         }
     }
 }

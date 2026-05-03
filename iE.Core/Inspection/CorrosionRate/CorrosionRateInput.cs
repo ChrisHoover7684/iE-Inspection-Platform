@@ -11,5 +11,9 @@
 
         public DateTime? InitialDate { get; set; }
         public DateTime? FinalDate { get; set; }
+
+        public double InspectionFactor { get; set; } = 0.5;
+        public double CurrentThicknessInches { get; set; }
+        public double TminInches { get; set; }
     }
 }

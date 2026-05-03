@@ -195,5 +195,5 @@ export type CylindricalShellCalculationRequest = { input:CylindricalShellInput; 
 export type SphericalShellCalculationRequest = { input:SphericalShellInput; materialStress:PressureVesselMaterialStressInput; };
 export type ConicalShellCalculationRequest = { input:ConicalShellInput; materialStress:PressureVesselMaterialStressInput|null; };
 export type HeadCalculationRequest = { input:HeadThicknessInput; materialStress:PressureVesselMaterialStressInput|null; };
-export type NozzleCalculationRequest = { input:NozzleThicknessInput; materialStress:PressureVesselMaterialStressInput|null; };
+export type NozzleCalculationRequest = { input:NozzleThicknessInput; };
 export type CalculationEnvelope<T> = { resolvedAllowableStressPsi:number; materialMatched:string|null; temperatureUsed:number; wasInterpolated:boolean; wasExtrapolated:boolean; stressSourceMessage:string; result:T; warnings:string[]; };

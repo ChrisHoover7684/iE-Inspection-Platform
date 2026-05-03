@@ -103,6 +103,7 @@ public sealed class HeadThicknessService
         if (pressure <= 0) throw new ArgumentException("Pressure must be greater than 0");
         if (sizeTerm <= 0) throw new ArgumentException(sizeError);
         if (allowableStress <= 0) throw new ArgumentException("Allowable stress must be greater than 0");
+        if (double.IsNaN(jointEfficiency) || double.IsInfinity(jointEfficiency)) throw new ArgumentException("Joint efficiency must be a finite value");
         if (jointEfficiency <= 0 || jointEfficiency > 1) throw new ArgumentException("Joint efficiency must be between 0 and 1");
     }
 }

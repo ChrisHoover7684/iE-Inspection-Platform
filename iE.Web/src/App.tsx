@@ -4,6 +4,7 @@ import { ReportEditPage } from './ReportEditPage';
 import { ReportsTestDashboardPage } from './ReportsTestDashboardPage';
 import { DashboardPage } from './DashboardPage';
 import { CorrosionRateCalculatorPage } from './CorrosionRateCalculatorPage';
+import { PipeLookupCalculatorPage } from './PipeLookupCalculatorPage';
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
       <Route path="/reports/api-570-piping-external" element={<Api570PipingExternalEntryPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/calculators/corrosion-rate" element={<CorrosionRateCalculatorPage />} />
+      <Route path="/calculators/pipe-lookup" element={<PipeLookupCalculatorPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );

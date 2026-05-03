@@ -172,3 +172,20 @@ export type PipeLookupResult = {
   upperLimitPlus12_5: number;
   display: string;
 };
+
+
+export type CylindricalShellInput = { designPressurePsi:number; allowableStressPsi:number; insideDiameterIn:number; outsideDiameterIn:number; originalThicknessIn:number; jointEfficiency:number; corrosionAllowanceIn:number; providedThicknessIn:number; };
+export type CylindricalShellResult = { radiusIn:number; circumferentialRequiredThicknessIn:number; longitudinalRequiredThicknessIn:number; governingRequiredThicknessIn:number; requiredWithCorrosionAllowanceIn:number; marginIn:number; };
+export type SphericalShellInput = CylindricalShellInput;
+export type SphericalShellResult = { insideRadiusIn:number; governingRequiredThicknessIn:number; requiredWithCorrosionAllowanceIn:number; marginIn:number; warnings:string[]; };
+export type ConicalShellInput = { designPressurePsi:number; allowableStressPsi:number; effectiveInsideDiameterIn:number; halfApexAngleDeg:number; jointEfficiency:number; corrosionAllowanceIn:number; providedThicknessIn:number; };
+export type ConicalShellResult = { formulaRequiredThicknessIn:number; requiredWithCorrosionAllowanceIn:number; marginIn:number; warnings:string[]; };
+export type HeadType = 'Ellipsoidal2To1'|'Hemispherical'|'TorisphericalAsmeFd'|'Conical'|'Toriconical'|'FlatUg34';
+export type HeadThicknessInput = { headType:HeadType; designPressurePsi:number; allowableStressPsi:number; jointEfficiency:number; effectiveInsideDiameterIn:number; effectiveInsideRadiusIn:number; crownRadiusIn:number; halfApexAngleDeg:number; flatHeadCFactor:number; corrosionAllowanceIn:number; providedThicknessIn:number; };
+export type HeadThicknessResult = { governingRequiredThicknessIn:number; requiredWithCorrosionAllowanceIn:number; marginIn:number; warnings:string[]; };
+export type NozzleType = 'PipeNozzle'|'ForgedNozzle'|'LongWeldNeck'|'FittingNozzle';
+export type AttachmentLocation = 'Shell'|'Head';
+export type CodeEra = 'Pre1999'|'Post1999';
+export type NozzleThicknessInput = { designCode:string; designPressurePsi:number; externalPressurePsi:number; designTemperatureF:number; jointEfficiency:number; corrosionAllowanceIn:number; manualAllowableStress:boolean; allowableStressPsi:number; materialSpec:string; materialGrade:string; materialProductForm:string; codeEra:CodeEra; attachmentLocation:AttachmentLocation; shellOrHeadRequiredThicknessIn:number; shellOrHeadExternalRequiredThicknessIn:number; ug16MinimumThicknessIn:number; nozzleType:NozzleType; useOdForTa:boolean; useIdForTa:boolean; outsideDiameterIn:number; insideDiameterIn:number; nominalThicknessIn:number; originalThicknessIn:number; nominalPipeSize:string; ug45TableMinimumThicknessIn:number|null; };
+export type NozzleThicknessResult = { isValid:boolean; errorMessage:string; jointEfficiencyUsed:number; insideRadiusUsed:number; taRequiredThicknessIn:number; tb1RequiredThicknessIn:number; tb2RequiredThicknessIn:number; tb3TableThicknessIn:number; tb3PlusCorrosionAllowanceIn:number; tbRequiredThicknessIn:number; pressureRequiredThicknessIn:number; governingRequiredThicknessIn:number; marginIn:number; providedThicknessIn:number; corrodedThicknessIn:number; requiredThicknessPlusCorrosionAllowanceIn:number; isAcceptable:boolean; warnings:string[]; };
+export type Ug45TableEntry = { nps:string; minimumThicknessIn:number|null; isAvailable:boolean; };

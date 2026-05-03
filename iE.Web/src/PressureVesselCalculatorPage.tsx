@@ -1,20 +1,94 @@
-import { useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { ApiError, pressureVesselApi } from './api';
+import type {
+  AttachmentLocation,
+  CodeEra,
+  ConicalShellInput,
+  ConicalShellResult,
+  CylindricalShellInput,
+  CylindricalShellResult,
+  HeadThicknessInput,
+  HeadThicknessResult,
+  HeadType,
+  NozzleThicknessInput,
+  NozzleThicknessResult,
+  NozzleType,
+  SphericalShellInput,
+  SphericalShellResult,
+  Ug45TableEntry
+} from './types';
 
 type Tab = 'shells' | 'heads' | 'nozzles';
+type ShellGeom = 'cylindrical' | 'spherical' | 'conical';
+
+const asNum = (v: string) => Number(v || 0);
+const fmt = (v: number) => v.toFixed(4);
 
 export function PressureVesselCalculatorPage() {
   const [tab, setTab] = useState<Tab>('shells');
-  return (
-    <div style={{ padding: 16 }}>
-      <h1>Pressure Vessel Calculator</h1>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-        <button onClick={() => setTab('shells')}>Shells</button>
-        <button onClick={() => setTab('heads')}>Heads</button>
-        <button onClick={() => setTab('nozzles')}>Nozzles / UG-45</button>
-      </div>
-      {tab === 'shells' && <div>Shell thickness calculators (cylindrical, spherical, conical).</div>}
-      {tab === 'heads' && <div>Head thickness calculator with geometry-specific inputs.</div>}
-      {tab === 'nozzles' && <div>Nozzle minimum thickness and UG-45 workflow.</div>}
-    </div>
-  );
+  const [error, setError] = useState<string | null>(null);
+
+  const [shellGeom, setShellGeom] = useState<ShellGeom>('cylindrical');
+  const [headTypes, setHeadTypes] = useState<HeadType[]>([]);
+  const [nozzleTypes, setNozzleTypes] = useState<NozzleType[]>([]);
+  const [ug45Rows, setUg45Rows] = useState<Ug45TableEntry[]>([]);
+
+  useEffect(() => { pressureVesselApi.getHeadTypes().then(setHeadTypes).catch(() => setHeadTypes([])); pressureVesselApi.getNozzleTypes().then(setNozzleTypes).catch(() => setNozzleTypes([])); pressureVesselApi.getUg45Table().then(setUg45Rows).catch(() => setUg45Rows([])); }, []);
+
+  const [cyl, setCyl] = useState<CylindricalShellInput>({ designPressurePsi: 150, allowableStressPsi: 20000, insideDiameterIn: 48, outsideDiameterIn: 0, originalThicknessIn: 0.5, jointEfficiency: 1, corrosionAllowanceIn: 0.125, providedThicknessIn: 0.625 });
+  const [sph, setSph] = useState<SphericalShellInput>({ designPressurePsi: 150, allowableStressPsi: 20000, insideDiameterIn: 48, outsideDiameterIn: 0, originalThicknessIn: 0.5, jointEfficiency: 1, corrosionAllowanceIn: 0.125, providedThicknessIn: 0.625 });
+  const [cone, setCone] = useState<ConicalShellInput>({ designPressurePsi: 150, allowableStressPsi: 20000, effectiveInsideDiameterIn: 48, halfApexAngleDeg: 30, jointEfficiency: 1, corrosionAllowanceIn: 0.125, providedThicknessIn: 0.625 });
+  const [shellResult, setShellResult] = useState<CylindricalShellResult | SphericalShellResult | ConicalShellResult | null>(null);
+
+  const [head, setHead] = useState<HeadThicknessInput>({ headType: 'Ellipsoidal2To1', designPressurePsi: 150, allowableStressPsi: 20000, jointEfficiency: 1, effectiveInsideDiameterIn: 48, effectiveInsideRadiusIn: 24, crownRadiusIn: 48, halfApexAngleDeg: 30, flatHeadCFactor: 0.3, corrosionAllowanceIn: 0.125, providedThicknessIn: 0.625 });
+  const [headResult, setHeadResult] = useState<HeadThicknessResult | null>(null);
+
+  const [noz, setNoz] = useState<NozzleThicknessInput>({ designCode: 'ASME Section VIII 1999', designPressurePsi: 150, externalPressurePsi: 0, designTemperatureF: 100, jointEfficiency: 1, corrosionAllowanceIn: 0.125, manualAllowableStress: false, allowableStressPsi: 20000, materialSpec: 'SA-106', materialGrade: 'B', materialProductForm: 'Seamless Pipe', codeEra: 'Post1999', attachmentLocation: 'Shell', shellOrHeadRequiredThicknessIn: 0.1, shellOrHeadExternalRequiredThicknessIn: 0, ug16MinimumThicknessIn: 0.0625, nozzleType: 'PipeNozzle', useOdForTa: true, useIdForTa: false, outsideDiameterIn: 4.5, insideDiameterIn: 4.0, nominalThicknessIn: 0.25, originalThicknessIn: 0.25, nominalPipeSize: '4', ug45TableMinimumThicknessIn: null });
+  const [nozResult, setNozResult] = useState<NozzleThicknessResult | null>(null);
+
+  const headFields = useMemo(() => ({
+    dia: ['Ellipsoidal2To1', 'Conical', 'Toriconical', 'FlatUg34'].includes(head.headType),
+    radius: head.headType === 'Hemispherical', crown: head.headType === 'TorisphericalAsmeFd', angle: ['Conical', 'Toriconical'].includes(head.headType), c: head.headType === 'FlatUg34'
+  }), [head.headType]);
+
+  const syncRelationship = (setter: any, data: any, name: string, value: number) => {
+    const n = { ...data, [name]: value };
+    const od = name === 'outsideDiameterIn' ? value : n.outsideDiameterIn;
+    const id = name === 'insideDiameterIn' ? value : n.insideDiameterIn;
+    const t = name === 'originalThicknessIn' || name === 'nominalThicknessIn' ? value : (n.originalThicknessIn ?? n.nominalThicknessIn);
+    if (od > 0 && id > 0) { if ('originalThicknessIn' in n) n.originalThicknessIn = (od - id) / 2; if ('nominalThicknessIn' in n) n.nominalThicknessIn = (od - id) / 2; }
+    else if (od > 0 && t > 0) n.insideDiameterIn = od - 2 * t;
+    else if (id > 0 && t > 0) n.outsideDiameterIn = id + 2 * t;
+    setter(n);
+  };
+
+  const handleErr = (e: unknown) => setError(e instanceof ApiError ? e.message : 'Unexpected error');
+
+  return <div style={{ padding: 16 }}><h1>Pressure Vessel Calculator</h1>{error && <div style={{ color: 'crimson' }}>{error}</div>}
+    <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>{(['shells', 'heads', 'nozzles'] as Tab[]).map(t => <button key={t} onClick={() => { setTab(t); setError(null); }}>{t === 'nozzles' ? 'Nozzles / UG-45' : t[0].toUpperCase() + t.slice(1)}</button>)}</div>
+    {tab === 'shells' && <form onSubmit={async (e: FormEvent) => { e.preventDefault(); try { setError(null); setShellResult(shellGeom === 'cylindrical' ? await pressureVesselApi.calculateCylindrical(cyl) : shellGeom === 'spherical' ? await pressureVesselApi.calculateSpherical(sph) : await pressureVesselApi.calculateConical(cone)); } catch (e) { handleErr(e); } }}>
+      <select value={shellGeom} onChange={e => setShellGeom(e.target.value as ShellGeom)}><option value='cylindrical'>Cylindrical</option><option value='spherical'>Spherical</option><option value='conical'>Conical</option></select>
+      {shellGeom !== 'conical' && <><input value={(shellGeom==='cylindrical'?cyl:sph).insideDiameterIn} onChange={e=>syncRelationship(shellGeom==='cylindrical'?setCyl:setSph,shellGeom==='cylindrical'?cyl:sph,'insideDiameterIn',asNum(e.target.value))}/><input value={(shellGeom==='cylindrical'?cyl:sph).outsideDiameterIn} onChange={e=>syncRelationship(shellGeom==='cylindrical'?setCyl:setSph,shellGeom==='cylindrical'?cyl:sph,'outsideDiameterIn',asNum(e.target.value))}/><input value={(shellGeom==='cylindrical'?cyl:sph).originalThicknessIn} onChange={e=>syncRelationship(shellGeom==='cylindrical'?setCyl:setSph,shellGeom==='cylindrical'?cyl:sph,'originalThicknessIn',asNum(e.target.value))}/></>}
+      {shellGeom === 'conical' && <input value={cone.effectiveInsideDiameterIn} onChange={e=>setCone({...cone,effectiveInsideDiameterIn:asNum(e.target.value)})}/>}
+      {shellGeom === 'conical' && <input value={cone.halfApexAngleDeg} onChange={e=>setCone({...cone,halfApexAngleDeg:asNum(e.target.value)})}/>}
+      <input placeholder='Allowable stress psi' value={(shellGeom==='cylindrical'?cyl:shellGeom==='spherical'?sph:cone).allowableStressPsi} onChange={e=>shellGeom==='cylindrical'?setCyl({...cyl,allowableStressPsi:asNum(e.target.value)}):shellGeom==='spherical'?setSph({...sph,allowableStressPsi:asNum(e.target.value)}):setCone({...cone,allowableStressPsi:asNum(e.target.value)})}/>
+      <input placeholder='Joint efficiency' value={(shellGeom==='cylindrical'?cyl:shellGeom==='spherical'?sph:cone).jointEfficiency} onChange={e=>shellGeom==='cylindrical'?setCyl({...cyl,jointEfficiency:asNum(e.target.value)}):shellGeom==='spherical'?setSph({...sph,jointEfficiency:asNum(e.target.value)}):setCone({...cone,jointEfficiency:asNum(e.target.value)})}/>
+      <button type='submit'>Calculate</button>
+      {shellResult && <div>Formula: {fmt('formulaRequiredThicknessIn' in shellResult ? shellResult.formulaRequiredThicknessIn : shellResult.governingRequiredThicknessIn)} in; Required+CA: {fmt(shellResult.requiredWithCorrosionAllowanceIn)} in; Margin: {fmt(shellResult.marginIn)} in {('warnings' in shellResult ? shellResult.warnings : []).map((w:string)=><div key={w}>{w}</div>)}</div>}
+    </form>}
+    {tab === 'heads' && <form onSubmit={async e=>{e.preventDefault(); try {setHeadResult(await pressureVesselApi.calculateHead(head)); setError(null);} catch (e) {handleErr(e);} }}>
+      <select value={head.headType} onChange={e=>setHead({...head,headType:e.target.value as HeadType})}>{(headTypes.length?headTypes:['Ellipsoidal2To1','Hemispherical','TorisphericalAsmeFd','Conical','Toriconical','FlatUg34'] as HeadType[]).map(h=><option key={h}>{h}</option>)}</select>
+      {headFields.dia && <input value={head.effectiveInsideDiameterIn} onChange={e=>setHead({...head,effectiveInsideDiameterIn:asNum(e.target.value)})}/>} {headFields.radius && <input value={head.effectiveInsideRadiusIn} onChange={e=>setHead({...head,effectiveInsideRadiusIn:asNum(e.target.value)})}/>} {headFields.crown && <input value={head.crownRadiusIn} onChange={e=>setHead({...head,crownRadiusIn:asNum(e.target.value)})}/>} {headFields.angle && <input value={head.halfApexAngleDeg} onChange={e=>setHead({...head,halfApexAngleDeg:asNum(e.target.value)})}/>} {headFields.c && <input value={head.flatHeadCFactor} onChange={e=>setHead({...head,flatHeadCFactor:asNum(e.target.value)})}/>}
+      <input placeholder='Allowable stress psi' value={head.allowableStressPsi} onChange={e=>setHead({...head,allowableStressPsi:asNum(e.target.value)})}/><input placeholder='Joint efficiency' value={head.jointEfficiency} onChange={e=>setHead({...head,jointEfficiency:asNum(e.target.value)})}/><button type='submit'>Calculate</button>
+      {headResult && <div>Formula: {fmt(headResult.governingRequiredThicknessIn)} in; Required+CA: {fmt(headResult.requiredWithCorrosionAllowanceIn)} in; Margin: {fmt(headResult.marginIn)} in</div>}
+    </form>}
+    {tab === 'nozzles' && <form onSubmit={async e=>{e.preventDefault();try{setNozResult(await pressureVesselApi.calculateNozzle(noz));setError(null);}catch(e){handleErr(e)}}}>
+      <select value={noz.nozzleType} onChange={e=>setNoz({...noz,nozzleType:e.target.value as NozzleType})}>{(nozzleTypes.length?nozzleTypes:['PipeNozzle','ForgedNozzle','LongWeldNeck','FittingNozzle'] as NozzleType[]).map(n=><option key={n}>{n}</option>)}</select>
+      <input value={noz.allowableStressPsi} onChange={e=>setNoz({...noz,allowableStressPsi:asNum(e.target.value)})} placeholder='Allowable stress psi'/><input value={noz.jointEfficiency} onChange={e=>setNoz({...noz,jointEfficiency:asNum(e.target.value)})} placeholder='Joint efficiency'/>
+      <input value={noz.outsideDiameterIn} onChange={e=>syncRelationship(setNoz,noz,'outsideDiameterIn',asNum(e.target.value))}/><input value={noz.insideDiameterIn} onChange={e=>syncRelationship(setNoz,noz,'insideDiameterIn',asNum(e.target.value))}/><input value={noz.nominalThicknessIn} onChange={e=>syncRelationship(setNoz,noz,'nominalThicknessIn',asNum(e.target.value))}/>
+      <select value={noz.nominalPipeSize} onChange={e=>{const row=ug45Rows.find(r=>r.nps===e.target.value);setNoz({...noz,nominalPipeSize:e.target.value,ug45TableMinimumThicknessIn:row?.minimumThicknessIn??null});}}>{ug45Rows.map(r=><option key={r.nps} value={r.nps}>{r.nps}</option>)}</select>
+      <button type='submit'>Calculate</button>
+      {nozResult && <div>Formula: {fmt(nozResult.governingRequiredThicknessIn)} in; Required+CA: {fmt(nozResult.requiredThicknessPlusCorrosionAllowanceIn)} in; Margin: {fmt(nozResult.marginIn)} in; {nozResult.isAcceptable?'Acceptable':'Not acceptable'} {nozResult.errorMessage && <div>{nozResult.errorMessage}</div>} {nozResult.warnings.map(w=><div key={w}>{w}</div>)}</div>}
+    </form>}
+  </div>;
 }

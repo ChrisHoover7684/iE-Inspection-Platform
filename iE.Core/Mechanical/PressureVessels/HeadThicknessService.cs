@@ -32,16 +32,14 @@ public sealed class HeadThicknessService
 
     public HeadThicknessResult Calculate(HeadThicknessInput input)
     {
-        var jointEfficiency = input.JointEfficiency > 0 ? input.JointEfficiency : 1.0;
-
         var t = input.HeadType switch
         {
-            HeadType.Ellipsoidal2To1 => Ellipsoidal(input.DesignPressurePsi, input.EffectiveInsideDiameterIn, input.AllowableStressPsi, jointEfficiency),
-            HeadType.Hemispherical => Hemispherical(input.DesignPressurePsi, input.EffectiveInsideRadiusIn, input.AllowableStressPsi, jointEfficiency),
-            HeadType.TorisphericalAsmeFd => Torispherical(input.DesignPressurePsi, input.CrownRadiusIn, input.AllowableStressPsi, jointEfficiency),
-            HeadType.Conical => Conical(input.DesignPressurePsi, input.EffectiveInsideDiameterIn, input.HalfApexAngleDeg, input.AllowableStressPsi, jointEfficiency),
-            HeadType.Toriconical => Toriconical(input.DesignPressurePsi, input.EffectiveInsideDiameterIn, input.HalfApexAngleDeg, input.AllowableStressPsi, jointEfficiency),
-            HeadType.FlatUg34 => Flat(input.DesignPressurePsi, input.EffectiveInsideDiameterIn, input.AllowableStressPsi, jointEfficiency, input.FlatHeadCFactor),
+            HeadType.Ellipsoidal2To1 => Ellipsoidal(input.DesignPressurePsi, input.EffectiveInsideDiameterIn, input.AllowableStressPsi, input.JointEfficiency),
+            HeadType.Hemispherical => Hemispherical(input.DesignPressurePsi, input.EffectiveInsideRadiusIn, input.AllowableStressPsi, input.JointEfficiency),
+            HeadType.TorisphericalAsmeFd => Torispherical(input.DesignPressurePsi, input.CrownRadiusIn, input.AllowableStressPsi, input.JointEfficiency),
+            HeadType.Conical => Conical(input.DesignPressurePsi, input.EffectiveInsideDiameterIn, input.HalfApexAngleDeg, input.AllowableStressPsi, input.JointEfficiency),
+            HeadType.Toriconical => Toriconical(input.DesignPressurePsi, input.EffectiveInsideDiameterIn, input.HalfApexAngleDeg, input.AllowableStressPsi, input.JointEfficiency),
+            HeadType.FlatUg34 => Flat(input.DesignPressurePsi, input.EffectiveInsideDiameterIn, input.AllowableStressPsi, input.JointEfficiency, input.FlatHeadCFactor),
             _ => throw new ArgumentOutOfRangeException(nameof(input.HeadType), input.HeadType, "Unsupported head type")
         };
 

@@ -13,8 +13,8 @@ public class PressureVesselServicesTests
         var result = service.CalculateCylindrical(input);
 
         Assert.Equal(24, result.RadiusIn, 6);
-        Assert.Equal(0.1802, result.CircumferentialRequiredThicknessIn, 4);
-        Assert.Equal(0.0898, result.LongitudinalRequiredThicknessIn, 4);
+        Assert.Equal(0.1808136614766449, result.CircumferentialRequiredThicknessIn, 12);
+        Assert.Equal(0.08986520224694163, result.LongitudinalRequiredThicknessIn, 12);
         Assert.Equal(result.CircumferentialRequiredThicknessIn, result.GoverningRequiredThicknessIn, 4);
     }
 
@@ -27,7 +27,7 @@ public class PressureVesselServicesTests
         var result = service.CalculateSpherical(input);
 
         Assert.Equal(24, result.InsideRadiusIn, 6);
-        Assert.Equal(0.0900, result.GoverningRequiredThicknessIn, 4);
+        Assert.Equal(0.09006755066299724, result.GoverningRequiredThicknessIn, 12);
     }
 
     [Fact]
@@ -38,7 +38,22 @@ public class PressureVesselServicesTests
 
         var result = service.Calculate(input);
 
-        Assert.Equal(0.1800, result.GoverningRequiredThicknessIn, 4);
+        Assert.Equal(0.18013510132599448, result.GoverningRequiredThicknessIn, 12);
+    }
+
+    [Fact]
+    public void CylindricalShell_ThicknessIncreasesWhenJointEfficiencyDecreases()
+    {
+        var service = new ShellThicknessService();
+
+        var highEfficiency = new CylindricalShellInput(150, 20000, 48, 0, 0.25, 1.0, 0.125, 0.5);
+        var lowEfficiency = new CylindricalShellInput(150, 20000, 48, 0, 0.25, 0.85, 0.125, 0.5);
+
+        var highResult = service.CalculateCylindrical(highEfficiency);
+        var lowResult = service.CalculateCylindrical(lowEfficiency);
+
+        Assert.True(lowResult.CircumferentialRequiredThicknessIn > highResult.CircumferentialRequiredThicknessIn);
+        Assert.True(lowResult.LongitudinalRequiredThicknessIn > highResult.LongitudinalRequiredThicknessIn);
     }
 
     [Fact]

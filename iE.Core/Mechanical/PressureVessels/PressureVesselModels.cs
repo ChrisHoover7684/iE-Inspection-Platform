@@ -32,7 +32,23 @@ public sealed record SphericalShellResult(
     double InsideRadiusIn,
     double GoverningRequiredThicknessIn,
     double RequiredWithCorrosionAllowanceIn,
-    double MarginIn);
+    double MarginIn,
+    IReadOnlyList<string> Warnings);
+
+public sealed record ConicalShellInput(
+    double DesignPressurePsi,
+    double AllowableStressPsi,
+    double EffectiveInsideDiameterIn,
+    double HalfApexAngleDeg,
+    double JointEfficiency,
+    double CorrosionAllowanceIn,
+    double ProvidedThicknessIn);
+
+public sealed record ConicalShellResult(
+    double FormulaRequiredThicknessIn,
+    double RequiredWithCorrosionAllowanceIn,
+    double MarginIn,
+    IReadOnlyList<string> Warnings);
 
 public enum HeadType
 {
@@ -60,4 +76,5 @@ public sealed record HeadThicknessInput(
 public sealed record HeadThicknessResult(
     double GoverningRequiredThicknessIn,
     double RequiredWithCorrosionAllowanceIn,
-    double MarginIn);
+    double MarginIn,
+    IReadOnlyList<string> Warnings);

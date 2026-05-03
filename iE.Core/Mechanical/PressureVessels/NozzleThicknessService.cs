@@ -29,7 +29,7 @@ public sealed record NozzleThicknessInput(
     double NominalThicknessIn,
     double OriginalThicknessIn,
     string NominalPipeSize,
-    double Ug45TableMinimumThicknessIn)
+    double? Ug45TableMinimumThicknessIn)
 {
     public static NozzleThicknessInput Default() => new("ASME Section VIII 1999",150,0,100,1.0,0.125,false,20000,"SA-106","B","Seamless Pipe",CodeEra.Post1999,AttachmentLocation.Shell,0,0,0.0625,NozzleType.PipeNozzle,true,false,4.5,4.026,0.237,0.237,"1",0.116);
 }
@@ -100,7 +100,9 @@ public sealed class NozzleThicknessService
             if (input.ExternalPressurePsi > 0) warnings.Add("External pressure exists but external required thickness not provided. UG-45 t_b2 may be unconservative.");
         }
 
-        var tb3 = input.Ug45TableMinimumThicknessIn;
+        var tb3 = input.Ug45TableMinimumThicknessIn ?? Ug45Table.GetMinimumThickness(input.NominalPipeSize);
+        if (tb3 <= 0)
+            warnings.Add($"UG-45 table minimum thickness is unavailable for NPS '{input.NominalPipeSize}'.");
         var tb3PlusCa = tb3 + input.CorrosionAllowanceIn;
         var tb = Math.Max(Math.Min(tb1, tb3PlusCa), Math.Min(tb2, tb3PlusCa));
         var governing = Math.Max(tAWithCa, tb);
@@ -132,11 +134,15 @@ public sealed class NozzleThicknessService
 }
 
 
+public sealed record Ug45TableEntry(string Nps, double? MinimumThicknessIn, bool IsAvailable);
+
 public static class Ug45Table
 {
-    private static readonly Dictionary<string, double> MinimumThickness = new()
+    private static readonly Dictionary<string, double?> MinimumThickness = new()
     {
-        { "1/8", 0.060 },{ "1/4", 0.077 },{ "3/8", 0.080 },{ "1/2", 0.095 },{ "3/4", 0.099 },{ "1", 0.116 },{ "1-1/4", 0.123 },{ "1-1/2", 0.127 },{ "2", 0.135 },{ "2-1/2", 0.178 },{ "3", 0.189 },{ "3-1/2", 0.198 },{ "4", 0.207 },{ "5", 0.226 },{ "6", 0.245 },{ "8", 0.282 },{ "10", 0.319 },{ "12", 0.328 }
+        { "1/8", 0.060 },{ "1/4", 0.077 },{ "3/8", 0.080 },{ "1/2", 0.095 },{ "3/4", 0.099 },{ "1", 0.116 },{ "1-1/4", 0.123 },{ "1-1/2", 0.127 },{ "2", 0.135 },{ "2-1/2", 0.178 },{ "3", 0.189 },{ "3-1/2", 0.198 },{ "4", 0.207 },{ "5", 0.226 },{ "6", 0.245 },{ "8", 0.282 },{ "10", 0.319 },{ "12", 0.328 },
+        { "14", null },{ "16", null },{ "18", null },{ "20", null },{ "24", null }
     };
-    public static double GetMinimumThickness(string nps) => !string.IsNullOrEmpty(nps) && MinimumThickness.TryGetValue(nps, out var v) ? v : 0.116;
+    public static double GetMinimumThickness(string nps) => !string.IsNullOrEmpty(nps) && MinimumThickness.TryGetValue(nps, out var v) ? (v ?? 0d) : 0d;
+    public static IReadOnlyList<Ug45TableEntry> GetAll() => MinimumThickness.Select(x => new Ug45TableEntry(x.Key, x.Value, x.Value.HasValue)).ToList();
 }

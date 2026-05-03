@@ -139,4 +139,23 @@ public class PressureVesselServicesTests
         Assert.Equal(expectedFormulaThickness, result.GoverningRequiredThicknessIn, 12);
         Assert.Equal(expectedFormulaThickness + 0.2, result.RequiredWithCorrosionAllowanceIn, 12);
     }
+
+    [Fact]
+    public void ConicalShell_CalculatesFormulaAndCaSeparately()
+    {
+        var service = new ShellThicknessService();
+        var input = new ConicalShellInput(150, 20000, 48, 30, 1.0, 0.125, 0.5);
+        var result = service.CalculateConicalShell(input);
+        Assert.True(result.FormulaRequiredThicknessIn > 0);
+        Assert.Equal(result.FormulaRequiredThicknessIn + 0.125, result.RequiredWithCorrosionAllowanceIn, 10);
+    }
+
+    [Fact]
+    public void Nozzle_WarnsWhenUg37NotIncluded()
+    {
+        var service = new NozzleThicknessService();
+        var input = NozzleThicknessInput.Default();
+        var result = service.Calculate(input);
+        Assert.Contains(result.Warnings, w => w.Contains("UG-37"));
+    }
 }

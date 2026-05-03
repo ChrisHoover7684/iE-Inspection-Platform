@@ -37,13 +37,13 @@ public sealed class ShellThicknessService
         var jointEfficiency = NormalizeSphericalJointEfficiency(input.JointEfficiency);
 
         var t = Spherical(input.DesignPressurePsi, insideRadiusIn, input.AllowableStressPsi, jointEfficiency);
-        return new SphericalShellResult(insideRadiusIn, t, RequiredThicknessWithCa(t, input.CorrosionAllowanceIn), CalculateMargin(input.ProvidedThicknessIn, t, input.CorrosionAllowanceIn));
+        return new SphericalShellResult(insideRadiusIn, t, RequiredThicknessWithCa(t, input.CorrosionAllowanceIn), CalculateMargin(input.ProvidedThicknessIn, t, input.CorrosionAllowanceIn), Array.Empty<string>());
     }
 
-    public HeadThicknessResult CalculateConicalShell(double designPressurePsi, double diameterIn, double halfApexAngleDeg, double allowableStressPsi, double jointEfficiency, double corrosionAllowanceIn, double providedThicknessIn)
+    public ConicalShellResult CalculateConicalShell(ConicalShellInput input)
     {
-        var t = Conical(designPressurePsi, diameterIn, halfApexAngleDeg, allowableStressPsi, jointEfficiency);
-        return new HeadThicknessResult(t, RequiredThicknessWithCa(t, corrosionAllowanceIn), CalculateMargin(providedThicknessIn, t, corrosionAllowanceIn));
+        var t = Conical(input.DesignPressurePsi, input.EffectiveInsideDiameterIn, input.HalfApexAngleDeg, input.AllowableStressPsi, input.JointEfficiency);
+        return new ConicalShellResult(t, RequiredThicknessWithCa(t, input.CorrosionAllowanceIn), CalculateMargin(input.ProvidedThicknessIn, t, input.CorrosionAllowanceIn), Array.Empty<string>());
     }
 
     public static double CylindricalCircumferential(double pressure, double radius, double allowableStress, double jointEfficiency)

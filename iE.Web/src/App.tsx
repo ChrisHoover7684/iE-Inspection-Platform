@@ -5,6 +5,7 @@ import { ReportsTestDashboardPage } from './ReportsTestDashboardPage';
 import { DashboardPage } from './DashboardPage';
 import { CorrosionRateCalculatorPage } from './CorrosionRateCalculatorPage';
 import { PipeLookupCalculatorPage } from './PipeLookupCalculatorPage';
+import { PressureVesselCalculatorPage } from './PressureVesselCalculatorPage';
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/calculators/corrosion-rate" element={<CorrosionRateCalculatorPage />} />
       <Route path="/calculators/pipe-lookup" element={<PipeLookupCalculatorPage />} />
+      <Route path="/calculators/pressure-vessels" element={<PressureVesselCalculatorPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );

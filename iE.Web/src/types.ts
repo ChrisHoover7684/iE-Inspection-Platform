@@ -155,3 +155,20 @@ export type CorrosionRateResult = {
   warnings: string[];
   display: string;
 };
+
+
+export type PipeLookupInput = {
+  nps: string;
+  schedule: string;
+};
+
+export type PipeLookupResult = {
+  nps: string;
+  schedule: string;
+  outsideDiameter: number;
+  nominalThickness: number;
+  insideDiameter: number;
+  lowerLimitMinus12_5: number;
+  upperLimitPlus12_5: number;
+  display: string;
+};

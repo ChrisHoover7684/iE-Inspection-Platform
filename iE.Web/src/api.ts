@@ -5,7 +5,9 @@ import type {
   ReportTemplate,
   UiAlert,
   CorrosionRateInput,
-  CorrosionRateResult
+  CorrosionRateResult,
+  PipeLookupInput,
+  PipeLookupResult
 } from './types';
 
 const DEFAULT_API_BASE_URL = 'http://localhost:5229';
@@ -78,4 +80,15 @@ export const corrosionRateApi = {
       method: 'POST',
       body: JSON.stringify(input)
     }, 'POST /api/inspection/corrosion-rate/calculate')
+};
+
+
+export const pipeLookupApi = {
+  lookup: (input: PipeLookupInput) =>
+    apiFetch<PipeLookupResult>('/api/mechanical/pipe-data/lookup', {
+      method: 'POST',
+      body: JSON.stringify({ nps: input.nps, schedule: input.schedule })
+    }, 'POST /api/mechanical/pipe-data/lookup'),
+  getNps: () => apiFetch<string[]>('/api/mechanical/pipe-data/nps'),
+  getSchedules: (nps: string) => apiFetch<string[]>(`/api/mechanical/pipe-data/schedules/${encodeURIComponent(nps)}`)
 };

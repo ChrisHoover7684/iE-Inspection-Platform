@@ -50,6 +50,10 @@ const getReportType = (report: InspectionReport) => {
 
 const engineeringTools = ['B31.3 Pressure Calcs', 'Pressure Vessel Calcs', 'Damage Mechanisms'];
 const reportMenuActions = ['Create', 'View', 'Edit'];
+const calculators = [
+  { label: 'Corrosion Rate', path: '/calculators/corrosion-rate' },
+  { label: 'Pipe Lookup', path: '/calculators/pipe-lookup' }
+];
 
 export function DashboardPage() {
   const navigate = useNavigate();
@@ -313,6 +317,10 @@ export function DashboardPage() {
           ))}
           <p className="sidebar-section-title">Engineering Tools</p>
           {engineeringTools.map((item) => <button key={item} type="button" className="sidebar-link">{item}</button>)}
+          <p className="sidebar-section-title">Calculators</p>
+          {calculators.map((item) => (
+            <button key={item.label} type="button" className="sidebar-link" onClick={() => navigate(item.path)}>{item.label}</button>
+          ))}
           <p className="sidebar-section-title">Report Actions</p>
           {reportMenuActions.map((item) => <button key={item} type="button" className="sidebar-link">{item}</button>)}
           <button type="button" className="sidebar-link">Settings</button>

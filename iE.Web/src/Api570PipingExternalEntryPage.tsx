@@ -198,16 +198,23 @@ export function Api570PipingExternalEntryPage() {
           <button className="accordion-toggle" onClick={() => setCollapsedSections((s) => ({ ...s, [bucket.name]: !s[bucket.name] }))}>{bucket.name} <span>{collapsedSections[bucket.name] ? '+' : '−'}</span></button>
           {!collapsedSections[bucket.name] && bucket.entries.map(({ section, i: sectionIndex }) => <div className="section-card" key={`${section.sectionId}-${section.instanceNumber ?? 0}`}>
             <h3>{section.sectionTitle}</h3>
-            {section.answers.filter((answer) => !DUPLICATE_HEADER_LABELS.has(answer.label.trim().toLowerCase())).map((answer, answerIndex) => {
+            {section.answers.map((answer, answerIndex) => {
+              if (DUPLICATE_HEADER_LABELS.has(answer.label.trim().toLowerCase())) return null;
               const suggestions = [...localSuggestionsFor(answer), ...(fieldSuggestions[answer.fieldId] || [])];
+              const condition = toCondition(answer);
+              const showIssueDetails = condition === 'issue';
+              const showMonitorDetails = condition === 'monitor';
               return <div className="inspection-row" key={`${section.sectionId}-${answer.fieldId}-${answerIndex}`}>
                 <div><label><strong>{answer.label}</strong></label></div>
                 <div><select value={toCondition(answer)} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value === 'na' ? 'N/A' : e.target.value, recommendationRequired: e.target.value === 'issue' ? answer.recommendationRequired ?? false : false })}><option value="na">N/A</option><option value="acceptable">Acceptable</option><option value="monitor">Monitor</option><option value="issue">Issue</option></select></div>
-                <div><select value={answer.values?.[0] || ''} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { values: [e.target.value] })}><option value="">Severity</option><option value="Low">Low</option><option value="Medium">Medium</option><option value="High">High</option><option value="Critical">Critical</option></select></div>
-                <div><input type="text" value={answer.value ?? ''} placeholder="Location / Component" onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value })} /></div>
                 <div><textarea placeholder="Notes" value={answer.comment ?? ''} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { comment: e.target.value })} />
                 {suggestions.length > 0 && <ul className="suggestions">{suggestions.map((s, idx) => <li key={`${s.promptType}-${idx}`}><strong>{s.severity.toUpperCase()}:</strong> {s.suggestion}</li>)}</ul>}</div>
-                <div className="inspection-row-flags"><label><input type="checkbox" checked={!!answer.photoRequired} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { photoRequired: e.target.checked })} /> Photo Required</label><label><input type="checkbox" checked={!!answer.recommendationRequired} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { recommendationRequired: e.target.checked })} /> Recommendation Required</label></div>
+                {(showIssueDetails || showMonitorDetails) && <div className="inspection-row-details">
+                  {showIssueDetails && <select value={answer.values?.[0] || ''} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { values: [e.target.value] })}><option value="">Severity</option><option value="Low">Low</option><option value="Medium">Medium</option><option value="High">High</option><option value="Critical">Critical</option></select>}
+                  <input type="text" value={answer.value ?? ''} placeholder="Location / Component" onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value })} />
+                  {showMonitorDetails && <input type="text" value={answer.values?.[1] || ''} placeholder="Follow-up Note" onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { values: [answer.values?.[0] || '', e.target.value] })} />}
+                  {showIssueDetails && <div className="inspection-row-flags"><label><input type="checkbox" checked={!!answer.photoRequired} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { photoRequired: e.target.checked })} /> Photo Required</label><label><input type="checkbox" checked={!!answer.recommendationRequired} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { recommendationRequired: e.target.checked })} /> Recommendation Required</label></div>}
+                </div>}
               </div>;
             })}
           </div>)}

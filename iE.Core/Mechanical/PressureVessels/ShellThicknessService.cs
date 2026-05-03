@@ -9,7 +9,7 @@ public sealed class ShellThicknessService
         return 0;
     }
 
-    public double NormalizeCylindricalJointEfficiency(double jointEfficiency) => jointEfficiency > 0 ? jointEfficiency : 0.85;
+    public double NormalizeCylindricalJointEfficiency(double jointEfficiency) => jointEfficiency > 0 ? jointEfficiency : 1.0;
     public double NormalizeSphericalJointEfficiency(double jointEfficiency) => jointEfficiency > 0 ? jointEfficiency : 1.0;
 
     public double ResolveSphericalInsideRadius(double insideDiameterIn, double outsideDiameterIn, double originalThicknessIn)

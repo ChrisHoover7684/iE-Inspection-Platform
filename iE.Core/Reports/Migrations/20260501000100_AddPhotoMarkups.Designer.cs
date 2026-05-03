@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using iE.Core.Reports;
@@ -13,9 +14,10 @@ namespace iE.Core.Reports.Migrations
 {
     [DbContext(typeof(InspectionReportsDbContext))]
     [Migration("20260501000100_AddPhotoMarkups")]
-    partial class AddPhotoMarkups
+    partial class AddPhotoMarkups : Migration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

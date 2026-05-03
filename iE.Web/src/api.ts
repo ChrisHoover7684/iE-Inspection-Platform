@@ -8,6 +8,8 @@ import type {
   CorrosionRateResult,
   PipeLookupInput,
   PipeLookupResult,
+  LwnLookupInput,
+  LwnLookupResult,
   CylindricalShellInput,
   CylindricalShellResult,
   CylindricalShellCalculationRequest,
@@ -110,6 +112,16 @@ export const pipeLookupApi = {
     }, 'POST /api/mechanical/pipe-data/lookup'),
   getNps: () => apiFetch<string[]>('/api/mechanical/pipe-data/nps'),
   getSchedules: (nps: string) => apiFetch<string[]>(`/api/mechanical/pipe-data/schedules/${encodeURIComponent(nps)}`)
+};
+
+export const lwnLookupApi = {
+  lookup: (input: LwnLookupInput) =>
+    apiFetch<LwnLookupResult>('/api/mechanical/lwn/calculate', {
+      method: 'POST',
+      body: JSON.stringify({ size: input.size, schedule: input.schedule })
+    }, 'POST /api/mechanical/lwn/calculate'),
+  getSizes: () => apiFetch<string[]>('/api/mechanical/lwn/sizes'),
+  getSchedules: (size: string) => apiFetch<string[]>(`/api/mechanical/lwn/schedules/${encodeURIComponent(size)}`)
 };
 
 

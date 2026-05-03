@@ -173,6 +173,22 @@ export type PipeLookupResult = {
   display: string;
 };
 
+export type LwnLookupInput = {
+  size: string;
+  schedule: string;
+};
+
+export type LwnLookupResult = {
+  size: string;
+  schedule: string;
+  nominalThickness: number;
+  outsideDiameter: number;
+  insideDiameter: number;
+  minThickness: number;
+  maxThickness: number;
+  display: string;
+};
+
 
 export type CylindricalShellInput = { designPressurePsi:number; allowableStressPsi:number; insideDiameterIn:number; outsideDiameterIn:number; originalThicknessIn:number; jointEfficiency:number; corrosionAllowanceIn:number; providedThicknessIn:number; };
 export type CylindricalShellResult = { radiusIn:number; circumferentialRequiredThicknessIn:number; longitudinalRequiredThicknessIn:number; governingRequiredThicknessIn:number; requiredWithCorrosionAllowanceIn:number; marginIn:number; };

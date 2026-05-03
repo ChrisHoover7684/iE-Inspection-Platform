@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { ApiError, pressureVesselApi } from './api';
+import { ApiError, lwnLookupApi, pipeLookupApi, pressureVesselApi } from './api';
 import type {
   AttachmentLocation,
   CodeEra,
@@ -21,6 +21,7 @@ import type {
 
 type Tab = 'shells' | 'heads' | 'nozzles';
 type ShellGeom = 'cylindrical' | 'spherical' | 'conical';
+type NozzleSizingMode = 'nps_schedule' | 'lwn' | 'custom';
 
 const asNum = (v: string) => Number(v || 0);
 const fmt = (v: number) => v.toFixed(4);
@@ -48,6 +49,45 @@ export function PressureVesselCalculatorPage() {
 
   const [noz, setNoz] = useState<NozzleThicknessInput>({ designCode: 'ASME Section VIII 1999', designPressurePsi: 150, externalPressurePsi: 0, designTemperatureF: 100, jointEfficiency: 1, corrosionAllowanceIn: 0.125, manualAllowableStress: false, allowableStressPsi: 20000, materialSpec: 'SA-106', materialGrade: 'B', materialProductForm: 'Seamless Pipe', codeEra: 'Post1999', attachmentLocation: 'Shell', shellOrHeadRequiredThicknessIn: 0.1, shellOrHeadExternalRequiredThicknessIn: 0, ug16MinimumThicknessIn: 0.0625, nozzleType: 'PipeNozzle', useOdForTa: true, useIdForTa: false, outsideDiameterIn: 4.5, insideDiameterIn: 4.0, nominalThicknessIn: 0.25, originalThicknessIn: 0.25, nominalPipeSize: '4', ug45TableMinimumThicknessIn: null });
   const [nozResult, setNozResult] = useState<NozzleThicknessResult | null>(null);
+
+  const [nozzleSizingMode, setNozzleSizingMode] = useState<NozzleSizingMode>('nps_schedule');
+  const [npsOptions, setNpsOptions] = useState<string[]>([]);
+  const [npsSchedules, setNpsSchedules] = useState<string[]>([]);
+  const [selectedNps, setSelectedNps] = useState<string>('4');
+  const [selectedNpsSchedule, setSelectedNpsSchedule] = useState<string>('40');
+  const [lwnSizes, setLwnSizes] = useState<string[]>([]);
+  const [lwnSchedules, setLwnSchedules] = useState<string[]>([]);
+  const [selectedLwnSize, setSelectedLwnSize] = useState<string>('4');
+  const [selectedLwnSchedule, setSelectedLwnSchedule] = useState<string>('STD');
+
+
+
+  useEffect(() => {
+    pipeLookupApi.getNps().then(values => {
+      setNpsOptions(values);
+      if (values.length > 0 && !values.includes(selectedNps)) setSelectedNps(values[0]);
+    }).catch(() => setNpsOptions([]));
+    lwnLookupApi.getSizes().then(values => {
+      setLwnSizes(values);
+      if (values.length > 0 && !values.includes(selectedLwnSize)) setSelectedLwnSize(values[0]);
+    }).catch(() => setLwnSizes([]));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedNps) return;
+    pipeLookupApi.getSchedules(selectedNps).then(values => {
+      setNpsSchedules(values);
+      if (values.length > 0 && !values.includes(selectedNpsSchedule)) setSelectedNpsSchedule(values[0]);
+    }).catch(() => setNpsSchedules([]));
+  }, [selectedNps]);
+
+  useEffect(() => {
+    if (!selectedLwnSize) return;
+    lwnLookupApi.getSchedules(selectedLwnSize).then(values => {
+      setLwnSchedules(values);
+      if (values.length > 0 && !values.includes(selectedLwnSchedule)) setSelectedLwnSchedule(values[0]);
+    }).catch(() => setLwnSchedules([]));
+  }, [selectedLwnSize]);
 
   const headFields = useMemo(() => ({
     dia: ['Ellipsoidal2To1', 'Conical', 'Toriconical', 'FlatUg34'].includes(head.headType),
@@ -86,9 +126,21 @@ export function PressureVesselCalculatorPage() {
       {headResult && <div>Formula: {fmt(headResult.governingRequiredThicknessIn)} in; Required+CA: {fmt(headResult.requiredWithCorrosionAllowanceIn)} in; Margin: {fmt(headResult.marginIn)} in</div>}
     </form>}
     {tab === 'nozzles' && <form onSubmit={async e=>{e.preventDefault();try{{ const r = await pressureVesselApi.calculateNozzle({ input: noz }); setNozResult(r.result); }setError(null);}catch(e){handleErr(e)}}}>
+      <select value={nozzleSizingMode} onChange={e=>setNozzleSizingMode(e.target.value as NozzleSizingMode)}>
+        <option value='nps_schedule'>NPS / Schedule</option><option value='lwn'>Long Weld Neck</option><option value='custom'>Custom</option>
+      </select>
       <select value={noz.nozzleType} onChange={e=>setNoz({...noz,nozzleType:e.target.value as NozzleType})}>{(nozzleTypes.length?nozzleTypes:['PipeNozzle','ForgedNozzle','LongWeldNeck','FittingNozzle'] as NozzleType[]).map(n=><option key={n}>{n}</option>)}</select>
+      {nozzleSizingMode === 'nps_schedule' && <>
+        <select value={selectedNps} onChange={e=>setSelectedNps(e.target.value)}>{npsOptions.map(v=><option key={v} value={v}>{v}</option>)}</select>
+        <select value={selectedNpsSchedule} onChange={e=>setSelectedNpsSchedule(e.target.value)}>{npsSchedules.map(v=><option key={v} value={v}>{v}</option>)}</select>
+        <button type='button' onClick={async ()=>{ try { const d = await pipeLookupApi.lookup({ nps: selectedNps, schedule: selectedNpsSchedule }); const row=ug45Rows.find(r=>r.nps===selectedNps); setNoz({ ...noz, outsideDiameterIn:d.outsideDiameter, insideDiameterIn:d.insideDiameter, nominalThicknessIn:d.nominalThickness, originalThicknessIn:d.nominalThickness, nominalPipeSize:selectedNps, ug45TableMinimumThicknessIn:row?.minimumThicknessIn??null }); setError(null);} catch(e){handleErr(e);} }}>Lookup NPS</button>
+      </>}
+      {nozzleSizingMode === 'lwn' && <>
+        <select value={selectedLwnSize} onChange={e=>setSelectedLwnSize(e.target.value)}>{lwnSizes.map(v=><option key={v} value={v}>{v}</option>)}</select>
+        <select value={selectedLwnSchedule} onChange={e=>setSelectedLwnSchedule(e.target.value)}>{lwnSchedules.map(v=><option key={v} value={v}>{v}</option>)}</select>
+        <button type='button' onClick={async ()=>{ try { const d = await lwnLookupApi.lookup({ size: selectedLwnSize, schedule: selectedLwnSchedule }); const row=ug45Rows.find(r=>r.nps===selectedLwnSize); setNoz({ ...noz, outsideDiameterIn:d.outsideDiameter, insideDiameterIn:d.insideDiameter, nominalThicknessIn:d.nominalThickness, originalThicknessIn:d.nominalThickness, nominalPipeSize:selectedLwnSize, ug45TableMinimumThicknessIn:row?.minimumThicknessIn??null }); setError(null);} catch(e){handleErr(e);} }}>Lookup LWN</button>
+      </>}
       <select value={noz.attachmentLocation} onChange={e=>setNoz({...noz,attachmentLocation:e.target.value as AttachmentLocation})}><option value='Shell'>Shell</option><option value='Head'>Head</option></select>
-      <label>Required shell/head thickness at nozzle location, before corrosion allowance unless specified otherwise.</label>
       <input value={noz.shellOrHeadRequiredThicknessIn} onChange={e=>setNoz({...noz,shellOrHeadRequiredThicknessIn:asNum(e.target.value)})} placeholder='Required shell/head thickness at nozzle location'/>
       <input value={noz.shellOrHeadExternalRequiredThicknessIn} onChange={e=>setNoz({...noz,shellOrHeadExternalRequiredThicknessIn:asNum(e.target.value)})} placeholder='External required thickness (optional)'/>
       <input value={noz.ug16MinimumThicknessIn} onChange={e=>setNoz({...noz,ug16MinimumThicknessIn:asNum(e.target.value)})} placeholder='UG-16 minimum thickness'/>
@@ -98,7 +150,6 @@ export function PressureVesselCalculatorPage() {
       <input value={noz.externalPressurePsi} onChange={e=>setNoz({...noz,externalPressurePsi:asNum(e.target.value)})} placeholder='External pressure psi'/>
       <label><input type='checkbox' checked={noz.useOdForTa} onChange={e=>setNoz({...noz,useOdForTa:e.target.checked,useIdForTa:!e.target.checked})}/>Use OD for t_a</label>
       <label><input type='checkbox' checked={noz.useIdForTa} onChange={e=>setNoz({...noz,useIdForTa:e.target.checked,useOdForTa:!e.target.checked})}/>Use ID for t_a</label>
-      <select value={noz.nominalPipeSize} onChange={e=>{const row=ug45Rows.find(r=>r.nps===e.target.value);setNoz({...noz,nominalPipeSize:e.target.value,ug45TableMinimumThicknessIn:row?.minimumThicknessIn??null});}}>{ug45Rows.map(r=><option key={r.nps} value={r.nps}>{r.nps}</option>)}</select>
       <button type='submit'>Calculate</button>
       {nozResult && <div>Formula: {fmt(nozResult.governingRequiredThicknessIn)} in; Required+CA: {fmt(nozResult.requiredThicknessPlusCorrosionAllowanceIn)} in; Margin: {fmt(nozResult.marginIn)} in; {nozResult.isAcceptable?'Acceptable':'Not acceptable'} {nozResult.errorMessage && <div>{nozResult.errorMessage}</div>} {nozResult.warnings.map(w=><div key={w}>{w}</div>)}</div>}
     </form>}

@@ -9,7 +9,6 @@ public static class MaterialStressServiceFactory
         var service = new MaterialStressService();
         NewStressDataImporter.ImportAll(service);
         OldStressDataImporter.ImportAll(service);
-        B313StressImporter.Import(service);
         return service;
     }
 }

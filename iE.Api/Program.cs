@@ -1,3 +1,4 @@
+using iE.Core.MaterialStress.Services;
 using System.Text.Json.Serialization;
 using iE.Core.Reports.Checklists;
 using iE.Core.Reports.Drafting;
@@ -45,6 +46,8 @@ builder.Services.AddScoped<IPhotoMarkupRenderer, PlaceholderPhotoMarkupRenderer>
 builder.Services.AddScoped<IPhotoDetectionService, PhotoDetectionService>();
 builder.Services.AddScoped<AnnotatedPhotoExportService>();
 builder.Services.AddSingleton<IReportTemplateRegistry, InMemoryReportTemplateRegistry>();
+builder.Services.AddSingleton(_ => MaterialStressServiceFactory.CreateInitialized());
+builder.Services.AddScoped<PressureVesselAllowableStressResolver>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

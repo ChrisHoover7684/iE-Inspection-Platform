@@ -37,7 +37,7 @@ namespace iE.Core.MaterialStress.Models
     /// <summary>
     /// Result model for stress lookup
     /// </summary>
-    public class StressLookupResult
+public class StressLookupResult
     {
         public bool Found { get; set; }
         public double? AllowableStress { get; set; }
@@ -47,9 +47,9 @@ namespace iE.Core.MaterialStress.Models
         public MaterialStressRecord Record { get; set; }
 
         public double? LowerBoundTemperature { get; set; }
-        public double? LowerBoundStress { get; set; }
+        public double? LowerBoundStressPsi { get; set; }
         public double? UpperBoundTemperature { get; set; }
-        public double? UpperBoundStress { get; set; }
+        public double? UpperBoundStressPsi { get; set; }
         public bool WasInterpolated { get; set; }
         public bool WasExtrapolated { get; set; }
         public double? AllowableStressKsi { get; set; }
@@ -73,17 +73,15 @@ namespace iE.Core.MaterialStress.Models
         }
 
 
-        public static StressLookupResult Success(double stress, double tempUsed, MaterialStressRecord record, bool interpolated = false, bool extrapolated = false)
+public static StressLookupResult Success(double stressKsi, double tempUsed, MaterialStressRecord record, bool interpolated = false, bool extrapolated = false)
 {
     var result = new StressLookupResult
     {
         Found = true,
-
-        // Original value from ASME table/interpolation, in ksi
-        AllowableStress = stress,
-        AllowableStressKsi = Math.Round(stress, 3),
-        AllowableStressPsi = Math.Round(stress * 1000.0, 0),
-        DisplayStress = $"{stress * 1000.0:N0} psi ({stress:0.###} ksi)",
+        AllowableStress = Math.Round(stressKsi * 1000.0, 0),
+        AllowableStressKsi = Math.Round(stressKsi, 3),
+        AllowableStressPsi = Math.Round(stressKsi * 1000.0, 0),
+        DisplayStress = $"{stressKsi * 1000.0:N0} psi",
 
         TemperatureUsed = tempUsed,
         DesignMargin = record.Dataset.DesignMargin,

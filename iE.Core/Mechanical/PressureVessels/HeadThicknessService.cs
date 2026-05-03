@@ -43,7 +43,7 @@ public sealed class HeadThicknessService
             _ => throw new ArgumentOutOfRangeException(nameof(input.HeadType), input.HeadType, "Unsupported head type")
         };
 
-        return new HeadThicknessResult(t, t + input.CorrosionAllowanceIn, input.ProvidedThicknessIn - (t + input.CorrosionAllowanceIn));
+        return new HeadThicknessResult(t, t + input.CorrosionAllowanceIn, input.ProvidedThicknessIn - (t + input.CorrosionAllowanceIn), Array.Empty<string>());
     }
 
     public static double Ellipsoidal(double pressure, double diameter, double allowableStress, double jointEfficiency)

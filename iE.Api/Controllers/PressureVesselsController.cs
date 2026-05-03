@@ -9,23 +9,23 @@ public sealed class PressureVesselsController : ControllerBase
 {
     [HttpPost("shells/cylindrical/calculate")]
     public ActionResult<CylindricalShellResult> CalculateCylindrical([FromBody] CylindricalShellInput input)
-        => Ok(new ShellThicknessService().CalculateCylindrical(input));
+        => Execute(() => new ShellThicknessService().CalculateCylindrical(input));
 
     [HttpPost("shells/spherical/calculate")]
     public ActionResult<SphericalShellResult> CalculateSpherical([FromBody] SphericalShellInput input)
-        => Ok(new ShellThicknessService().CalculateSpherical(input));
+        => Execute(() => new ShellThicknessService().CalculateSpherical(input));
 
     [HttpPost("shells/conical/calculate")]
     public ActionResult<ConicalShellResult> CalculateConical([FromBody] ConicalShellInput input)
-        => Ok(new ShellThicknessService().CalculateConicalShell(input));
+        => Execute(() => new ShellThicknessService().CalculateConicalShell(input));
 
     [HttpPost("heads/calculate")]
     public ActionResult<HeadThicknessResult> CalculateHead([FromBody] HeadThicknessInput input)
-        => Ok(new HeadThicknessService().Calculate(input));
+        => Execute(() => new HeadThicknessService().Calculate(input));
 
     [HttpPost("nozzles/ug45/calculate")]
     public ActionResult<NozzleThicknessResult> CalculateNozzle([FromBody] NozzleThicknessInput input)
-        => Ok(new NozzleThicknessService().Calculate(input));
+        => Execute(() => new NozzleThicknessService().Calculate(input));
 
     [HttpGet("heads/types")]
     public ActionResult<IReadOnlyList<string>> GetHeadTypes() => Ok(Enum.GetNames<HeadType>());
@@ -35,4 +35,20 @@ public sealed class PressureVesselsController : ControllerBase
 
     [HttpGet("ug45-table")]
     public ActionResult<IReadOnlyList<Ug45TableEntry>> GetUg45Table() => Ok(Ug45Table.GetAll());
+
+    private ActionResult<T> Execute<T>(Func<T> action)
+    {
+        try
+        {
+            return Ok(action());
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }

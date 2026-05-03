@@ -7,7 +7,20 @@ import type {
   CorrosionRateInput,
   CorrosionRateResult,
   PipeLookupInput,
-  PipeLookupResult
+  PipeLookupResult,
+  CylindricalShellInput,
+  CylindricalShellResult,
+  SphericalShellInput,
+  SphericalShellResult,
+  ConicalShellInput,
+  ConicalShellResult,
+  HeadThicknessInput,
+  HeadThicknessResult,
+  NozzleThicknessInput,
+  NozzleThicknessResult,
+  HeadType,
+  NozzleType,
+  Ug45TableEntry
 } from './types';
 
 const DEFAULT_API_BASE_URL = 'http://localhost:5229';
@@ -91,4 +104,16 @@ export const pipeLookupApi = {
     }, 'POST /api/mechanical/pipe-data/lookup'),
   getNps: () => apiFetch<string[]>('/api/mechanical/pipe-data/nps'),
   getSchedules: (nps: string) => apiFetch<string[]>(`/api/mechanical/pipe-data/schedules/${encodeURIComponent(nps)}`)
+};
+
+
+export const pressureVesselApi = {
+  calculateCylindrical: (input: CylindricalShellInput) => apiFetch<CylindricalShellResult>('/api/mechanical/pressure-vessels/shells/cylindrical/calculate', { method: 'POST', body: JSON.stringify(input) }),
+  calculateSpherical: (input: SphericalShellInput) => apiFetch<SphericalShellResult>('/api/mechanical/pressure-vessels/shells/spherical/calculate', { method: 'POST', body: JSON.stringify(input) }),
+  calculateConical: (input: ConicalShellInput) => apiFetch<ConicalShellResult>('/api/mechanical/pressure-vessels/shells/conical/calculate', { method: 'POST', body: JSON.stringify(input) }),
+  calculateHead: (input: HeadThicknessInput) => apiFetch<HeadThicknessResult>('/api/mechanical/pressure-vessels/heads/calculate', { method: 'POST', body: JSON.stringify(input) }),
+  calculateNozzle: (input: NozzleThicknessInput) => apiFetch<NozzleThicknessResult>('/api/mechanical/pressure-vessels/nozzles/ug45/calculate', { method: 'POST', body: JSON.stringify(input) }),
+  getHeadTypes: () => apiFetch<HeadType[]>('/api/mechanical/pressure-vessels/heads/types'),
+  getNozzleTypes: () => apiFetch<NozzleType[]>('/api/mechanical/pressure-vessels/nozzles/types'),
+  getUg45Table: () => apiFetch<Ug45TableEntry[]>('/api/mechanical/pressure-vessels/ug45-table')
 };

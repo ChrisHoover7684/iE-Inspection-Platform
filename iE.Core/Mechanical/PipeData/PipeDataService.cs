@@ -6,6 +6,8 @@ namespace iE.Core.Mechanical.PipeData
 {
     public class PipeDataService
     {
+        // Source intent: ASME B36.10M (carbon/alloy steel pipe) and ASME B36.19M (stainless steel pipe, S schedules)
+        // for NPS 1/2 through 12. Legacy rows below 1/2 and above 12 are maintained for application compatibility.
         private readonly List<PipeRow> _rows = new()
         {
             new("0.125", 0.405, new() { ["40"] = 0.068, ["80"] = 0.095 }),

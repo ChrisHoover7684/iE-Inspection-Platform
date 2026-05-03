@@ -84,4 +84,59 @@ public class PressureVesselServicesTests
         Assert.True(result.GoverningRequiredThicknessIn > 0);
         Assert.Equal(Math.Max(result.TaRequiredThicknessIn + input.CorrosionAllowanceIn, result.TbRequiredThicknessIn), result.GoverningRequiredThicknessIn, 6);
     }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(double.NaN)]
+    public void HeadThickness_ThrowsWhenJointEfficiencyIsZeroOrNullLike(double jointEfficiency)
+    {
+        var service = new HeadThicknessService();
+        var input = new HeadThicknessInput(HeadType.Ellipsoidal2To1, 150, 20000, jointEfficiency, 48, 24, 0, 0, 0, 0.125, 0.5);
+
+        Assert.Throws<ArgumentException>(() => service.Calculate(input));
+    }
+
+    [Fact]
+    public void HeadThickness_ThrowsWhenJointEfficiencyGreaterThanOne()
+    {
+        var service = new HeadThicknessService();
+        var input = new HeadThicknessInput(HeadType.Ellipsoidal2To1, 150, 20000, 1.01, 48, 24, 0, 0, 0, 0.125, 0.5);
+
+        Assert.Throws<ArgumentException>(() => service.Calculate(input));
+    }
+
+    [Fact]
+    public void ShellThickness_ThrowsWhenJointEfficiencyGreaterThanOne()
+    {
+        var service = new ShellThicknessService();
+        var input = new CylindricalShellInput(150, 20000, 48, 0, 0.25, 1.01, 0.125, 0.5);
+
+        Assert.Throws<ArgumentException>(() => service.CalculateCylindrical(input));
+    }
+
+    [Fact]
+    public void CylindricalShell_CircumferentialAndLongitudinalDifferAndGoverningSelectsLarger()
+    {
+        var service = new ShellThicknessService();
+        var input = new CylindricalShellInput(300, 18000, 60, 0, 0.25, 0.9, 0.1, 0.5);
+
+        var result = service.CalculateCylindrical(input);
+
+        Assert.NotEqual(result.CircumferentialRequiredThicknessIn, result.LongitudinalRequiredThicknessIn);
+        Assert.True(result.CircumferentialRequiredThicknessIn > result.LongitudinalRequiredThicknessIn);
+        Assert.Equal(result.CircumferentialRequiredThicknessIn, result.GoverningRequiredThicknessIn, 12);
+    }
+
+    [Fact]
+    public void CorrosionAllowance_IsAddedAfterFormulaThicknessCalculation()
+    {
+        var service = new ShellThicknessService();
+        var input = new CylindricalShellInput(200, 20000, 48, 0, 0.25, 1.0, 0.2, 1.0);
+
+        var result = service.CalculateCylindrical(input);
+        var expectedFormulaThickness = ShellThicknessService.CylindricalCircumferential(200, 24, 20000, 1.0);
+
+        Assert.Equal(expectedFormulaThickness, result.GoverningRequiredThicknessIn, 12);
+        Assert.Equal(expectedFormulaThickness + 0.2, result.RequiredWithCorrosionAllowanceIn, 12);
+    }
 }

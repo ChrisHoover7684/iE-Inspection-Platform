@@ -106,6 +106,7 @@ public sealed class ShellThicknessService
 
     private static void ValidateEfficiency(double jointEfficiency)
     {
+        if (double.IsNaN(jointEfficiency) || double.IsInfinity(jointEfficiency)) throw new ArgumentException("Joint efficiency must be a finite value");
         if (jointEfficiency <= 0 || jointEfficiency > 1) throw new ArgumentException("Joint efficiency must be between 0 and 1");
     }
 

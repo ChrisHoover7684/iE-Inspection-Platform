@@ -34,4 +34,45 @@ public class PipeDataServiceTests
         Assert.Contains("0.5", list);
         Assert.Contains("12", list);
     }
+
+    [Theory]
+    [InlineData("6", "80", 0.432)]
+    [InlineData("8", "80", 0.500)]
+    [InlineData("10", "80", 0.594)]
+    [InlineData("12", "80", 0.688)]
+    public void Lookup_ReturnsExpectedCarbonSchedule80(string nps, string schedule, double expectedThickness)
+    {
+        var service = new PipeDataService();
+
+        var result = service.Lookup(new PipeDataInput { Nps = nps, Schedule = schedule });
+
+        Assert.Equal(expectedThickness, result.NominalThickness, 3);
+    }
+
+    [Theory]
+    [InlineData("6", "80S", 0.432)]
+    [InlineData("8", "80S", 0.500)]
+    [InlineData("10", "80S", 0.500)]
+    [InlineData("12", "80S", 0.500)]
+    public void Lookup_ReturnsExpectedStainlessSchedule80S(string nps, string schedule, double expectedThickness)
+    {
+        var service = new PipeDataService();
+
+        var result = service.Lookup(new PipeDataInput { Nps = nps, Schedule = schedule });
+
+        Assert.Equal(expectedThickness, result.NominalThickness, 3);
+    }
+
+    [Theory]
+    [InlineData("10")]
+    [InlineData("12")]
+    public void Lookup_DistinguishesSchedule80From80S_WhenValuesDiffer(string nps)
+    {
+        var service = new PipeDataService();
+
+        var sch80 = service.Lookup(new PipeDataInput { Nps = nps, Schedule = "80" });
+        var sch80S = service.Lookup(new PipeDataInput { Nps = nps, Schedule = "80S" });
+
+        Assert.NotEqual(sch80.NominalThickness, sch80S.NominalThickness);
+    }
 }

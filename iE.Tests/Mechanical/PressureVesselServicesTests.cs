@@ -158,4 +158,49 @@ public class PressureVesselServicesTests
         var result = service.Calculate(input);
         Assert.Contains(result.Warnings, w => w.Contains("UG-37"));
     }
+
+    [Fact]
+    public void Nozzle_Tb1_UsesShellOrHeadRequiredThicknessInput()
+    {
+        var service = new NozzleThicknessService();
+        var input = NozzleThicknessInput.Default() with
+        {
+            ShellOrHeadRequiredThicknessIn = 0.2,
+            Ug16MinimumThicknessIn = 0.0625,
+            CorrosionAllowanceIn = 0.1
+        };
+
+        var result = service.Calculate(input);
+
+        Assert.Equal(0.3, result.Tb1RequiredThicknessIn, 6);
+    }
+
+    [Fact]
+    public void Nozzle_MissingShellOrHeadRequiredThickness_CreatesWarning()
+    {
+        var service = new NozzleThicknessService();
+        var input = NozzleThicknessInput.Default() with { ShellOrHeadRequiredThicknessIn = 0 };
+
+        var result = service.Calculate(input);
+
+        Assert.Contains(result.Warnings, w => w.Contains("not provided", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Nozzle_GoverningValueSelection_StillUsesMaxOfTaPlusCaAndTb()
+    {
+        var service = new NozzleThicknessService();
+        var input = NozzleThicknessInput.Default() with
+        {
+            CorrosionAllowanceIn = 0.08,
+            ShellOrHeadRequiredThicknessIn = 0.18,
+            ShellOrHeadExternalRequiredThicknessIn = 0.16,
+            Ug45TableMinimumThicknessIn = 0.2
+        };
+
+        var result = service.Calculate(input);
+        var expected = Math.Max(result.TaRequiredThicknessIn + input.CorrosionAllowanceIn, result.TbRequiredThicknessIn);
+
+        Assert.Equal(expected, result.GoverningRequiredThicknessIn, 8);
+    }
 }

@@ -18,7 +18,7 @@ public sealed class PressureVesselsController : ControllerBase
     public sealed record SphericalShellCalculationRequest(SphericalShellInput Input, PressureVesselMaterialStressInput MaterialStress);
     public sealed record ConicalShellCalculationRequest(ConicalShellInput Input, PressureVesselMaterialStressInput? MaterialStress);
     public sealed record HeadCalculationRequest(HeadThicknessInput Input, PressureVesselMaterialStressInput? MaterialStress);
-    public sealed record NozzleCalculationRequest(NozzleThicknessInput Input, PressureVesselMaterialStressInput? MaterialStress);
+    public sealed record NozzleCalculationRequest(NozzleThicknessInput Input);
 
     public sealed record CalculationEnvelope<T>(double ResolvedAllowableStressPsi, string? MaterialMatched, double TemperatureUsed, bool WasInterpolated, bool WasExtrapolated, string StressSourceMessage, T Result, IReadOnlyList<string> Warnings);
 
@@ -70,11 +70,8 @@ public sealed class PressureVesselsController : ControllerBase
     public ActionResult<CalculationEnvelope<NozzleThicknessResult>> CalculateNozzle([FromBody] NozzleCalculationRequest request)
         => Execute(() =>
         {
-            var stressInput = request.MaterialStress ?? new PressureVesselMaterialStressInput(request.Input.DesignCode, request.Input.CodeEra == CodeEra.Post1999 ? "From1999Onward" : "From1950To1998", request.Input.DesignTemperatureF, request.Input.MaterialSpec, request.Input.MaterialGrade, request.Input.MaterialProductForm, "", "", request.Input.ManualAllowableStress, request.Input.AllowableStressPsi);
-            var resolved = _stressResolver.Resolve(stressInput);
-            if (!resolved.IsValid || !resolved.AllowableStressPsi.HasValue) throw new ArgumentException(resolved.Message);
-            var result = new NozzleThicknessService().Calculate(request.Input with { AllowableStressPsi = resolved.AllowableStressPsi.Value });
-            return new CalculationEnvelope<NozzleThicknessResult>(resolved.AllowableStressPsi.Value, resolved.MaterialMatched, resolved.TemperatureUsed, resolved.WasInterpolated, resolved.WasExtrapolated, resolved.Message, result, resolved.Warnings.Concat(result.Warnings).Distinct().ToArray());
+            var result = new NozzleThicknessService().Calculate(request.Input);
+            return new CalculationEnvelope<NozzleThicknessResult>(request.Input.AllowableStressPsi, null, request.Input.DesignTemperatureF, false, false, "Nozzle UG-45 uses direct NozzleThicknessInput values.", result, result.Warnings);
         });
 
     [HttpGet("heads/types")] public ActionResult<IReadOnlyList<string>> GetHeadTypes() => Ok(Enum.GetNames<HeadType>());

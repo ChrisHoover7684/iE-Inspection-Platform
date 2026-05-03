@@ -1,5 +1,27 @@
 namespace iE.Core.Mechanical.PressureVessels;
 
+public sealed record PressureVesselMaterialStressInput(
+    string DesignCode,
+    string StressEra,
+    double DesignTemperatureF,
+    string MaterialSpec,
+    string MaterialGrade,
+    string ProductForm,
+    string AlloyUNS,
+    string ClassConditionTemper,
+    bool ManualAllowableStress,
+    double? AllowableStressPsi);
+
+public sealed record ResolvedAllowableStress(
+    bool IsValid,
+    double? AllowableStressPsi,
+    string? MaterialMatched,
+    double TemperatureUsed,
+    bool WasInterpolated,
+    bool WasExtrapolated,
+    string Message,
+    IReadOnlyList<string> Warnings);
+
 public sealed record CylindricalShellInput(
     double DesignPressurePsi,
     double AllowableStressPsi,

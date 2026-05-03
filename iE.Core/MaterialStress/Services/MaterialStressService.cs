@@ -203,12 +203,11 @@ namespace iE.Core.MaterialStress.Services
                 return StressLookupResult.NotFound(rangeMessage);
             }
 
-            // CRITICAL: Convert from ksi (database storage) to psi (calculation units)
-            double stressPsi = stress.Value * 1000.0;
-            double finalStress = stressPsi * record.WeldEfficiency;
+            // Stresses are stored as ksi. Convert to psi exactly once in result model.
+            double finalStressKsi = stress.Value * record.WeldEfficiency;
 
             var result = StressLookupResult.Success(
-                finalStress,
+                finalStressKsi,
                 request.Temperature,
                 record,
                 interpolated: lowerTemp.HasValue && upperTemp.HasValue,
@@ -216,9 +215,14 @@ namespace iE.Core.MaterialStress.Services
             );
 
             result.LowerBoundTemperature = lowerTemp;
-            result.LowerBoundStress = lowerStress;
+            result.LowerBoundStressPsi = lowerStress.HasValue ? Math.Round(lowerStress.Value * 1000.0, 0) : null;
             result.UpperBoundTemperature = upperTemp;
-            result.UpperBoundStress = upperStress;
+            result.UpperBoundStressPsi = upperStress.HasValue ? Math.Round(upperStress.Value * 1000.0, 0) : null;
+
+            if (!result.WasInterpolated && !result.WasExtrapolated)
+                result.Message = "Exact allowable stress match found.";
+            else if (result.WasInterpolated)
+                result.Message = "Interpolated between temperature points.";
 
             return result;
         }

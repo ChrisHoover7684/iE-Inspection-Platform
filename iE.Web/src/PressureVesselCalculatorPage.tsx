@@ -15,7 +15,8 @@ import type {
   NozzleType,
   SphericalShellInput,
   SphericalShellResult,
-  Ug45TableEntry
+  Ug45TableEntry,
+  PressureVesselMaterialStressInput
 } from './types';
 
 type Tab = 'shells' | 'heads' | 'nozzles';
@@ -39,6 +40,8 @@ export function PressureVesselCalculatorPage() {
   const [sph, setSph] = useState<SphericalShellInput>({ designPressurePsi: 150, allowableStressPsi: 20000, insideDiameterIn: 48, outsideDiameterIn: 0, originalThicknessIn: 0.5, jointEfficiency: 1, corrosionAllowanceIn: 0.125, providedThicknessIn: 0.625 });
   const [cone, setCone] = useState<ConicalShellInput>({ designPressurePsi: 150, allowableStressPsi: 20000, effectiveInsideDiameterIn: 48, halfApexAngleDeg: 30, jointEfficiency: 1, corrosionAllowanceIn: 0.125, providedThicknessIn: 0.625 });
   const [shellResult, setShellResult] = useState<CylindricalShellResult | SphericalShellResult | ConicalShellResult | null>(null);
+  const [shellStressInfo, setShellStressInfo] = useState<string>('');
+  const [materialStress, setMaterialStress] = useState<PressureVesselMaterialStressInput>({ designCode:'ASME_VIII_DIV1', stressEra:'From1999Onward', designTemperatureF:300, materialSpec:'SA-TEST', materialGrade:'A', productForm:'Plate', alloyUNS:'', classConditionTemper:'', manualAllowableStress:true, allowableStressPsi:20000 });
 
   const [head, setHead] = useState<HeadThicknessInput>({ headType: 'Ellipsoidal2To1', designPressurePsi: 150, allowableStressPsi: 20000, jointEfficiency: 1, effectiveInsideDiameterIn: 48, effectiveInsideRadiusIn: 24, crownRadiusIn: 48, halfApexAngleDeg: 30, flatHeadCFactor: 0.3, corrosionAllowanceIn: 0.125, providedThicknessIn: 0.625 });
   const [headResult, setHeadResult] = useState<HeadThicknessResult | null>(null);
@@ -66,15 +69,15 @@ export function PressureVesselCalculatorPage() {
 
   return <div style={{ padding: 16 }}><h1>Pressure Vessel Calculator</h1>{error && <div style={{ color: 'crimson' }}>{error}</div>}
     <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>{(['shells', 'heads', 'nozzles'] as Tab[]).map(t => <button key={t} onClick={() => { setTab(t); setError(null); }}>{t === 'nozzles' ? 'Nozzles / UG-45' : t[0].toUpperCase() + t.slice(1)}</button>)}</div>
-    {tab === 'shells' && <form onSubmit={async (e: FormEvent) => { e.preventDefault(); try { setError(null); setShellResult(shellGeom === 'cylindrical' ? await pressureVesselApi.calculateCylindrical(cyl) : shellGeom === 'spherical' ? await pressureVesselApi.calculateSpherical(sph) : await pressureVesselApi.calculateConical(cone)); } catch (e) { handleErr(e); } }}>
+    {tab === 'shells' && <form onSubmit={async (e: FormEvent) => { e.preventDefault(); try { setError(null); if (shellGeom === 'conical') { setShellResult(await pressureVesselApi.calculateConical(cone)); setShellStressInfo(''); } else if (shellGeom === 'cylindrical') { const r = await pressureVesselApi.calculateCylindrical({ input: cyl, materialStress }); setShellResult(r.result); setShellStressInfo(`Resolved allowable stress: ${r.resolvedAllowableStressPsi.toLocaleString()} psi. ${r.stressSourceMessage}`); } else { const r = await pressureVesselApi.calculateSpherical({ input: sph as any, materialStress }); setShellResult(r.result); setShellStressInfo(`Resolved allowable stress: ${r.resolvedAllowableStressPsi.toLocaleString()} psi. ${r.stressSourceMessage}`); } } catch (e) { handleErr(e); } }}>
       <select value={shellGeom} onChange={e => setShellGeom(e.target.value as ShellGeom)}><option value='cylindrical'>Cylindrical</option><option value='spherical'>Spherical</option><option value='conical'>Conical</option></select>
       {shellGeom !== 'conical' && <><input value={(shellGeom==='cylindrical'?cyl:sph).insideDiameterIn} onChange={e=>syncRelationship(shellGeom==='cylindrical'?setCyl:setSph,shellGeom==='cylindrical'?cyl:sph,'insideDiameterIn',asNum(e.target.value))}/><input value={(shellGeom==='cylindrical'?cyl:sph).outsideDiameterIn} onChange={e=>syncRelationship(shellGeom==='cylindrical'?setCyl:setSph,shellGeom==='cylindrical'?cyl:sph,'outsideDiameterIn',asNum(e.target.value))}/><input value={(shellGeom==='cylindrical'?cyl:sph).originalThicknessIn} onChange={e=>syncRelationship(shellGeom==='cylindrical'?setCyl:setSph,shellGeom==='cylindrical'?cyl:sph,'originalThicknessIn',asNum(e.target.value))}/></>}
       {shellGeom === 'conical' && <input value={cone.effectiveInsideDiameterIn} onChange={e=>setCone({...cone,effectiveInsideDiameterIn:asNum(e.target.value)})}/>}
       {shellGeom === 'conical' && <input value={cone.halfApexAngleDeg} onChange={e=>setCone({...cone,halfApexAngleDeg:asNum(e.target.value)})}/>}
-      <input placeholder='Allowable stress psi' value={(shellGeom==='cylindrical'?cyl:shellGeom==='spherical'?sph:cone).allowableStressPsi} onChange={e=>shellGeom==='cylindrical'?setCyl({...cyl,allowableStressPsi:asNum(e.target.value)}):shellGeom==='spherical'?setSph({...sph,allowableStressPsi:asNum(e.target.value)}):setCone({...cone,allowableStressPsi:asNum(e.target.value)})}/>
+      <label><input type='checkbox' checked={materialStress.manualAllowableStress} onChange={e=>setMaterialStress({...materialStress,manualAllowableStress:e.target.checked})}/> Manual allowable stress override (psi)</label><input placeholder='Allowable stress psi' disabled={!materialStress.manualAllowableStress} value={(materialStress.allowableStressPsi ?? 0)} onChange={e=>setMaterialStress({...materialStress,allowableStressPsi:asNum(e.target.value)})}/><input placeholder='Allowable stress psi' value={(shellGeom==='cylindrical'?cyl:shellGeom==='spherical'?sph:cone).allowableStressPsi} onChange={e=>shellGeom==='cylindrical'?setCyl({...cyl,allowableStressPsi:asNum(e.target.value)}):shellGeom==='spherical'?setSph({...sph,allowableStressPsi:asNum(e.target.value)}):setCone({...cone,allowableStressPsi:asNum(e.target.value)})}/>
       <input placeholder='Joint efficiency' value={(shellGeom==='cylindrical'?cyl:shellGeom==='spherical'?sph:cone).jointEfficiency} onChange={e=>shellGeom==='cylindrical'?setCyl({...cyl,jointEfficiency:asNum(e.target.value)}):shellGeom==='spherical'?setSph({...sph,jointEfficiency:asNum(e.target.value)}):setCone({...cone,jointEfficiency:asNum(e.target.value)})}/>
       <button type='submit'>Calculate</button>
-      {shellResult && <div>Formula: {fmt('formulaRequiredThicknessIn' in shellResult ? shellResult.formulaRequiredThicknessIn : shellResult.governingRequiredThicknessIn)} in; Required+CA: {fmt(shellResult.requiredWithCorrosionAllowanceIn)} in; Margin: {fmt(shellResult.marginIn)} in {('warnings' in shellResult ? shellResult.warnings : []).map((w:string)=><div key={w}>{w}</div>)}</div>}
+      {shellStressInfo && <div>{shellStressInfo}</div>}{shellResult && <div>Formula: {fmt('formulaRequiredThicknessIn' in shellResult ? shellResult.formulaRequiredThicknessIn : shellResult.governingRequiredThicknessIn)} in; Required+CA: {fmt(shellResult.requiredWithCorrosionAllowanceIn)} in; Margin: {fmt(shellResult.marginIn)} in {('warnings' in shellResult ? shellResult.warnings : []).map((w:string)=><div key={w}>{w}</div>)}</div>}
     </form>}
     {tab === 'heads' && <form onSubmit={async e=>{e.preventDefault(); try {setHeadResult(await pressureVesselApi.calculateHead(head)); setError(null);} catch (e) {handleErr(e);} }}>
       <select value={head.headType} onChange={e=>setHead({...head,headType:e.target.value as HeadType})}>{(headTypes.length?headTypes:['Ellipsoidal2To1','Hemispherical','TorisphericalAsmeFd','Conical','Toriconical','FlatUg34'] as HeadType[]).map(h=><option key={h}>{h}</option>)}</select>

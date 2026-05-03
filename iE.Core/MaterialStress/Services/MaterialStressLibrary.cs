@@ -91,9 +91,9 @@ namespace iE.Core.MaterialStress.Services
             );
 
             result.LowerBoundTemperature = lowerTemp;
-            result.LowerBoundStress = lowerStress;
+            result.LowerBoundStressPsi = lowerStress.HasValue ? Math.Round(lowerStress.Value * 1000.0, 0) : null;
             result.UpperBoundTemperature = upperTemp;
-            result.UpperBoundStress = upperStress;
+            result.UpperBoundStressPsi = upperStress.HasValue ? Math.Round(upperStress.Value * 1000.0, 0) : null;
 
             return result;
         }

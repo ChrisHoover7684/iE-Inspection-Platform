@@ -10,6 +10,8 @@ import type {
   PipeLookupResult,
   CylindricalShellInput,
   CylindricalShellResult,
+  ShellCalculationRequest,
+  CalculationEnvelope,
   SphericalShellInput,
   SphericalShellResult,
   ConicalShellInput,
@@ -108,8 +110,8 @@ export const pipeLookupApi = {
 
 
 export const pressureVesselApi = {
-  calculateCylindrical: (input: CylindricalShellInput) => apiFetch<CylindricalShellResult>('/api/mechanical/pressure-vessels/shells/cylindrical/calculate', { method: 'POST', body: JSON.stringify(input) }),
-  calculateSpherical: (input: SphericalShellInput) => apiFetch<SphericalShellResult>('/api/mechanical/pressure-vessels/shells/spherical/calculate', { method: 'POST', body: JSON.stringify(input) }),
+  calculateCylindrical: (input: ShellCalculationRequest) => apiFetch<CalculationEnvelope<CylindricalShellResult>>('/api/mechanical/pressure-vessels/shells/cylindrical/calculate', { method: 'POST', body: JSON.stringify(input) }),
+  calculateSpherical: (input: ShellCalculationRequest) => apiFetch<CalculationEnvelope<SphericalShellResult>>('/api/mechanical/pressure-vessels/shells/spherical/calculate', { method: 'POST', body: JSON.stringify(input) }),
   calculateConical: (input: ConicalShellInput) => apiFetch<ConicalShellResult>('/api/mechanical/pressure-vessels/shells/conical/calculate', { method: 'POST', body: JSON.stringify(input) }),
   calculateHead: (input: HeadThicknessInput) => apiFetch<HeadThicknessResult>('/api/mechanical/pressure-vessels/heads/calculate', { method: 'POST', body: JSON.stringify(input) }),
   calculateNozzle: (input: NozzleThicknessInput) => apiFetch<NozzleThicknessResult>('/api/mechanical/pressure-vessels/nozzles/ug45/calculate', { method: 'POST', body: JSON.stringify(input) }),

@@ -9,6 +9,7 @@ Status: **Not ready to merge**. This report captures what is missing before beha
 - `ConicalControl.cs`
 - `HeadCalculators.cs`
 - `NozzleControl.cs`
+- `HeadControl.cs` (Part 1 + Part 2)
 
 ## What can be extracted with confidence now
 From the provided files, only the following calculation logic is explicit:
@@ -47,13 +48,15 @@ From the provided files, only the following calculation logic is explicit:
    - Default geometry source for LWN: rating-based thickness, ID from NPS, OD = ID + 2t
    - `GetGeometryInput()` sets `UseODForTMin=true` and maps nominal thickness to both nominal and original thickness
 
+7. **Head control explicit behavior in `HeadControl.cs`**
+   - Geometry resolution requires exactly two of ID/OD/thickness to auto-compute the third
+   - Geometry consistency tolerance check: `|OD - (ID + 2t)| <= 0.001`
+   - Torispherical ASME F&D defaults: crown radius = OD, knuckle radius = 0.06*OD
+   - Flat-head default C factors: integral=0.30, bolted=0.33, loose=0.50
+
 ## Referenced methods/types that are still missing
 The coordinator references the following calculation-bearing dependencies not yet provided:
 
-- `HeadControl`
-  - `ValidateInputs(...)`
-  - `Calculate(...)`
-  - `GetHeadType()`, `GetJointEfficiency()`, `GetEffectiveInsideDiameter()`, `GetEffectiveInsideRadius()`, `GetTorisphericalCrownRadius()`, `GetConicalHalfApexAngle()`, `GetToriconicalHalfApexAngle()`, `GetFlatCFactor()`, `GetFlatEdgeCondition()`, `GetCorrosionAllowance()`, `GetOriginalThickness()`
 - `NozzleControl`
   - `GetGeometryInput()` defaults confirmed (UseODForTMin=true, UseIDForTMin=false; nominal/original thickness mapping)
   - NPS/LWN geometry library behavior confirmed (auto-population from schedule/rating)
@@ -67,10 +70,9 @@ The coordinator references the following calculation-bearing dependencies not ye
 ## Additional source files required next
 To complete a formula-accurate migration, the following are required:
 
-1. `HeadControl.cs`
-2. `NozzleCalcResult.cs`
-3. `NozzleCalcInput.cs` (or equivalent definition)
-4. `UG45Table.cs`
+1. `NozzleCalcResult.cs`
+2. `NozzleCalcInput.cs` (or equivalent definition)
+3. `UG45Table.cs`
 
 ## Migration constraints being followed
 - No WinForms UI/designer/event-handler code is copied into `iE.Core`.

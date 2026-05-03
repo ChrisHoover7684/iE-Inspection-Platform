@@ -2,6 +2,34 @@ namespace iE.Core.Mechanical.PressureVessels;
 
 public sealed class HeadThicknessService
 {
+    public static double ResolveEffectiveInsideDiameter(double innerDiameterIn, double outerDiameterIn, double originalThicknessIn)
+    {
+        if (innerDiameterIn > 0) return innerDiameterIn;
+        if (outerDiameterIn > 0 && originalThicknessIn > 0) return outerDiameterIn - (2.0 * originalThicknessIn);
+        return 0;
+    }
+
+    public static bool AreGeometryConsistent(double innerDiameterIn, double outerDiameterIn, double originalThicknessIn, double toleranceIn = 0.001)
+    {
+        if (innerDiameterIn > 0 && outerDiameterIn > 0 && originalThicknessIn > 0)
+            return Math.Abs(outerDiameterIn - (innerDiameterIn + (2.0 * originalThicknessIn))) <= toleranceIn;
+        return true;
+    }
+
+    public static double GetDefaultFlatCFactor(string edgeCondition) => edgeCondition switch
+    {
+        "Integral welded flat head" => 0.30,
+        "Bolted flat cover" => 0.33,
+        "Loose / unrestrained flat plate" => 0.50,
+        _ => 0.30
+    };
+
+    public static (double crownRadiusIn, double knuckleRadiusIn) GetAsmeFdTorisphericalDefaultsFromOd(double outerDiameterIn)
+    {
+        if (outerDiameterIn <= 0) return (0, 0);
+        return (outerDiameterIn, 0.06 * outerDiameterIn);
+    }
+
     public HeadThicknessResult Calculate(HeadThicknessInput input)
     {
         var t = input.HeadType switch

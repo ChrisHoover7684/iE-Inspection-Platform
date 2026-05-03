@@ -9,8 +9,8 @@ public sealed class ShellThicknessService
         return 0;
     }
 
-    public double NormalizeCylindricalJointEfficiency(double jointEfficiency) => jointEfficiency > 0 ? jointEfficiency : 0.85;
-    public double NormalizeSphericalJointEfficiency(double jointEfficiency) => jointEfficiency > 0 ? jointEfficiency : 1.0;
+    public double NormalizeCylindricalJointEfficiency(double jointEfficiency) => NormalizeJointEfficiency(jointEfficiency);
+    public double NormalizeSphericalJointEfficiency(double jointEfficiency) => NormalizeJointEfficiency(jointEfficiency);
 
     public double ResolveSphericalInsideRadius(double insideDiameterIn, double outsideDiameterIn, double originalThicknessIn)
     {
@@ -107,5 +107,11 @@ public sealed class ShellThicknessService
     private static void ValidateEfficiency(double jointEfficiency)
     {
         if (jointEfficiency <= 0 || jointEfficiency > 1) throw new ArgumentException("Joint efficiency must be between 0 and 1");
+    }
+
+    private static double NormalizeJointEfficiency(double jointEfficiency)
+    {
+        ValidateEfficiency(jointEfficiency);
+        return jointEfficiency;
     }
 }

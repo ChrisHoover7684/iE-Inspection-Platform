@@ -13,8 +13,11 @@ public class PressureVesselServicesTests
         var result = service.CalculateCylindrical(input);
 
         Assert.Equal(24, result.RadiusIn, 6);
-        Assert.Equal(0.1808136614766449, result.CircumferentialRequiredThicknessIn, 12);
-        Assert.Equal(0.08986520224694163, result.LongitudinalRequiredThicknessIn, 12);
+        var expectedCirc = (150d * 24d) / ((20000d * 1.0d) - (0.6d * 150d));
+        var expectedLong = (150d * 24d) / ((2d * 20000d * 1.0d) + (0.4d * 150d));
+
+        Assert.Equal(expectedCirc, result.CircumferentialRequiredThicknessIn, 12);
+        Assert.Equal(expectedLong, result.LongitudinalRequiredThicknessIn, 12);
         Assert.Equal(result.CircumferentialRequiredThicknessIn, result.GoverningRequiredThicknessIn, 4);
     }
 
@@ -27,7 +30,9 @@ public class PressureVesselServicesTests
         var result = service.CalculateSpherical(input);
 
         Assert.Equal(24, result.InsideRadiusIn, 6);
-        Assert.Equal(0.09006755066299724, result.GoverningRequiredThicknessIn, 12);
+        var expected = (150d * 24d) / ((2d * 20000d * 1.0d) - (0.2d * 150d));
+
+        Assert.Equal(expected, result.GoverningRequiredThicknessIn, 12);
     }
 
     [Fact]
@@ -38,7 +43,19 @@ public class PressureVesselServicesTests
 
         var result = service.Calculate(input);
 
-        Assert.Equal(0.18013510132599448, result.GoverningRequiredThicknessIn, 12);
+        var expected = (150d * 48d) / ((2d * 20000d * 1.0d) - (0.2d * 150d));
+
+        Assert.Equal(expected, result.GoverningRequiredThicknessIn, 12);
+    }
+
+
+    [Fact]
+    public void CylindricalShell_ThrowsWhenJointEfficiencyMissing()
+    {
+        var service = new ShellThicknessService();
+        var input = new CylindricalShellInput(150, 20000, 48, 0, 0.25, 0.0, 0.125, 0.5);
+
+        Assert.Throws<ArgumentException>(() => service.CalculateCylindrical(input));
     }
 
     [Fact]

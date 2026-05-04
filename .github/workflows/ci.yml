@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  dotnet-build-and-test:
+    name: .NET Restore/Build/Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore iE.Api/iE.Api.sln
+
+      - name: Build
+        run: dotnet build iE.Api/iE.Api.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test iE.Api/iE.Api.sln --configuration Release --no-build
+
+  frontend-build:
+    name: Frontend Build (Vite)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: iE.Web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: iE.Web
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: iE.Web
+        run: npm run build

@@ -33,6 +33,14 @@ namespace iE.Core.MaterialStress.Services
                         .ToUpperInvariant();
         }
 
+        private string NormalizeKeyToken(string value)
+        {
+            return Normalize(value)
+                .Replace("_", "")
+                .Replace("-", "")
+                .Replace(".", "");
+        }
+
         public StressLookupResult GetAllowableStress(StressLookupRequest request)
         {
             if (request == null)
@@ -52,17 +60,20 @@ namespace iE.Core.MaterialStress.Services
             // Find all records that match the era
             string requestedDesignCode = string.IsNullOrWhiteSpace(request.DesignCode)
                  ? "ASME_VIII_DIV1"
-                 : request.DesignCode.Trim().ToUpperInvariant();
+                 : request.DesignCode;
 
             string requestedFamily = string.IsNullOrWhiteSpace(request.CalculationFamily)
                 ? ""
-                : request.CalculationFamily.Trim().ToUpperInvariant();
+                : request.CalculationFamily;
+
+            var normalizedRequestedDesignCode = NormalizeKeyToken(requestedDesignCode);
+            var normalizedRequestedFamily = NormalizeKeyToken(requestedFamily);
 
             var eraRecords = _library.GetRecordsByEra(reqEra)
                 .Where(r =>
-                    Normalize(r.Dataset.DesignCode) == requestedDesignCode &&
-                    (string.IsNullOrWhiteSpace(requestedFamily) ||
-                     Normalize(r.Dataset.CalculationFamily) == requestedFamily))
+                    NormalizeKeyToken(r.Dataset.DesignCode) == normalizedRequestedDesignCode &&
+                    (string.IsNullOrWhiteSpace(normalizedRequestedFamily) ||
+                     NormalizeKeyToken(r.Dataset.CalculationFamily) == normalizedRequestedFamily))
                 .ToList();
 
             // First: exact match on all provided fields (using normalized values)
@@ -114,7 +125,10 @@ namespace iE.Core.MaterialStress.Services
                 var eraWeighted = new List<MaterialStressRecord>();
                 foreach (var match in weightedMatches)
                 {
-                    if (match.Dataset.Era == reqEra)
+                    if (match.Dataset.Era == reqEra
+                        && NormalizeKeyToken(match.Dataset.DesignCode) == normalizedRequestedDesignCode
+                        && (string.IsNullOrWhiteSpace(normalizedRequestedFamily)
+                            || NormalizeKeyToken(match.Dataset.CalculationFamily) == normalizedRequestedFamily))
                         eraWeighted.Add(match);
                 }
 
@@ -137,7 +151,10 @@ namespace iE.Core.MaterialStress.Services
                 var eraSpec = new List<MaterialStressRecord>();
                 foreach (var match in specMatches)
                 {
-                    if (match.Dataset.Era == reqEra)
+                    if (match.Dataset.Era == reqEra
+                        && NormalizeKeyToken(match.Dataset.DesignCode) == normalizedRequestedDesignCode
+                        && (string.IsNullOrWhiteSpace(normalizedRequestedFamily)
+                            || NormalizeKeyToken(match.Dataset.CalculationFamily) == normalizedRequestedFamily))
                         eraSpec.Add(match);
                 }
 

@@ -59,11 +59,6 @@ public sealed class B313MaterialStressService
             return null;
         }
 
-        if (records.Count == 1)
-        {
-            normalizedUns = string.Empty;
-        }
-
         var result = _repository.FindAllowableStress(normalizedSpec, normalizedGrade, normalizedForm, normalizedUns, normalizedClass, temperatureF);
         return result.Found ? result.AllowableStressPsi : null;
     }

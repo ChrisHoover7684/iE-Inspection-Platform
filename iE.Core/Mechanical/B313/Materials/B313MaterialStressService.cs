@@ -127,16 +127,28 @@ public sealed class B313MaterialStressService
                 return new(false, $"TemperatureF must be within available stress range ({minTemp}F to {maxTemp}F).", null, null, null, null, null);
         }
 
+        var normalizedSpec = NormalizeSpec(request.Spec);
+        var normalizedGrade = Normalize(request.Grade);
+        var normalizedProductForm = NormalizeProductForm(request.ProductForm);
+        var normalizedUnsNo = Normalize(request.UnsNo);
+        var normalizedClassConditionTemper = NormalizeClassConditionTemper(request.ClassConditionTemper);
+
+        if (candidates.Count == 0)
+        {
+            var notFoundMessage = $"Allowable stress not found. normalized: spec='{normalizedSpec}', grade='{normalizedGrade}', productForm='{normalizedProductForm}', unsNo='{normalizedUnsNo}', classConditionTemper='{normalizedClassConditionTemper}'. Try GET /api/B313/materials?spec={normalizedSpec}.";
+            if (normalizedSpec.StartsWith("SA", StringComparison.Ordinal))
+            {
+                notFoundMessage += " B31.3 piping lookups typically use A-spec naming (for example, use A106 instead of SA106) unless an explicit SA-spec B31.3 record exists.";
+            }
+
+            return new(false, notFoundMessage, null, null, null, null, null);
+        }
+
         var stress = GetAllowableStressPsiCore(request.Spec, request.Grade, request.ProductForm, request.UnsNo, request.ClassConditionTemper, request.TemperatureF);
         if (!stress.HasValue)
         {
-            var spec = NormalizeSpec(request.Spec);
-            var grade = Normalize(request.Grade);
-            var productForm = NormalizeProductForm(request.ProductForm);
-            var unsNo = Normalize(request.UnsNo);
-            var classConditionTemper = NormalizeClassConditionTemper(request.ClassConditionTemper);
-            var message = $"Allowable stress not found. normalized: spec='{spec}', grade='{grade}', productForm='{productForm}', unsNo='{unsNo}', classConditionTemper='{classConditionTemper}'. Try GET /api/B313/materials?spec={spec}.";
-            if (spec.StartsWith("SA", StringComparison.Ordinal))
+            var message = $"Allowable stress not found. normalized: spec='{normalizedSpec}', grade='{normalizedGrade}', productForm='{normalizedProductForm}', unsNo='{normalizedUnsNo}', classConditionTemper='{normalizedClassConditionTemper}'. Try GET /api/B313/materials?spec={normalizedSpec}.";
+            if (normalizedSpec.StartsWith("SA", StringComparison.Ordinal))
             {
                 message += " B31.3 piping lookups typically use A-spec naming (for example, use A106 instead of SA106) unless an explicit SA-spec B31.3 record exists.";
             }

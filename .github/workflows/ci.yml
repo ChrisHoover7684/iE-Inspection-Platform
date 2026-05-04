@@ -26,8 +26,16 @@ jobs:
       - name: Build
         run: dotnet build iE.Api/iE.Api.sln --configuration Release --no-restore
 
-      - name: Test
-        run: dotnet test iE.Api/iE.Api.sln --configuration Release --no-build
+      - name: Test (detailed + TRX)
+        run: dotnet test iE.Api/iE.Api.sln --configuration Release --no-build --logger "console;verbosity=detailed" --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults
+
+      - name: Upload .NET test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-test-results
+          path: TestResults
+          if-no-files-found: warn
 
   frontend-build:
     name: Frontend Build (Vite)

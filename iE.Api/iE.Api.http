@@ -35,11 +35,11 @@ Content-Type: application/json
   "pressurePsi": 200,
   "temperatureF": 579,
   "outsideDiameterIn": 2.375,
-  "spec": "A106",
-  "grade": "B",
-  "productForm": "",
-  "unsNo": "K03006",
-  "classConditionTemper": "",
+  "spec": "A134",
+  "grade": "A285A",
+  "productForm": "...",
+  "unsNo": "K01700",
+  "classConditionTemper": "...",
   "materialCategory": "Ferritic",
   "jointType": "Seamless",
   "jointQualityKey": "FULL_RT",
@@ -47,3 +47,6 @@ Content-Type: application/json
   "yOverride": 0.4,
   "eOverride": 1.0
 }
+
+### B31.3 materials lookup debug
+GET {{iE.Api_HostAddress}}/api/B313/materials?spec=A134

@@ -10,8 +10,17 @@ public sealed class B313MaterialStressService
 
     private static string NormalizeSpec(string? value)
     {
-        var spec = Normalize(value).Replace(" ", string.Empty);
-        return spec == "SA-106" ? "A106" : spec;
+        var spec = Normalize(value)
+            .Replace(" ", string.Empty)
+            .Replace("-", string.Empty)
+            .Replace("_", string.Empty);
+
+        if (spec.StartsWith("SA", StringComparison.Ordinal) && spec.Length > 2 && char.IsDigit(spec[2]))
+        {
+            return $"A{spec[2..]}";
+        }
+
+        return spec;
     }
 
     private static string NormalizeProductForm(string? value)
@@ -48,6 +57,11 @@ public sealed class B313MaterialStressService
                 && (string.IsNullOrWhiteSpace(normalizedForm) || NormalizeProductForm(r.Material.ProductForm) == normalizedForm)
                 && (string.IsNullOrWhiteSpace(normalizedClass) || NormalizeClassConditionTemper(r.Material.ClassConditionTemper) == normalizedClass))
             .ToList();
+
+        if (!string.IsNullOrWhiteSpace(normalizedGrade) && records.Count == 0)
+        {
+            return null;
+        }
 
         if (records.Count == 1)
         {

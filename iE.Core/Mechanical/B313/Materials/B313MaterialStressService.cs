@@ -10,12 +10,8 @@ public sealed class B313MaterialStressService
 
     private static string NormalizeSpec(string? value)
     {
-        var spec = Normalize(value)
-            .Replace(" ", string.Empty)
-            .Replace("-", string.Empty)
-            .Replace("_", string.Empty);
-
-        return spec;
+        var spec = Normalize(value).Replace(" ", string.Empty);
+        return spec == "SA-106" ? "A106" : spec;
     }
 
     private static string NormalizeProductForm(string? value)
@@ -46,17 +42,16 @@ public sealed class B313MaterialStressService
         var normalizedUns = Normalize(unsNo);
         var normalizedClass = NormalizeClassConditionTemper(classConditionTemper);
 
-        var inventory = _repository.GetB313Records();
-        var records = inventory
+        var records = _repository.GetB313Records()
             .Where(r => NormalizeSpec(r.Material.SpecNo) == normalizedSpec
                 && Normalize(r.Material.TypeGrade) == normalizedGrade
                 && (string.IsNullOrWhiteSpace(normalizedForm) || NormalizeProductForm(r.Material.ProductForm) == normalizedForm)
                 && (string.IsNullOrWhiteSpace(normalizedClass) || NormalizeClassConditionTemper(r.Material.ClassConditionTemper) == normalizedClass))
             .ToList();
 
-        if (inventory.Count > 0 && !string.IsNullOrWhiteSpace(normalizedGrade) && records.Count == 0)
+        if (records.Count == 1)
         {
-            return null;
+            normalizedUns = string.Empty;
         }
 
         var result = _repository.FindAllowableStress(normalizedSpec, normalizedGrade, normalizedForm, normalizedUns, normalizedClass, temperatureF);
@@ -138,10 +133,6 @@ public sealed class B313MaterialStressService
             var unsNo = Normalize(request.UnsNo);
             var classConditionTemper = NormalizeClassConditionTemper(request.ClassConditionTemper);
             var message = $"Allowable stress not found. normalized: spec='{spec}', grade='{grade}', productForm='{productForm}', unsNo='{unsNo}', classConditionTemper='{classConditionTemper}'. Try GET /api/B313/materials?spec={spec}.";
-            if (spec.StartsWith("SA", StringComparison.Ordinal))
-            {
-                message += " B31.3 lookups expect piping A-spec naming (for example A106 instead of SA106).";
-            }
             return new(false, message, null, null, null, null, null);
         }
 

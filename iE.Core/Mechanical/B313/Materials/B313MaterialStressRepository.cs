@@ -32,7 +32,17 @@ public sealed class B313MaterialStressRepository
 
     public IReadOnlyList<MaterialStressRecord> GetB313Records()
         => _service.Library.GetRecordsByEra(StressEra.From1999Onward)
-            .Where(r => string.Equals(r.Dataset.DesignCode, "B31_3", StringComparison.OrdinalIgnoreCase)
-                     && string.Equals(r.Dataset.CalculationFamily, "Piping", StringComparison.OrdinalIgnoreCase))
+            .Where(r => NormalizeKey(r.Dataset.DesignCode) == "B313"
+                     && NormalizeKey(r.Dataset.CalculationFamily) == "PIPING")
             .ToList();
+
+    private static string NormalizeKey(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+        return value.Trim().ToUpperInvariant()
+            .Replace(" ", string.Empty)
+            .Replace("_", string.Empty)
+            .Replace("-", string.Empty)
+            .Replace(".", string.Empty);
+    }
 }

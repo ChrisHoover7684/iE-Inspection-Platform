@@ -51,14 +51,15 @@ public sealed class B313MaterialStressService
         var normalizedUns = Normalize(unsNo);
         var normalizedClass = NormalizeClassConditionTemper(classConditionTemper);
 
-        var records = _repository.GetB313Records()
+        var inventory = _repository.GetB313Records();
+        var records = inventory
             .Where(r => NormalizeSpec(r.Material.SpecNo) == normalizedSpec
                 && Normalize(r.Material.TypeGrade) == normalizedGrade
                 && (string.IsNullOrWhiteSpace(normalizedForm) || NormalizeProductForm(r.Material.ProductForm) == normalizedForm)
                 && (string.IsNullOrWhiteSpace(normalizedClass) || NormalizeClassConditionTemper(r.Material.ClassConditionTemper) == normalizedClass))
             .ToList();
 
-        if (!string.IsNullOrWhiteSpace(normalizedGrade) && records.Count == 0)
+        if (inventory.Count > 0 && !string.IsNullOrWhiteSpace(normalizedGrade) && records.Count == 0)
         {
             return null;
         }

@@ -29,4 +29,10 @@ public sealed class B313MaterialStressRepository
             Temperature = temperatureF,
             AllowPartialMatch = true
         });
+
+    public IReadOnlyList<MaterialStressRecord> GetB313Records()
+        => _service.Library.GetRecordsByEra(StressEra.From1999Onward)
+            .Where(r => string.Equals(r.Dataset.DesignCode, "B31_3", StringComparison.OrdinalIgnoreCase)
+                     && string.Equals(r.Dataset.CalculationFamily, "Piping", StringComparison.OrdinalIgnoreCase))
+            .ToList();
 }

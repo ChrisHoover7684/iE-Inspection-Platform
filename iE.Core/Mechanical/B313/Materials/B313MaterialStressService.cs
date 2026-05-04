@@ -37,7 +37,7 @@ public sealed class B313MaterialStressService
 
     private static double RoundFactor(double value) => Math.Round(value, 3);
 
-    private double? GetAllowableStressPsiCore(string spec, string grade, string? productForm, string? unsNo, string? classConditionTemper, double temperatureF)
+    private List<iE.Core.MaterialStress.Models.MaterialStressRecord> GetB313Candidates(string spec, string grade, string? productForm, string? unsNo, string? classConditionTemper)
     {
         var normalizedSpec = NormalizeSpec(spec);
         var normalizedGrade = Normalize(grade);
@@ -45,19 +45,63 @@ public sealed class B313MaterialStressService
         var normalizedUns = Normalize(unsNo);
         var normalizedClass = NormalizeClassConditionTemper(classConditionTemper);
 
-        var records = _repository.GetB313Records()
+        var scoped = _repository.GetB313Records()
             .Where(r => NormalizeSpec(r.Material.SpecNo) == normalizedSpec
                 && Normalize(r.Material.TypeGrade) == normalizedGrade
-                && (string.IsNullOrWhiteSpace(normalizedForm) || NormalizeProductForm(r.Material.ProductForm) == normalizedForm)
-                && (string.IsNullOrWhiteSpace(normalizedClass) || NormalizeClassConditionTemper(r.Material.ClassConditionTemper) == normalizedClass))
+                && (string.IsNullOrWhiteSpace(normalizedForm) || NormalizeProductForm(r.Material.ProductForm) == normalizedForm))
             .ToList();
 
-        if (records.Count == 1)
+        if (!string.IsNullOrWhiteSpace(normalizedUns) && !string.IsNullOrWhiteSpace(normalizedClass))
         {
-            normalizedUns = string.Empty;
+            var withUnsAndClass = scoped
+                .Where(r => Normalize(r.Material.AlloyUNS) == normalizedUns
+                    && NormalizeClassConditionTemper(r.Material.ClassConditionTemper) == normalizedClass)
+                .ToList();
+            if (withUnsAndClass.Count > 0) return withUnsAndClass;
         }
 
-        var result = _repository.FindAllowableStress(normalizedSpec, normalizedGrade, normalizedForm, normalizedUns, normalizedClass, temperatureF);
+        if (!string.IsNullOrWhiteSpace(normalizedUns))
+        {
+            var withUns = scoped
+                .Where(r => Normalize(r.Material.AlloyUNS) == normalizedUns)
+                .ToList();
+            if (withUns.Count > 0) return withUns;
+        }
+
+        if (!string.IsNullOrWhiteSpace(normalizedForm))
+        {
+            var withForm = scoped
+                .Where(r => NormalizeProductForm(r.Material.ProductForm) == normalizedForm)
+                .ToList();
+            if (withForm.Count > 0) return withForm;
+        }
+
+        if (!string.IsNullOrWhiteSpace(normalizedClass))
+        {
+            var withClass = scoped
+                .Where(r => NormalizeClassConditionTemper(r.Material.ClassConditionTemper) == normalizedClass)
+                .ToList();
+            if (withClass.Count > 0) return withClass;
+        }
+
+        return scoped;
+    }
+
+    private double? GetAllowableStressPsiCore(string spec, string grade, string? productForm, string? unsNo, string? classConditionTemper, double temperatureF)
+    {
+        var normalizedUns = Normalize(unsNo);
+        var normalizedClass = NormalizeClassConditionTemper(classConditionTemper);
+        var candidates = GetB313Candidates(spec, grade, productForm, unsNo, classConditionTemper);
+        if (candidates.Count != 1) return null;
+
+        var match = candidates[0];
+        var result = _repository.FindAllowableStress(
+            match.Material.SpecNo,
+            match.Material.TypeGrade,
+            match.Material.ProductForm,
+            string.IsNullOrWhiteSpace(normalizedUns) ? match.Material.AlloyUNS : normalizedUns,
+            string.IsNullOrWhiteSpace(normalizedClass) ? match.Material.ClassConditionTemper : normalizedClass,
+            temperatureF);
         return result.Found ? result.AllowableStressPsi : null;
     }
 
@@ -68,11 +112,8 @@ public sealed class B313MaterialStressService
         var normalizedForm = NormalizeProductForm(productForm);
         var normalizedClass = NormalizeClassConditionTemper(classConditionTemper);
 
-        return _repository.GetB313Records()
-            .Where(r => NormalizeSpec(r.Material.SpecNo) == normalizedSpec
-                && Normalize(r.Material.TypeGrade) == normalizedGrade
-                && (string.IsNullOrWhiteSpace(normalizedForm) || NormalizeProductForm(r.Material.ProductForm) == normalizedForm)
-                && (string.IsNullOrWhiteSpace(normalizedClass) || NormalizeClassConditionTemper(r.Material.ClassConditionTemper) == normalizedClass))
+        return GetB313Candidates(spec, grade, productForm, null, classConditionTemper)
+            .Where(r => string.IsNullOrWhiteSpace(normalizedClass) || NormalizeClassConditionTemper(r.Material.ClassConditionTemper) == normalizedClass)
             .ToList();
     }
 
@@ -142,6 +183,10 @@ public sealed class B313MaterialStressService
             }
 
             return new(false, notFoundMessage, null, null, null, null, null);
+        }
+        if (candidates.Count > 1)
+        {
+            return new(false, $"Ambiguous B31.3 material match ({candidates.Count} records). Provide ProductForm/UNS/ClassConditionTemper to disambiguate.", null, null, null, null, null);
         }
 
         var stress = GetAllowableStressPsiCore(request.Spec, request.Grade, request.ProductForm, request.UnsNo, request.ClassConditionTemper, request.TemperatureF);

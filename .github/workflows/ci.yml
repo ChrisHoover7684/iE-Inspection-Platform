@@ -26,8 +26,8 @@ jobs:
       - name: Build
         run: dotnet build iE.Api/iE.Api.sln --configuration Release --no-restore
 
-  dotnet-tests-diagnostic:
-    name: .NET Tests (diagnostic, non-blocking)
+  dotnet-tests:
+    name: .NET Tests
     runs-on: ubuntu-latest
     needs: dotnet-build
 
@@ -47,11 +47,6 @@ jobs:
         run: dotnet build iE.Api/iE.Api.sln --configuration Release --no-restore
 
       - name: Test (detailed + TRX)
-        # Temporary stabilization mode:
-        # dotnet test remains enabled for diagnostics, but is non-blocking due to
-        # known baseline B31.3 material lookup failures tracked in docs/testing/KNOWN_TEST_FAILURES.md.
-        # This step must become blocking again after the focused B31.3 lookup correction PR lands.
-        continue-on-error: true
         run: dotnet test iE.Api/iE.Api.sln --configuration Release --no-build --logger "console;verbosity=detailed" --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults
 
       - name: Upload .NET test artifacts

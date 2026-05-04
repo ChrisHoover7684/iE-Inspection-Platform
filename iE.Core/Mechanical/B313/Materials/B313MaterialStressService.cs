@@ -9,10 +9,7 @@ public sealed class B313MaterialStressService
         => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToUpperInvariant();
 
     private static string NormalizeSpec(string? value)
-    {
-        var spec = Normalize(value).Replace(" ", string.Empty);
-        return spec == "SA-106" ? "A106" : spec;
-    }
+        => Normalize(value).Replace(" ", string.Empty);
 
     private static string NormalizeProductForm(string? value)
     {

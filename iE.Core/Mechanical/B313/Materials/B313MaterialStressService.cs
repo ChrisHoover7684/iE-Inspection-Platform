@@ -15,11 +15,6 @@ public sealed class B313MaterialStressService
             .Replace("-", string.Empty)
             .Replace("_", string.Empty);
 
-        if (spec.StartsWith("SA", StringComparison.Ordinal) && spec.Length > 2 && char.IsDigit(spec[2]))
-        {
-            return $"A{spec[2..]}";
-        }
-
         return spec;
     }
 
@@ -148,6 +143,10 @@ public sealed class B313MaterialStressService
             var unsNo = Normalize(request.UnsNo);
             var classConditionTemper = NormalizeClassConditionTemper(request.ClassConditionTemper);
             var message = $"Allowable stress not found. normalized: spec='{spec}', grade='{grade}', productForm='{productForm}', unsNo='{unsNo}', classConditionTemper='{classConditionTemper}'. Try GET /api/B313/materials?spec={spec}.";
+            if (spec.StartsWith("SA", StringComparison.Ordinal))
+            {
+                message += " B31.3 lookups expect piping A-spec naming (for example A106 instead of SA106).";
+            }
             return new(false, message, null, null, null, null, null);
         }
 

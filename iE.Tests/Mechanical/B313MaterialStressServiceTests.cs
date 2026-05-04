@@ -21,11 +21,13 @@ public class B313MaterialStressServiceTests
     }
 
     [Fact]
-    public void SA106_MapsToA106_AndSucceeds()
+    public void SA106_DoesNotSilentlyMapToA106_AndReturnsGuidance()
     {
         var service = new B313MaterialStressService();
         var result = service.CalculateThickness(new B313ThicknessRequest(200, 579, 2.375, "SA-106", "B", "Smls", "K03006", "", "Ferritic", "Seamless", "FULL_RT", 1.0, 0.4, 1.0));
-        Assert.True(result.Success);
+        Assert.False(result.Success);
+        Assert.Contains("spec='SA106'", result.Message);
+        Assert.Contains("A106", result.Message);
     }
 
     [Fact]

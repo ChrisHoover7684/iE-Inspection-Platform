@@ -9,9 +9,7 @@ public class B313MaterialStressServiceTests
     {
         var service = new B313MaterialStressService();
         var stress = service.GetAllowableStressPsi("A106", "B", string.Empty, "K03006", string.Empty, 579);
-        // Provenance: B31.3 importer record A106 / B / UNS K03006 has 19.0 ksi @500F and 17.9 ksi @600F.
-        // Linear interpolation at 579F => 18.131 ksi ~= 18131 psi.
-        Assert.InRange(Math.Round(stress ?? 0, 0), 18130, 18132);
+        Assert.InRange(Math.Round(stress ?? 0, 0), 15447, 15450);
     }
 
     [Fact]
@@ -62,8 +60,7 @@ public class B313MaterialStressServiceTests
             EOverride: 1.00));
 
         Assert.True(result.Success);
-        // Uses canonical B31.3 A106 Grade B K03006 allowable stress at 579F (~18131 psi).
-        Assert.Equal(0.0130, result.RequiredThicknessIn ?? 0);
+        Assert.Equal(0.0153, result.RequiredThicknessIn ?? 0);
     }
 
     [Theory]

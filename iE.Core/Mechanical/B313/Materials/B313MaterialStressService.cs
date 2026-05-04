@@ -34,6 +34,11 @@ public sealed class B313MaterialStressService
         var normalized = Normalize(value);
         return normalized == "..." ? string.Empty : normalized;
     }
+    private static string NormalizeOptionalField(string? value)
+    {
+        var normalized = Normalize(value);
+        return normalized == "..." ? string.Empty : normalized;
+    }
 
     private static double RoundFactor(double value) => Math.Round(value, 3);
 
@@ -48,7 +53,9 @@ public sealed class B313MaterialStressService
         var scoped = _repository.GetB313Records()
             .Where(r => NormalizeSpec(r.Material.SpecNo) == normalizedSpec
                 && Normalize(r.Material.TypeGrade) == normalizedGrade
-                && (string.IsNullOrWhiteSpace(normalizedForm) || NormalizeProductForm(r.Material.ProductForm) == normalizedForm))
+                && (string.IsNullOrWhiteSpace(normalizedForm)
+                    || NormalizeProductForm(r.Material.ProductForm) == normalizedForm
+                    || string.IsNullOrWhiteSpace(NormalizeOptionalField(r.Material.ProductForm))))
             .ToList();
 
         if (!string.IsNullOrWhiteSpace(normalizedUns) && !string.IsNullOrWhiteSpace(normalizedClass))
@@ -71,7 +78,8 @@ public sealed class B313MaterialStressService
         if (!string.IsNullOrWhiteSpace(normalizedForm))
         {
             var withForm = scoped
-                .Where(r => NormalizeProductForm(r.Material.ProductForm) == normalizedForm)
+                .Where(r => NormalizeProductForm(r.Material.ProductForm) == normalizedForm
+                    || string.IsNullOrWhiteSpace(NormalizeOptionalField(r.Material.ProductForm)))
                 .ToList();
             if (withForm.Count > 0) return withForm;
         }

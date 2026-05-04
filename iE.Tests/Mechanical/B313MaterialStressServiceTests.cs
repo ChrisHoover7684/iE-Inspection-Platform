@@ -5,30 +5,34 @@ namespace iE.Tests.Mechanical;
 public class B313MaterialStressServiceTests
 {
     [Fact]
-    public void AllowableStress_IsReturnedInPsi()
+    public void AllowableStress_A106B_At579F_ReturnsExpectedPsi()
     {
         var service = new B313MaterialStressService();
-        var stress = service.GetAllowableStressPsi("A106", "B", "Smls", "K03006", "...", 579);
-        Assert.NotNull(stress);
-        Assert.True(stress > 10000);
+        var stress = service.GetAllowableStressPsi("A106", "B", string.Empty, "K03006", string.Empty, 579);
+        Assert.Equal(15447, Math.Round(stress ?? 0, 0));
     }
 
     [Fact]
-    public void B313_ThicknessCase_MatchesPortedLogic()
+    public void B313_ThicknessCase_Nps2_MatchesExpectedValue()
     {
         var service = new B313MaterialStressService();
-        var stress = service.GetAllowableStressPsi("A106", "B", "Smls", "K03006", "...", 579);
-        Assert.NotNull(stress);
+        var result = service.CalculateThickness(new B313ThicknessRequest(
+            PressurePsi: 200,
+            TemperatureF: 579,
+            OutsideDiameterIn: 2.375,
+            Spec: "A106",
+            Grade: "B",
+            ProductForm: string.Empty,
+            UnsNo: "K03006",
+            ClassConditionTemper: string.Empty,
+            MaterialCategory: "Ferritic",
+            JointType: "Seamless",
+            JointQualityKey: "FULL_RT",
+            WFactor: 1.00,
+            YOverride: 0.4,
+            EOverride: 1.00));
 
-        const double nps2OutsideDiameter = 2.375;
-        double thickness = B313MaterialStressService.CalculateRequiredThickness(
-            pressurePsi: 200,
-            outsideDiameterIn: nps2OutsideDiameter,
-            allowableStressPsi: stress!.Value,
-            qualityFactorE: 1.00,
-            yCoefficient: 0.4,
-            wFactor: 1.00);
-
-        Assert.InRange(thickness, 0.01, 0.2);
+        Assert.True(result.Success);
+        Assert.Equal(0.0153, Math.Round(result.RequiredThicknessIn ?? 0, 4));
     }
 }

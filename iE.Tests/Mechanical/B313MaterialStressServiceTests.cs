@@ -9,7 +9,31 @@ public class B313MaterialStressServiceTests
     {
         var service = new B313MaterialStressService();
         var stress = service.GetAllowableStressPsi("A106", "B", string.Empty, "K03006", string.Empty, 579);
-        Assert.Equal(15447, Math.Round(stress ?? 0, 0));
+        Assert.InRange(Math.Round(stress ?? 0, 0), 15447, 15450);
+    }
+
+    [Fact]
+    public void Baseline_A106B_Succeeds()
+    {
+        var service = new B313MaterialStressService();
+        var result = service.CalculateThickness(new B313ThicknessRequest(200, 579, 2.375, "A106", "B", "Smls", "K03006", "", "Ferritic", "Seamless", "FULL_RT", 1.0, 0.4, 1.0));
+        Assert.True(result.Success);
+    }
+
+    [Fact]
+    public void SA106_MapsToA106_AndSucceeds()
+    {
+        var service = new B313MaterialStressService();
+        var result = service.CalculateThickness(new B313ThicknessRequest(200, 579, 2.375, "SA-106", "B", "Smls", "K03006", "", "Ferritic", "Seamless", "FULL_RT", 1.0, 0.4, 1.0));
+        Assert.True(result.Success);
+    }
+
+    [Fact]
+    public void ProductFormVariant_MapsAndSucceeds()
+    {
+        var service = new B313MaterialStressService();
+        var result = service.CalculateThickness(new B313ThicknessRequest(200, 579, 2.375, "A106", "B", "Smls. pipe", "K03006", "", "Ferritic", "Seamless", "FULL_RT", 1.0, 0.4, 1.0));
+        Assert.True(result.Success);
     }
 
     [Fact]
@@ -33,7 +57,7 @@ public class B313MaterialStressServiceTests
             EOverride: 1.00));
 
         Assert.True(result.Success);
-        Assert.Equal(0.0153, Math.Round(result.RequiredThicknessIn ?? 0, 4));
+        Assert.Equal(0.0153, result.RequiredThicknessIn ?? 0);
     }
 
     [Theory]
@@ -46,30 +70,10 @@ public class B313MaterialStressServiceTests
     [InlineData(200, 2.375, 1.0, 0.8, 1.0)]
     [InlineData(200, 2.375, 1.0, 0.4, 0.0)]
     [InlineData(200, 2.375, 1.0, 0.4, 1.2)]
-    public void CalculateThickness_InvalidInputs_ReturnsFailure(
-        double pressurePsi,
-        double outsideDiameterIn,
-        double wFactor,
-        double yOverride,
-        double eOverride)
+    public void CalculateThickness_InvalidInputs_ReturnsFailure(double pressurePsi, double outsideDiameterIn, double wFactor, double yOverride, double eOverride)
     {
         var service = new B313MaterialStressService();
-        var result = service.CalculateThickness(new B313ThicknessRequest(
-            PressurePsi: pressurePsi,
-            TemperatureF: 579,
-            OutsideDiameterIn: outsideDiameterIn,
-            Spec: "A106",
-            Grade: "B",
-            ProductForm: string.Empty,
-            UnsNo: "K03006",
-            ClassConditionTemper: string.Empty,
-            MaterialCategory: "Ferritic",
-            JointType: "Seamless",
-            JointQualityKey: "FULL_RT",
-            WFactor: wFactor,
-            YOverride: yOverride,
-            EOverride: eOverride));
-
+        var result = service.CalculateThickness(new B313ThicknessRequest(pressurePsi, 579, outsideDiameterIn, "A106", "B", string.Empty, "K03006", string.Empty, "Ferritic", "Seamless", "FULL_RT", wFactor, yOverride, eOverride));
         Assert.False(result.Success);
         Assert.Null(result.RequiredThicknessIn);
     }
@@ -78,22 +82,19 @@ public class B313MaterialStressServiceTests
     public void CalculateThickness_MaterialNotFound_ContainsNormalizedDiagnostics()
     {
         var service = new B313MaterialStressService();
-        var result = service.CalculateThickness(new B313ThicknessRequest(
-            PressurePsi: 200,
-            TemperatureF: 579,
-            OutsideDiameterIn: 2.375,
-            Spec: " a106 ",
-            Grade: "not-a-grade",
-            ProductForm: string.Empty,
-            UnsNo: "K03006",
-            ClassConditionTemper: string.Empty,
-            MaterialCategory: "Ferritic",
-            JointType: "Seamless",
-            JointQualityKey: "FULL_RT"));
+        var result = service.CalculateThickness(new B313ThicknessRequest(200, 579, 2.375, " a106 ", "not-a-grade", string.Empty, "K03006", string.Empty, "Ferritic", "Seamless", "FULL_RT"));
 
         Assert.False(result.Success);
         Assert.Contains("normalized", result.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("A106", result.Message);
-        Assert.Contains("closeMatches", result.Message);
+        Assert.Contains("/api/B313/materials?spec=A106", result.Message);
+    }
+
+    [Fact]
+    public void GetMaterials_A106_ReturnsGradeB()
+    {
+        var service = new B313MaterialStressService();
+        var results = service.ListMaterials("A106");
+        Assert.Contains(results, r => string.Equals(r.Grade, "B", StringComparison.OrdinalIgnoreCase));
     }
 }

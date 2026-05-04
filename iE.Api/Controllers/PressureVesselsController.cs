@@ -81,7 +81,7 @@ public sealed class PressureVesselsController : ControllerBase
     private ActionResult<T> Execute<T>(Func<T> action)
     {
         try { return Ok(action()); }
-        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
         catch (ArgumentOutOfRangeException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
     }
 }

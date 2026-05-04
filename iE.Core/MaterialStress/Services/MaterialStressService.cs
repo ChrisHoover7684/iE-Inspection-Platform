@@ -249,6 +249,7 @@ namespace iE.Core.MaterialStress.Services
             record.Dataset.DisplayName = GetEraDisplayName(era);
             record.Dataset.DesignMargin = designMargin;
             record.Dataset.DesignCode = designCode;
+            record.Dataset.CalculationFamily = calculationFamily;
 
             record.Material.SpecNo = specNo?.Trim() ?? "";
             record.Material.TypeGrade = typeGrade?.Trim() ?? "";

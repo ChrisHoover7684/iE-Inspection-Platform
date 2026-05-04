@@ -10,8 +10,11 @@ public sealed class B313MaterialStressService
 
     private static string NormalizeSpec(string? value)
     {
-        var spec = Normalize(value).Replace(" ", string.Empty);
-        return spec == "SA-106" ? "A106" : spec;
+        var spec = Normalize(value)
+            .Replace("-", string.Empty)
+            .Replace("_", string.Empty)
+            .Replace(" ", string.Empty);
+        return spec;
     }
 
     private static string NormalizeProductForm(string? value)
@@ -133,6 +136,10 @@ public sealed class B313MaterialStressService
             var unsNo = Normalize(request.UnsNo);
             var classConditionTemper = NormalizeClassConditionTemper(request.ClassConditionTemper);
             var message = $"Allowable stress not found. normalized: spec='{spec}', grade='{grade}', productForm='{productForm}', unsNo='{unsNo}', classConditionTemper='{classConditionTemper}'. Try GET /api/B313/materials?spec={spec}.";
+            if (spec.StartsWith("SA", StringComparison.Ordinal))
+            {
+                message += " B31.3 piping lookups typically use A-spec naming (for example, use A106 instead of SA106) unless an explicit SA-spec B31.3 record exists.";
+            }
             return new(false, message, null, null, null, null, null);
         }
 

@@ -26,3 +26,24 @@ Content-Type: application/json
 }
 
 ###
+
+### B31.3 thickness
+POST {{iE.Api_HostAddress}}/api/B313/thickness
+Content-Type: application/json
+
+{
+  "pressurePsi": 200,
+  "temperatureF": 579,
+  "outsideDiameterIn": 2.375,
+  "spec": "A106",
+  "grade": "B",
+  "productForm": "",
+  "unsNo": "K03006",
+  "classConditionTemper": "",
+  "materialCategory": "Ferritic",
+  "jointType": "Seamless",
+  "jointQualityKey": "FULL_RT",
+  "wFactor": 1.0,
+  "yOverride": 0.4,
+  "eOverride": 1.0
+}

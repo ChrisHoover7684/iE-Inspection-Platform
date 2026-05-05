@@ -19,10 +19,12 @@ Use this checklist before backend-focused releases.
 
 ## 4) Secrets and configuration
 - [ ] No production credentials committed.
-- [ ] Required environment variables documented.
+- [ ] Required environment variables documented (including `ConnectionStrings__InspectionReports`).
 - [ ] Connection strings and secrets resolved via secure config paths.
 
 ## 5) Database migrations
+- [ ] `Database:ApplyMigrationsOnStartup` flag is reviewed for the target environment.
+- [ ] Production migration strategy is deliberate (startup migration disabled unless explicitly approved).
 - [ ] New migrations are reviewed and applied in staging.
 - [ ] Backward-compatibility/rollback notes are documented.
 - [ ] Data-seeding impacts are understood and tested.
@@ -55,3 +57,8 @@ Use this checklist before backend-focused releases.
 ## 11) Marketplace readiness (later)
 - [ ] Deferred unless release explicitly targets marketplace exposure.
 - [ ] If in scope later: packaging, terms, and support workflows are tracked.
+
+## 12) Health endpoints
+- [ ] Liveness endpoint responds at `GET /health/live`.
+- [ ] Readiness endpoint responds at `GET /health/ready` and verifies database connectivity.
+- [ ] Health responses do not expose sensitive configuration data.

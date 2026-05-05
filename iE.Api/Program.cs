@@ -1,3 +1,4 @@
+using iE.Api;
 using iE.Core.Mechanical.PressureVessels;
 using iE.Core.MaterialStress.Services;
 using System.Text.Json.Serialization;
@@ -11,8 +12,10 @@ using iE.Core.Reports.Review;
 using iE.Core.Reports.Services;
 using iE.Core.Reports.Templates;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
+var inspectionReportsConnectionString = StartupConfiguration.GetRequiredConnectionString(builder.Configuration);
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -21,9 +24,14 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddDbContext<InspectionReportsDbContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("InspectionReports")
-        ?? "Host=localhost;Port=5432;Database=inspection_reports;Username=postgres;Password=postgres"));
+    options.UseNpgsql(inspectionReportsConnectionString));
+
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: new[] { "live" })
+    .AddNpgSql(
+        inspectionReportsConnectionString,
+        name: "postgres",
+        tags: new[] { "ready" });
 
 builder.Services.AddScoped<InspectionReportRepository>();
 builder.Services.AddScoped<PhotoMarkupRepository>();
@@ -64,10 +72,18 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+var applyMigrationsOnStartup = StartupConfiguration.ShouldApplyMigrationsOnStartup(builder.Configuration);
+if (applyMigrationsOnStartup)
 {
+    app.Logger.LogInformation("Applying database migrations on startup because Database:ApplyMigrationsOnStartup=true.");
+
+    using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<InspectionReportsDbContext>();
     dbContext.Database.Migrate();
+}
+else
+{
+    app.Logger.LogInformation("Skipping database migrations on startup because Database:ApplyMigrationsOnStartup is not enabled.");
 }
 
 if (app.Environment.IsDevelopment())
@@ -82,5 +98,13 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("live")
+});
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
 
 app.Run();

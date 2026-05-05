@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using iE.Core.Inspection.CorrosionRate;
+using iE.Api.Extensions;
 
 namespace iE.Api.Controllers
 {
     [ApiController]
     [Route("api/inspection/corrosion-rate")]
-    public class CorrosionRateController : ControllerBase
+    public class CorrosionRateController(ILogger<CorrosionRateController> logger) : ControllerBase
     {
         [HttpPost("calculate")]
         public ActionResult<CorrosionRateResult> Calculate([FromBody] CorrosionRateInput input)
@@ -17,9 +18,10 @@ namespace iE.Api.Controllers
 
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (ArgumentException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                logger.LogInformation(ex, "Corrosion rate domain failure. TraceId={TraceId}", HttpContext.TraceIdentifier);
+                return DomainError(ex.Message);
             }
         }
     }

@@ -1,3 +1,4 @@
+using iE.Api.Extensions;
 using iE.Core.Mechanical.B313.Materials;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,7 +14,7 @@ public class B313Controller : ControllerBase
     public ActionResult<B313ThicknessResult> Thickness([FromBody] B313ThicknessRequest request)
     {
         var result = _svc.CalculateThickness(request);
-        if (!result.Success) return BadRequest(result);
+        if (!result.Success) return DomainError(result.Error ?? "B31.3 thickness calculation failed.", result.Warnings);
         return Ok(result);
     }
 

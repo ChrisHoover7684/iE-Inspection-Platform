@@ -45,7 +45,35 @@ From repo root:
 dotnet run --project iE.Api/iE.Api.csproj
 ```
 
-The API uses `ConnectionStrings:InspectionReports` and currently auto-applies EF Core migrations on startup.
+The API requires `ConnectionStrings:InspectionReports`. Startup fails fast when this is missing or blank.
+
+### Backend Configuration (Secrets-Safe)
+Required backend setting:
+- `ConnectionStrings__InspectionReports`
+
+Local development with user secrets:
+```bash
+dotnet user-secrets init --project iE.Api/iE.Api.csproj
+dotnet user-secrets set "ConnectionStrings:InspectionReports" "Host=localhost;Port=5432;Database=inspection_reports_dev;Username=postgres;Password=YOUR_LOCAL_PASSWORD" --project iE.Api/iE.Api.csproj
+```
+
+Environment variable examples:
+
+PowerShell:
+```powershell
+$env:ConnectionStrings__InspectionReports = "Host=localhost;Port=5432;Database=inspection_reports_dev;Username=postgres;Password=YOUR_LOCAL_PASSWORD"
+```
+
+Bash:
+```bash
+export ConnectionStrings__InspectionReports="Host=localhost;Port=5432;Database=inspection_reports_dev;Username=postgres;Password=YOUR_LOCAL_PASSWORD"
+```
+
+Production secrets must never be committed to source control.
+
+Optional migration behavior:
+- `Database__ApplyMigrationsOnStartup=true` enables startup migration execution.
+- Default is `false`, so migrations are skipped unless explicitly enabled.
 
 ## Frontend Run Instructions
 From `iE.Web/`:

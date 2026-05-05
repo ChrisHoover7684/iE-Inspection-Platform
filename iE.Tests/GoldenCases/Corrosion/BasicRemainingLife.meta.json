@@ -1,0 +1,18 @@
+{
+  "caseId": "Corrosion/BasicRemainingLife",
+  "calculatorModule": "Corrosion remaining life backend module (to be linked)",
+  "units": {
+    "thickness": "in",
+    "corrosionRate": "in/year",
+    "remainingLife": "years"
+  },
+  "sourceProvenanceNote": "Current regression baseline; reference pending review.",
+  "tolerance": {
+    "remainingLifeYears": 0.01
+  },
+  "reviewerApprovalStatus": "pending",
+  "codeStandardEdition": "unknown",
+  "knownLimitations": [
+    "Seed scaffold only; expected numeric authority pending provenance review."
+  ]
+}

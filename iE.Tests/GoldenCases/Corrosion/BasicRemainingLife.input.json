@@ -1,0 +1,6 @@
+{
+  "initialThicknessIn": 0.5,
+  "currentThicknessIn": 0.45,
+  "requiredThicknessIn": 0.35,
+  "inspectionIntervalYears": 5
+}

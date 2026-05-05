@@ -1,0 +1,18 @@
+{
+  "caseId": "PipeLookup/NPS2_STD_or_Schedule80",
+  "calculatorModule": "PipeLookup backend module (to be linked)",
+  "units": {
+    "nominalPipeSize": "in",
+    "thickness": "in"
+  },
+  "sourceProvenanceNote": "Current regression baseline; reference pending review.",
+  "tolerance": {
+    "thicknessIn": 0.0001
+  },
+  "reviewerApprovalStatus": "pending",
+  "codeStandardEdition": "unknown",
+  "knownLimitations": [
+    "Case seeded for golden framework only.",
+    "Exact provenance citation pending engineering review."
+  ]
+}

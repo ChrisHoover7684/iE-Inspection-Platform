@@ -1,0 +1,16 @@
+{
+  "pressurePsi": 200,
+  "temperatureF": 579,
+  "outsideDiameterIn": 2.375,
+  "spec": "A106",
+  "grade": "B",
+  "productForm": "Smls",
+  "unsNo": "K03006",
+  "classConditionTemper": "",
+  "materialCategory": "Ferritic",
+  "jointType": "Seamless",
+  "jointQualityKey": "FULL_RT",
+  "wFactor": 1.0,
+  "yOverride": 0.4,
+  "eOverride": 1.0
+}

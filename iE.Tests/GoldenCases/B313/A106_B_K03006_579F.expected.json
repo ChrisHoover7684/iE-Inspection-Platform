@@ -1,0 +1,6 @@
+{
+  "success": true,
+  "allowableStressPsi": 18131,
+  "requiredThicknessIn": 0.0130,
+  "note": "Current regression baseline; reference pending review."
+}

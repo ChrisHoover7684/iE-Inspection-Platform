@@ -1,0 +1,7 @@
+{
+  "internalPressurePsi": 150,
+  "insideDiameterIn": 48,
+  "allowableStressPsi": 15000,
+  "jointEfficiency": 1.0,
+  "corrosionAllowanceIn": 0.0
+}

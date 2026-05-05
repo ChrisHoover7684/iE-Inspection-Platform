@@ -1,0 +1,18 @@
+{
+  "caseId": "PressureVessels/CylindricalShellBasic",
+  "calculatorModule": "Pressure vessel cylindrical shell backend module (to be linked)",
+  "units": {
+    "pressure": "psi",
+    "diameter": "in",
+    "thickness": "in"
+  },
+  "sourceProvenanceNote": "Current regression baseline; reference pending review.",
+  "tolerance": {
+    "requiredThicknessIn": 0.0001
+  },
+  "reviewerApprovalStatus": "pending",
+  "codeStandardEdition": "ASME Section VIII (edition/year pending confirmation)",
+  "knownLimitations": [
+    "Seed scaffold only; expected numeric authority pending provenance review."
+  ]
+}

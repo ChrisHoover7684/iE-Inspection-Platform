@@ -1,0 +1,20 @@
+{
+  "caseId": "B313/A106_B_K03006_579F",
+  "calculatorModule": "B313MaterialStressService.CalculateThickness",
+  "units": {
+    "temperature": "degF",
+    "stress": "psi",
+    "thickness": "in"
+  },
+  "sourceProvenanceNote": "Current regression baseline; reference pending review. Imported B31.3/Piping stress dataset path in repo.",
+  "tolerance": {
+    "allowableStressPsi": 1,
+    "thicknessIn": 0.0001
+  },
+  "reviewerApprovalStatus": "pending",
+  "codeStandardEdition": "ASME B31.3 (edition/year pending confirmation)",
+  "knownLimitations": [
+    "Interpolation expectation is locked to current backend behavior.",
+    "Authoritative external source package not yet attached."
+  ]
+}

@@ -1,23 +1,28 @@
-# PR Triage Plan
+# PR Triage Recommendations
 
-Before adding major calculator features, reconcile existing open pull requests to reduce merge risk and duplicated engineering logic changes.
+This document records recommended disposition for known stale or overlapping PRs after the B31.3 CI stabilization work landed in PR #177.
 
-## Why this comes first
-- Open PR drift increases risk of conflicting calculator logic.
-- CI/build status should be clear before adding new behavior.
-- Early triage prevents rework and unclear ownership.
+## Scope and guardrails
+- Do not merge stale PR code blindly.
+- Preserve current blocking CI posture and current backend calculation baselines.
+- Re-open behavior work only through fresh, scoped backend PRs with provenance and golden-case coverage.
 
-## Open PR Inventory (as of 2026-05-04)
-> Repository access via GitHub API/CLI was not available in this environment during this pass. Fill in actual PR numbers/titles in the table below when network/CLI access is available.
+## Recommended disposition
 
-| PR | Title | Purpose | Overlap with `master` | Build/Test Status | Recommendation (merge/rebase/close) | Risk |
-|---|---|---|---|---|---|---|
-| TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| PR | Current assessment | Recommendation | Rationale |
+|---|---|---|---|
+| #173 | Overlaps the stabilization stream that continued in #174/#176/#177. | **Close** as superseded. | Keeping #173 open increases review noise and merge-conflict risk for no net backend benefit. |
+| #157 | Older pressure-vessel line of work; likely partially superseded. | **Defer merge; review for unique migration notes only**. | If migration or rollout notes are unique, extract docs-only content into a new targeted PR; otherwise close. |
+| #158 | Older pressure-vessel line of work; likely partially superseded. | **Defer merge; review for unique migration notes only**. | Same as #157; do not merge code as-is into stabilized baseline. |
+| #153 | Corrosion/calculator overlap with later backend work. | **Close as-is; reopen missing behavior via fresh scoped PR(s)**. | Avoid importing stale assumptions; reintroduce only validated missing backend behavior with tests/provenance. |
+| #154 | Corrosion/calculator overlap with later backend work. | **Close as-is; reopen missing behavior via fresh scoped PR(s)**. | Same disposition as #153. |
+| #55 | Sample report JSON contribution, low risk. | **Defer (nice-to-have)**. | Safe candidate later, but not release-critical versus current backend hardening tasks. |
+| #4 | API 653 MRT work. | **Defer until provenance/golden process is active**. | High calculation risk area; should enter only after golden-case + provenance workflow is in place. |
 
-## Per-PR Checklist
-For each open PR, document:
-1. **Purpose** — What problem is it solving?
-2. **Overlap with `master`** — Which files/domains overlap current branch and other PRs?
-3. **Build/test status** — Current CI result, local reproducibility, failing tests summary.
-4. **Recommendation** — Merge as-is, rebase/update, split, or close.
-5. **Risk level** — Low/Medium/High with rationale.
+## Follow-up actions
+1. Use this triage as the canonical stale-PR disposition reference for current hardening work.
+2. For any behavior believed missing from #153/#154/#157/#158, open a new backend-only PR with:
+   - explicit issue statement,
+   - provenance references,
+   - golden-case artifact(s),
+   - passing blocking CI.

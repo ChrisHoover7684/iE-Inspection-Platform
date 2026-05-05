@@ -7,9 +7,9 @@
   "productForm": "Smls",
   "unsNo": "K03006",
   "classConditionTemper": "",
-  "typeGrade": "Ferritic",
+  "materialCategory": "Ferritic",
   "jointType": "Seamless",
-  "qualityFactorKey": "FULL_RT",
+  "jointQualityKey": "FULL_RT",
   "wFactor": 1.0,
   "yOverride": 0.4,
   "eOverride": 1.0

@@ -68,7 +68,7 @@ public class ReportingController(
         var template = reportTemplateRegistry.GetTemplateById(templateId);
         if (template is null)
         {
-            return NotFoundError($"Report template '{templateId}' was not found.");
+            return this.NotFoundError($"Report template '{templateId}' was not found.");
         }
 
         return Ok(template);
@@ -90,7 +90,7 @@ public class ReportingController(
         var report = inspectionReportRepository.GetById(id);
         if (report is null)
         {
-            return NotFoundError($"Inspection report instance '{id}' was not found.");
+            return this.NotFoundError($"Inspection report instance '{id}' was not found.");
         }
 
         return Ok(report);
@@ -102,7 +102,7 @@ public class ReportingController(
         var report = inspectionReportRepository.GetById(id);
         if (report is null)
         {
-            return NotFoundError($"Inspection report instance '{id}' was not found.");
+            return this.NotFoundError($"Inspection report instance '{id}' was not found.");
         }
 
         var fileBytes = inspectionReportDocxExportService.Export(report);
@@ -124,7 +124,7 @@ public class ReportingController(
         var report = inspectionReportRepository.GetById(id);
         if (report is null)
         {
-            return NotFoundError($"Inspection report instance '{id}' was not found.");
+            return this.NotFoundError($"Inspection report instance '{id}' was not found.");
         }
 
         var fileBytes = photoAppendixExportService.Export(report);
@@ -159,7 +159,7 @@ public class ReportingController(
     {
         if (request.Report is null)
         {
-            return ValidationError("Report payload is required.");
+            return this.ValidationError("Report payload is required.");
         }
 
         request.Report.Observations ??= new List<InspectionObservation>();
@@ -169,7 +169,7 @@ public class ReportingController(
             && request.Report.Observations.Count == 0
             && request.Report.Findings.Count == 0)
         {
-            return ValidationError("checklistResponses are required when report has no observations or findings.");
+            return this.ValidationError("checklistResponses are required when report has no observations or findings.");
         }
 
         var templateId = string.IsNullOrWhiteSpace(request.TemplateId)
@@ -226,7 +226,7 @@ public class ReportingController(
     {
         if (report.Findings.Count > 0)
         {
-            return DomainError("Quick complete cannot be used when reportable findings exist. Remove findings before using this action.");
+            return this.DomainError("Quick complete cannot be used when reportable findings exist. Remove findings before using this action.");
         }
 
         report.Observations = noFindingObservationBuilder.BuildDefaultObservations(report.TemplateId, report.PipingProfile);
@@ -261,7 +261,7 @@ public class ReportingController(
         var existing = inspectionReportRepository.GetById(id);
         if (existing is null)
         {
-            return NotFoundError($"Inspection report instance '{id}' was not found.");
+            return this.NotFoundError($"Inspection report instance '{id}' was not found.");
         }
 
         report.Id = id;
@@ -283,7 +283,7 @@ public class ReportingController(
         var deleted = inspectionReportRepository.Delete(id);
         if (!deleted)
         {
-            return NotFoundError($"Inspection report instance '{id}' was not found.");
+            return this.NotFoundError($"Inspection report instance '{id}' was not found.");
         }
 
         return NoContent();
@@ -301,7 +301,7 @@ public class ReportingController(
         var template = reportTemplateRegistry.GetTemplateById(templateId);
         if (template is null)
         {
-            return NotFoundError($"Report template '{templateId}' was not found.");
+            return this.NotFoundError($"Report template '{templateId}' was not found.");
         }
 
         var report = inspectionReportFactory.CreateFromTemplate(template);
@@ -329,7 +329,7 @@ public class ReportingController(
         var report = inspectionReportRepository.GetById(id);
         if (report is null)
         {
-            return NotFoundError($"Inspection report instance '{id}' was not found.");
+            return this.NotFoundError($"Inspection report instance '{id}' was not found.");
         }
 
         var updatedReport = inspectionReportFactory.CreateFindingDraftsFromChecklistTransfers(report);

@@ -14,7 +14,7 @@ public class B313Controller : ControllerBase
     public ActionResult<B313ThicknessResult> Thickness([FromBody] B313ThicknessRequest request)
     {
         var result = _svc.CalculateThickness(request);
-        if (!result.Success) return DomainError(result.Error ?? "B31.3 thickness calculation failed.", result.Warnings);
+        if (!result.Success) return this.DomainError(result.Message, result);
         return Ok(result);
     }
 

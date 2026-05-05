@@ -87,12 +87,12 @@ public sealed class PressureVesselsController : ControllerBase
         catch (ArgumentOutOfRangeException ex)
         {
             _logger.LogWarning(ex, "Pressure vessel calculation validation failure. TraceId={TraceId}", HttpContext.TraceIdentifier);
-            return ValidationError(ex.Message);
+            return this.ValidationError(ex.Message);
         }
         catch (ArgumentException ex)
         {
             _logger.LogInformation(ex, "Pressure vessel calculation domain failure. TraceId={TraceId}", HttpContext.TraceIdentifier);
-            return DomainError(ex.Message);
+            return this.DomainError(ex.Message);
         }
     }
 }

@@ -18,10 +18,10 @@ namespace iE.Api.Controllers
 
                 return Ok(result);
             }
-            catch (ArgumentException ex)
+            catch (Exception ex)
             {
                 logger.LogInformation(ex, "Corrosion rate domain failure. TraceId={TraceId}", HttpContext.TraceIdentifier);
-                return DomainError(ex.Message);
+                return this.DomainError(ex.Message);
             }
         }
     }

@@ -1,3 +1,4 @@
+using iE.Api.Extensions;
 using iE.Core.Mechanical.PressureVessels;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,10 +9,12 @@ namespace iE.Api.Controllers;
 public sealed class PressureVesselsController : ControllerBase
 {
     private readonly PressureVesselAllowableStressResolver _stressResolver;
+    private readonly ILogger<PressureVesselsController> _logger;
 
-    public PressureVesselsController(PressureVesselAllowableStressResolver stressResolver)
+    public PressureVesselsController(PressureVesselAllowableStressResolver stressResolver, ILogger<PressureVesselsController> logger)
     {
         _stressResolver = stressResolver;
+        _logger = logger;
     }
 
     public sealed record CylindricalShellCalculationRequest(CylindricalShellInput Input, PressureVesselMaterialStressInput MaterialStress);
@@ -81,7 +84,15 @@ public sealed class PressureVesselsController : ControllerBase
     private ActionResult<T> Execute<T>(Func<T> action)
     {
         try { return Ok(action()); }
-        catch (ArgumentOutOfRangeException ex) { return BadRequest(new { error = ex.Message }); }
-        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            _logger.LogWarning(ex, "Pressure vessel calculation validation failure. TraceId={TraceId}", HttpContext.TraceIdentifier);
+            return this.ValidationError(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogInformation(ex, "Pressure vessel calculation domain failure. TraceId={TraceId}", HttpContext.TraceIdentifier);
+            return this.DomainError(ex.Message);
+        }
     }
 }

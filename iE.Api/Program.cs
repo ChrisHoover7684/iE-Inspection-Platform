@@ -13,6 +13,7 @@ using iE.Core.Reports.Services;
 using iE.Core.Reports.Templates;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using iE.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 var inspectionReportsConnectionString = StartupConfiguration.GetRequiredConnectionString(builder.Configuration);
@@ -72,6 +73,8 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+
 var applyMigrationsOnStartup = StartupConfiguration.ShouldApplyMigrationsOnStartup(builder.Configuration);
 if (applyMigrationsOnStartup)
 {
@@ -79,7 +82,16 @@ if (applyMigrationsOnStartup)
 
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<InspectionReportsDbContext>();
-    dbContext.Database.Migrate();
+    try
+    {
+        dbContext.Database.Migrate();
+        app.Logger.LogInformation("Database migrations applied successfully.");
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Database migration failed during startup.");
+        throw;
+    }
 }
 else
 {

@@ -62,3 +62,7 @@ Use this checklist before backend-focused releases.
 - [ ] Liveness endpoint responds at `GET /health/live`.
 - [ ] Readiness endpoint responds at `GET /health/ready` and verifies database connectivity.
 - [ ] Health responses do not expose sensitive configuration data.
+
+- [ ] API error-handling consistency verified (standardized error envelope with code/message/traceId).
+- [ ] Structured logging verified for startup migration decisions and unhandled exceptions.
+- [ ] Logging review confirms no sensitive data (secrets, connection strings, raw report payloads) is emitted.

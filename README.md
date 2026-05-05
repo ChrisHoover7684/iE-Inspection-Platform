@@ -90,7 +90,7 @@ Default compose credentials are for local development only and must not be reuse
 ## Project Status
 This repository is being stabilized for stronger CI, documentation, safer configuration, and future calculator golden-test coverage.
 
-## CI Status Note
-- During this stabilization phase, `.NET` tests are configured as **diagnostic/non-blocking** due to known baseline B31.3 lookup failures.
-- Restore/build and frontend build remain blocking.
-- See `docs/testing/KNOWN_TEST_FAILURES.md` for details and required follow-up.
+## CI Status
+- `dotnet restore` and `dotnet build` are expected to pass.
+- `.NET` tests are expected to pass and are blocking in CI.
+- Frontend build (`npm run build`) is expected to pass.

@@ -48,9 +48,10 @@ public class ReportingControllerAuthorizationSweepTests
         accessor = new TenantContextAccessor();
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Authentication:Enabled"] = authEnabled.ToString() }).Build();
         var guard = new ReportAccessGuard(config, accessor, db);
+        var referenceGuard = new ReportReferenceGuard(config, db, new NoopAuditEventWriter());
         repo = new InspectionReportRepository(db);
 
-        var controller = new ReportingController(repo, new InspectionReportFactory(), null!, null!, new ReportDraftBuilder(new SummaryBuilder(), new ReportValidationService(new InspectionTagRuleEngine()), new RepairRecommendationBuilder()), null!, new ObservationChecklistService(), new ChecklistMergeService(), new ReportWorkflowService(), new InMemoryReportTemplateRegistry(), new InspectionTagRuleEngine(), null!, null!, null!, guard, new NoopAuditEventWriter());
+        var controller = new ReportingController(repo, new InspectionReportFactory(), null!, null!, new ReportDraftBuilder(new SummaryBuilder(), new ReportValidationService(new InspectionTagRuleEngine()), new RepairRecommendationBuilder()), null!, new ObservationChecklistService(), new ChecklistMergeService(), new ReportWorkflowService(), new InMemoryReportTemplateRegistry(), new InspectionTagRuleEngine(), null!, null!, null!, guard, referenceGuard, new NoopAuditEventWriter());
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         return controller;
     }

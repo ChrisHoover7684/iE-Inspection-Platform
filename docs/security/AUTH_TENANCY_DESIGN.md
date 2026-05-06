@@ -415,3 +415,10 @@ Facility moves remain blocked on update paths pending a dedicated future workflo
 - Health endpoints remain public.
 - Calculator endpoints remain intentionally unprotected and not audited in this phase.
 - Audit UI/admin tooling remains future work.
+
+## PR #193 — Persisted report ownership-reference consistency
+- Enforces persisted report write-time consistency checks across `ClientOrganizationId`, `FacilityId`, `ProcessUnitId`, and `AssetId`.
+- Preserves blocked facility moves; ownership rewrite protections remain in effect.
+- Keeps health endpoints public.
+- Calculator endpoints remain intentionally unprotected and out of audit scope in this phase.
+- Adds no audit/admin/subscription UI or new UI/API surfaces.

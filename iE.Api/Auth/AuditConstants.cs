@@ -7,6 +7,7 @@ public static class AuditActions
     public const string ReportUpdated = "ReportUpdated";
     public const string ReportDeleted = "ReportDeleted";
     public const string ReportExported = "ReportExported";
+    public const string ReportReferenceValidationFailed = "ReportReferenceValidationFailed";
 }
 
 public static class AuditResourceTypes

@@ -35,6 +35,7 @@ public class ReportingController(
     IInspectionAssistantService inspectionAssistantService,
     IReportNarrativeGenerator reportNarrativeGenerator,
     ReportAccessGuard reportAccessGuard,
+    ReportReferenceGuard reportReferenceGuard,
     IAuditEventWriter auditEventWriter) : ControllerBase
 {
     private async Task<ActionResult?> EnforceReportAccessAsync(InspectionReport report, string reportIdForMessage, string capability, string forbiddenMessage)
@@ -239,6 +240,12 @@ public class ReportingController(
 
             request.Report.CreatedAt = DateTime.UtcNow;
             request.Report.UpdatedAt = null;
+            var createReferenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, request.Report, "BuildDraftFromChecklist");
+            if (createReferenceValidation is not null)
+            {
+                return createReferenceValidation;
+            }
+
             inspectionReportRepository.Create(request.Report);
             await auditEventWriter.WriteAsync(AuditActions.ReportCreated, AuditResourceTypes.Report, request.Report.Id, AuditResults.Success, request.Report.FacilityId, new Dictionary<string, object?> { ["route"] = "BuildDraftFromChecklist", ["path"] = "create" });
         }
@@ -261,6 +268,12 @@ public class ReportingController(
             if (string.IsNullOrWhiteSpace(request.Report.Status))
             {
                 request.Report.Status = existingReport.Status;
+            }
+
+            var checklistUpdateReferenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, request.Report, "BuildDraftFromChecklist");
+            if (checklistUpdateReferenceValidation is not null)
+            {
+                return checklistUpdateReferenceValidation;
             }
 
             inspectionReportRepository.Update(existingReport.Id, request.Report);
@@ -307,6 +320,18 @@ public class ReportingController(
         if (createAccess == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, report.Id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return Unauthorized(); }
         report.UpdatedAt = null;
 
+        var referenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, report, "CreateInstance");
+        if (referenceValidation is not null)
+        {
+            return referenceValidation;
+        }
+
+        var templateReferenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, report, "CreateInstanceFromTemplate");
+        if (templateReferenceValidation is not null)
+        {
+            return templateReferenceValidation;
+        }
+
         var created = inspectionReportRepository.Create(report);
         await auditEventWriter.WriteAsync(AuditActions.ReportCreated, AuditResourceTypes.Report, created.Id, AuditResults.Success, created.FacilityId);
         return CreatedAtAction(nameof(GetInstanceById), new { id = created.Id }, created);
@@ -338,6 +363,12 @@ public class ReportingController(
         if (updateAccess == ReportAccessDecision.NotFound) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return this.NotFoundError($"Inspection report instance '{id}' was not found."); }
         if (updateAccess == ReportAccessDecision.Forbidden) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, existing.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return this.ForbiddenError("Insufficient capability to update report."); }
         if (updateAccess == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return Unauthorized(); }
+
+        var updateReferenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, report, "UpdateInstance");
+        if (updateReferenceValidation is not null)
+        {
+            return updateReferenceValidation;
+        }
 
         var updated = inspectionReportRepository.Update(id, report);
         await auditEventWriter.WriteAsync(AuditActions.ReportUpdated, AuditResourceTypes.Report, updated.Id, AuditResults.Success, updated.FacilityId);
@@ -433,6 +464,12 @@ public class ReportingController(
         updatedReport.CreatedByUserId = report.CreatedByUserId;
         updatedReport.UpdatedAt = DateTime.UtcNow;
         reportAccessGuard.ApplyUpdateOwnership(updatedReport);
+        var syncReferenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, updatedReport, "SyncFindingsFromChecklistTransfers");
+        if (syncReferenceValidation is not null)
+        {
+            return syncReferenceValidation;
+        }
+
         inspectionReportRepository.Update(id, updatedReport);
         await auditEventWriter.WriteAsync(AuditActions.ReportUpdated, AuditResourceTypes.Report, id, AuditResults.Success, updatedReport.FacilityId, new Dictionary<string, object?> { ["route"] = "SyncFindingsFromChecklistTransfers" });
         return Ok(updatedReport);

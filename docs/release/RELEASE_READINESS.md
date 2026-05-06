@@ -95,3 +95,10 @@ Use this checklist before backend-focused releases.
 - PR #192: Backend audit hardening complete (metadata sanitization bounds, append-only guardrails, tenant-scoped internal query service).
 - No public audit API or UI shipped in this release; internal-only groundwork.
 - Health endpoints remain public; calculator endpoints intentionally unprotected and unaudited for this phase.
+
+## PR #193 tenancy hardening
+- Added backend guardrails for persisted report ownership-reference consistency (tenant/facility/process-unit/asset).
+- Facility moves remain blocked pending dedicated workflow.
+- Health endpoints remain public.
+- Calculator endpoints remain intentionally unprotected and not audited in this phase.
+- No audit/admin/subscription UI surface added.

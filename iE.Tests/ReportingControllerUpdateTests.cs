@@ -157,9 +157,10 @@ public class ReportingControllerUpdateTests
         accessor = new TenantContextAccessor();
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Authentication:Enabled"] = authEnabled.ToString() }).Build();
         var guard = new ReportAccessGuard(config, accessor, db);
+        var referenceGuard = new ReportReferenceGuard(config, db, new NoopAuditEventWriter());
         repo = new InspectionReportRepository(db);
 
-        var controller = new ReportingController(repo, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, guard, new NoopAuditEventWriter());
+        var controller = new ReportingController(repo, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, guard, referenceGuard, new NoopAuditEventWriter());
         controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()

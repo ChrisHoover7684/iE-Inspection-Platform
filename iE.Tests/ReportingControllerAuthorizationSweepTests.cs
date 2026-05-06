@@ -1,4 +1,5 @@
 using iE.Tests.TestDoubles;
+using iE.Api.Contracts;
 using iE.Api.Auth;
 using iE.Api.Controllers;
 using iE.Api.Tenancy;
@@ -15,6 +16,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using System.Text.Json;
 
 namespace iE.Tests;
 
@@ -35,6 +37,84 @@ public class ReportingControllerAuthorizationSweepTests
         Assert.Equal("CreateInstance", evt.Metadata?["route"]?.ToString());
         Assert.Equal(EntitlementKeys.ReportsCreate, evt.Metadata?["entitlementKey"]?.ToString());
         Assert.False(evt.Metadata?.ContainsKey("requestBody") ?? false);
+    }
+
+    [Fact]
+    public async Task CreateInstance_LimitExceeded_Returns403_AndAuditsSafeMetadata()
+    {
+        var writer = new CapturingAuditEventWriter();
+        var c = BuildController(true, out var db, out var a, out _, entitlementEnabled: true, entitlementAllowed: true, usage: new SubscriptionUsageSnapshot("11111111-1111-1111-1111-111111111111", 5), limitValue: 5, auditWriter: writer);
+        SetTenant(a, AuthCapabilities.ReportsWrite);
+        SeedAccess(db);
+        SeedClientOrgAndFacility(db);
+        var r = await c.CreateInstance(Base("r-limit"));
+        Assert.Equal(403, ((ObjectResult)r.Result!).StatusCode);
+        var evt = Assert.Single(writer.Events, e => e.Action == AuditActions.EntitlementLimitDenied);
+        Assert.Equal(EntitlementKeys.MaxActiveReports, evt.Metadata?["entitlementKey"]?.ToString());
+        Assert.False(evt.Metadata?.ContainsKey("metadataJson") ?? false);
+    }
+
+
+    [Fact]
+    public async Task CreateInstanceFromTemplate_LimitExceeded_Returns403_SubscriptionLimitExceeded()
+    {
+        var c = BuildController(true, out var db, out var a, out _, entitlementEnabled: true, entitlementAllowed: true, usage: new SubscriptionUsageSnapshot("11111111-1111-1111-1111-111111111111", 5), limitValue: 5);
+        SetTenant(a, AuthCapabilities.ReportsWrite);
+        SeedAccess(db);
+        SeedClientOrgAndFacility(db);
+        SeedDemoProcessUnitAndAsset(db);
+
+        var r = await c.CreateInstanceFromTemplate("api-570-piping-external", null, "facility-a", null, null, null);
+        var obj = Assert.IsType<ObjectResult>(r.Result);
+        Assert.Equal(403, obj.StatusCode);
+        var json = JsonSerializer.Serialize(obj.Value);
+        Assert.Contains("subscription_limit_exceeded", json);
+    }
+
+    [Fact]
+    public async Task BuildDraftFromChecklist_CreateBranch_LimitExceeded_Returns403_SubscriptionLimitExceeded()
+    {
+        var c = BuildController(true, out var db, out var a, out _, entitlementEnabled: true, entitlementAllowed: true, usage: new SubscriptionUsageSnapshot("11111111-1111-1111-1111-111111111111", 2), limitValue: 2);
+        SetTenant(a, AuthCapabilities.ReportsWrite);
+        SeedAccess(db);
+        SeedClientOrgAndFacility(db);
+
+        var request = new ApplyObservationChecklistRequest
+        {
+            TemplateId = "api-570-piping-external",
+            ChecklistResponses = [new ObservationChecklistItemResponse { ItemId = "visual-external", IsApplicable = true, HasFinding = false }],
+            Report = Base("r-checklist-limit")
+        };
+
+        var r = await c.BuildDraftFromChecklist(request);
+        var obj = Assert.IsType<ObjectResult>(r.Result);
+        Assert.Equal(403, obj.StatusCode);
+        var json = JsonSerializer.Serialize(obj.Value);
+        Assert.Contains("subscription_limit_exceeded", json);
+    }
+
+    [Fact]
+    public async Task CreateInstance_EnforcementDisabled_Allows_OverLimit()
+    {
+        var c = BuildController(true, out var db, out var a, out _, entitlementEnabled: false, entitlementAllowed: true, usage: new SubscriptionUsageSnapshot("11111111-1111-1111-1111-111111111111", 1000), limitValue: 1);
+        SetTenant(a, AuthCapabilities.ReportsWrite);
+        SeedAccess(db);
+        SeedClientOrgAndFacility(db);
+
+        var r = await c.CreateInstance(Base("r-over-limit-disabled"));
+        Assert.IsType<CreatedAtActionResult>(r.Result);
+    }
+
+    [Fact]
+    public async Task CreateInstance_NullMaxActiveReports_Allows_Unlimited()
+    {
+        var c = BuildController(true, out var db, out var a, out _, entitlementEnabled: true, entitlementAllowed: true, usage: new SubscriptionUsageSnapshot("11111111-1111-1111-1111-111111111111", 1000), limitValue: null);
+        SetTenant(a, AuthCapabilities.ReportsWrite);
+        SeedAccess(db);
+        SeedClientOrgAndFacility(db);
+
+        var r = await c.CreateInstance(Base("r-unlimited"));
+        Assert.IsType<CreatedAtActionResult>(r.Result);
     }
     [Fact]
     public async Task CreateFromTemplate_MissingWrite_ReturnsForbidden() { var c = BuildController(true, out var db, out var a, out _); SetTenant(a, AuthCapabilities.ReportsRead); SeedAccess(db); var r = await c.CreateInstanceFromTemplate("api-570-piping-external", null, "facility-a", null, null, null); Assert.Equal(403, ((ObjectResult)r.Result!).StatusCode); }
@@ -59,7 +139,7 @@ public class ReportingControllerAuthorizationSweepTests
     private static void SeedClientOrgAndFacility(InspectionReportsDbContext db) { db.ClientOrganizations.Add(new ClientOrganization { Id = "11111111-1111-1111-1111-111111111111", Name = "Test Org", IsActive = true }); db.Facilities.Add(new Facility { Id = "facility-a", ClientOrganizationId = "11111111-1111-1111-1111-111111111111", Name = "Test Facility", IsActive = true }); db.SaveChanges(); }
     private static void SeedDemoProcessUnitAndAsset(InspectionReportsDbContext db) { db.ProcessUnits.Add(new ProcessUnit { Id = "unit-demo-crude", FacilityId = "facility-a", Name = "Crude Unit", UnitCode = "001", IsActive = true }); db.Assets.Add(new Asset { Id = "asset-demo-piping-system", FacilityId = "facility-a", ProcessUnitId = "unit-demo-crude", EquipmentTag = "TAG-1", EquipmentType = "Piping", Service = "Service", IsActive = true }); db.SaveChanges(); }
 
-    private static ReportingController BuildController(bool authEnabled, out InspectionReportsDbContext db, out TenantContextAccessor accessor, out InspectionReportRepository repo, bool entitlementEnabled = false, bool entitlementAllowed = true, IAuditEventWriter? auditWriter = null)
+    private static ReportingController BuildController(bool authEnabled, out InspectionReportsDbContext db, out TenantContextAccessor accessor, out InspectionReportRepository repo, bool entitlementEnabled = false, bool entitlementAllowed = true, SubscriptionUsageSnapshot? usage = null, int? limitValue = null, IAuditEventWriter? auditWriter = null)
     {
         var options = new DbContextOptionsBuilder<InspectionReportsDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
         db = new InspectionReportsDbContext(options);
@@ -67,11 +147,12 @@ public class ReportingControllerAuthorizationSweepTests
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Authentication:Enabled"] = authEnabled.ToString() }).Build();
         var guard = new ReportAccessGuard(config, accessor, db);
         var entitlementConfig = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Subscriptions:EnforcementEnabled"] = entitlementEnabled.ToString().ToLowerInvariant() }).Build();
-        var entitlementGuard = new EntitlementGuard(entitlementConfig, new StubEntitlementService(entitlementAllowed ? EntitlementCheckResult.AllowedWithLimit(null) : EntitlementCheckResult.Denied("entitlement_disabled")));
+        var entitlementGuard = new EntitlementGuard(entitlementConfig, new StubEntitlementService(entitlementAllowed ? EntitlementCheckResult.AllowedWithLimit(limitValue) : EntitlementCheckResult.Denied("entitlement_disabled")));
+        var limitGuard = new EntitlementLimitGuard(entitlementConfig, entitlementGuard, new StubSubscriptionUsageService(usage));
         var referenceGuard = new ReportReferenceGuard(config, db, new NoopAuditEventWriter());
         repo = new InspectionReportRepository(db);
 
-        var controller = new ReportingController(repo, new InspectionReportFactory(), null!, null!, new ReportDraftBuilder(new SummaryBuilder(), new ReportValidationService(new InspectionTagRuleEngine()), new RepairRecommendationBuilder()), null!, new ObservationChecklistService(), new ChecklistMergeService(), new ReportWorkflowService(), new InMemoryReportTemplateRegistry(), new InspectionTagRuleEngine(), null!, null!, null!, guard, referenceGuard, entitlementGuard, auditWriter ?? new NoopAuditEventWriter());
+        var controller = new ReportingController(repo, new InspectionReportFactory(), null!, null!, new ReportDraftBuilder(new SummaryBuilder(), new ReportValidationService(new InspectionTagRuleEngine()), new RepairRecommendationBuilder()), null!, new ObservationChecklistService(), new ChecklistMergeService(), new ReportWorkflowService(), new InMemoryReportTemplateRegistry(), new InspectionTagRuleEngine(), null!, null!, null!, guard, referenceGuard, entitlementGuard, limitGuard, auditWriter ?? new NoopAuditEventWriter());
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         return controller;
     }

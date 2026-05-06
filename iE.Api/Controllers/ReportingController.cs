@@ -11,6 +11,7 @@ using iE.Core.Reports.Review;
 using iE.Core.Reports.Services;
 using iE.Core.Reports.Templates;
 using iE.Core.Reports.Rules;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using iE.Api.Extensions;
 using iE.Api.Auth;
@@ -37,6 +38,7 @@ public class ReportingController(
     ReportAccessGuard reportAccessGuard,
     ReportReferenceGuard reportReferenceGuard,
     EntitlementGuard entitlementGuard,
+    EntitlementLimitGuard entitlementLimitGuard,
     IAuditEventWriter auditEventWriter) : ControllerBase
 {
     private async Task<ActionResult?> EnforceReportAccessAsync(InspectionReport report, string reportIdForMessage, string capability, string forbiddenMessage)
@@ -140,6 +142,47 @@ public class ReportingController(
 
         return new ObjectResult(this.CreateError("entitlement_required", "This subscription does not include this operation.")) { StatusCode = StatusCodes.Status403Forbidden };
     }
+
+    private async Task<ActionResult?> EnforceMaxActiveReportLimitAsync(string route, string? tenantId)
+    {
+        var limit = await entitlementLimitGuard.CheckMaxActiveReportsAsync(tenantId);
+        if (limit.Allowed)
+        {
+            return null;
+        }
+
+        await auditEventWriter.WriteAsync(
+            AuditActions.EntitlementLimitDenied,
+            AuditResourceTypes.Report,
+            null,
+            AuditResults.Denied,
+            metadata: new Dictionary<string, object?>
+            {
+                ["route"] = route,
+                ["entitlementKey"] = EntitlementKeys.MaxActiveReports,
+                ["reasonCode"] = limit.ReasonCode,
+                ["activeCount"] = limit.ActiveCount,
+                ["limitValue"] = limit.LimitValue
+            });
+
+        if (limit.ReasonCode == "limit_exceeded")
+        {
+            return new ObjectResult(this.CreateError(
+                "subscription_limit_exceeded",
+                "This subscription has reached its active report limit."))
+            {
+                StatusCode = StatusCodes.Status403Forbidden
+            };
+        }
+
+        return new ObjectResult(this.CreateError(
+            "entitlement_required",
+            "This subscription does not include this operation."))
+        {
+            StatusCode = StatusCodes.Status403Forbidden
+        };
+    }
+
 [HttpGet("instances/{id}/export/docx")]
     public async Task<ActionResult> ExportInstanceDocx(string id)
     {
@@ -272,6 +315,8 @@ public class ReportingController(
             request.Report.UpdatedAt = null;
             var createEntitlement = await EnforceEntitlementAsync(EntitlementKeys.ReportsCreate, "BuildDraftFromChecklist", request.Report.ClientOrganizationId);
             if (createEntitlement is not null) return createEntitlement;
+            var activeReportLimit = await EnforceMaxActiveReportLimitAsync("BuildDraftFromChecklist", request.Report.ClientOrganizationId);
+            if (activeReportLimit is not null) return activeReportLimit;
 
             var createReferenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, request.Report, "BuildDraftFromChecklist");
             if (createReferenceValidation is not null)
@@ -355,6 +400,8 @@ public class ReportingController(
 
         var createEntitlement = await EnforceEntitlementAsync(EntitlementKeys.ReportsCreate, "CreateInstance", report.ClientOrganizationId);
         if (createEntitlement is not null) return createEntitlement;
+        var activeReportLimit = await EnforceMaxActiveReportLimitAsync("CreateInstance", report.ClientOrganizationId);
+        if (activeReportLimit is not null) return activeReportLimit;
 
         var referenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, report, "CreateInstance");
         if (referenceValidation is not null)
@@ -470,6 +517,8 @@ public class ReportingController(
 
         var createEntitlement = await EnforceEntitlementAsync(EntitlementKeys.ReportsCreate, "CreateInstanceFromTemplate", report.ClientOrganizationId);
         if (createEntitlement is not null) return createEntitlement;
+        var activeReportLimit = await EnforceMaxActiveReportLimitAsync("CreateInstanceFromTemplate", report.ClientOrganizationId);
+        if (activeReportLimit is not null) return activeReportLimit;
 
         var referenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, report, "CreateInstanceFromTemplate");
         if (referenceValidation is not null)

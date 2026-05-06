@@ -23,3 +23,9 @@ Calculator endpoints remain intentionally unprotected for this phase.
 - No billing provider integration or UI/public subscription APIs in this phase.
 - Calculator endpoints are intentionally not entitlement-gated.
 - Health endpoints remain public.
+
+## PR #196 active report limit enforcement
+- `max.activeReports` is enforced only when `Subscriptions:EnforcementEnabled=true`.
+- MVP active report definition: all tenant reports with status other than `Final`.
+- Enforcement is applied only to persisted report creation paths (`CreateInstance`, `CreateInstanceFromTemplate`, and create branch of `BuildDraftFromChecklist`).
+- No billing provider integration, UI, or public subscription/admin APIs in this PR.

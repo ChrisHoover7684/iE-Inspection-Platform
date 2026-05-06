@@ -8,11 +8,11 @@ public enum EntitlementAccessDecision
     Denied
 }
 
-public sealed record EntitlementAccessResult(EntitlementAccessDecision Decision, string ReasonCode)
+public sealed record EntitlementAccessResult(EntitlementAccessDecision Decision, string ReasonCode, int? LimitValue = null)
 {
     public bool Allowed => Decision == EntitlementAccessDecision.Allowed;
 
-    public static EntitlementAccessResult Allow(string reasonCode = "entitlement_allowed") => new(EntitlementAccessDecision.Allowed, reasonCode);
+    public static EntitlementAccessResult Allow(string reasonCode = "entitlement_allowed", int? limitValue = null) => new(EntitlementAccessDecision.Allowed, reasonCode, limitValue);
     public static EntitlementAccessResult Deny(string reasonCode) => new(EntitlementAccessDecision.Denied, reasonCode);
 }
 
@@ -33,7 +33,7 @@ public sealed class EntitlementGuard(IConfiguration configuration, IEntitlementS
         var result = await entitlementService.CheckAsync(entitlementKey, clientOrganizationId, trustedInternalRequest, cancellationToken);
         if (result.Allowed)
         {
-            return EntitlementAccessResult.Allow("entitlement_allowed");
+            return EntitlementAccessResult.Allow("entitlement_allowed", result.LimitValue);
         }
 
         return result.ReasonCode switch

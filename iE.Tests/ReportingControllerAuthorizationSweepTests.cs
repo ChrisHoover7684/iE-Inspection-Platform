@@ -21,6 +21,22 @@ namespace iE.Tests;
 public class ReportingControllerAuthorizationSweepTests
 {
     [Fact]
+    public async Task CreateInstance_MissingEntitlement_EmitsSafeEntitlementDeniedAudit()
+    {
+        var writer = new CapturingAuditEventWriter();
+        var c = BuildController(true, out var db, out var a, out _, entitlementEnabled: true, entitlementAllowed: false, auditWriter: writer);
+        SetTenant(a, AuthCapabilities.ReportsWrite);
+        SeedAccess(db);
+        SeedClientOrgAndFacility(db);
+        var r = await c.CreateInstance(Base("r-ent"));
+        Assert.Equal(403, ((ObjectResult)r.Result!).StatusCode);
+        var evt = Assert.Single(writer.Events, e => e.Action == AuditActions.EntitlementDenied);
+        Assert.Equal(AuditResults.Denied, evt.Result);
+        Assert.Equal("CreateInstance", evt.Metadata?["route"]?.ToString());
+        Assert.Equal(EntitlementKeys.ReportsCreate, evt.Metadata?["entitlementKey"]?.ToString());
+        Assert.False(evt.Metadata?.ContainsKey("requestBody") ?? false);
+    }
+    [Fact]
     public async Task CreateFromTemplate_MissingWrite_ReturnsForbidden() { var c = BuildController(true, out var db, out var a, out _); SetTenant(a, AuthCapabilities.ReportsRead); SeedAccess(db); var r = await c.CreateInstanceFromTemplate("api-570-piping-external", null, "facility-a", null, null, null); Assert.Equal(403, ((ObjectResult)r.Result!).StatusCode); }
     [Fact]
     public async Task CreateFromTemplate_OutOfScopeFacility_ReturnsNotFound() { var c = BuildController(true, out var db, out var a, out _); SetTenant(a, AuthCapabilities.ReportsWrite); SeedAccess(db); var r = await c.CreateInstanceFromTemplate("api-570-piping-external", null, "facility-b", null, null, null); Assert.IsType<NotFoundObjectResult>(r.Result); }
@@ -43,18 +59,30 @@ public class ReportingControllerAuthorizationSweepTests
     private static void SeedClientOrgAndFacility(InspectionReportsDbContext db) { db.ClientOrganizations.Add(new ClientOrganization { Id = "11111111-1111-1111-1111-111111111111", Name = "Test Org", IsActive = true }); db.Facilities.Add(new Facility { Id = "facility-a", ClientOrganizationId = "11111111-1111-1111-1111-111111111111", Name = "Test Facility", IsActive = true }); db.SaveChanges(); }
     private static void SeedDemoProcessUnitAndAsset(InspectionReportsDbContext db) { db.ProcessUnits.Add(new ProcessUnit { Id = "unit-demo-crude", FacilityId = "facility-a", Name = "Crude Unit", UnitCode = "001", IsActive = true }); db.Assets.Add(new Asset { Id = "asset-demo-piping-system", FacilityId = "facility-a", ProcessUnitId = "unit-demo-crude", EquipmentTag = "TAG-1", EquipmentType = "Piping", Service = "Service", IsActive = true }); db.SaveChanges(); }
 
-    private static ReportingController BuildController(bool authEnabled, out InspectionReportsDbContext db, out TenantContextAccessor accessor, out InspectionReportRepository repo)
+    private static ReportingController BuildController(bool authEnabled, out InspectionReportsDbContext db, out TenantContextAccessor accessor, out InspectionReportRepository repo, bool entitlementEnabled = false, bool entitlementAllowed = true, IAuditEventWriter? auditWriter = null)
     {
         var options = new DbContextOptionsBuilder<InspectionReportsDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
         db = new InspectionReportsDbContext(options);
         accessor = new TenantContextAccessor();
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Authentication:Enabled"] = authEnabled.ToString() }).Build();
         var guard = new ReportAccessGuard(config, accessor, db);
+        var entitlementConfig = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Subscriptions:EnforcementEnabled"] = entitlementEnabled.ToString().ToLowerInvariant() }).Build();
+        var entitlementGuard = new EntitlementGuard(entitlementConfig, new StubEntitlementService(entitlementAllowed ? EntitlementCheckResult.AllowedWithLimit(null) : EntitlementCheckResult.Denied("entitlement_disabled")));
         var referenceGuard = new ReportReferenceGuard(config, db, new NoopAuditEventWriter());
         repo = new InspectionReportRepository(db);
 
-        var controller = new ReportingController(repo, new InspectionReportFactory(), null!, null!, new ReportDraftBuilder(new SummaryBuilder(), new ReportValidationService(new InspectionTagRuleEngine()), new RepairRecommendationBuilder()), null!, new ObservationChecklistService(), new ChecklistMergeService(), new ReportWorkflowService(), new InMemoryReportTemplateRegistry(), new InspectionTagRuleEngine(), null!, null!, null!, guard, referenceGuard, new NoopAuditEventWriter());
+        var controller = new ReportingController(repo, new InspectionReportFactory(), null!, null!, new ReportDraftBuilder(new SummaryBuilder(), new ReportValidationService(new InspectionTagRuleEngine()), new RepairRecommendationBuilder()), null!, new ObservationChecklistService(), new ChecklistMergeService(), new ReportWorkflowService(), new InMemoryReportTemplateRegistry(), new InspectionTagRuleEngine(), null!, null!, null!, guard, referenceGuard, entitlementGuard, auditWriter ?? new NoopAuditEventWriter());
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         return controller;
+    }
+
+    private sealed class CapturingAuditEventWriter : IAuditEventWriter
+    {
+        public List<(string Action, string ResourceType, string? ResourceId, string Result, string? FacilityId, IDictionary<string, object?>? Metadata)> Events { get; } = [];
+        public Task WriteAsync(string action, string resourceType, string? resourceId, string result, string? facilityId = null, IDictionary<string, object?>? metadata = null, CancellationToken cancellationToken = default)
+        {
+            Events.Add((action, resourceType, resourceId, result, facilityId, metadata));
+            return Task.CompletedTask;
+        }
     }
 }

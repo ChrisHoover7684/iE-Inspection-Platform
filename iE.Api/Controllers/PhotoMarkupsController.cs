@@ -34,7 +34,12 @@ public class PhotoMarkupsController(PhotoMarkupRepository photoMarkupRepository,
         var entitlement = await entitlementGuard.CheckAsync(entitlementKey, tenantId);
         if (entitlement.Allowed) return null;
 
-        await auditEventWriter.WriteAsync(AuditActions.EntitlementDenied, AuditResourceTypes.PhotoMarkup, metadata: new Dictionary<string, object?>
+        await auditEventWriter.WriteAsync(
+            AuditActions.EntitlementDenied,
+            AuditResourceTypes.PhotoMarkup,
+            null,
+            AuditResults.Denied,
+            metadata: new Dictionary<string, object?>
         {
             ["route"] = route,
             ["entitlementKey"] = entitlementKey,

@@ -126,7 +126,12 @@ public class ReportingController(
             return null;
         }
 
-        await auditEventWriter.WriteAsync(AuditActions.EntitlementDenied, AuditResourceTypes.Report, metadata: new Dictionary<string, object?>
+        await auditEventWriter.WriteAsync(
+            AuditActions.EntitlementDenied,
+            AuditResourceTypes.Report,
+            null,
+            AuditResults.Denied,
+            metadata: new Dictionary<string, object?>
         {
             ["route"] = route,
             ["entitlementKey"] = entitlementKey,

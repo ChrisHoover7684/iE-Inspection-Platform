@@ -71,6 +71,7 @@ builder.Services.AddScoped<ReportAccessGuard>();
 builder.Services.AddScoped<ReportReferenceGuard>();
 builder.Services.AddScoped<IAuditEventWriter, AuditEventWriter>();
 builder.Services.AddScoped<IAuditEventQueryService, AuditEventQueryService>();
+builder.Services.AddScoped<IEntitlementService, EntitlementService>();
 
 if (authenticationEnabled)
 {

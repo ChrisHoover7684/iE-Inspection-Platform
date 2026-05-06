@@ -102,3 +102,9 @@ Use this checklist before backend-focused releases.
 - Health endpoints remain public.
 - Calculator endpoints remain intentionally unprotected and not audited in this phase.
 - No audit/admin/subscription UI surface added.
+
+## PR #194 Subscription/Entitlement Foundation
+- Backend data model + service foundation added for tenant-scoped entitlements.
+- Billing provider integrations (Stripe/Marketplace/AppSource) are deferred.
+- No UI or public admin subscription APIs added.
+- Existing report/calculator endpoint behavior remains unchanged in this phase.

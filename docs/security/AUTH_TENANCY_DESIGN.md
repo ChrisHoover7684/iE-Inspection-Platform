@@ -422,3 +422,11 @@ Facility moves remain blocked on update paths pending a dedicated future workflo
 - Keeps health endpoints public.
 - Calculator endpoints remain intentionally unprotected and out of audit scope in this phase.
 - Adds no audit/admin/subscription UI or new UI/API surfaces.
+
+## PR #194 Subscription/Entitlement Foundation
+- Adds backend-only subscription plan, client subscription, and entitlement data model foundation.
+- No billing provider integration in this phase.
+- No UI and no public subscription/admin APIs in this phase.
+- No endpoint entitlement enforcement in this phase.
+- Health endpoints remain public.
+- Calculator endpoints remain intentionally unprotected and not entitlement-gated in this phase.

@@ -37,13 +37,8 @@ public sealed class TenantContextBuilder(AuthOptions authOptions) : ITenantConte
             throw new InvalidOperationException($"Claim {_authOptions.RequiredTenantClaimName} must be a valid GUID.");
         }
 
-        var roles = principal.Claims
-            .Where(c => string.Equals(c.Type, _authOptions.RequiredRolesClaimName, StringComparison.OrdinalIgnoreCase))
-            .SelectMany(c => c.Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-
-        var capabilities = MapCapabilities(roles);
+        var roles = RoleCapabilityMapper.ExtractRoles(principal, _authOptions.RequiredRolesClaimName);
+        var capabilities = RoleCapabilityMapper.MapCapabilities(roles);
 
         return new TenantContext
         {
@@ -57,42 +52,4 @@ public sealed class TenantContextBuilder(AuthOptions authOptions) : ITenantConte
         };
     }
 
-    private static string[] MapCapabilities(IEnumerable<string> roles)
-    {
-        var capabilities = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var role in roles)
-        {
-            switch (role.ToLowerInvariant())
-            {
-                case "ie_owner":
-                case "ie_admin":
-                    Add(capabilities, AuthCapabilities.ReportsRead, AuthCapabilities.ReportsWrite, AuthCapabilities.ReportsSubmit,
-                        AuthCapabilities.ReportsReview, AuthCapabilities.PhotosRead, AuthCapabilities.PhotosWrite,
-                        AuthCapabilities.ExportsRead, AuthCapabilities.AdminUsersManage);
-                    break;
-                case "ie_inspector":
-                    Add(capabilities, AuthCapabilities.ReportsRead, AuthCapabilities.ReportsWrite, AuthCapabilities.ReportsSubmit,
-                        AuthCapabilities.PhotosRead, AuthCapabilities.PhotosWrite, AuthCapabilities.ExportsRead);
-                    break;
-                case "ie_reviewer":
-                    Add(capabilities, AuthCapabilities.ReportsRead, AuthCapabilities.ReportsReview, AuthCapabilities.PhotosRead,
-                        AuthCapabilities.ExportsRead);
-                    break;
-                case "ie_readonly":
-                    Add(capabilities, AuthCapabilities.ReportsRead, AuthCapabilities.PhotosRead, AuthCapabilities.ExportsRead);
-                    break;
-            }
-        }
-
-        return capabilities.ToArray();
-    }
-
-    private static void Add(HashSet<string> capabilities, params string[] values)
-    {
-        foreach (var value in values)
-        {
-            capabilities.Add(value);
-        }
-    }
 }

@@ -1,8 +1,12 @@
 using System.Security.Claims;
+using System.Text.Json;
 using iE.Api;
 using iE.Api.Auth;
+using iE.Api.Contracts;
+using iE.Api.Middleware;
 using iE.Api.Tenancy;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace iE.Tests;
 
@@ -92,6 +96,55 @@ public class AuthFoundationTests
         var builder = new TenantContextBuilder(new AuthOptions());
         var ctx = builder.Build(principal, "trace");
         Assert.Empty(ctx.Capabilities);
+    }
+
+    [Fact]
+    public async Task CapabilityClaimsTransformation_MapsInspectorCapabilities()
+    {
+        var principal = AuthenticatedPrincipal(("sub", "u1"), ("org_id", Guid.NewGuid().ToString()), ("roles", "ie_inspector"));
+        var transformer = new CapabilityClaimsTransformation(new AuthOptions());
+        var transformed = await transformer.TransformAsync(principal);
+        var capabilities = transformed.Claims.Where(c => c.Type == "capability").Select(c => c.Value).ToArray();
+        Assert.Contains(AuthCapabilities.ReportsWrite, capabilities);
+        Assert.Contains(AuthCapabilities.PhotosWrite, capabilities);
+    }
+
+    [Fact]
+    public async Task CapabilityClaimsTransformation_UnknownRolesAddNothing()
+    {
+        var principal = AuthenticatedPrincipal(("sub", "u1"), ("org_id", Guid.NewGuid().ToString()), ("roles", "unknown"));
+        var transformer = new CapabilityClaimsTransformation(new AuthOptions());
+        var transformed = await transformer.TransformAsync(principal);
+        Assert.Empty(transformed.Claims.Where(c => c.Type == "capability"));
+    }
+
+    [Fact]
+    public async Task CapabilityClaimsTransformation_DeduplicatesCapabilities()
+    {
+        var principal = AuthenticatedPrincipal(("sub", "u1"), ("org_id", Guid.NewGuid().ToString()), ("roles", "ie_owner"), ("roles", "ie_admin"), ("roles", "ie_owner,ie_admin"));
+        var transformer = new CapabilityClaimsTransformation(new AuthOptions());
+        var transformed = await transformer.TransformAsync(principal);
+        var claims = transformed.Claims.Where(c => c.Type == "capability").Select(c => c.Value).ToArray();
+        Assert.Equal(claims.Length, claims.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+    }
+
+    [Fact]
+    public async Task TenantContextMiddleware_MissingOrgId_ReturnsSafeForbiddenResponse()
+    {
+        var middleware = new TenantContextMiddleware(_ => Task.CompletedTask, NullLogger<TenantContextMiddleware>.Instance);
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+        context.User = AuthenticatedPrincipal(("sub", "u1"));
+        context.TraceIdentifier = "trace-123";
+
+        await middleware.InvokeAsync(context, new TenantContextAccessor(), new TenantContextBuilder(new AuthOptions()));
+
+        Assert.Equal(StatusCodes.Status403Forbidden, context.Response.StatusCode);
+        context.Response.Body.Position = 0;
+        var response = await JsonSerializer.DeserializeAsync<ApiErrorResponse>(context.Response.Body);
+        Assert.NotNull(response);
+        Assert.Equal("tenant_context_invalid", response.Code);
+        Assert.Equal("trace-123", response.TraceId);
     }
 
     [Fact]

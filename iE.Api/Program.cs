@@ -76,6 +76,8 @@ if (authenticationEnabled)
             options.Audience = authOptions.Audience;
             options.RequireHttpsMetadata = authOptions.RequireHttpsMetadata;
         });
+
+    builder.Services.AddTransient<Microsoft.AspNetCore.Authentication.IClaimsTransformation, CapabilityClaimsTransformation>();
 }
 
 builder.Services.AddAuthorization(options =>

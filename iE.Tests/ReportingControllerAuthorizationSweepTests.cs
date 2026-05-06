@@ -28,9 +28,9 @@ public class ReportingControllerAuthorizationSweepTests
     [Fact]
     public void SyncFindings_MissingWrite_ReturnsForbidden() { var c = BuildController(true, out var db, out var a, out var repo); SetTenant(a, AuthCapabilities.ReportsRead); SeedAccess(db); repo.Create(Base("r1")); var r = c.SyncFindingsFromChecklistTransfers("r1"); Assert.Equal(403, ((ObjectResult)r.Result!).StatusCode); }
     [Fact]
-    public void SubmitForReview_MissingSubmit_ReturnsForbidden() { var c = BuildController(true, out var db, out var a, out var repo); SetTenant(a, AuthCapabilities.ReportsWrite); SeedAccess(db); repo.Create(Base("r2")); var r = c.SubmitForReview("r2"); Assert.Equal(403, ((ObjectResult)r.Result!).StatusCode); }
+    public void SubmitForReview_MissingSubmit_ReturnsForbidden() { var c = BuildController(true, out var db, out var a, out var repo); SetTenant(a, AuthCapabilities.ReportsWrite); SeedAccess(db); repo.Create(Base("r2")); var r = c.SubmitForReview("r2"); var objectResult = Assert.IsType<ObjectResult>(r); Assert.Equal(403, objectResult.StatusCode); }
     [Fact]
-    public void ReviewActions_MissingReview_ReturnsForbidden() { var c = BuildController(true, out var db, out var a, out var repo); SetTenant(a, AuthCapabilities.ReportsSubmit); SeedAccess(db); repo.Create(Base("r3", InspectionReportStatuses.ReadyForReview)); Assert.Equal(403, ((ObjectResult)c.StartReview("r3")!).StatusCode); }
+    public void ReviewActions_MissingReview_ReturnsForbidden() { var c = BuildController(true, out var db, out var a, out var repo); SetTenant(a, AuthCapabilities.ReportsSubmit); SeedAccess(db); repo.Create(Base("r3", InspectionReportStatuses.ReadyForReview)); var result = c.StartReview("r3"); var objectResult = Assert.IsType<ObjectResult>(result); Assert.Equal(403, objectResult.StatusCode); }
     [Fact]
     public void ReviewHistory_MissingRead_ReturnsForbidden() { var c = BuildController(true, out var db, out var a, out var repo); SetTenant(a, AuthCapabilities.ReportsWrite); SeedAccess(db); repo.Create(Base("r4")); var r = c.GetReviewHistory("r4"); Assert.Equal(403, ((ObjectResult)r.Result!).StatusCode); }
     [Fact]

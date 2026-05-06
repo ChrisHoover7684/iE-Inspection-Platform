@@ -142,7 +142,9 @@ public class AuthFoundationTests
 
         Assert.Equal(StatusCodes.Status403Forbidden, context.Response.StatusCode);
         context.Response.Body.Position = 0;
-        var response = await JsonSerializer.DeserializeAsync<ApiErrorResponse>(context.Response.Body);
+        var response = await JsonSerializer.DeserializeAsync<ApiErrorResponse>(
+            context.Response.Body,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
         Assert.NotNull(response);
         Assert.Equal("tenant_context_invalid", response.Code);
         Assert.Equal("trace-123", response.TraceId);

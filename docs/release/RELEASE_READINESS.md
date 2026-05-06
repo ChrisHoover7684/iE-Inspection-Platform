@@ -108,3 +108,10 @@ Use this checklist before backend-focused releases.
 - Billing provider integrations (Stripe/Marketplace/AppSource) are deferred.
 - No UI or public admin subscription APIs added.
 - Existing report/calculator endpoint behavior remains unchanged in this phase.
+
+## PR #195
+- Added configuration-gated entitlement guardrails (`Subscriptions:EnforcementEnabled`, default false).
+- Enforced operations in this phase: report create/export, photo markup create, internal audit query.
+- No Stripe/Marketplace/AppSource/payment integrations yet.
+- No UI/public subscription APIs yet.
+- Calculator endpoints remain not entitlement-gated; health endpoints remain public.

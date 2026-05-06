@@ -36,6 +36,7 @@ public class ReportingController(
     IReportNarrativeGenerator reportNarrativeGenerator,
     ReportAccessGuard reportAccessGuard,
     ReportReferenceGuard reportReferenceGuard,
+    EntitlementGuard entitlementGuard,
     IAuditEventWriter auditEventWriter) : ControllerBase
 {
     private async Task<ActionResult?> EnforceReportAccessAsync(InspectionReport report, string reportIdForMessage, string capability, string forbiddenMessage)
@@ -116,7 +117,30 @@ public class ReportingController(
         return Ok(report);
     }
 
-    [HttpGet("instances/{id}/export/docx")]
+    
+    private async Task<ActionResult?> EnforceEntitlementAsync(string entitlementKey, string route, string? tenantId = null)
+    {
+        var entitlement = await entitlementGuard.CheckAsync(entitlementKey, tenantId);
+        if (entitlement.Allowed)
+        {
+            return null;
+        }
+
+        await auditEventWriter.WriteAsync(
+            AuditActions.EntitlementDenied,
+            AuditResourceTypes.Report,
+            null,
+            AuditResults.Denied,
+            metadata: new Dictionary<string, object?>
+        {
+            ["route"] = route,
+            ["entitlementKey"] = entitlementKey,
+            ["reasonCode"] = entitlement.ReasonCode
+        });
+
+        return new ObjectResult(this.CreateError("entitlement_required", "This subscription does not include this operation.")) { StatusCode = StatusCodes.Status403Forbidden };
+    }
+[HttpGet("instances/{id}/export/docx")]
     public async Task<ActionResult> ExportInstanceDocx(string id)
     {
         var report = inspectionReportRepository.GetById(id);
@@ -129,6 +153,9 @@ public class ReportingController(
         if (access == ReportAccessDecision.NotFound) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return this.NotFoundError($"Inspection report instance '{id}' was not found."); }
         if (access == ReportAccessDecision.Forbidden) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, report.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return this.ForbiddenError("Insufficient capability to export report."); }
         if (access == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return Unauthorized(); }
+
+        var exportEntitlement = await EnforceEntitlementAsync(EntitlementKeys.ReportsExport, "ExportInstanceDocx", report.ClientOrganizationId);
+        if (exportEntitlement is not null) return exportEntitlement;
 
         var fileBytes = inspectionReportDocxExportService.Export(report);
         var safeReportNumber = string.IsNullOrWhiteSpace(report.ReportNumber)
@@ -157,6 +184,9 @@ public class ReportingController(
         if (access == ReportAccessDecision.NotFound) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return this.NotFoundError($"Inspection report instance '{id}' was not found."); }
         if (access == ReportAccessDecision.Forbidden) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, report.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return this.ForbiddenError("Insufficient capability to export report."); }
         if (access == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return Unauthorized(); }
+
+        var exportEntitlement = await EnforceEntitlementAsync(EntitlementKeys.ReportsExport, "ExportPhotoAppendixDocx", report.ClientOrganizationId);
+        if (exportEntitlement is not null) return exportEntitlement;
 
         var fileBytes = photoAppendixExportService.Export(report);
         await auditEventWriter.WriteAsync(AuditActions.ReportExported, AuditResourceTypes.Report, id, AuditResults.Success, report.FacilityId, new Dictionary<string, object?> { ["exportType"] = "photo-appendix-docx" });
@@ -240,6 +270,9 @@ public class ReportingController(
 
             request.Report.CreatedAt = DateTime.UtcNow;
             request.Report.UpdatedAt = null;
+            var createEntitlement = await EnforceEntitlementAsync(EntitlementKeys.ReportsCreate, "BuildDraftFromChecklist", request.Report.ClientOrganizationId);
+            if (createEntitlement is not null) return createEntitlement;
+
             var createReferenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, request.Report, "BuildDraftFromChecklist");
             if (createReferenceValidation is not null)
             {
@@ -319,6 +352,9 @@ public class ReportingController(
         if (createAccess == ReportAccessDecision.Forbidden) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, report.Id, AuditResults.Denied, report.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return this.ForbiddenError("Insufficient capability to create report."); }
         if (createAccess == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, report.Id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return Unauthorized(); }
         report.UpdatedAt = null;
+
+        var createEntitlement = await EnforceEntitlementAsync(EntitlementKeys.ReportsCreate, "CreateInstance", report.ClientOrganizationId);
+        if (createEntitlement is not null) return createEntitlement;
 
         var referenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, report, "CreateInstance");
         if (referenceValidation is not null)
@@ -431,6 +467,9 @@ public class ReportingController(
         {
             return createAccessResult;
         }
+
+        var createEntitlement = await EnforceEntitlementAsync(EntitlementKeys.ReportsCreate, "CreateInstanceFromTemplate", report.ClientOrganizationId);
+        if (createEntitlement is not null) return createEntitlement;
 
         var referenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, report, "CreateInstanceFromTemplate");
         if (referenceValidation is not null)

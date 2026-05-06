@@ -16,6 +16,26 @@ namespace iE.Tests;
 public class PhotoMarkupsControllerAuthorizationTests
 {
     [Fact]
+    public async Task Create_MissingEntitlement_EmitsSafeEntitlementDeniedAudit()
+    {
+        var writer = new CapturingAuditEventWriter();
+        var controller = BuildController(true, out var db, out var accessor, out _, entitlementEnabled: true, entitlementAllowed: false, auditWriter: writer);
+        SeedFacilityAccess(db, "facility-a");
+        SeedReportWithPhoto(db, reportId: "r-ent", photoId: "p-ent");
+        SetTenant(accessor, AuthCapabilities.PhotosWrite);
+
+        var create = await controller.Create("p-ent", ValidRequest());
+        var result = Assert.IsType<ObjectResult>(create.Result);
+        Assert.Equal(403, result.StatusCode);
+
+        var evt = Assert.Single(writer.Events, e => e.Action == AuditActions.EntitlementDenied);
+        Assert.Equal(AuditResults.Denied, evt.Result);
+        Assert.Equal("CreatePhotoMarkup", evt.Metadata?["route"]?.ToString());
+        Assert.Equal(EntitlementKeys.PhotosMarkup, evt.Metadata?["entitlementKey"]?.ToString());
+        Assert.False(evt.Metadata?.ContainsKey("requestBody") ?? false);
+        Assert.False(evt.Metadata?.ContainsKey("rawPlan") ?? false);
+    }
+    [Fact]
     public async Task AuthDisabled_AllowsReadAndWriteForKnownPhoto()
     {
         var controller = BuildController(false, out var db, out _, out _);
@@ -124,16 +144,18 @@ public class PhotoMarkupsControllerAuthorizationTests
 
     private static CreatePhotoMarkupRequest ValidRequest() => new() { MarkupJson = "{\"annotations\":[{\"type\":\"circle\"}]}" };
 
-    private static PhotoMarkupsController BuildController(bool authEnabled, out InspectionReportsDbContext db, out TenantContextAccessor accessor, out PhotoMarkupRepository repo)
+    private static PhotoMarkupsController BuildController(bool authEnabled, out InspectionReportsDbContext db, out TenantContextAccessor accessor, out PhotoMarkupRepository repo, bool entitlementEnabled = false, bool entitlementAllowed = true, IAuditEventWriter? auditWriter = null)
     {
         var options = new DbContextOptionsBuilder<InspectionReportsDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
         db = new InspectionReportsDbContext(options);
         accessor = new TenantContextAccessor();
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Authentication:Enabled"] = authEnabled.ToString() }).Build();
         var guard = new ReportAccessGuard(config, accessor, db);
+        var entitlementConfig = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Subscriptions:EnforcementEnabled"] = entitlementEnabled.ToString().ToLowerInvariant() }).Build();
+        var entitlementGuard = new EntitlementGuard(entitlementConfig, new StubEntitlementService(entitlementAllowed ? EntitlementCheckResult.AllowedWithLimit(null) : EntitlementCheckResult.Denied("entitlement_disabled")));
         repo = new PhotoMarkupRepository(db);
 
-        var controller = new PhotoMarkupsController(repo, guard, new NoopAuditEventWriter());
+        var controller = new PhotoMarkupsController(repo, guard, entitlementGuard, auditWriter ?? new NoopAuditEventWriter());
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         return controller;
     }
@@ -187,5 +209,15 @@ public class PhotoMarkupsControllerAuthorizationTests
             CreatedAt = DateTime.UtcNow
         });
         db.SaveChanges();
+    }
+
+    private sealed class CapturingAuditEventWriter : IAuditEventWriter
+    {
+        public List<(string Action, string ResourceType, string? ResourceId, string Result, string? FacilityId, IDictionary<string, object?>? Metadata)> Events { get; } = [];
+        public Task WriteAsync(string action, string resourceType, string? resourceId, string result, string? facilityId = null, IDictionary<string, object?>? metadata = null, CancellationToken cancellationToken = default)
+        {
+            Events.Add((action, resourceType, resourceId, result, facilityId, metadata));
+            return Task.CompletedTask;
+        }
     }
 }

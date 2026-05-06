@@ -430,3 +430,10 @@ Facility moves remain blocked on update paths pending a dedicated future workflo
 - No endpoint entitlement enforcement in this phase.
 - Health endpoints remain public.
 - Calculator endpoints remain intentionally unprotected and not entitlement-gated in this phase.
+
+## PR #195 Entitlement Enforcement Guardrails
+- Adds feature-flagged backend entitlement enforcement via `Subscriptions:EnforcementEnabled` (default `false`).
+- First enforced operations: report create/export, photo markup create, internal audit query service.
+- Calculator endpoints remain intentionally ungated in this phase.
+- Health endpoints remain public.
+- No billing provider integration, UI, or public subscription/admin APIs in this phase.

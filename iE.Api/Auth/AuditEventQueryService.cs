@@ -1,4 +1,5 @@
 using iE.Api.Tenancy;
+using iE.Core.Reports;
 using iE.Core.Reports.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,7 +24,7 @@ public interface IAuditEventQueryService
     Task<IReadOnlyList<AuditEvent>> QueryAsync(AuditEventQuery query, CancellationToken cancellationToken = default);
 }
 
-public sealed class AuditEventQueryService(InspectionReportsDbContext dbContext, ITenantContextAccessor tenantContextAccessor, IConfiguration configuration) : IAuditEventQueryService
+public sealed class AuditEventQueryService(InspectionReportsDbContext dbContext, ITenantContextAccessor tenantContextAccessor, IConfiguration configuration, EntitlementGuard entitlementGuard) : IAuditEventQueryService
 {
     private const int DefaultLimit = 100;
     private const int MaxLimit = 500;
@@ -31,6 +32,12 @@ public sealed class AuditEventQueryService(InspectionReportsDbContext dbContext,
     public async Task<IReadOnlyList<AuditEvent>> QueryAsync(AuditEventQuery query, CancellationToken cancellationToken = default)
     {
         var authEnabled = StartupConfiguration.IsAuthenticationEnabled(configuration);
+        var entitlement = await entitlementGuard.CheckAsync(EntitlementKeys.AuditQuery, query.TenantId, trustedInternalRequest: !StartupConfiguration.IsAuthenticationEnabled(configuration), cancellationToken: cancellationToken);
+        if (!entitlement.Allowed)
+        {
+            return [];
+        }
+
         IQueryable<AuditEvent> rows = dbContext.AuditEvents.AsNoTracking();
         if (authEnabled)
         {

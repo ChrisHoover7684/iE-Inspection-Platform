@@ -23,6 +23,7 @@ var inspectionReportsConnectionString = StartupConfiguration.GetRequiredConnecti
 var authenticationEnabled = StartupConfiguration.IsAuthenticationEnabled(builder.Configuration);
 var authOptions = StartupConfiguration.GetAuthOptions(builder.Configuration);
 AuthOptions.ValidateWhenEnabled(authenticationEnabled, authOptions);
+var subscriptionOptions = new SubscriptionOptions { EnforcementEnabled = StartupConfiguration.IsSubscriptionEnforcementEnabled(builder.Configuration) };
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -71,7 +72,9 @@ builder.Services.AddScoped<ReportAccessGuard>();
 builder.Services.AddScoped<ReportReferenceGuard>();
 builder.Services.AddScoped<IAuditEventWriter, AuditEventWriter>();
 builder.Services.AddScoped<IAuditEventQueryService, AuditEventQueryService>();
+builder.Services.AddSingleton(subscriptionOptions);
 builder.Services.AddScoped<IEntitlementService, EntitlementService>();
+builder.Services.AddScoped<EntitlementGuard>();
 
 if (authenticationEnabled)
 {

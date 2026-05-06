@@ -47,4 +47,9 @@ internal static class StartupConfiguration
     {
         return configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup");
     }
+
+    internal static bool IsSubscriptionEnforcementEnabled(IConfiguration configuration)
+    {
+        return configuration.GetValue<bool>("Subscriptions:EnforcementEnabled");
+    }
 }

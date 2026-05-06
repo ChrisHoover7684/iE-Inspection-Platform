@@ -6,6 +6,7 @@ using iE.Api.Contracts;
 using iE.Api.Middleware;
 using iE.Api.Tenancy;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace iE.Tests;
@@ -115,7 +116,7 @@ public class AuthFoundationTests
         var principal = AuthenticatedPrincipal(("sub", "u1"), ("org_id", Guid.NewGuid().ToString()), ("roles", "unknown"));
         var transformer = new CapabilityClaimsTransformation(new AuthOptions());
         var transformed = await transformer.TransformAsync(principal);
-        Assert.Empty(transformed.Claims.Where(c => c.Type == "capability"));
+        Assert.DoesNotContain(transformed.Claims, c => c.Type == "capability");
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using iE.Tests.TestDoubles;
 using iE.Api.Auth;
 using iE.Api.Controllers;
 using iE.Api.Contracts;
@@ -15,20 +16,20 @@ namespace iE.Tests;
 public class PhotoMarkupsControllerAuthorizationTests
 {
     [Fact]
-    public void AuthDisabled_AllowsReadAndWriteForKnownPhoto()
+    public async Task AuthDisabled_AllowsReadAndWriteForKnownPhoto()
     {
         var controller = BuildController(false, out var db, out _, out _);
         SeedReportWithPhoto(db, reportId: "r-auth-off", photoId: "p-auth-off");
 
-        var create = controller.Create("p-auth-off", ValidRequest());
-        var read = controller.Get("p-auth-off");
+        var create = await controller.Create("p-auth-off", ValidRequest());
+        var read = await controller.Get("p-auth-off");
 
         Assert.IsType<CreatedResult>(create.Result);
         Assert.IsType<OkObjectResult>(read.Result);
     }
 
     [Fact]
-    public void InScope_WithPhotosRead_CanReadMarkup()
+    public async Task InScope_WithPhotosRead_CanReadMarkup()
     {
         var controller = BuildController(true, out var db, out var accessor, out _);
         SeedFacilityAccess(db, "facility-a");
@@ -36,52 +37,52 @@ public class PhotoMarkupsControllerAuthorizationTests
         SeedMarkup(db, "p-read");
         SetTenant(accessor, AuthCapabilities.PhotosRead);
 
-        var read = controller.Get("p-read");
+        var read = await controller.Get("p-read");
 
         Assert.IsType<OkObjectResult>(read.Result);
     }
 
     [Fact]
-    public void InScope_WithPhotosWrite_CanCreateMarkup()
+    public async Task InScope_WithPhotosWrite_CanCreateMarkup()
     {
         var controller = BuildController(true, out var db, out var accessor, out _);
         SeedFacilityAccess(db, "facility-a");
         SeedReportWithPhoto(db, reportId: "r-write", photoId: "p-write");
         SetTenant(accessor, AuthCapabilities.PhotosWrite);
 
-        var create = controller.Create("p-write", ValidRequest());
+        var create = await controller.Create("p-write", ValidRequest());
 
         Assert.IsType<CreatedResult>(create.Result);
     }
 
     [Fact]
-    public void CrossTenantOwningReport_ReturnsNotFound()
+    public async Task CrossTenantOwningReport_ReturnsNotFound()
     {
         var controller = BuildController(true, out var db, out var accessor, out _);
         SeedFacilityAccess(db, "facility-a");
         SeedReportWithPhoto(db, reportId: "r-tenant", photoId: "p-tenant", orgId: "22222222-2222-2222-2222-222222222222");
         SetTenant(accessor, AuthCapabilities.PhotosRead, AuthCapabilities.PhotosWrite);
 
-        var read = controller.Get("p-tenant");
+        var read = await controller.Get("p-tenant");
 
         Assert.IsType<NotFoundObjectResult>(read.Result);
     }
 
     [Fact]
-    public void CrossFacilityOwningReport_ReturnsNotFound()
+    public async Task CrossFacilityOwningReport_ReturnsNotFound()
     {
         var controller = BuildController(true, out var db, out var accessor, out _);
         SeedFacilityAccess(db, "facility-a");
         SeedReportWithPhoto(db, reportId: "r-facility", photoId: "p-facility", facilityId: "facility-b");
         SetTenant(accessor, AuthCapabilities.PhotosRead, AuthCapabilities.PhotosWrite);
 
-        var read = controller.Get("p-facility");
+        var read = await controller.Get("p-facility");
 
         Assert.IsType<NotFoundObjectResult>(read.Result);
     }
 
     [Fact]
-    public void MissingReadCapability_ReturnsForbidden()
+    public async Task MissingReadCapability_ReturnsForbidden()
     {
         var controller = BuildController(true, out var db, out var accessor, out _);
         SeedFacilityAccess(db, "facility-a");
@@ -89,33 +90,33 @@ public class PhotoMarkupsControllerAuthorizationTests
         SeedMarkup(db, "p-no-read");
         SetTenant(accessor, AuthCapabilities.PhotosWrite);
 
-        var read = controller.Get("p-no-read");
+        var read = await controller.Get("p-no-read");
 
         Assert.Equal(403, ((ObjectResult)read.Result!).StatusCode);
     }
 
     [Fact]
-    public void MissingWriteCapability_ReturnsForbidden()
+    public async Task MissingWriteCapability_ReturnsForbidden()
     {
         var controller = BuildController(true, out var db, out var accessor, out _);
         SeedFacilityAccess(db, "facility-a");
         SeedReportWithPhoto(db, reportId: "r-no-write", photoId: "p-no-write");
         SetTenant(accessor, AuthCapabilities.PhotosRead);
 
-        var create = controller.Create("p-no-write", ValidRequest());
+        var create = await controller.Create("p-no-write", ValidRequest());
 
         Assert.Equal(403, ((ObjectResult)create.Result!).StatusCode);
     }
 
     [Fact]
-    public void UnknownOrOrphanPhoto_ReturnsNotFound()
+    public async Task UnknownOrOrphanPhoto_ReturnsNotFound()
     {
         var controller = BuildController(true, out var db, out var accessor, out _);
         SeedFacilityAccess(db, "facility-a");
         SetTenant(accessor, AuthCapabilities.PhotosRead, AuthCapabilities.PhotosWrite);
 
-        var read = controller.Get("missing-photo");
-        var create = controller.Create("missing-photo", ValidRequest());
+        var read = await controller.Get("missing-photo");
+        var create = await controller.Create("missing-photo", ValidRequest());
 
         Assert.IsType<NotFoundObjectResult>(read.Result);
         Assert.IsType<NotFoundObjectResult>(create.Result);
@@ -132,7 +133,7 @@ public class PhotoMarkupsControllerAuthorizationTests
         var guard = new ReportAccessGuard(config, accessor, db);
         repo = new PhotoMarkupRepository(db);
 
-        var controller = new PhotoMarkupsController(repo, guard);
+        var controller = new PhotoMarkupsController(repo, guard, new NoopAuditEventWriter());
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         return controller;
     }

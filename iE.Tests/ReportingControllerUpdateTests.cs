@@ -1,3 +1,4 @@
+using iE.Tests.TestDoubles;
 using iE.Api.Auth;
 using iE.Api.Controllers;
 using iE.Api.Tenancy;
@@ -14,7 +15,7 @@ namespace iE.Tests;
 public class ReportingControllerUpdateTests
 {
     [Fact]
-    public void UpdateInstance_PreservesOwnershipFields_AndStampsUpdater_WhenAuthEnabled()
+    public async Task UpdateInstance_PreservesOwnershipFields_AndStampsUpdater_WhenAuthEnabled()
     {
         var controller = BuildController(true, out var db, out var accessor, out var repo);
         accessor.Current = new TenantContext
@@ -47,7 +48,7 @@ public class ReportingControllerUpdateTests
             Status = InspectionReportStatuses.ReadyForReview
         };
 
-        var result = controller.UpdateInstance("r-1", submitted);
+        var result = await controller.UpdateInstance("r-1", submitted);
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var updated = Assert.IsType<InspectionReport>(ok.Value);
 
@@ -61,7 +62,7 @@ public class ReportingControllerUpdateTests
     }
 
     [Fact]
-    public void UpdateInstance_AuthDisabled_DoesNotOverwriteOwnershipFromExistingUserContext()
+    public async Task UpdateInstance_AuthDisabled_DoesNotOverwriteOwnershipFromExistingUserContext()
     {
         var controller = BuildController(false, out var db, out _, out var repo);
         repo.Create(new InspectionReport
@@ -81,7 +82,7 @@ public class ReportingControllerUpdateTests
             CreatedByUserId = "attacker"
         };
 
-        var result = controller.UpdateInstance("r-2", submitted);
+        var result = await controller.UpdateInstance("r-2", submitted);
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var updated = Assert.IsType<InspectionReport>(ok.Value);
 
@@ -92,7 +93,7 @@ public class ReportingControllerUpdateTests
     }
 
     [Fact]
-    public void UpdateInstance_CrossTenant_RemainsNotFound()
+    public async Task UpdateInstance_CrossTenant_RemainsNotFound()
     {
         var controller = BuildController(true, out var db, out var accessor, out var repo);
         accessor.Current = new TenantContext
@@ -106,12 +107,12 @@ public class ReportingControllerUpdateTests
         SeedAccess(db, "subject-1", "11111111-1111-1111-1111-111111111111", "facility-a");
         repo.Create(new InspectionReport { Id = "r-3", ClientOrganizationId = "22222222-2222-2222-2222-222222222222", FacilityId = "facility-a", CreatedAt = DateTime.UtcNow });
 
-        var result = controller.UpdateInstance("r-3", new InspectionReport());
+        var result = await controller.UpdateInstance("r-3", new InspectionReport());
         Assert.IsType<NotFoundObjectResult>(result.Result);
     }
 
     [Fact]
-    public void UpdateInstance_CrossFacility_RemainsNotFound()
+    public async Task UpdateInstance_CrossFacility_RemainsNotFound()
     {
         var controller = BuildController(true, out var db, out var accessor, out var repo);
         accessor.Current = new TenantContext
@@ -125,12 +126,12 @@ public class ReportingControllerUpdateTests
         SeedAccess(db, "subject-1", "11111111-1111-1111-1111-111111111111", "facility-a");
         repo.Create(new InspectionReport { Id = "r-4", ClientOrganizationId = "11111111-1111-1111-1111-111111111111", FacilityId = "facility-b", CreatedAt = DateTime.UtcNow });
 
-        var result = controller.UpdateInstance("r-4", new InspectionReport());
+        var result = await controller.UpdateInstance("r-4", new InspectionReport());
         Assert.IsType<NotFoundObjectResult>(result.Result);
     }
 
     [Fact]
-    public void UpdateInstance_MissingReportsWrite_RemainsForbidden()
+    public async Task UpdateInstance_MissingReportsWrite_RemainsForbidden()
     {
         var controller = BuildController(true, out var db, out var accessor, out var repo);
         accessor.Current = new TenantContext
@@ -144,9 +145,9 @@ public class ReportingControllerUpdateTests
         SeedAccess(db, "subject-1", "11111111-1111-1111-1111-111111111111", "facility-a");
         repo.Create(new InspectionReport { Id = "r-5", ClientOrganizationId = "11111111-1111-1111-1111-111111111111", FacilityId = "facility-a", CreatedAt = DateTime.UtcNow });
 
-        var result = controller.UpdateInstance("r-5", new InspectionReport());
-        Assert.IsType<ObjectResult>(result.Result);
-        Assert.Equal(403, ((ObjectResult)result.Result!).StatusCode);
+        var result = await controller.UpdateInstance("r-5", new InspectionReport());
+        var objectResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, objectResult.StatusCode);
     }
 
     private static ReportingController BuildController(bool authEnabled, out InspectionReportsDbContext db, out TenantContextAccessor accessor, out InspectionReportRepository repo)
@@ -158,7 +159,7 @@ public class ReportingControllerUpdateTests
         var guard = new ReportAccessGuard(config, accessor, db);
         repo = new InspectionReportRepository(db);
 
-        var controller = new ReportingController(repo, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, guard);
+        var controller = new ReportingController(repo, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, guard, new NoopAuditEventWriter());
         controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()

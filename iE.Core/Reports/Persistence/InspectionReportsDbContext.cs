@@ -11,6 +11,7 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
     public DbSet<UserFacilityAccess> UserFacilityAccesses => Set<UserFacilityAccess>();
     public DbSet<InspectionReport> InspectionReports => Set<InspectionReport>();
     public DbSet<PhotoMarkup> PhotoMarkups => Set<PhotoMarkup>();
+    public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -147,6 +148,29 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
             builder.HasIndex(ufa => ufa.UserId);
             builder.HasIndex(ufa => ufa.ClientOrganizationId);
             builder.HasIndex(ufa => ufa.FacilityId);
+        });
+
+
+        modelBuilder.Entity<AuditEvent>(builder =>
+        {
+            builder.ToTable("AuditEvents");
+            builder.HasKey(a => a.AuditEventId);
+            builder.Property(a => a.AuditEventId).HasMaxLength(64);
+            builder.Property(a => a.TenantId).HasMaxLength(64);
+            builder.Property(a => a.FacilityId).HasMaxLength(64);
+            builder.Property(a => a.ActorUserId).HasMaxLength(128);
+            builder.Property(a => a.Action).HasMaxLength(128);
+            builder.Property(a => a.ResourceType).HasMaxLength(64);
+            builder.Property(a => a.ResourceId).HasMaxLength(128);
+            builder.Property(a => a.Result).HasMaxLength(32);
+            builder.Property(a => a.CorrelationId).HasMaxLength(128);
+            builder.Property(a => a.ClientIp).HasMaxLength(64);
+            builder.Property(a => a.UserAgent).HasMaxLength(512);
+            builder.Property(a => a.MetadataJson).HasMaxLength(4000);
+            builder.HasIndex(a => a.TenantId);
+            builder.HasIndex(a => new { a.ResourceType, a.ResourceId });
+            builder.HasIndex(a => a.ActorUserId);
+            builder.HasIndex(a => a.OccurredAtUtc);
         });
 
         modelBuilder.Entity<InspectionReport>(builder =>

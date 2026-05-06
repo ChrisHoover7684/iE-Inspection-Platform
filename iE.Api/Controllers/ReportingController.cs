@@ -326,11 +326,7 @@ public class ReportingController(
             return referenceValidation;
         }
 
-        var templateReferenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, report, "CreateInstanceFromTemplate");
-        if (templateReferenceValidation is not null)
-        {
-            return templateReferenceValidation;
-        }
+
 
         var created = inspectionReportRepository.Create(report);
         await auditEventWriter.WriteAsync(AuditActions.ReportCreated, AuditResourceTypes.Report, created.Id, AuditResults.Success, created.FacilityId);
@@ -434,6 +430,12 @@ public class ReportingController(
         if (createAccessResult is not null)
         {
             return createAccessResult;
+        }
+
+        var referenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, report, "CreateInstanceFromTemplate");
+        if (referenceValidation is not null)
+        {
+            return referenceValidation;
         }
 
         var created = inspectionReportRepository.Create(report);

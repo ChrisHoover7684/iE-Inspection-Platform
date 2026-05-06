@@ -32,11 +32,10 @@ public sealed class AuditEventQueryService(InspectionReportsDbContext dbContext,
     public async Task<IReadOnlyList<AuditEvent>> QueryAsync(AuditEventQuery query, CancellationToken cancellationToken = default)
     {
         var authEnabled = StartupConfiguration.IsAuthenticationEnabled(configuration);
-        var subscriptionEnforcementEnabled = StartupConfiguration.IsSubscriptionEnforcementEnabled(configuration);
-        if (subscriptionEnforcementEnabled)
+        var entitlement = await entitlementGuard.CheckAsync(EntitlementKeys.AuditQuery, query.TenantId, trustedInternalRequest: !StartupConfiguration.IsAuthenticationEnabled(configuration), cancellationToken: cancellationToken);
+        if (!entitlement.Allowed)
         {
-            var entitlement = await entitlementGuard.CheckAsync(EntitlementKeys.AuditQuery, query.TenantId, trustedInternalRequest: !StartupConfiguration.IsAuthenticationEnabled(configuration), cancellationToken: cancellationToken);
-            if (!entitlement.Allowed) return [];
+            return [];
         }
 
         IQueryable<AuditEvent> rows = dbContext.AuditEvents.AsNoTracking();

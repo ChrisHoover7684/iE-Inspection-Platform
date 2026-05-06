@@ -82,7 +82,7 @@ public class ReportingControllerAuthorizationSweepTests
         var request = new ApplyObservationChecklistRequest
         {
             TemplateId = "api-570-piping-external",
-            ChecklistResponses = [new ObservationChecklistItemResponse { ItemId = "visual-external", IsApplicable = true, HasFinding = false }],
+            ChecklistResponses = [new ObservationChecklistItemResponse { ItemId = "visual-external" }],
             Report = Base("r-checklist-limit")
         };
 

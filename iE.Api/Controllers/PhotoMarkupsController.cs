@@ -9,7 +9,7 @@ namespace iE.Api.Controllers;
 
 [ApiController]
 [Route("api/photos/{photoId}/markups")]
-public class PhotoMarkupsController(PhotoMarkupRepository photoMarkupRepository, ReportAccessGuard reportAccessGuard) : ControllerBase
+public class PhotoMarkupsController(PhotoMarkupRepository photoMarkupRepository, ReportAccessGuard reportAccessGuard, IAuditEventWriter auditEventWriter) : ControllerBase
 {
     private ActionResult? EnforcePhotoAccess(string photoId, string capability, string forbiddenMessage)
     {
@@ -20,9 +20,9 @@ public class PhotoMarkupsController(PhotoMarkupRepository photoMarkupRepository,
         }
 
         var access = reportAccessGuard.CanAccessReport(owningReport, capability);
-        if (access == ReportAccessDecision.NotFound) return this.NotFoundError($"Photo '{photoId}' was not found.");
-        if (access == ReportAccessDecision.Forbidden) return this.ForbiddenError(forbiddenMessage);
-        if (access == ReportAccessDecision.Unauthorized) return Unauthorized();
+        if (access == ReportAccessDecision.NotFound) { _ = auditEventWriter.WriteAsync("AuthorizationDenied", "Photo", photoId, "Denied", metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope" }); return this.NotFoundError($"Photo '{photoId}' was not found."); }
+        if (access == ReportAccessDecision.Forbidden) { _ = auditEventWriter.WriteAsync("AuthorizationDenied", "Photo", photoId, "Denied", metadata: new Dictionary<string, object?> { ["requiredCapability"] = capability, ["denialReason"] = "missing_capability" }); return this.ForbiddenError(forbiddenMessage); }
+        if (access == ReportAccessDecision.Unauthorized) { _ = auditEventWriter.WriteAsync("AuthorizationDenied", "Photo", photoId, "Denied", metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated" }); return Unauthorized(); }
         return null;
     }
 
@@ -43,6 +43,7 @@ public class PhotoMarkupsController(PhotoMarkupRepository photoMarkupRepository,
         try
         {
             var created = photoMarkupRepository.Create(photoId, request.MarkupJson);
+            _ = auditEventWriter.WriteAsync("PhotoMarkupCreated", "PhotoMarkup", created.Id, "Success", metadata: new Dictionary<string, object?> { ["photoId"] = photoId });
             return Created($"/api/photos/{photoId}/markups/{created.Id}", created);
         }
         catch (ArgumentException ex)

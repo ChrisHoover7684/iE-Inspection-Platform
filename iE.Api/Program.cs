@@ -64,9 +64,11 @@ builder.Services.AddScoped<AnnotatedPhotoExportService>();
 builder.Services.AddSingleton<IReportTemplateRegistry, InMemoryReportTemplateRegistry>();
 builder.Services.AddSingleton(_ => MaterialStressServiceFactory.CreateInitialized());
 builder.Services.AddScoped<PressureVesselAllowableStressResolver>();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITenantContextAccessor, TenantContextAccessor>();
 builder.Services.AddScoped<ITenantContextBuilder>(_ => new TenantContextBuilder(authOptions));
 builder.Services.AddScoped<ReportAccessGuard>();
+builder.Services.AddScoped<IAuditEventWriter, AuditEventWriter>();
 
 if (authenticationEnabled)
 {

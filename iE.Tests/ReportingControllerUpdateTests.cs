@@ -1,3 +1,4 @@
+using iE.Tests.TestDoubles;
 using iE.Api.Auth;
 using iE.Api.Controllers;
 using iE.Api.Tenancy;
@@ -158,7 +159,7 @@ public class ReportingControllerUpdateTests
         var guard = new ReportAccessGuard(config, accessor, db);
         repo = new InspectionReportRepository(db);
 
-        var controller = new ReportingController(repo, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, guard);
+        var controller = new ReportingController(repo, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, guard, new NoopAuditEventWriter());
         controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()

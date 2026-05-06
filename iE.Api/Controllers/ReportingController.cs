@@ -34,14 +34,15 @@ public class ReportingController(
     InspectionAlertMapper inspectionAlertMapper,
     IInspectionAssistantService inspectionAssistantService,
     IReportNarrativeGenerator reportNarrativeGenerator,
-    ReportAccessGuard reportAccessGuard) : ControllerBase
+    ReportAccessGuard reportAccessGuard,
+    IAuditEventWriter auditEventWriter) : ControllerBase
 {
     private ActionResult? EnforceReportAccess(InspectionReport report, string reportIdForMessage, string capability, string forbiddenMessage)
     {
         var access = reportAccessGuard.CanAccessReport(report, capability);
-        if (access == ReportAccessDecision.NotFound) return this.NotFoundError($"Inspection report instance '{reportIdForMessage}' was not found.");
-        if (access == ReportAccessDecision.Forbidden) return this.ForbiddenError(forbiddenMessage);
-        if (access == ReportAccessDecision.Unauthorized) return Unauthorized();
+        if (access == ReportAccessDecision.NotFound) { _ = auditEventWriter.WriteAsync("AuthorizationDenied", "Report", reportIdForMessage, "Denied", metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope", ["requiredCapability"] = capability }); return this.NotFoundError($"Inspection report instance '{reportIdForMessage}' was not found."); }
+        if (access == ReportAccessDecision.Forbidden) { _ = auditEventWriter.WriteAsync("AuthorizationDenied", "Report", reportIdForMessage, "Denied", report.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = capability }); return this.ForbiddenError(forbiddenMessage); }
+        if (access == ReportAccessDecision.Unauthorized) { _ = auditEventWriter.WriteAsync("AuthorizationDenied", "Report", reportIdForMessage, "Denied", metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = capability }); return Unauthorized(); }
 
         return null;
     }
@@ -134,6 +135,7 @@ public class ReportingController(
             : report.ReportNumber.Trim().Replace(' ', '-');
         var fileName = $"api570-report-{safeReportNumber}.docx";
 
+        _ = auditEventWriter.WriteAsync("ReportExported", "Report", id, "Success", report.FacilityId, new Dictionary<string, object?> { ["exportType"] = "report-docx" });
         return File(
             fileBytes,
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -156,6 +158,7 @@ public class ReportingController(
         if (access == ReportAccessDecision.Unauthorized) return Unauthorized();
 
         var fileBytes = photoAppendixExportService.Export(report);
+        _ = auditEventWriter.WriteAsync("ReportExported", "Report", id, "Success", report.FacilityId, new Dictionary<string, object?> { ["exportType"] = "photo-appendix-docx" });
         var fileName = string.IsNullOrWhiteSpace(report.ReportNumber)
             ? $"InspectionReport_{id}_PhotoAppendix.docx"
             : $"{report.ReportNumber.Trim()}_PhotoAppendix.docx";
@@ -303,6 +306,7 @@ public class ReportingController(
         report.UpdatedAt = null;
 
         var created = inspectionReportRepository.Create(report);
+        _ = auditEventWriter.WriteAsync("ReportCreated", "Report", created.Id, "Success", created.FacilityId);
         return CreatedAtAction(nameof(GetInstanceById), new { id = created.Id }, created);
     }
 
@@ -334,6 +338,7 @@ public class ReportingController(
         if (updateAccess == ReportAccessDecision.Unauthorized) return Unauthorized();
 
         var updated = inspectionReportRepository.Update(id, report);
+        _ = auditEventWriter.WriteAsync("ReportUpdated", "Report", updated.Id, "Success", updated.FacilityId);
         return Ok(updated);
     }
 
@@ -357,6 +362,7 @@ public class ReportingController(
             return this.NotFoundError($"Inspection report instance '{id}' was not found.");
         }
 
+        _ = auditEventWriter.WriteAsync("ReportDeleted", "Report", id, "Success", existing.FacilityId);
         return NoContent();
     }
 
@@ -398,6 +404,7 @@ public class ReportingController(
         }
 
         var created = inspectionReportRepository.Create(report);
+        _ = auditEventWriter.WriteAsync("ReportCreated", "Report", created.Id, "Success", created.FacilityId, new Dictionary<string, object?> { ["templateId"] = templateId, ["route"] = "CreateInstanceFromTemplate" });
         return CreatedAtAction(nameof(GetInstanceById), new { id = created.Id }, created);
     }
 
@@ -425,6 +432,7 @@ public class ReportingController(
         updatedReport.UpdatedAt = DateTime.UtcNow;
         reportAccessGuard.ApplyUpdateOwnership(updatedReport);
         inspectionReportRepository.Update(id, updatedReport);
+        _ = auditEventWriter.WriteAsync("ReportUpdated", "Report", id, "Success", updatedReport.FacilityId, new Dictionary<string, object?> { ["route"] = "SyncFindingsFromChecklistTransfers" });
         return Ok(updatedReport);
     }
 
@@ -500,6 +508,7 @@ public class ReportingController(
         reportAccessGuard.ApplyUpdateOwnership(report);
         inspectionReportRepository.Update(id, report);
 
+        _ = auditEventWriter.WriteAsync("ReportSubmittedForReview", "Report", id, "Success", report.FacilityId);
         return Ok(new
         {
             message = "Report submitted for review",
@@ -535,6 +544,7 @@ public class ReportingController(
         reportAccessGuard.ApplyUpdateOwnership(report);
         inspectionReportRepository.Update(id, report);
 
+        _ = auditEventWriter.WriteAsync("ReviewStarted", "Report", id, "Success", report.FacilityId);
         return Ok(new
         {
             message = "Review started",
@@ -570,6 +580,7 @@ public class ReportingController(
         reportAccessGuard.ApplyUpdateOwnership(report);
         inspectionReportRepository.Update(id, report);
 
+        _ = auditEventWriter.WriteAsync("ReportApproved", "Report", id, "Success", report.FacilityId);
         return Ok(new
         {
             message = "Report approved",
@@ -613,6 +624,7 @@ public class ReportingController(
         reportAccessGuard.ApplyUpdateOwnership(report);
         inspectionReportRepository.Update(id, report);
 
+        _ = auditEventWriter.WriteAsync("ReportReturnedForRevision", "Report", id, "Success", report.FacilityId);
         return Ok(new
         {
             message = "Report returned for revision",

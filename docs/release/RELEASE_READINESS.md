@@ -85,3 +85,9 @@ Use this checklist before backend-focused releases.
 - [ ] Facility move attempts remain blocked pending dedicated workflow.
 - Report read/write/export/review paths now include tenant/capability checks and 404-vs-403 behavior.
 - Dedicated photo/markup endpoint-level ownership enforcement is now complete in PR #190.
+
+## PR #191
+- Implemented append-only backend accountability auditing for sensitive report/photo/export/workflow and authorization-denial events.
+- Sensitive metadata filtering and bounded metadata storage added.
+- Health remains public; calculators remain intentionally unprotected and not audited in this phase.
+- Audit administration/user interface is deferred.

@@ -1,3 +1,4 @@
+using iE.Tests.TestDoubles;
 using iE.Api.Auth;
 using iE.Api.Controllers;
 using iE.Api.Tenancy;
@@ -49,7 +50,7 @@ public class ReportingControllerAuthorizationSweepTests
         var guard = new ReportAccessGuard(config, accessor, db);
         repo = new InspectionReportRepository(db);
 
-        var controller = new ReportingController(repo, new InspectionReportFactory(), null!, null!, new ReportDraftBuilder(new SummaryBuilder(), new ReportValidationService(new InspectionTagRuleEngine()), new RepairRecommendationBuilder()), null!, new ObservationChecklistService(), new ChecklistMergeService(), new ReportWorkflowService(), new InMemoryReportTemplateRegistry(), new InspectionTagRuleEngine(), null!, null!, null!, guard);
+        var controller = new ReportingController(repo, new InspectionReportFactory(), null!, null!, new ReportDraftBuilder(new SummaryBuilder(), new ReportValidationService(new InspectionTagRuleEngine()), new RepairRecommendationBuilder()), null!, new ObservationChecklistService(), new ChecklistMergeService(), new ReportWorkflowService(), new InMemoryReportTemplateRegistry(), new InspectionTagRuleEngine(), null!, null!, null!, guard, new NoopAuditEventWriter());
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         return controller;
     }

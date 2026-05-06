@@ -1,3 +1,4 @@
+using iE.Tests.TestDoubles;
 using iE.Api.Auth;
 using iE.Api.Controllers;
 using iE.Api.Contracts;
@@ -132,7 +133,7 @@ public class PhotoMarkupsControllerAuthorizationTests
         var guard = new ReportAccessGuard(config, accessor, db);
         repo = new PhotoMarkupRepository(db);
 
-        var controller = new PhotoMarkupsController(repo, guard);
+        var controller = new PhotoMarkupsController(repo, guard, new NoopAuditEventWriter());
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         return controller;
     }

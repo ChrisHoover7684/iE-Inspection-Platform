@@ -400,3 +400,10 @@ Intentionally out of scope in this PR:
 - Health endpoints (remain public).
 
 Facility moves remain blocked on update paths pending a dedicated future workflow.
+
+## PR #191 audit accountability
+- Added append-only backend audit events for report create/update/delete, review workflow transitions, export, photo markup create, and authorization denials.
+- Health endpoints remain public.
+- Calculator endpoints remain intentionally unprotected and are not audited in this phase.
+- Audit metadata is sanitized to exclude sensitive values (tokens, authorization headers, passwords, connection strings, raw payloads, markup JSON).
+- Audit UI/query/admin tooling remains future work.

@@ -634,7 +634,7 @@ public class ReportingController(
     }
 
     [HttpGet("{id}/review-history")]
-    public ActionResult<IReadOnlyList<ReportReviewHistory>> GetReviewHistory(string id)
+    public async Task<ActionResult<IReadOnlyList<ReportReviewHistory>>> GetReviewHistory(string id)
     {
         var report = inspectionReportRepository.GetById(id);
         if (report is null)

@@ -91,3 +91,7 @@ Use this checklist before backend-focused releases.
 - Sensitive metadata filtering and bounded metadata storage added.
 - Health remains public; calculators remain intentionally unprotected and not audited in this phase.
 - Audit administration/user interface is deferred.
+
+- PR #192: Backend audit hardening complete (metadata sanitization bounds, append-only guardrails, tenant-scoped internal query service).
+- No public audit API or UI shipped in this release; internal-only groundwork.
+- Health endpoints remain public; calculator endpoints intentionally unprotected and unaudited for this phase.

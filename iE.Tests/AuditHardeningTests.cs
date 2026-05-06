@@ -22,6 +22,49 @@ public class AuditHardeningTests
     [Fact] public async Task Query_Service_Empty_When_Enabled_Without_Tenant() { var db=Db(); Seed(db); var cfg=new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?>{{"Authentication:Enabled","true"}}).Build(); var svc=new AuditEventQueryService(db,new TenantContextAccessor(),cfg); var rows=await svc.QueryAsync(new AuditEventQuery()); Assert.Empty(rows); }
 
     [Fact] public async Task Query_Service_Local_Mode_Uses_Filters_And_Limits() { var db=Db(); Seed(db); var cfg=new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?>{{"Authentication:Enabled","false"}}).Build(); var svc=new AuditEventQueryService(db,new TenantContextAccessor(),cfg); var rows=await svc.QueryAsync(new AuditEventQuery{TenantId="t2",Action="A2",Limit=9999}); Assert.Single(rows); Assert.Null(rows[0].MetadataJson); }
+    
+    [Fact]
+    public async Task Writer_Sanitizer_Removes_Sensitive_Keys_Case_Insensitively()
+    {
+        var db = Db();
+        var writer = Writer(db);
+        await writer.WriteAsync("a", "r", "1", "s", metadata: new Dictionary<string, object?>
+        {
+            ["Authorization"] = "x",
+            ["AUTHORIZATION"] = "x",
+            ["accessToken"] = "x",
+            ["AccessToken"] = "x",
+            ["APIKEY"] = "x",
+            ["ConnectionString"] = "x",
+            ["StackTrace"] = "x",
+            ["ok"] = true
+        });
+
+        var json = db.AuditEvents.Single().MetadataJson!;
+        Assert.DoesNotContain("Authorization", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("accessToken", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("APIKEY", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ConnectionString", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("StackTrace", json, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("ok", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Writer_Sanitizer_Removes_Nested_Mixed_Case_Sensitive_Keys()
+    {
+        var db = Db();
+        var writer = Writer(db);
+        await writer.WriteAsync("a", "r", "1", "s", metadata: new Dictionary<string, object?>
+        {
+            ["safe"] = new Dictionary<string, object?> { ["Authorization"] = "secret", ["ok"] = "value" }
+        });
+
+        var json = db.AuditEvents.Single().MetadataJson!;
+        Assert.DoesNotContain("Authorization", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("secret", json, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("ok", json, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("value", json, StringComparison.OrdinalIgnoreCase);
+    }
 
     static InspectionReportsDbContext Db()=>new(new DbContextOptionsBuilder<InspectionReportsDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
     static AuditEventWriter Writer(InspectionReportsDbContext db){var http=new HttpContextAccessor{HttpContext=new DefaultHttpContext()}; return new AuditEventWriter(db,new TenantContextAccessor{Current=new TenantContext{ClientOrganizationId=Guid.Parse("11111111-1111-1111-1111-111111111111"),ExternalSubject="u1"}},http,NullLogger<AuditEventWriter>.Instance);}    

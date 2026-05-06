@@ -24,8 +24,8 @@ public static class AuditResults
 public static class AuditMetadataKeys
 {
     public const string MetadataTruncated = "metadataTruncated";
-    public static readonly HashSet<string> Sensitive =
-    [
+    public static readonly HashSet<string> Sensitive = new(StringComparer.OrdinalIgnoreCase)
+    {
         "token", "accessToken", "refreshToken", "idToken", "authorization", "authHeader", "password", "secret", "apiKey", "connectionString", "rawPayload", "requestBody", "responseBody", "markupJson", "stackTrace"
-    ];
+    };
 }

@@ -20,11 +20,11 @@ namespace iE.Tests;
 public class ReportingControllerAuthorizationSweepTests
 {
     [Fact]
-    public void CreateFromTemplate_MissingWrite_ReturnsForbidden() { var c = BuildController(true, out var db, out var a, out _); SetTenant(a, AuthCapabilities.ReportsRead); SeedAccess(db); var r = c.CreateInstanceFromTemplate("api-570-piping-inspection", null, "facility-a", null, null, null); Assert.Equal(403, ((ObjectResult)r.Result!).StatusCode); }
+    public void CreateFromTemplate_MissingWrite_ReturnsForbidden() { var c = BuildController(true, out var db, out var a, out _); SetTenant(a, AuthCapabilities.ReportsRead); SeedAccess(db); var r = c.CreateInstanceFromTemplate("api-570-piping-external", null, "facility-a", null, null, null); Assert.Equal(403, ((ObjectResult)r.Result!).StatusCode); }
     [Fact]
-    public void CreateFromTemplate_OutOfScopeFacility_ReturnsNotFound() { var c = BuildController(true, out var db, out var a, out _); SetTenant(a, AuthCapabilities.ReportsWrite); SeedAccess(db); var r = c.CreateInstanceFromTemplate("api-570-piping-inspection", null, "facility-b", null, null, null); Assert.IsType<NotFoundObjectResult>(r.Result); }
+    public void CreateFromTemplate_OutOfScopeFacility_ReturnsNotFound() { var c = BuildController(true, out var db, out var a, out _); SetTenant(a, AuthCapabilities.ReportsWrite); SeedAccess(db); var r = c.CreateInstanceFromTemplate("api-570-piping-external", null, "facility-b", null, null, null); Assert.IsType<NotFoundObjectResult>(r.Result); }
     [Fact]
-    public void CreateFromTemplate_Allowed_StampsOwnership() { var c = BuildController(true, out var db, out var a, out _); SetTenant(a, AuthCapabilities.ReportsWrite); SeedAccess(db); var r = c.CreateInstanceFromTemplate("api-570-piping-inspection", null, "facility-a", null, null, null); var created = Assert.IsType<InspectionReport>(((CreatedAtActionResult)r.Result!).Value); Assert.Equal("11111111-1111-1111-1111-111111111111", created.ClientOrganizationId); Assert.Equal("subject-1", created.CreatedByUserId); }
+    public void CreateFromTemplate_Allowed_StampsOwnership() { var c = BuildController(true, out var db, out var a, out _); SetTenant(a, AuthCapabilities.ReportsWrite); SeedAccess(db); var r = c.CreateInstanceFromTemplate("api-570-piping-external", null, "facility-a", null, null, null); var created = Assert.IsType<InspectionReport>(((CreatedAtActionResult)r.Result!).Value); Assert.Equal("11111111-1111-1111-1111-111111111111", created.ClientOrganizationId); Assert.Equal("subject-1", created.CreatedByUserId); }
     [Fact]
     public void SyncFindings_MissingWrite_ReturnsForbidden() { var c = BuildController(true, out var db, out var a, out var repo); SetTenant(a, AuthCapabilities.ReportsRead); SeedAccess(db); repo.Create(Base("r1")); var r = c.SyncFindingsFromChecklistTransfers("r1"); Assert.Equal(403, ((ObjectResult)r.Result!).StatusCode); }
     [Fact]

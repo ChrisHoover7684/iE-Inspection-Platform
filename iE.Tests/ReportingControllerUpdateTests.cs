@@ -27,6 +27,7 @@ public class ReportingControllerUpdateTests
         };
 
         SeedAccess(db, "subject-1", "11111111-1111-1111-1111-111111111111", "facility-a");
+        SeedClientOrgAndFacility(db);
         var createdAt = DateTime.UtcNow.AddDays(-3);
         repo.Create(new InspectionReport
         {
@@ -172,6 +173,24 @@ public class ReportingControllerUpdateTests
     private static void SeedAccess(InspectionReportsDbContext db, string userId, string orgId, string facilityId)
     {
         db.UserFacilityAccesses.Add(new UserFacilityAccess { Id = Guid.NewGuid().ToString("N"), UserId = userId, ClientOrganizationId = orgId, FacilityId = facilityId, IsActive = true });
+        db.SaveChanges();
+    }
+
+    private static void SeedClientOrgAndFacility(InspectionReportsDbContext db)
+    {
+        db.ClientOrganizations.Add(new ClientOrganization
+        {
+            Id = "11111111-1111-1111-1111-111111111111",
+            Name = "Test Org",
+            IsActive = true
+        });
+        db.Facilities.Add(new Facility
+        {
+            Id = "facility-a",
+            ClientOrganizationId = "11111111-1111-1111-1111-111111111111",
+            Name = "Test Facility",
+            IsActive = true
+        });
         db.SaveChanges();
     }
 }

@@ -47,6 +47,7 @@ Use this checklist before backend-focused releases.
 - [ ] Audit logging implemented for sensitive report and authorization events.
 - [ ] Cross-tenant access behavior reviewed for consistent 404/403 policy.
 - [ ] Access checks verified for modified endpoints/services.
+- [ ] Update-body ownership overwrite protection verified (update payload cannot change `ClientOrganizationId`, `FacilityId`, `CreatedAt`, or `CreatedByUserId` on persisted reports).
 - [ ] Tenant boundary assumptions validated in tests/review.
 - [ ] Privilege escalation paths reviewed.
 

@@ -358,4 +358,6 @@ PR B remains responsible for endpoint enforcement and repository tenant/facility
 ## PR B Phase 1 (Report Paths)
 - Implemented report-path tenant and capability checks in `ReportingController` using `ReportAccessGuard`.
 - `Authentication:Enabled=false` keeps existing permissive local/dev behavior.
+- Update hardening: report ownership fields (`Id`, `ClientOrganizationId`, `FacilityId`, `CreatedAt`, `CreatedByUserId`) are preserved from the persisted record during updates to prevent request-body ownership overwrite.
+- Facility moves are intentionally blocked in PR B follow-up; moving a report between facilities requires a future dedicated endpoint with explicit source + target facility authorization.
 - Deferred: deeper photo/markup ownership scoping beyond report-level checks.

@@ -1,4 +1,5 @@
 using iE.Tests.TestDoubles;
+using iE.Api.Contracts;
 using iE.Api.Auth;
 using iE.Api.Controllers;
 using iE.Api.Tenancy;
@@ -52,6 +53,68 @@ public class ReportingControllerAuthorizationSweepTests
         Assert.False(evt.Metadata?.ContainsKey("metadataJson") ?? false);
     }
 
+
+    [Fact]
+    public async Task CreateInstanceFromTemplate_LimitExceeded_Returns403_SubscriptionLimitExceeded()
+    {
+        var c = BuildController(true, out var db, out var a, out _, entitlementEnabled: true, entitlementAllowed: true, usage: new SubscriptionUsageSnapshot("11111111-1111-1111-1111-111111111111", 5), limitValue: 5);
+        SetTenant(a, AuthCapabilities.ReportsWrite);
+        SeedAccess(db);
+        SeedClientOrgAndFacility(db);
+        SeedDemoProcessUnitAndAsset(db);
+
+        var r = await c.CreateInstanceFromTemplate("api-570-piping-external", null, "facility-a", null, null, null);
+        var obj = Assert.IsType<ObjectResult>(r.Result);
+        Assert.Equal(403, obj.StatusCode);
+        var err = Assert.IsType<ApiError>(obj.Value);
+        Assert.Equal("subscription_limit_exceeded", err.Code);
+    }
+
+    [Fact]
+    public async Task BuildDraftFromChecklist_CreateBranch_LimitExceeded_Returns403_SubscriptionLimitExceeded()
+    {
+        var c = BuildController(true, out var db, out var a, out _, entitlementEnabled: true, entitlementAllowed: true, usage: new SubscriptionUsageSnapshot("11111111-1111-1111-1111-111111111111", 2), limitValue: 2);
+        SetTenant(a, AuthCapabilities.ReportsWrite);
+        SeedAccess(db);
+        SeedClientOrgAndFacility(db);
+
+        var request = new ApplyObservationChecklistRequest
+        {
+            TemplateId = "api-570-piping-external",
+            ChecklistResponses = [new ObservationChecklistResponse { ItemId = "visual-external", IsApplicable = true, HasFinding = false }],
+            Report = Base("r-checklist-limit")
+        };
+
+        var r = await c.BuildDraftFromChecklist(request);
+        var obj = Assert.IsType<ObjectResult>(r.Result);
+        Assert.Equal(403, obj.StatusCode);
+        var err = Assert.IsType<ApiError>(obj.Value);
+        Assert.Equal("subscription_limit_exceeded", err.Code);
+    }
+
+    [Fact]
+    public async Task CreateInstance_EnforcementDisabled_Allows_OverLimit()
+    {
+        var c = BuildController(true, out var db, out var a, out _, entitlementEnabled: false, entitlementAllowed: true, usage: new SubscriptionUsageSnapshot("11111111-1111-1111-1111-111111111111", 1000), limitValue: 1);
+        SetTenant(a, AuthCapabilities.ReportsWrite);
+        SeedAccess(db);
+        SeedClientOrgAndFacility(db);
+
+        var r = await c.CreateInstance(Base("r-over-limit-disabled"));
+        Assert.IsType<CreatedAtActionResult>(r.Result);
+    }
+
+    [Fact]
+    public async Task CreateInstance_NullMaxActiveReports_Allows_Unlimited()
+    {
+        var c = BuildController(true, out var db, out var a, out _, entitlementEnabled: true, entitlementAllowed: true, usage: new SubscriptionUsageSnapshot("11111111-1111-1111-1111-111111111111", 1000), limitValue: null);
+        SetTenant(a, AuthCapabilities.ReportsWrite);
+        SeedAccess(db);
+        SeedClientOrgAndFacility(db);
+
+        var r = await c.CreateInstance(Base("r-unlimited"));
+        Assert.IsType<CreatedAtActionResult>(r.Result);
+    }
     [Fact]
     public async Task CreateFromTemplate_MissingWrite_ReturnsForbidden() { var c = BuildController(true, out var db, out var a, out _); SetTenant(a, AuthCapabilities.ReportsRead); SeedAccess(db); var r = await c.CreateInstanceFromTemplate("api-570-piping-external", null, "facility-a", null, null, null); Assert.Equal(403, ((ObjectResult)r.Result!).StatusCode); }
     [Fact]

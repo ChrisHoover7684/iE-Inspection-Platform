@@ -68,6 +68,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITenantContextAccessor, TenantContextAccessor>();
 builder.Services.AddScoped<ITenantContextBuilder>(_ => new TenantContextBuilder(authOptions));
 builder.Services.AddScoped<ReportAccessGuard>();
+builder.Services.AddScoped<ReportReferenceGuard>();
 builder.Services.AddScoped<IAuditEventWriter, AuditEventWriter>();
 builder.Services.AddScoped<IAuditEventQueryService, AuditEventQueryService>();
 

@@ -1,3 +1,5 @@
+using iE.Api.Auth;
+
 namespace iE.Api;
 
 internal static class StartupConfiguration
@@ -19,6 +21,17 @@ internal static class StartupConfiguration
         return connectionString;
     }
 
+    internal static bool IsAuthenticationEnabled(IConfiguration configuration)
+    {
+        return configuration.GetValue<bool>("Authentication:Enabled");
+    }
+
+    internal static AuthOptions GetAuthOptions(IConfiguration configuration)
+    {
+        var options = new AuthOptions();
+        configuration.GetSection("Authentication:JwtBearer").Bind(options);
+        return options;
+    }
 
     private static bool IsPlaceholderConnectionString(string connectionString)
     {

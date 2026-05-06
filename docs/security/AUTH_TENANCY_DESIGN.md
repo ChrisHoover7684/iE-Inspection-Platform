@@ -330,3 +330,27 @@ No migration is added in this PR. Planned migration sequence:
 3. Exact 404 vs 403 policy for each endpoint class.
 4. Audit retention window and export requirements.
 5. Whether facility-scoped RBAC is mandatory in MVP or follows shortly after tenant-wide RBAC.
+
+## PR A implementation notes (backend auth foundation)
+
+Implemented in PR A:
+- Added `Authentication:Enabled` feature flag (default `false`) and JWT bearer config contract under `Authentication:JwtBearer`.
+- Added fail-fast validation for missing `Authentication:JwtBearer:Authority` and `Authentication:JwtBearer:Audience` when `Authentication:Enabled=true`.
+- Added backend tenant-context contracts (`ITenantContext`, `TenantContext`, `ITenantContextAccessor`) and claims mapping service.
+- Added role-to-capability mapping for MVP roles and capability policy registration constants.
+- Added tenant context middleware that runs after authentication (when enabled) and captures unauthenticated defaults when disabled.
+
+Config keys added:
+- `Authentication:Enabled`
+- `Authentication:JwtBearer:Authority`
+- `Authentication:JwtBearer:Audience`
+- `Authentication:JwtBearer:RequireHttpsMetadata`
+- `Authentication:JwtBearer:RequiredTenantClaimName` (default `org_id`)
+- `Authentication:JwtBearer:RequiredRolesClaimName` (default `roles`)
+
+Not enforced in PR A:
+- Broad endpoint policy enforcement.
+- Repository-level tenant/facility filtering enforcement.
+- Full 401/403/404 endpoint behavior rollout.
+
+PR B remains responsible for endpoint enforcement and repository tenant/facility filtering.

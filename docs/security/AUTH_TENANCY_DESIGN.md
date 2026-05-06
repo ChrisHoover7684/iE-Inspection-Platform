@@ -70,6 +70,84 @@ Use **Option A** with JWT bearer auth:
    - role claims -> platform roles/policies
 3. Resolve effective access from token + internal access table (`UserFacilityAccess`) for facility-level constraints.
 
+
+## MVP decision record (approved for first implementation PR series)
+
+Decision date: **2026-05-06**
+
+### 1) Selected auth provider recommendation
+- **Recommendation: Microsoft Entra ID (OIDC + OAuth2 JWT bearer) for MVP**.
+- Rationale: enterprise customer fit, strong MFA/Conditional Access support, and direct alignment with Azure-hosted backend patterns.
+- Contract note: keep JWT validation provider-agnostic at the middleware/policy layer so Auth0/Okta remain viable later without domain model churn.
+
+### 2) Required JWT claims (MVP contract)
+Required on every access token accepted by backend APIs:
+- `iss` (issuer)
+- `aud` (audience)
+- `exp` (expiration)
+- `iat` (issued-at)
+- `sub` (external user id)
+- `tid` (tenant directory id from IdP, for provenance/logging)
+- `org_id` (**application tenant claim** mapping to `ClientOrganizationId`)
+- `roles` (application roles)
+
+Optional but recommended:
+- `email`
+- `name`
+
+### 3) Claim-to-internal-user mapping
+- `sub` -> `User.ExternalSubject` (canonical unique key).
+- `email` -> `User.Email` (snapshot, non-authoritative).
+- `name` -> `User.DisplayName` (snapshot for audit readability).
+- `tid` -> `User.LastSeenIdentityTenantId` (diagnostics/audit provenance).
+
+Rules:
+- Internal user lookup is by (`ExternalSubject`, `IdentityProvider`) tuple.
+- User record is auto-provisioned on first successful auth if no record exists (minimal profile only).
+- Authorization decisions never rely on `email` or `name`; those are informational only.
+
+### 4) Tenant claim mapping
+- Token `org_id` -> internal `ClientOrganizationId` (GUID/UUID string).
+- Backend rejects token when `org_id` is missing, malformed, or refers to unknown/inactive client org.
+- Route/query tenant identifiers (when present) must match claim-derived tenant context or request is denied per policy below.
+
+### 5) Role/capability mapping
+MVP roles in token `roles` claim map to backend capabilities:
+- `ie_owner` / `ie_admin` -> `reports.read`, `reports.write`, `reports.submit`, `reports.review`, `photos.read`, `photos.write`, `exports.read`, `admin.users.manage`
+- `ie_inspector` -> `reports.read`, `reports.write`, `reports.submit`, `photos.read`, `photos.write`, `exports.read`
+- `ie_reviewer` -> `reports.read`, `reports.review`, `photos.read`, `exports.read`
+- `ie_readonly` -> `reports.read`, `photos.read`, `exports.read`
+
+Implementation rule:
+- Endpoints authorize policies/capabilities, not raw role strings.
+
+### 6) 404 vs 403 policy (finalized for MVP)
+- **404 Not Found**: resource id exists but is outside caller tenant boundary, or caller has no facility scope to know resource exists.
+- **403 Forbidden**: caller is in correct tenant/resource scope but lacks required capability (policy failure).
+- **401 Unauthorized**: token invalid/missing/expired.
+
+### 7) Facility-scoped RBAC in MVP vs Phase 2
+- **Decision: facility-scoped RBAC is included in MVP for enforcement (not deferred)**.
+- Source of truth: internal `UserFacilityAccess` table.
+- Token roles provide coarse capability; facility allow-list provides final data-scope filter.
+
+### 8) First implementation PR breakdown (backend only)
+1. **PR A — Auth foundation and contracts**
+   - Add JWT bearer authentication configuration and issuer/audience validation.
+   - Introduce claim parsing + tenant context abstraction (`ITenantContext`).
+   - Add policy registration for capability-based authorization.
+2. **PR B — Authorization enforcement on report/review/photo/markup endpoints**
+   - Apply policy attributes/handlers across backend endpoints/services.
+   - Enforce tenant + facility scope checks in repository/service query paths.
+   - Standardize 401/403/404 behavior contract for authz failures.
+3. **PR C — Audit + security verification**
+   - Add audit events for sensitive actions and denied authorization attempts.
+   - Add integration tests for cross-tenant denial and facility-scope denial.
+   - Add release-readiness evidence updates in `docs/release/RELEASE_READINESS.md`.
+
+Out of scope for this decision record:
+- No login UI, no IdP tenant bootstrap scripts, no EF migration in this doc-only follow-up PR.
+
 ## Tenant and organization model
 
 ### Core model

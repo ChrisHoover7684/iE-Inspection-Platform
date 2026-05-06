@@ -122,3 +122,35 @@ This repository is being stabilized for stronger CI, documentation, safer config
 - `dotnet restore` and `dotnet build` are expected to pass.
 - `.NET` tests are expected to pass and are blocking in CI.
 - Frontend build (`npm run build`) is expected to pass.
+
+## Backend Auth Configuration (PR A foundation)
+
+Backend authentication foundation is implemented but disabled by default for local/dev continuity.
+
+Defaults:
+- `Authentication:Enabled=false`
+
+JWT bearer keys:
+- `Authentication:JwtBearer:Authority`
+- `Authentication:JwtBearer:Audience`
+- `Authentication:JwtBearer:RequireHttpsMetadata`
+- `Authentication:JwtBearer:RequiredTenantClaimName` (default `org_id`)
+- `Authentication:JwtBearer:RequiredRolesClaimName` (default `roles`)
+
+Example:
+```json
+{
+  "Authentication": {
+    "Enabled": true,
+    "JwtBearer": {
+      "Authority": "https://login.microsoftonline.com/<tenant-id>/v2.0",
+      "Audience": "api://ie-inspection-api",
+      "RequireHttpsMetadata": true,
+      "RequiredTenantClaimName": "org_id",
+      "RequiredRolesClaimName": "roles"
+    }
+  }
+}
+```
+
+Production note: authentication must be enabled before allowing external users to access backend APIs.

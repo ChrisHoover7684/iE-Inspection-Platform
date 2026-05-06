@@ -12,6 +12,9 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
     public DbSet<InspectionReport> InspectionReports => Set<InspectionReport>();
     public DbSet<PhotoMarkup> PhotoMarkups => Set<PhotoMarkup>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
+    public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
+    public DbSet<ClientSubscription> ClientSubscriptions => Set<ClientSubscription>();
+    public DbSet<SubscriptionEntitlement> SubscriptionEntitlements => Set<SubscriptionEntitlement>();
 
     public override int SaveChanges()
     {
@@ -206,6 +209,54 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
             builder.HasIndex(a => new { a.TenantId, a.ActorUserId });
             builder.HasIndex(a => new { a.TenantId, a.Action });
             builder.HasIndex(a => new { a.TenantId, a.FacilityId });
+        });
+
+
+
+        modelBuilder.Entity<SubscriptionPlan>(builder =>
+        {
+            builder.ToTable("SubscriptionPlans");
+            builder.HasKey(p => p.Id);
+            builder.Property(p => p.Id).HasMaxLength(64);
+            builder.Property(p => p.Name).HasMaxLength(128);
+            builder.Property(p => p.PlanCode).HasMaxLength(64);
+            builder.Property(p => p.MetadataJson).HasMaxLength(1000);
+            builder.HasIndex(p => p.PlanCode).IsUnique();
+        });
+
+        modelBuilder.Entity<ClientSubscription>(builder =>
+        {
+            builder.ToTable("ClientSubscriptions");
+            builder.HasKey(s => s.Id);
+            builder.Property(s => s.Id).HasMaxLength(64);
+            builder.Property(s => s.ClientOrganizationId).HasMaxLength(64);
+            builder.Property(s => s.PlanId).HasMaxLength(64);
+            builder.Property(s => s.Status).HasMaxLength(32);
+            builder.HasIndex(s => s.ClientOrganizationId);
+            builder.HasIndex(s => s.PlanId);
+            builder.HasIndex(s => s.Status);
+
+            builder.HasOne(s => s.Plan)
+                .WithMany(p => p.ClientSubscriptions)
+                .HasForeignKey(s => s.PlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<SubscriptionEntitlement>(builder =>
+        {
+            builder.ToTable("SubscriptionEntitlements");
+            builder.HasKey(e => e.Id);
+            builder.Property(e => e.Id).HasMaxLength(64);
+            builder.Property(e => e.PlanId).HasMaxLength(64);
+            builder.Property(e => e.EntitlementKey).HasMaxLength(128);
+            builder.HasIndex(e => e.PlanId);
+            builder.HasIndex(e => e.EntitlementKey);
+            builder.HasIndex(e => new { e.PlanId, e.EntitlementKey }).IsUnique();
+
+            builder.HasOne(e => e.Plan)
+                .WithMany(p => p.Entitlements)
+                .HasForeignKey(e => e.PlanId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<InspectionReport>(builder =>

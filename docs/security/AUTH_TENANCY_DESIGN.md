@@ -362,6 +362,24 @@ PR B remains responsible for endpoint enforcement and repository tenant/facility
 - Facility moves are intentionally blocked in PR B follow-up; moving a report between facilities requires a future dedicated endpoint with explicit source + target facility authorization.
 - Deferred: deeper photo/markup ownership scoping beyond report-level checks.
 
+## PR #190 photo/markup ownership enforcement
+
+PR #190 completes dedicated photo/markup endpoint ownership enforcement through the owning report scope.
+
+Covered in scope:
+- `PhotoMarkupsController` (`GET /api/photos/{photoId}/markups`, `POST /api/photos/{photoId}/markups`) now resolves `photoId -> owning report` and evaluates access via `ReportAccessGuard`.
+- Read behavior requires `photos.read`.
+- Write behavior requires `photos.write`.
+- Cross-tenant and cross-facility report ownership mismatches are hidden as `404`.
+- In-scope requests without required capability return `403`.
+- Unknown or orphan photo identifiers return `404`.
+- `Authentication:Enabled=false` preserves permissive local/dev behavior.
+
+Still intentionally unchanged in this phase:
+- Health endpoints remain public.
+- Calculator endpoints remain intentionally unprotected.
+- Audit logging expansion remains follow-up work.
+
 
 ## PR #189 persisted report-instance authorization sweep
 

@@ -25,4 +25,12 @@ public class SubscriptionUsageServiceTests
         Assert.NotNull(usage);
         Assert.Equal(1, usage!.ActiveReportCount);
     }
+
+    private static InspectionReportsDbContext Db()
+    {
+        return new InspectionReportsDbContext(
+            new DbContextOptionsBuilder<InspectionReportsDbContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .Options);
+    }
 }

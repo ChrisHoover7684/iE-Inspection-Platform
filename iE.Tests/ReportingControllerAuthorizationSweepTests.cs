@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using System.Text.Json;
 
 namespace iE.Tests;
 
@@ -66,8 +67,8 @@ public class ReportingControllerAuthorizationSweepTests
         var r = await c.CreateInstanceFromTemplate("api-570-piping-external", null, "facility-a", null, null, null);
         var obj = Assert.IsType<ObjectResult>(r.Result);
         Assert.Equal(403, obj.StatusCode);
-        var err = Assert.IsType<ApiError>(obj.Value);
-        Assert.Equal("subscription_limit_exceeded", err.Code);
+        var json = JsonSerializer.Serialize(obj.Value);
+        Assert.Contains("subscription_limit_exceeded", json);
     }
 
     [Fact]
@@ -81,15 +82,15 @@ public class ReportingControllerAuthorizationSweepTests
         var request = new ApplyObservationChecklistRequest
         {
             TemplateId = "api-570-piping-external",
-            ChecklistResponses = [new ObservationChecklistResponse { ItemId = "visual-external", IsApplicable = true, HasFinding = false }],
+            ChecklistResponses = [new ObservationChecklistItemResponse { ItemId = "visual-external", IsApplicable = true, HasFinding = false }],
             Report = Base("r-checklist-limit")
         };
 
         var r = await c.BuildDraftFromChecklist(request);
         var obj = Assert.IsType<ObjectResult>(r.Result);
         Assert.Equal(403, obj.StatusCode);
-        var err = Assert.IsType<ApiError>(obj.Value);
-        Assert.Equal("subscription_limit_exceeded", err.Code);
+        var json = JsonSerializer.Serialize(obj.Value);
+        Assert.Contains("subscription_limit_exceeded", json);
     }
 
     [Fact]

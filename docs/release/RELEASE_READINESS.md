@@ -40,8 +40,8 @@ Use this checklist before backend-focused releases.
 - [ ] Sensitive fields are redacted where required.
 
 ## 8) Authentication / tenant isolation
-- [ ] Auth provider selected and token/claims contract documented.
-- [ ] Tenant isolation implemented across report/photo/markup/review data paths.
+- [ ] Auth provider selected and token/claims contract documented (see `docs/security/AUTH_TENANCY_DESIGN.md` MVP decision record dated 2026-05-06).
+- [ ] Tenant isolation implemented across report/photo/markup/review data paths (including facility scope enforcement for MVP).
 - [ ] Tenant isolation tests passing (including cross-tenant deny cases).
 - [ ] Audit logging implemented for sensitive report and authorization events.
 - [ ] Cross-tenant access behavior reviewed for consistent 404/403 policy.

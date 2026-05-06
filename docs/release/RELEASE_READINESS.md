@@ -75,5 +75,11 @@ Use this checklist before backend-focused releases.
 - [ ] Logging review confirms no sensitive data (secrets, connection strings, raw report payloads) is emitted.
 
 ## Authorization PR B Evidence
+
+- [ ] PR #189 persisted report-instance authorization sweep verified complete for `ReportingController` (create-from-template, checklist persisted create/update, sync-findings, submit/start/approve/return workflow transitions, and review-history).
+- [ ] Endpoint classification documented: metadata/utility/non-persisted helpers intentionally out of scope for PR #189.
+- [ ] Calculator endpoints remain intentionally unprotected in this phase.
+- [ ] Health endpoints remain public.
+- [ ] Facility move attempts remain blocked pending dedicated workflow.
 - Report read/write/export/review paths now include tenant/capability checks and 404-vs-403 behavior.
 - Pending: dedicated photo/markup endpoint-level ownership enforcement follow-up.

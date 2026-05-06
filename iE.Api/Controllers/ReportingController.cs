@@ -36,6 +36,16 @@ public class ReportingController(
     IReportNarrativeGenerator reportNarrativeGenerator,
     ReportAccessGuard reportAccessGuard) : ControllerBase
 {
+    private ActionResult? EnforceReportAccess(InspectionReport report, string reportIdForMessage, string capability, string forbiddenMessage)
+    {
+        var access = reportAccessGuard.CanAccessReport(report, capability);
+        if (access == ReportAccessDecision.NotFound) return this.NotFoundError($"Inspection report instance '{reportIdForMessage}' was not found.");
+        if (access == ReportAccessDecision.Forbidden) return this.ForbiddenError(forbiddenMessage);
+        if (access == ReportAccessDecision.Unauthorized) return Unauthorized();
+
+        return null;
+    }
+
     [HttpGet]
     public ActionResult<List<ReportListItemDto>> GetReports(
         [FromQuery] string? status,
@@ -217,15 +227,32 @@ public class ReportingController(
                 request.Report.Status = InspectionReportStatuses.Draft;
             }
 
+            reportAccessGuard.ApplyCreateOwnership(request.Report);
+            var createAccessResult = EnforceReportAccess(request.Report, request.Report.Id, AuthCapabilities.ReportsWrite, "Insufficient capability to create report.");
+            if (createAccessResult is not null)
+            {
+                return createAccessResult;
+            }
+
             request.Report.CreatedAt = DateTime.UtcNow;
             request.Report.UpdatedAt = null;
             inspectionReportRepository.Create(request.Report);
         }
         else
         {
+            var updateAccessResult = EnforceReportAccess(existingReport, existingReport.Id, AuthCapabilities.ReportsWrite, "Insufficient capability to update report.");
+            if (updateAccessResult is not null)
+            {
+                return updateAccessResult;
+            }
+
             request.Report.Id = existingReport.Id;
+            request.Report.ClientOrganizationId = existingReport.ClientOrganizationId;
+            request.Report.FacilityId = existingReport.FacilityId;
             request.Report.CreatedAt = existingReport.CreatedAt;
+            request.Report.CreatedByUserId = existingReport.CreatedByUserId;
             request.Report.UpdatedAt = DateTime.UtcNow;
+            reportAccessGuard.ApplyUpdateOwnership(request.Report);
 
             if (string.IsNullOrWhiteSpace(request.Report.Status))
             {
@@ -363,6 +390,13 @@ public class ReportingController(
             ?? assetId
             ?? "asset-demo-piping-system";
 
+        reportAccessGuard.ApplyCreateOwnership(report);
+        var createAccessResult = EnforceReportAccess(report, report.Id, AuthCapabilities.ReportsWrite, "Insufficient capability to create report.");
+        if (createAccessResult is not null)
+        {
+            return createAccessResult;
+        }
+
         var created = inspectionReportRepository.Create(report);
         return CreatedAtAction(nameof(GetInstanceById), new { id = created.Id }, created);
     }
@@ -376,8 +410,20 @@ public class ReportingController(
             return this.NotFoundError($"Inspection report instance '{id}' was not found.");
         }
 
+        var accessResult = EnforceReportAccess(report, id, AuthCapabilities.ReportsWrite, "Insufficient capability to update report.");
+        if (accessResult is not null)
+        {
+            return accessResult;
+        }
+
         var updatedReport = inspectionReportFactory.CreateFindingDraftsFromChecklistTransfers(report);
+        updatedReport.Id = report.Id;
+        updatedReport.ClientOrganizationId = report.ClientOrganizationId;
+        updatedReport.FacilityId = report.FacilityId;
+        updatedReport.CreatedAt = report.CreatedAt;
+        updatedReport.CreatedByUserId = report.CreatedByUserId;
         updatedReport.UpdatedAt = DateTime.UtcNow;
+        reportAccessGuard.ApplyUpdateOwnership(updatedReport);
         inspectionReportRepository.Update(id, updatedReport);
         return Ok(updatedReport);
     }
@@ -430,7 +476,13 @@ public class ReportingController(
         var report = inspectionReportRepository.GetById(id);
         if (report is null)
         {
-            return NotFound();
+            return this.NotFoundError($"Inspection report instance '{id}' was not found.");
+        }
+
+        var accessResult = EnforceReportAccess(report, id, AuthCapabilities.ReportsSubmit, "Insufficient capability to submit report.");
+        if (accessResult is not null)
+        {
+            return accessResult;
         }
 
         var draft = reportDraftBuilder.Build(report);
@@ -444,6 +496,8 @@ public class ReportingController(
         }
 
         reportWorkflowService.SubmitForReview(report);
+        report.UpdatedAt = DateTime.UtcNow;
+        reportAccessGuard.ApplyUpdateOwnership(report);
         inspectionReportRepository.Update(id, report);
 
         return Ok(new
@@ -459,7 +513,13 @@ public class ReportingController(
         var report = inspectionReportRepository.GetById(id);
         if (report is null)
         {
-            return NotFound();
+            return this.NotFoundError($"Inspection report instance '{id}' was not found.");
+        }
+
+        var accessResult = EnforceReportAccess(report, id, AuthCapabilities.ReportsReview, "Insufficient capability to review report.");
+        if (accessResult is not null)
+        {
+            return accessResult;
         }
 
         if (!reportWorkflowService.TryStartReview(report))
@@ -471,6 +531,8 @@ public class ReportingController(
         }
 
         reportWorkflowService.StartReview(report);
+        report.UpdatedAt = DateTime.UtcNow;
+        reportAccessGuard.ApplyUpdateOwnership(report);
         inspectionReportRepository.Update(id, report);
 
         return Ok(new
@@ -486,7 +548,13 @@ public class ReportingController(
         var report = inspectionReportRepository.GetById(id);
         if (report is null)
         {
-            return NotFound();
+            return this.NotFoundError($"Inspection report instance '{id}' was not found.");
+        }
+
+        var accessResult = EnforceReportAccess(report, id, AuthCapabilities.ReportsReview, "Insufficient capability to review report.");
+        if (accessResult is not null)
+        {
+            return accessResult;
         }
 
         if (!reportWorkflowService.TryApprove(report))
@@ -498,6 +566,8 @@ public class ReportingController(
         }
 
         reportWorkflowService.Approve(report);
+        report.UpdatedAt = DateTime.UtcNow;
+        reportAccessGuard.ApplyUpdateOwnership(report);
         inspectionReportRepository.Update(id, report);
 
         return Ok(new
@@ -513,7 +583,13 @@ public class ReportingController(
         var report = inspectionReportRepository.GetById(id);
         if (report is null)
         {
-            return NotFound();
+            return this.NotFoundError($"Inspection report instance '{id}' was not found.");
+        }
+
+        var accessResult = EnforceReportAccess(report, id, AuthCapabilities.ReportsReview, "Insufficient capability to review report.");
+        if (accessResult is not null)
+        {
+            return accessResult;
         }
 
         if (!reportWorkflowService.TryReturnForRevision(report))
@@ -533,6 +609,8 @@ public class ReportingController(
         }
 
         reportWorkflowService.ReturnForRevision(report, request.ReviewerComments);
+        report.UpdatedAt = DateTime.UtcNow;
+        reportAccessGuard.ApplyUpdateOwnership(report);
         inspectionReportRepository.Update(id, report);
 
         return Ok(new
@@ -549,7 +627,13 @@ public class ReportingController(
         var report = inspectionReportRepository.GetById(id);
         if (report is null)
         {
-            return NotFound();
+            return this.NotFoundError($"Inspection report instance '{id}' was not found.");
+        }
+
+        var accessResult = EnforceReportAccess(report, id, AuthCapabilities.ReportsRead, "Insufficient capability to read report.");
+        if (accessResult is not null)
+        {
+            return accessResult;
         }
 
         var history = report.ReviewHistory

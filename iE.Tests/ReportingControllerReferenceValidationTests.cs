@@ -5,6 +5,7 @@ using iE.Core.Reports;
 using iE.Core.Reports.Domain;
 using iE.Core.Reports.Persistence;
 using iE.Core.Reports.Templates;
+using iE.Core.Reports.Services;
 using iE.Tests.TestDoubles;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +19,7 @@ public class ReportingControllerReferenceValidationTests
     [Fact]
     public async Task CreateFromTemplate_ValidReferences_Succeeds()
     {
-        var c = BuildController(true, out var db, out var a, out _);
+        var c = BuildController(true, out var db, out var a, new NoopAuditEventWriter());
         SeedTenantData(db);
         SeedAccess(db, "facility-a");
         SetTenant(a);
@@ -30,7 +31,7 @@ public class ReportingControllerReferenceValidationTests
     [Fact]
     public async Task CreateFromTemplate_ProcessUnitAnotherFacility_ReturnsNotFound()
     {
-        var c = BuildController(true, out var db, out var a, out _);
+        var c = BuildController(true, out var db, out var a, new NoopAuditEventWriter());
         SeedTenantData(db);
         SeedAccess(db, "facility-a");
         SetTenant(a);
@@ -42,7 +43,7 @@ public class ReportingControllerReferenceValidationTests
     [Fact]
     public async Task CreateFromTemplate_AssetAnotherFacility_ReturnsNotFound()
     {
-        var c = BuildController(true, out var db, out var a, out _);
+        var c = BuildController(true, out var db, out var a, new NoopAuditEventWriter());
         SeedTenantData(db);
         SeedAccess(db, "facility-a");
         SetTenant(a);
@@ -54,7 +55,7 @@ public class ReportingControllerReferenceValidationTests
     [Fact]
     public async Task CreateFromTemplate_AssetProcessUnitMismatch_ReturnsBadRequest()
     {
-        var c = BuildController(true, out var db, out var a, out _);
+        var c = BuildController(true, out var db, out var a, new NoopAuditEventWriter());
         SeedTenantData(db);
         SeedAccess(db, "facility-a");
         SetTenant(a);
@@ -75,7 +76,7 @@ public class ReportingControllerReferenceValidationTests
         var result = await c.CreateInstanceFromTemplate("api-570-piping-external", null, "facility-a", "unit-a", "asset-b", null);
         Assert.IsType<BadRequestObjectResult>(result.Result);
 
-        var evt = Assert.Single(writer.Events.Where(e => e.Action == AuditActions.ReportReferenceValidationFailed));
+        var evt = Assert.Single(writer.Events, e => e.Action == AuditActions.ReportReferenceValidationFailed);
         Assert.Equal(AuditResourceTypes.Report, evt.ResourceType);
         Assert.Equal(AuditResults.Denied, evt.Result);
         Assert.True(evt.Metadata?.ContainsKey("route"));

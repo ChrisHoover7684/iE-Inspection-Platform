@@ -2,6 +2,7 @@ using iE.Api.Tenancy;
 using iE.Core.Reports;
 using iE.Core.Reports.Domain;
 using iE.Core.Reports.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace iE.Api.Auth;
 
@@ -100,6 +101,18 @@ public sealed class ReportAccessGuard(IConfiguration configuration, ITenantConte
 
         var tenant = tenantContextAccessor.Current;
         report.UpdatedByUserId = tenant.ExternalSubject;
+    }
+
+    public InspectionReport? GetOwningReportByPhotoId(string photoId)
+    {
+        if (string.IsNullOrWhiteSpace(photoId))
+        {
+            return null;
+        }
+
+        return dbContext.InspectionReports
+            .AsNoTracking()
+            .FirstOrDefault(report => report.Photos.Any(photo => photo.Id == photoId));
     }
 
     private bool HasFacilityAccess(string facilityId, string userId, string clientOrganizationId)

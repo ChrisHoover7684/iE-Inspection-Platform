@@ -77,9 +77,11 @@ Use this checklist before backend-focused releases.
 ## Authorization PR B Evidence
 
 - [ ] PR #189 persisted report-instance authorization sweep verified complete for `ReportingController` (create-from-template, checklist persisted create/update, sync-findings, submit/start/approve/return workflow transitions, and review-history).
+- [ ] PR #190 dedicated photo/markup endpoint ownership enforcement verified complete through owning report scope.
 - [ ] Endpoint classification documented: metadata/utility/non-persisted helpers intentionally out of scope for PR #189.
 - [ ] Calculator endpoints remain intentionally unprotected in this phase.
 - [ ] Health endpoints remain public.
+- [ ] Audit logging follow-up remains tracked as a separate PR (not included in PR #190 scope).
 - [ ] Facility move attempts remain blocked pending dedicated workflow.
 - Report read/write/export/review paths now include tenant/capability checks and 404-vs-403 behavior.
-- Pending: dedicated photo/markup endpoint-level ownership enforcement follow-up.
+- Dedicated photo/markup endpoint-level ownership enforcement is now complete in PR #190.

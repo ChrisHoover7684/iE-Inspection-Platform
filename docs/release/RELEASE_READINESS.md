@@ -72,3 +72,7 @@ Use this checklist before backend-focused releases.
 - [ ] API error-handling consistency verified (standardized error envelope with code/message/traceId).
 - [ ] Structured logging verified for startup migration decisions and unhandled exceptions.
 - [ ] Logging review confirms no sensitive data (secrets, connection strings, raw report payloads) is emitted.
+
+## Authorization PR B Evidence
+- Report read/write/export/review paths now include tenant/capability checks and 404-vs-403 behavior.
+- Pending: dedicated photo/markup endpoint-level ownership enforcement follow-up.

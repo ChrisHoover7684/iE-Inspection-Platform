@@ -13,6 +13,7 @@ using iE.Core.Reports.Templates;
 using iE.Core.Reports.Rules;
 using Microsoft.AspNetCore.Mvc;
 using iE.Api.Extensions;
+using iE.Api.Auth;
 
 namespace iE.Api.Controllers;
 
@@ -32,7 +33,8 @@ public class ReportingController(
     IInspectionTagRuleEngine inspectionTagRuleEngine,
     InspectionAlertMapper inspectionAlertMapper,
     IInspectionAssistantService inspectionAssistantService,
-    IReportNarrativeGenerator reportNarrativeGenerator) : ControllerBase
+    IReportNarrativeGenerator reportNarrativeGenerator,
+    ReportAccessGuard reportAccessGuard) : ControllerBase
 {
     [HttpGet]
     public ActionResult<List<ReportListItemDto>> GetReports(
@@ -40,7 +42,7 @@ public class ReportingController(
         [FromQuery] string? facilityId,
         [FromQuery] string? unit)
     {
-        var reports = inspectionReportRepository.GetReports(status, facilityId, unit)
+        var reports = reportAccessGuard.ScopeReports(inspectionReportRepository.GetReports(status, facilityId, unit), AuthCapabilities.ReportsRead)
             .Select(report => new ReportListItemDto
             {
                 Id = report.Id,
@@ -81,7 +83,8 @@ public class ReportingController(
         [FromQuery] string? templateId,
         [FromQuery] string? status)
     {
-        return Ok(inspectionReportRepository.GetAll(clientOrganizationId, facilityId, templateId, status));
+        var reports = reportAccessGuard.ScopeReports(inspectionReportRepository.GetAll(clientOrganizationId, facilityId, templateId, status), AuthCapabilities.ReportsRead);
+        return Ok(reports);
     }
 
     [HttpGet("instances/{id}")]
@@ -92,6 +95,11 @@ public class ReportingController(
         {
             return this.NotFoundError($"Inspection report instance '{id}' was not found.");
         }
+
+        var access = reportAccessGuard.CanAccessReport(report, AuthCapabilities.ReportsRead);
+        if (access == ReportAccessDecision.NotFound) return this.NotFoundError($"Inspection report instance '{id}' was not found.");
+        if (access == ReportAccessDecision.Forbidden) return this.ForbiddenError("Insufficient capability to read report.");
+        if (access == ReportAccessDecision.Unauthorized) return Unauthorized();
 
         return Ok(report);
     }
@@ -104,6 +112,11 @@ public class ReportingController(
         {
             return this.NotFoundError($"Inspection report instance '{id}' was not found.");
         }
+
+        var access = reportAccessGuard.CanAccessReport(report, AuthCapabilities.ExportsRead);
+        if (access == ReportAccessDecision.NotFound) return this.NotFoundError($"Inspection report instance '{id}' was not found.");
+        if (access == ReportAccessDecision.Forbidden) return this.ForbiddenError("Insufficient capability to export report.");
+        if (access == ReportAccessDecision.Unauthorized) return Unauthorized();
 
         var fileBytes = inspectionReportDocxExportService.Export(report);
         var safeReportNumber = string.IsNullOrWhiteSpace(report.ReportNumber)
@@ -126,6 +139,11 @@ public class ReportingController(
         {
             return this.NotFoundError($"Inspection report instance '{id}' was not found.");
         }
+
+        var access = reportAccessGuard.CanAccessReport(report, AuthCapabilities.ExportsRead);
+        if (access == ReportAccessDecision.NotFound) return this.NotFoundError($"Inspection report instance '{id}' was not found.");
+        if (access == ReportAccessDecision.Forbidden) return this.ForbiddenError("Insufficient capability to export report.");
+        if (access == ReportAccessDecision.Unauthorized) return Unauthorized();
 
         var fileBytes = photoAppendixExportService.Export(report);
         var fileName = string.IsNullOrWhiteSpace(report.ReportNumber)
@@ -249,6 +267,12 @@ public class ReportingController(
         }
 
         report.CreatedAt = DateTime.UtcNow;
+
+        reportAccessGuard.ApplyCreateOwnership(report);
+        var createAccess = reportAccessGuard.CanAccessReport(report, AuthCapabilities.ReportsWrite);
+        if (createAccess == ReportAccessDecision.NotFound) return this.NotFoundError("Inspection report instance was not found.");
+        if (createAccess == ReportAccessDecision.Forbidden) return this.ForbiddenError("Insufficient capability to create report.");
+        if (createAccess == ReportAccessDecision.Unauthorized) return Unauthorized();
         report.UpdatedAt = null;
 
         var created = inspectionReportRepository.Create(report);
@@ -272,6 +296,12 @@ public class ReportingController(
 
         report.CreatedAt = existing.CreatedAt;
         report.UpdatedAt = DateTime.UtcNow;
+        reportAccessGuard.ApplyUpdateOwnership(report);
+
+        var updateAccess = reportAccessGuard.CanAccessReport(existing, AuthCapabilities.ReportsWrite);
+        if (updateAccess == ReportAccessDecision.NotFound) return this.NotFoundError($"Inspection report instance '{id}' was not found.");
+        if (updateAccess == ReportAccessDecision.Forbidden) return this.ForbiddenError("Insufficient capability to update report.");
+        if (updateAccess == ReportAccessDecision.Unauthorized) return Unauthorized();
 
         var updated = inspectionReportRepository.Update(id, report);
         return Ok(updated);
@@ -280,6 +310,17 @@ public class ReportingController(
     [HttpDelete("instances/{id}")]
     public ActionResult DeleteInstance(string id)
     {
+        var existing = inspectionReportRepository.GetById(id);
+        if (existing is null)
+        {
+            return this.NotFoundError($"Inspection report instance '{id}' was not found.");
+        }
+
+        var access = reportAccessGuard.CanAccessReport(existing, AuthCapabilities.ReportsWrite);
+        if (access == ReportAccessDecision.NotFound) return this.NotFoundError($"Inspection report instance '{id}' was not found.");
+        if (access == ReportAccessDecision.Forbidden) return this.ForbiddenError("Insufficient capability to delete report.");
+        if (access == ReportAccessDecision.Unauthorized) return Unauthorized();
+
         var deleted = inspectionReportRepository.Delete(id);
         if (!deleted)
         {

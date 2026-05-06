@@ -66,6 +66,7 @@ builder.Services.AddSingleton(_ => MaterialStressServiceFactory.CreateInitialize
 builder.Services.AddScoped<PressureVesselAllowableStressResolver>();
 builder.Services.AddScoped<ITenantContextAccessor, TenantContextAccessor>();
 builder.Services.AddScoped<ITenantContextBuilder>(_ => new TenantContextBuilder(authOptions));
+builder.Services.AddScoped<ReportAccessGuard>();
 
 if (authenticationEnabled)
 {

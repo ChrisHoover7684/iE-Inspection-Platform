@@ -354,3 +354,8 @@ Not enforced in PR A:
 - Full 401/403/404 endpoint behavior rollout.
 
 PR B remains responsible for endpoint enforcement and repository tenant/facility filtering.
+
+## PR B Phase 1 (Report Paths)
+- Implemented report-path tenant and capability checks in `ReportingController` using `ReportAccessGuard`.
+- `Authentication:Enabled=false` keeps existing permissive local/dev behavior.
+- Deferred: deeper photo/markup ownership scoping beyond report-level checks.

@@ -44,7 +44,7 @@ public class ReportingControllerUpdateTests
             FacilityId = "facility-b",
             CreatedAt = DateTime.UtcNow,
             CreatedByUserId = "attacker",
-            Status = InspectionReportStatuses.Submitted
+            Status = InspectionReportStatuses.ReadyForReview
         };
 
         var result = controller.UpdateInstance("r-1", submitted);

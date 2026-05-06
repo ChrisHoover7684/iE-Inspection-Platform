@@ -361,3 +361,24 @@ PR B remains responsible for endpoint enforcement and repository tenant/facility
 - Update hardening: report ownership fields (`Id`, `ClientOrganizationId`, `FacilityId`, `CreatedAt`, `CreatedByUserId`) are preserved from the persisted record during updates to prevent request-body ownership overwrite.
 - Facility moves are intentionally blocked in PR B follow-up; moving a report between facilities requires a future dedicated endpoint with explicit source + target facility authorization.
 - Deferred: deeper photo/markup ownership scoping beyond report-level checks.
+
+
+## PR #189 persisted report-instance authorization sweep
+
+PR #189 completes authorization coverage for persisted `ReportingController` report-instance routes.
+
+Covered in scope (persisted report resources):
+- Create from template (`POST /api/reports/templates/{templateId}/instances`) -> `reports.write` with create ownership stamp and facility-scope hiding.
+- Checklist build-draft when persistence occurs (`POST /api/reports/checklist/build-draft`) -> `reports.write` on create/update paths; persisted ownership fields preserved on update.
+- Checklist finding sync (`POST /api/reports/instances/{id}/sync-findings`) -> `reports.write` with tenant/facility 404 hiding and ownership-field preservation.
+- Review workflow transitions (`submit-for-review`, `start-review`, `approve`, `return-for-revision`) -> `reports.submit` / `reports.review` with tenant/facility 404 hiding.
+- Review history (`GET /api/reports/{id}/review-history`) -> `reports.read` with tenant/facility 404 hiding.
+
+Intentionally out of scope in this PR:
+- Template metadata and checklist metadata endpoints that do not fetch/save persisted report resources.
+- Pure draft transformation helpers that do not persist or fetch persisted reports.
+- Alerts/assistant/rules/narrative utility endpoints.
+- Calculator endpoints (remain intentionally unprotected in this phase).
+- Health endpoints (remain public).
+
+Facility moves remain blocked on update paths pending a dedicated future workflow.

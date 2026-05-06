@@ -40,6 +40,11 @@ Use this checklist before backend-focused releases.
 - [ ] Sensitive fields are redacted where required.
 
 ## 8) Authentication / tenant isolation
+- [ ] Auth provider selected and token/claims contract documented.
+- [ ] Tenant isolation implemented across report/photo/markup/review data paths.
+- [ ] Tenant isolation tests passing (including cross-tenant deny cases).
+- [ ] Audit logging implemented for sensitive report and authorization events.
+- [ ] Cross-tenant access behavior reviewed for consistent 404/403 policy.
 - [ ] Access checks verified for modified endpoints/services.
 - [ ] Tenant boundary assumptions validated in tests/review.
 - [ ] Privilege escalation paths reviewed.

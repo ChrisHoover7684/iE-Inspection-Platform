@@ -288,13 +288,16 @@ public class ReportingController(
             return this.NotFoundError($"Inspection report instance '{id}' was not found.");
         }
 
-        report.Id = id;
+        report.Id = existing.Id;
         if (string.IsNullOrWhiteSpace(report.Status))
         {
             report.Status = existing.Status;
         }
 
+        report.ClientOrganizationId = existing.ClientOrganizationId;
+        report.FacilityId = existing.FacilityId; // TODO: support facility moves via dedicated endpoint with source + target facility authorization.
         report.CreatedAt = existing.CreatedAt;
+        report.CreatedByUserId = existing.CreatedByUserId;
         report.UpdatedAt = DateTime.UtcNow;
         reportAccessGuard.ApplyUpdateOwnership(report);
 

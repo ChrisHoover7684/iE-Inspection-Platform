@@ -9,6 +9,7 @@ public static class AuditActions
     public const string ReportExported = "ReportExported";
     public const string ReportReferenceValidationFailed = "ReportReferenceValidationFailed";
     public const string EntitlementDenied = "EntitlementDenied";
+    public const string EntitlementLimitDenied = "EntitlementLimitDenied";
 }
 
 public static class AuditResourceTypes

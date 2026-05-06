@@ -437,3 +437,8 @@ Facility moves remain blocked on update paths pending a dedicated future workflo
 - Calculator endpoints remain intentionally ungated in this phase.
 - Health endpoints remain public.
 - No billing provider integration, UI, or public subscription/admin APIs in this phase.
+
+## PR #196 backend subscription limit hardening
+- After existing auth/capability checks and `reports.create` entitlement checks pass, persisted report creation now evaluates `max.activeReports` when subscription enforcement is enabled.
+- Limit denials return 403 (`subscription_limit_exceeded`) and emit a safe `EntitlementLimitDenied` audit event with route/reason/activeCount/limitValue only.
+- Calculator endpoints remain intentionally unprotected by subscription entitlement checks, and health endpoints remain public.

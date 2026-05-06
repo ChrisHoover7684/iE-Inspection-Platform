@@ -115,3 +115,8 @@ Use this checklist before backend-focused releases.
 - No Stripe/Marketplace/AppSource/payment integrations yet.
 - No UI/public subscription APIs yet.
 - Calculator endpoints remain not entitlement-gated; health endpoints remain public.
+
+## PR #196 release note
+- Added backend-only enforcement for subscription `max.activeReports` on persisted report creation paths, feature-flagged by `Subscriptions:EnforcementEnabled` (default `false`).
+- Active report count for this MVP is non-`Final` tenant-scoped reports.
+- No web UI, billing integration, or public subscription administration APIs were introduced.

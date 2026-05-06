@@ -75,6 +75,8 @@ builder.Services.AddScoped<IAuditEventQueryService, AuditEventQueryService>();
 builder.Services.AddSingleton(subscriptionOptions);
 builder.Services.AddScoped<IEntitlementService, EntitlementService>();
 builder.Services.AddScoped<EntitlementGuard>();
+builder.Services.AddScoped<ISubscriptionUsageService, SubscriptionUsageService>();
+builder.Services.AddScoped<EntitlementLimitGuard>();
 
 if (authenticationEnabled)
 {

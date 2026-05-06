@@ -37,6 +37,7 @@ public class ReportingController(
     ReportAccessGuard reportAccessGuard,
     ReportReferenceGuard reportReferenceGuard,
     EntitlementGuard entitlementGuard,
+    EntitlementLimitGuard entitlementLimitGuard,
     IAuditEventWriter auditEventWriter) : ControllerBase
 {
     private async Task<ActionResult?> EnforceReportAccessAsync(InspectionReport report, string reportIdForMessage, string capability, string forbiddenMessage)
@@ -272,6 +273,8 @@ public class ReportingController(
             request.Report.UpdatedAt = null;
             var createEntitlement = await EnforceEntitlementAsync(EntitlementKeys.ReportsCreate, "BuildDraftFromChecklist", request.Report.ClientOrganizationId);
             if (createEntitlement is not null) return createEntitlement;
+            var activeReportLimit = await EnforceMaxActiveReportLimitAsync("BuildDraftFromChecklist", request.Report.ClientOrganizationId);
+            if (activeReportLimit is not null) return activeReportLimit;
 
             var createReferenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, request.Report, "BuildDraftFromChecklist");
             if (createReferenceValidation is not null)
@@ -355,6 +358,8 @@ public class ReportingController(
 
         var createEntitlement = await EnforceEntitlementAsync(EntitlementKeys.ReportsCreate, "CreateInstance", report.ClientOrganizationId);
         if (createEntitlement is not null) return createEntitlement;
+        var activeReportLimit = await EnforceMaxActiveReportLimitAsync("CreateInstance", report.ClientOrganizationId);
+        if (activeReportLimit is not null) return activeReportLimit;
 
         var referenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, report, "CreateInstance");
         if (referenceValidation is not null)
@@ -470,6 +475,8 @@ public class ReportingController(
 
         var createEntitlement = await EnforceEntitlementAsync(EntitlementKeys.ReportsCreate, "CreateInstanceFromTemplate", report.ClientOrganizationId);
         if (createEntitlement is not null) return createEntitlement;
+        var activeReportLimit = await EnforceMaxActiveReportLimitAsync("CreateInstanceFromTemplate", report.ClientOrganizationId);
+        if (activeReportLimit is not null) return activeReportLimit;
 
         var referenceValidation = await reportReferenceGuard.ValidateForPersistedWriteAsync(this, report, "CreateInstanceFromTemplate");
         if (referenceValidation is not null)

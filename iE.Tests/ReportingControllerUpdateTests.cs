@@ -4,6 +4,7 @@ using iE.Api.Tenancy;
 using iE.Core.Reports;
 using iE.Core.Reports.Domain;
 using iE.Core.Reports.Persistence;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -157,7 +158,13 @@ public class ReportingControllerUpdateTests
         var guard = new ReportAccessGuard(config, accessor, db);
         repo = new InspectionReportRepository(db);
 
-        return new ReportingController(repo, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, guard);
+        var controller = new ReportingController(repo, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, guard);
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext()
+        };
+
+        return controller;
     }
 
     private static void SeedAccess(InspectionReportsDbContext db, string userId, string orgId, string facilityId)

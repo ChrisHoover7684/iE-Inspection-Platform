@@ -14,7 +14,16 @@ public class AuditEventWriterTests
     public async Task Writes_Audit_Row_With_Context()
     {
         var db = BuildDb();
-        var accessor = new TenantContextAccessor { Current = new TenantContext(true, "user-1", Guid.Parse("11111111-1111-1111-1111-111111111111"), []) };
+        var accessor = new TenantContextAccessor
+        {
+            Current = new TenantContext
+            {
+                IsAuthenticated = true,
+                ExternalSubject = "user-1",
+                ClientOrganizationId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                Capabilities = []
+            }
+        };
         var http = new HttpContextAccessor { HttpContext = new DefaultHttpContext() };
         http.HttpContext.TraceIdentifier = "trace-123";
         http.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("127.0.0.1");

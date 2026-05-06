@@ -407,3 +407,11 @@ Facility moves remain blocked on update paths pending a dedicated future workflo
 - Calculator endpoints remain intentionally unprotected and are not audited in this phase.
 - Audit metadata is sanitized to exclude sensitive values (tokens, authorization headers, passwords, connection strings, raw payloads, markup JSON).
 - Audit UI/query/admin tooling remains future work.
+
+- PR #192 hardens backend audit metadata sanitization (recursive sensitive-key stripping, bounded metadata, truncation fallback).
+- AuditEvents are append-only at DbContext save boundaries (update/delete blocked).
+- Internal tenant-scoped audit query service added for future tooling; no public audit UI/API exposure in this phase.
+- Sensitive metadata handling now excludes tokens/auth headers/passwords/connection strings/raw payloads/stack traces/markup JSON.
+- Health endpoints remain public.
+- Calculator endpoints remain intentionally unprotected and not audited in this phase.
+- Audit UI/admin tooling remains future work.

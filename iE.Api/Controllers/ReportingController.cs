@@ -40,9 +40,9 @@ public class ReportingController(
     private async Task<ActionResult?> EnforceReportAccessAsync(InspectionReport report, string reportIdForMessage, string capability, string forbiddenMessage)
     {
         var access = reportAccessGuard.CanAccessReport(report, capability);
-        if (access == ReportAccessDecision.NotFound) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", reportIdForMessage, "Denied", metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope", ["requiredCapability"] = capability }); return this.NotFoundError($"Inspection report instance '{reportIdForMessage}' was not found."); }
-        if (access == ReportAccessDecision.Forbidden) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", reportIdForMessage, "Denied", report.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = capability }); return this.ForbiddenError(forbiddenMessage); }
-        if (access == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", reportIdForMessage, "Denied", metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = capability }); return Unauthorized(); }
+        if (access == ReportAccessDecision.NotFound) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, reportIdForMessage, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope", ["requiredCapability"] = capability }); return this.NotFoundError($"Inspection report instance '{reportIdForMessage}' was not found."); }
+        if (access == ReportAccessDecision.Forbidden) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, reportIdForMessage, AuditResults.Denied, report.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = capability }); return this.ForbiddenError(forbiddenMessage); }
+        if (access == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, reportIdForMessage, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = capability }); return Unauthorized(); }
 
         return null;
     }
@@ -125,9 +125,9 @@ public class ReportingController(
         }
 
         var access = reportAccessGuard.CanAccessReport(report, AuthCapabilities.ExportsRead);
-        if (access == ReportAccessDecision.NotFound) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", id, "Denied", metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return this.NotFoundError($"Inspection report instance '{id}' was not found."); }
-        if (access == ReportAccessDecision.Forbidden) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", id, "Denied", report.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return this.ForbiddenError("Insufficient capability to export report."); }
-        if (access == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", id, "Denied", metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return Unauthorized(); }
+        if (access == ReportAccessDecision.NotFound) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return this.NotFoundError($"Inspection report instance '{id}' was not found."); }
+        if (access == ReportAccessDecision.Forbidden) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, report.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return this.ForbiddenError("Insufficient capability to export report."); }
+        if (access == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return Unauthorized(); }
 
         var fileBytes = inspectionReportDocxExportService.Export(report);
         var safeReportNumber = string.IsNullOrWhiteSpace(report.ReportNumber)
@@ -135,7 +135,7 @@ public class ReportingController(
             : report.ReportNumber.Trim().Replace(' ', '-');
         var fileName = $"api570-report-{safeReportNumber}.docx";
 
-        await auditEventWriter.WriteAsync("ReportExported", "Report", id, "Success", report.FacilityId, new Dictionary<string, object?> { ["exportType"] = "report-docx" });
+        await auditEventWriter.WriteAsync(AuditActions.ReportExported, AuditResourceTypes.Report, id, AuditResults.Success, report.FacilityId, new Dictionary<string, object?> { ["exportType"] = "report-docx" });
         return File(
             fileBytes,
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -153,12 +153,12 @@ public class ReportingController(
         }
 
         var access = reportAccessGuard.CanAccessReport(report, AuthCapabilities.ExportsRead);
-        if (access == ReportAccessDecision.NotFound) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", id, "Denied", metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return this.NotFoundError($"Inspection report instance '{id}' was not found."); }
-        if (access == ReportAccessDecision.Forbidden) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", id, "Denied", report.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return this.ForbiddenError("Insufficient capability to export report."); }
-        if (access == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", id, "Denied", metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return Unauthorized(); }
+        if (access == ReportAccessDecision.NotFound) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return this.NotFoundError($"Inspection report instance '{id}' was not found."); }
+        if (access == ReportAccessDecision.Forbidden) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, report.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return this.ForbiddenError("Insufficient capability to export report."); }
+        if (access == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = AuthCapabilities.ExportsRead }); return Unauthorized(); }
 
         var fileBytes = photoAppendixExportService.Export(report);
-        await auditEventWriter.WriteAsync("ReportExported", "Report", id, "Success", report.FacilityId, new Dictionary<string, object?> { ["exportType"] = "photo-appendix-docx" });
+        await auditEventWriter.WriteAsync(AuditActions.ReportExported, AuditResourceTypes.Report, id, AuditResults.Success, report.FacilityId, new Dictionary<string, object?> { ["exportType"] = "photo-appendix-docx" });
         var fileName = string.IsNullOrWhiteSpace(report.ReportNumber)
             ? $"InspectionReport_{id}_PhotoAppendix.docx"
             : $"{report.ReportNumber.Trim()}_PhotoAppendix.docx";
@@ -240,6 +240,7 @@ public class ReportingController(
             request.Report.CreatedAt = DateTime.UtcNow;
             request.Report.UpdatedAt = null;
             inspectionReportRepository.Create(request.Report);
+            await auditEventWriter.WriteAsync(AuditActions.ReportCreated, AuditResourceTypes.Report, request.Report.Id, AuditResults.Success, request.Report.FacilityId, new Dictionary<string, object?> { ["route"] = "BuildDraftFromChecklist", ["path"] = "create" });
         }
         else
         {
@@ -263,6 +264,7 @@ public class ReportingController(
             }
 
             inspectionReportRepository.Update(existingReport.Id, request.Report);
+            await auditEventWriter.WriteAsync(AuditActions.ReportUpdated, AuditResourceTypes.Report, request.Report.Id, AuditResults.Success, request.Report.FacilityId, new Dictionary<string, object?> { ["route"] = "BuildDraftFromChecklist", ["path"] = "update" });
         }
 
         var draft = reportDraftBuilder.Build(request.Report);
@@ -300,13 +302,13 @@ public class ReportingController(
 
         reportAccessGuard.ApplyCreateOwnership(report);
         var createAccess = reportAccessGuard.CanAccessReport(report, AuthCapabilities.ReportsWrite);
-        if (createAccess == ReportAccessDecision.NotFound) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", report.Id, "Denied", metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return this.NotFoundError("Inspection report instance was not found."); }
-        if (createAccess == ReportAccessDecision.Forbidden) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", report.Id, "Denied", report.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return this.ForbiddenError("Insufficient capability to create report."); }
-        if (createAccess == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", report.Id, "Denied", metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return Unauthorized(); }
+        if (createAccess == ReportAccessDecision.NotFound) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, report.Id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return this.NotFoundError("Inspection report instance was not found."); }
+        if (createAccess == ReportAccessDecision.Forbidden) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, report.Id, AuditResults.Denied, report.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return this.ForbiddenError("Insufficient capability to create report."); }
+        if (createAccess == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, report.Id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return Unauthorized(); }
         report.UpdatedAt = null;
 
         var created = inspectionReportRepository.Create(report);
-        await auditEventWriter.WriteAsync("ReportCreated", "Report", created.Id, "Success", created.FacilityId);
+        await auditEventWriter.WriteAsync(AuditActions.ReportCreated, AuditResourceTypes.Report, created.Id, AuditResults.Success, created.FacilityId);
         return CreatedAtAction(nameof(GetInstanceById), new { id = created.Id }, created);
     }
 
@@ -333,12 +335,12 @@ public class ReportingController(
         reportAccessGuard.ApplyUpdateOwnership(report);
 
         var updateAccess = reportAccessGuard.CanAccessReport(existing, AuthCapabilities.ReportsWrite);
-        if (updateAccess == ReportAccessDecision.NotFound) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", id, "Denied", metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return this.NotFoundError($"Inspection report instance '{id}' was not found."); }
-        if (updateAccess == ReportAccessDecision.Forbidden) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", id, "Denied", existing.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return this.ForbiddenError("Insufficient capability to update report."); }
-        if (updateAccess == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", id, "Denied", metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return Unauthorized(); }
+        if (updateAccess == ReportAccessDecision.NotFound) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return this.NotFoundError($"Inspection report instance '{id}' was not found."); }
+        if (updateAccess == ReportAccessDecision.Forbidden) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, existing.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return this.ForbiddenError("Insufficient capability to update report."); }
+        if (updateAccess == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return Unauthorized(); }
 
         var updated = inspectionReportRepository.Update(id, report);
-        await auditEventWriter.WriteAsync("ReportUpdated", "Report", updated.Id, "Success", updated.FacilityId);
+        await auditEventWriter.WriteAsync(AuditActions.ReportUpdated, AuditResourceTypes.Report, updated.Id, AuditResults.Success, updated.FacilityId);
         return Ok(updated);
     }
 
@@ -352,9 +354,9 @@ public class ReportingController(
         }
 
         var access = reportAccessGuard.CanAccessReport(existing, AuthCapabilities.ReportsWrite);
-        if (access == ReportAccessDecision.NotFound) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", id, "Denied", metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return this.NotFoundError($"Inspection report instance '{id}' was not found."); }
-        if (access == ReportAccessDecision.Forbidden) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", id, "Denied", existing.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return this.ForbiddenError("Insufficient capability to delete report."); }
-        if (access == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync("AuthorizationDenied", "Report", id, "Denied", metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return Unauthorized(); }
+        if (access == ReportAccessDecision.NotFound) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "out_of_scope", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return this.NotFoundError($"Inspection report instance '{id}' was not found."); }
+        if (access == ReportAccessDecision.Forbidden) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, existing.FacilityId, new Dictionary<string, object?> { ["denialReason"] = "missing_capability", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return this.ForbiddenError("Insufficient capability to delete report."); }
+        if (access == ReportAccessDecision.Unauthorized) { await auditEventWriter.WriteAsync(AuditActions.AuthorizationDenied, AuditResourceTypes.Report, id, AuditResults.Denied, metadata: new Dictionary<string, object?> { ["denialReason"] = "unauthenticated", ["requiredCapability"] = AuthCapabilities.ReportsWrite }); return Unauthorized(); }
 
         var deleted = inspectionReportRepository.Delete(id);
         if (!deleted)
@@ -362,7 +364,7 @@ public class ReportingController(
             return this.NotFoundError($"Inspection report instance '{id}' was not found.");
         }
 
-        await auditEventWriter.WriteAsync("ReportDeleted", "Report", id, "Success", existing.FacilityId);
+        await auditEventWriter.WriteAsync(AuditActions.ReportDeleted, AuditResourceTypes.Report, id, AuditResults.Success, existing.FacilityId);
         return NoContent();
     }
 
@@ -404,7 +406,7 @@ public class ReportingController(
         }
 
         var created = inspectionReportRepository.Create(report);
-        await auditEventWriter.WriteAsync("ReportCreated", "Report", created.Id, "Success", created.FacilityId, new Dictionary<string, object?> { ["templateId"] = templateId, ["route"] = "CreateInstanceFromTemplate" });
+        await auditEventWriter.WriteAsync(AuditActions.ReportCreated, AuditResourceTypes.Report, created.Id, AuditResults.Success, created.FacilityId, new Dictionary<string, object?> { ["templateId"] = templateId, ["route"] = "CreateInstanceFromTemplate" });
         return CreatedAtAction(nameof(GetInstanceById), new { id = created.Id }, created);
     }
 
@@ -432,7 +434,7 @@ public class ReportingController(
         updatedReport.UpdatedAt = DateTime.UtcNow;
         reportAccessGuard.ApplyUpdateOwnership(updatedReport);
         inspectionReportRepository.Update(id, updatedReport);
-        await auditEventWriter.WriteAsync("ReportUpdated", "Report", id, "Success", updatedReport.FacilityId, new Dictionary<string, object?> { ["route"] = "SyncFindingsFromChecklistTransfers" });
+        await auditEventWriter.WriteAsync(AuditActions.ReportUpdated, AuditResourceTypes.Report, id, AuditResults.Success, updatedReport.FacilityId, new Dictionary<string, object?> { ["route"] = "SyncFindingsFromChecklistTransfers" });
         return Ok(updatedReport);
     }
 
@@ -508,7 +510,7 @@ public class ReportingController(
         reportAccessGuard.ApplyUpdateOwnership(report);
         inspectionReportRepository.Update(id, report);
 
-        await auditEventWriter.WriteAsync("ReportSubmittedForReview", "Report", id, "Success", report.FacilityId);
+        await auditEventWriter.WriteAsync("ReportSubmittedForReview", AuditResourceTypes.Report, id, AuditResults.Success, report.FacilityId);
         return Ok(new
         {
             message = "Report submitted for review",
@@ -544,7 +546,7 @@ public class ReportingController(
         reportAccessGuard.ApplyUpdateOwnership(report);
         inspectionReportRepository.Update(id, report);
 
-        await auditEventWriter.WriteAsync("ReviewStarted", "Report", id, "Success", report.FacilityId);
+        await auditEventWriter.WriteAsync("ReviewStarted", AuditResourceTypes.Report, id, AuditResults.Success, report.FacilityId);
         return Ok(new
         {
             message = "Review started",
@@ -580,7 +582,7 @@ public class ReportingController(
         reportAccessGuard.ApplyUpdateOwnership(report);
         inspectionReportRepository.Update(id, report);
 
-        await auditEventWriter.WriteAsync("ReportApproved", "Report", id, "Success", report.FacilityId);
+        await auditEventWriter.WriteAsync("ReportApproved", AuditResourceTypes.Report, id, AuditResults.Success, report.FacilityId);
         return Ok(new
         {
             message = "Report approved",
@@ -624,7 +626,7 @@ public class ReportingController(
         reportAccessGuard.ApplyUpdateOwnership(report);
         inspectionReportRepository.Update(id, report);
 
-        await auditEventWriter.WriteAsync("ReportReturnedForRevision", "Report", id, "Success", report.FacilityId);
+        await auditEventWriter.WriteAsync("ReportReturnedForRevision", AuditResourceTypes.Report, id, AuditResults.Success, report.FacilityId);
         return Ok(new
         {
             message = "Report returned for revision",

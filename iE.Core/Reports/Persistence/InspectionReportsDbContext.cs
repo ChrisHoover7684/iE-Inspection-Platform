@@ -13,6 +13,36 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
     public DbSet<PhotoMarkup> PhotoMarkups => Set<PhotoMarkup>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
 
+    public override int SaveChanges()
+    {
+        EnforceAppendOnlyAuditEvents();
+        return base.SaveChanges();
+    }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        EnforceAppendOnlyAuditEvents();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        EnforceAppendOnlyAuditEvents();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        EnforceAppendOnlyAuditEvents();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void EnforceAppendOnlyAuditEvents()
+    {
+        var invalid = ChangeTracker.Entries<AuditEvent>().Any(e => e.State is EntityState.Modified or EntityState.Deleted);
+        if (invalid) throw new InvalidOperationException("AuditEvents are append-only.");
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ClientOrganization>(builder =>
@@ -171,6 +201,11 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
             builder.HasIndex(a => new { a.ResourceType, a.ResourceId });
             builder.HasIndex(a => a.ActorUserId);
             builder.HasIndex(a => a.OccurredAtUtc);
+            builder.HasIndex(a => new { a.TenantId, a.OccurredAtUtc });
+            builder.HasIndex(a => new { a.TenantId, a.ResourceType, a.ResourceId });
+            builder.HasIndex(a => new { a.TenantId, a.ActorUserId });
+            builder.HasIndex(a => new { a.TenantId, a.Action });
+            builder.HasIndex(a => new { a.TenantId, a.FacilityId });
         });
 
         modelBuilder.Entity<InspectionReport>(builder =>

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using iE.Api.Tenancy;
 using iE.Core.Reports.Persistence;
 
@@ -11,7 +12,8 @@ public interface IAuditEventWriter
 
 public sealed class AuditEventWriter(InspectionReportsDbContext dbContext, ITenantContextAccessor tenantContextAccessor, IHttpContextAccessor httpContextAccessor, ILogger<AuditEventWriter> logger) : IAuditEventWriter
 {
-    private static readonly HashSet<string> SensitiveKeys = new(StringComparer.OrdinalIgnoreCase) { "token", "authorization", "password", "connectionString", "rawPayload", "markupJson" };
+    private const int MaxMetadataLength = 4000;
+    private const int MaxStringValueLength = 256;
 
     public async Task WriteAsync(string action, string resourceType, string? resourceId, string result, string? facilityId = null, IDictionary<string, object?>? metadata = null, CancellationToken cancellationToken = default)
     {
@@ -24,17 +26,17 @@ public sealed class AuditEventWriter(InspectionReportsDbContext dbContext, ITena
             {
                 AuditEventId = Guid.NewGuid().ToString("N"),
                 OccurredAtUtc = DateTime.UtcNow,
-                TenantId = tenant.ClientOrganizationId?.ToString(),
-                FacilityId = facilityId,
-                ActorUserId = string.IsNullOrWhiteSpace(tenant.ExternalSubject) ? null : tenant.ExternalSubject,
-                Action = action,
-                ResourceType = resourceType,
-                ResourceId = resourceId,
-                Result = result,
-                CorrelationId = http?.TraceIdentifier,
-                ClientIp = http?.Connection.RemoteIpAddress?.ToString(),
-                UserAgent = http?.Request.Headers.UserAgent.ToString(),
-                MetadataJson = sanitized.Count == 0 ? null : JsonSerializer.Serialize(sanitized)
+                TenantId = TrimToLength(tenant.ClientOrganizationId?.ToString(), 64),
+                FacilityId = TrimToLength(facilityId, 64),
+                ActorUserId = TrimToLength(string.IsNullOrWhiteSpace(tenant.ExternalSubject) ? null : tenant.ExternalSubject, 128),
+                Action = TrimToLength(action, 128) ?? string.Empty,
+                ResourceType = TrimToLength(resourceType, 64) ?? string.Empty,
+                ResourceId = TrimToLength(resourceId, 128),
+                Result = TrimToLength(result, 32) ?? string.Empty,
+                CorrelationId = TrimToLength(http?.TraceIdentifier, 128),
+                ClientIp = TrimToLength(http?.Connection.RemoteIpAddress?.ToString(), 64),
+                UserAgent = TrimToLength(http?.Request.Headers.UserAgent.ToString(), 512),
+                MetadataJson = SerializeMetadataSafely(sanitized)
             };
 
             dbContext.AuditEvents.Add(evt);
@@ -52,10 +54,45 @@ public sealed class AuditEventWriter(InspectionReportsDbContext dbContext, ITena
         if (metadata is null) return result;
         foreach (var kvp in metadata)
         {
-            if (SensitiveKeys.Contains(kvp.Key)) continue;
-            result[kvp.Key] = kvp.Value;
+            if (AuditMetadataKeys.Sensitive.Contains(kvp.Key)) continue;
+            result[kvp.Key] = SanitizeValue(kvp.Value);
         }
 
         return result;
+    }
+
+    private static object? SanitizeValue(object? value)
+    {
+        return value switch
+        {
+            null => null,
+            string s => TrimToLength(s, MaxStringValueLength),
+            IDictionary<string, object?> dict => SanitizeMetadata(dict),
+            IDictionary<string, string> dictStr => SanitizeMetadata(dictStr.ToDictionary(k => k.Key, v => (object?)v.Value)),
+            IEnumerable<object?> list => list.Select(SanitizeValue).ToList(),
+            _ => value
+        };
+    }
+
+    private static string? SerializeMetadataSafely(Dictionary<string, object?> sanitized)
+    {
+        if (sanitized.Count == 0) return null;
+        try
+        {
+            var json = JsonSerializer.Serialize(sanitized, new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
+            if (json.Length <= MaxMetadataLength) return json;
+            var fallback = JsonSerializer.Serialize(new Dictionary<string, object?> { [AuditMetadataKeys.MetadataTruncated] = true });
+            return fallback.Length <= MaxMetadataLength ? fallback : fallback[..MaxMetadataLength];
+        }
+        catch
+        {
+            return "{\"metadataTruncated\":true}";
+        }
+    }
+
+    private static string? TrimToLength(string? value, int max)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return value;
+        return value.Length <= max ? value : value[..max];
     }
 }

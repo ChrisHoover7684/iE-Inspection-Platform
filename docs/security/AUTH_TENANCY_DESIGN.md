@@ -449,3 +449,13 @@ Facility moves remain blocked on update paths pending a dedicated future workflo
 - After existing auth/capability checks and `reports.create` entitlement checks pass, persisted report creation now evaluates `max.activeReports` when subscription enforcement is enabled.
 - Limit denials return 403 (`subscription_limit_exceeded`) and emit a safe `EntitlementLimitDenied` audit event with route/reason/activeCount/limitValue only.
 - Calculator endpoints remain intentionally unprotected by subscription entitlement checks, and health endpoints remain public.
+
+## PR #200 Tenant Member Workflow Scope
+- Added backend-only tenant member workflow service with tenant-safe invite/activate/disable/remove logic.
+- Enforcement of `max.users` occurs only when `Subscriptions:EnforcementEnabled=true`.
+- Active/invited users consume seats; disabled/removed users do not.
+- No new public user-management API, no UI changes, no outbound email, no billing integration.
+- Health endpoints stay public; calculator endpoint entitlement behavior is unchanged.
+
+- Named-user licensing policy for PR #200: one active/invited member record equals one human seat; shared logins are not allowed for bypass.
+- No session/device enforcement is added in this phase; legitimate multi-device use for a single user remains allowed.

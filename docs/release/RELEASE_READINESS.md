@@ -134,3 +134,12 @@ Use this checklist before backend-focused releases.
 - Plan tiers continue to be represented by entitlement rows and optional limit values (example: Starter `max.users = 10`).
 - No billing provider integration (Stripe/Marketplace/AppSource/payment), no subscription UI, and no public admin/user-management APIs were introduced.
 - Health endpoints remain public and calculator endpoints remain intentionally ungated.
+
+## PR #200 Release Readiness Notes
+- Includes backend-only tenant member workflow service and safe audit events for member lifecycle + seat-limit denial.
+- Confirms seat accounting and entitlement gate behavior for `max.users` under feature-flagged enforcement.
+- Excludes public admin API/UI, email invite delivery, and billing provider integrations.
+- Maintains public health endpoints and ungated calculator endpoints by design.
+
+- PR #200 documents named-user seat policy (`max.users`) and explicitly disallows shared-account bypass.
+- Session/device anomaly detection is deferred to future work; not part of this release gate.

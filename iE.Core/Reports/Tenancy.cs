@@ -81,8 +81,9 @@ public class ClientOrganizationUser
 {
     public string Id { get; set; } = string.Empty;
     public string ClientOrganizationId { get; set; } = string.Empty;
-    public string ExternalSubject { get; set; } = string.Empty;
+    public string? ExternalSubject { get; set; }
     public string? Email { get; set; }
+    public string? NormalizedEmail { get; set; }
     public string? DisplayName { get; set; }
     public string Status { get; set; } = ClientOrganizationUserStatuses.Invited;
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;

@@ -197,13 +197,14 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
             builder.Property(cou => cou.ClientOrganizationId).HasMaxLength(64);
             builder.Property(cou => cou.ExternalSubject).HasMaxLength(256);
             builder.Property(cou => cou.Email).HasMaxLength(256);
+            builder.Property(cou => cou.NormalizedEmail).HasMaxLength(256);
             builder.Property(cou => cou.DisplayName).HasMaxLength(256);
             builder.Property(cou => cou.Status).HasMaxLength(32);
 
             builder.HasIndex(cou => cou.ClientOrganizationId);
-            builder.HasIndex(cou => new { cou.ClientOrganizationId, cou.ExternalSubject }).IsUnique();
-            builder.HasIndex(cou => new { cou.ClientOrganizationId, cou.Email });
-            builder.HasIndex(cou => cou.Status);
+            builder.HasIndex(cou => new { cou.ClientOrganizationId, cou.ExternalSubject }).IsUnique().HasFilter(""ExternalSubject" IS NOT NULL");
+            builder.HasIndex(cou => new { cou.ClientOrganizationId, cou.NormalizedEmail });
+            builder.HasIndex(cou => new { cou.ClientOrganizationId, cou.Status });
         });
 
 

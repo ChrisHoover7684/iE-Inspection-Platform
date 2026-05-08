@@ -43,3 +43,10 @@ Calculator endpoints remain intentionally unprotected for this phase.
 - MVP seat counting rule: `active + invited` users consume seats; `disabled + removed` do not.
 - No billing provider integration, no subscription UI, and no public admin/user-management API were added.
 - Calculator endpoints remain intentionally ungated; health endpoints remain public.
+
+## PR #200 Tenant Member Workflow Service
+- Backend-only tenant member workflow service adds invite/activate/disable/remove flows.
+- `max.users` is enforced only when `Subscriptions:EnforcementEnabled=true`.
+- Seat counting: `active` + `invited` consume seats; `disabled` + `removed` do not.
+- No public admin/user-management API, no UI, no email sending, and no billing provider integration in this PR.
+- Calculator endpoints remain intentionally ungated; health endpoints remain public.

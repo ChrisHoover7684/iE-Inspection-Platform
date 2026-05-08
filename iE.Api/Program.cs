@@ -79,6 +79,7 @@ builder.Services.AddScoped<ISubscriptionUsageService, SubscriptionUsageService>(
 builder.Services.AddScoped<ISubscriptionSeatUsageService, SubscriptionSeatUsageService>();
 builder.Services.AddScoped<EntitlementLimitGuard>();
 builder.Services.AddScoped<EntitlementSeatLimitGuard>();
+builder.Services.AddScoped<ITenantMemberService, TenantMemberService>();
 
 if (authenticationEnabled)
 {

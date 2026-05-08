@@ -10,6 +10,11 @@ public static class AuditActions
     public const string ReportReferenceValidationFailed = "ReportReferenceValidationFailed";
     public const string EntitlementDenied = "EntitlementDenied";
     public const string EntitlementLimitDenied = "EntitlementLimitDenied";
+    public const string TenantMemberInvited = "TenantMemberInvited";
+    public const string TenantMemberActivated = "TenantMemberActivated";
+    public const string TenantMemberDisabled = "TenantMemberDisabled";
+    public const string TenantMemberRemoved = "TenantMemberRemoved";
+    public const string TenantMemberSeatLimitDenied = "TenantMemberSeatLimitDenied";
 }
 
 public static class AuditResourceTypes

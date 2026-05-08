@@ -509,6 +509,24 @@ PR #212 adds a frontend test foundation focused on role-aware navigation metadat
 - Do not use a global left-nav "Report Actions" group for generic Create/View/Edit links.
 - Create/View/Edit should exist as actions within report listing/detail/workspace screens.
 
+
+## Common Supplemental Report Tools
+- Corrosion Rate
+- Remaining Life
+- Tmin / Required Thickness Check
+- Thickness Trend / Grid Review
+- Damage Mechanism Lookup
+- NDE Request Insertion
+- Photo Markup Insertion
+- Finding / Recommendation Insertion
+
+### Common supplemental tools planning note
+- Corrosion Rate is applicable across equipment types, not only API 570 piping.
+- Common supplemental report tools should be available in future report workspaces where relevant.
+- These are planning/tooling placeholders only in this PR.
+- Do not build these tools/screens in this PR.
+- Do not change calculator/formula code in this PR.
+
 ## Engineering tools organization direction
 - Engineering Tools in the global left nav is only a high-level entry point.
 - The full engineering tool library is future work and is not implemented in this PR.

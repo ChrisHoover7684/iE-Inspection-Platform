@@ -508,3 +508,11 @@ PR #212 adds a frontend test foundation focused on role-aware navigation metadat
 ## Global navigation guidance
 - Do not use a global left-nav "Report Actions" group for generic Create/View/Edit links.
 - Create/View/Edit should exist as actions within report listing/detail/workspace screens.
+
+## Engineering tools organization direction
+- Engineering Tools in the global left nav is only a high-level entry point.
+- The full engineering tool library is future work and is not implemented in this PR.
+- Tools such as API 653 calculations, corrosion rate, PCC-1 criteria, B31.3, pressure vessel calculations, damage mechanisms, and report-specific insert/check tools should be organized into:
+  1. Engineering Tools library
+  2. Context-sensitive report workspace tool panel
+- Do not add all tools as a flat global left-nav list.

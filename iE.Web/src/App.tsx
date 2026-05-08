@@ -13,6 +13,8 @@ function ShellRoute({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>;
 }
 
+const placeholder = (title: string, description: string) => <ShellRoute><PlaceholderPage title={title} description={description} /></ShellRoute>;
+
 export default function App() {
   return (
     <Routes>
@@ -24,9 +26,31 @@ export default function App() {
       <Route path="/calculators/pipe-lookup" element={<ShellRoute><PipeLookupCalculatorPage /></ShellRoute>} />
       <Route path="/calculators/pressure-vessels" element={<ShellRoute><PressureVesselCalculatorPage /></ShellRoute>} />
 
-      <Route path="/nde-requests" element={<ShellRoute><PlaceholderPage title="NDE Requests" description="Coming soon: NDE request queue and workflows." /></ShellRoute>} />
-      <Route path="/reports" element={<ShellRoute><PlaceholderPage title="Reports" description="Coming soon: role-filtered report views and actions." /></ShellRoute>} />
-      <Route path="/users-access" element={<ShellRoute><PlaceholderPage title="Admin" description="Coming soon: user and access administration." /></ShellRoute>} />
+      <Route path="/nde-requests" element={placeholder('NDE Requests', 'Coming soon: NDE request queue and workflows.')} />
+      <Route path="/reports" element={placeholder('Reports', 'Coming soon: role-filtered report views and actions within report workspaces.')} />
+      <Route path="/downloads" element={placeholder('Downloads', 'Coming soon: downloadable report and file library.')} />
+      <Route path="/assets" element={placeholder('Assets', 'Coming soon: asset register and activity screens.')} />
+      <Route path="/help" element={placeholder('Help', 'Coming soon: support resources and guidance.')} />
+      <Route path="/approval-queue" element={placeholder('Approval Queue', 'Coming soon: owner approval queue and decision workflow.')} />
+      <Route path="/nde-reports" element={placeholder('NDE Reports', 'Coming soon: NDE reports listing and review tools.')} />
+      <Route path="/exports" element={placeholder('Exports', 'Coming soon: report export jobs and history.')} />
+      <Route path="/api-inspection-log" element={placeholder('API Inspection Log', 'Coming soon: API inspection report log and history.')} />
+      <Route path="/my-reports" element={placeholder('My Reports', 'Coming soon: personalized report queue and actions.')} />
+      <Route path="/returned-reports" element={placeholder('Returned Reports', 'Coming soon: returned report corrections and resubmissions.')} />
+      <Route path="/schedule" element={placeholder('Schedule', 'Coming soon: NDE scheduling and planning views.')} />
+      <Route path="/results-received" element={placeholder('Results Received', 'Coming soon: received results review and triage.')} />
+      <Route path="/overdue" element={placeholder('Overdue', 'Coming soon: overdue request and report tracking.')} />
+      <Route path="/cancelled" element={placeholder('Cancelled', 'Coming soon: cancelled workflow tracking.')} />
+      <Route path="/users-access" element={placeholder('Users & Access', 'Coming soon: user and access administration.')} />
+      <Route path="/facilities" element={placeholder('Facilities', 'Coming soon: facility administration and scopes.')} />
+      <Route path="/custom-nde-types" element={placeholder('Custom NDE Types', 'Coming soon: tenant-specific NDE type configuration.')} />
+      <Route path="/audit-log" element={placeholder('Audit Log', 'Coming soon: system audit events and history.')} />
+      <Route path="/settings" element={placeholder('Settings', 'Coming soon: tenant and application settings.')} />
+      <Route path="/system-readiness" element={placeholder('System Readiness', 'Coming soon: internal system readiness dashboard.')} />
+      <Route path="/stress-test-setup" element={placeholder('Stress Test Setup', 'Coming soon: internal stress and load-test setup.')} />
+      <Route path="/tenants" element={placeholder('Tenants', 'Coming soon: multi-tenant setup and governance.')} />
+      <Route path="/engineering-tools/criteria-references" element={placeholder('Criteria / References', 'Coming soon: criteria and standards references for report workflows.')} />
+      <Route path="/engineering-tools/damage-mechanisms" element={placeholder('Damage Mechanisms', 'Coming soon: mechanism lookup and contextual guidance.')} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );

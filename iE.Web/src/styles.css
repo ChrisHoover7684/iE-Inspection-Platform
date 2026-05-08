@@ -844,18 +844,36 @@ html, body, #root {
 }
 
 .app-shell-body {
-    display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
+    display: flex;
+    grid-template-columns: minmax(0, 1fr);
     min-height: 0;
 }
 
 .left-nav {
+    width: 260px;
     border-right: 1px solid var(--color-border-medium);
     background: var(--color-bg-sidebar);
     padding: 12px;
+    transition: width 0.2s ease;
+}
+
+.left-nav.collapsed {
+    width: 64px;
+}
+
+.left-nav-toggle {
+    width: 100%;
+    margin-bottom: 8px;
+    border: 1px solid var(--color-border-medium);
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
 }
 
 .left-nav-heading {
+    overflow: hidden;
+    white-space: nowrap;
+
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: .04em;
@@ -870,6 +888,9 @@ html, body, #root {
 }
 
 .left-nav-link {
+    overflow: hidden;
+    white-space: nowrap;
+
     display: block;
     padding: 8px 10px;
     border-radius: 6px;
@@ -891,7 +912,8 @@ html, body, #root {
 }
 
 @media (max-width: 1024px) {
-    .app-shell-body {
-        grid-template-columns: 1fr;
+    .left-nav,
+    .left-nav.collapsed {
+        width: 100%;
     }
 }

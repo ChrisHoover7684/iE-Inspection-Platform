@@ -48,9 +48,6 @@ const getReportType = (report: InspectionReport) => {
   return report.templateId || 'General';
 };
 
-const engineeringTools = ['B31.3 Pressure Calcs', 'Pressure Vessel Calcs', 'Damage Mechanisms'];
-const reportMenuActions = ['Create', 'View', 'Edit'];
-
 export function DashboardPage() {
   const navigate = useNavigate();
   const [reports, setReports] = useState<InspectionReport[]>([]);
@@ -299,26 +296,6 @@ export function DashboardPage() {
 
   return (
     <div className="dashboard-shell">
-      <aside className="dashboard-sidebar">
-        <h2>iE Inspection Platform</h2>
-        <nav>
-          {['Dashboard', 'Reports'].map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={`sidebar-link ${item === 'Dashboard' ? 'active' : ''}`}
-            >
-              {item}
-            </button>
-          ))}
-          <p className="sidebar-section-title">Engineering Tools</p>
-          {engineeringTools.map((item) => <button key={item} type="button" className="sidebar-link">{item}</button>)}
-          <p className="sidebar-section-title">Report Actions</p>
-          {reportMenuActions.map((item) => <button key={item} type="button" className="sidebar-link">{item}</button>)}
-          <button type="button" className="sidebar-link">Settings</button>
-        </nav>
-      </aside>
-
       <section className="dashboard-content">
         <header className="dashboard-topbar card">
           <h1>Dashboard</h1>

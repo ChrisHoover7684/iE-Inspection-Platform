@@ -9,6 +9,7 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
     public DbSet<ProcessUnit> ProcessUnits => Set<ProcessUnit>();
     public DbSet<Asset> Assets => Set<Asset>();
     public DbSet<UserFacilityAccess> UserFacilityAccesses => Set<UserFacilityAccess>();
+    public DbSet<ClientOrganizationUser> ClientOrganizationUsers => Set<ClientOrganizationUser>();
     public DbSet<InspectionReport> InspectionReports => Set<InspectionReport>();
     public DbSet<PhotoMarkup> PhotoMarkups => Set<PhotoMarkup>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
@@ -63,6 +64,11 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
             builder.HasMany(c => c.UserFacilityAccesses)
                 .WithOne(ufa => ufa.ClientOrganization)
                 .HasForeignKey(ufa => ufa.ClientOrganizationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany<ClientOrganizationUser>()
+                .WithOne(cou => cou.ClientOrganization)
+                .HasForeignKey(cou => cou.ClientOrganizationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(c => c.InspectionReports)
@@ -181,6 +187,23 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
             builder.HasIndex(ufa => ufa.UserId);
             builder.HasIndex(ufa => ufa.ClientOrganizationId);
             builder.HasIndex(ufa => ufa.FacilityId);
+        });
+
+        modelBuilder.Entity<ClientOrganizationUser>(builder =>
+        {
+            builder.ToTable("ClientOrganizationUsers");
+            builder.HasKey(cou => cou.Id);
+            builder.Property(cou => cou.Id).HasMaxLength(64);
+            builder.Property(cou => cou.ClientOrganizationId).HasMaxLength(64);
+            builder.Property(cou => cou.ExternalSubject).HasMaxLength(256);
+            builder.Property(cou => cou.Email).HasMaxLength(256);
+            builder.Property(cou => cou.DisplayName).HasMaxLength(256);
+            builder.Property(cou => cou.Status).HasMaxLength(32);
+
+            builder.HasIndex(cou => cou.ClientOrganizationId);
+            builder.HasIndex(cou => new { cou.ClientOrganizationId, cou.ExternalSubject }).IsUnique();
+            builder.HasIndex(cou => new { cou.ClientOrganizationId, cou.Email });
+            builder.HasIndex(cou => cou.Status);
         });
 
 

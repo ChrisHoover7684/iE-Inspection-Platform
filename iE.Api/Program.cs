@@ -76,7 +76,9 @@ builder.Services.AddSingleton(subscriptionOptions);
 builder.Services.AddScoped<IEntitlementService, EntitlementService>();
 builder.Services.AddScoped<EntitlementGuard>();
 builder.Services.AddScoped<ISubscriptionUsageService, SubscriptionUsageService>();
+builder.Services.AddScoped<ISubscriptionSeatUsageService, SubscriptionSeatUsageService>();
 builder.Services.AddScoped<EntitlementLimitGuard>();
+builder.Services.AddScoped<EntitlementSeatLimitGuard>();
 
 if (authenticationEnabled)
 {

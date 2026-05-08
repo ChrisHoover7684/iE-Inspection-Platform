@@ -68,3 +68,25 @@ public class UserFacilityAccess
     public ClientOrganization? ClientOrganization { get; set; }
     public Facility? Facility { get; set; }
 }
+
+public static class ClientOrganizationUserStatuses
+{
+    public const string Active = "active";
+    public const string Invited = "invited";
+    public const string Disabled = "disabled";
+    public const string Removed = "removed";
+}
+
+public class ClientOrganizationUser
+{
+    public string Id { get; set; } = string.Empty;
+    public string ClientOrganizationId { get; set; } = string.Empty;
+    public string ExternalSubject { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string? DisplayName { get; set; }
+    public string Status { get; set; } = ClientOrganizationUserStatuses.Invited;
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAtUtc { get; set; }
+    public DateTime? LastSeenAtUtc { get; set; }
+    public ClientOrganization? ClientOrganization { get; set; }
+}

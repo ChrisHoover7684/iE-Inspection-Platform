@@ -36,3 +36,10 @@ Calculator endpoints remain intentionally unprotected for this phase.
 - Billing provider integration is still future work; no Stripe/Marketplace/AppSource/payment integration in this PR.
 - No UI and no public subscription/admin APIs were added.
 - Calculator endpoints remain intentionally ungated.
+
+## PR #199 seat entitlement foundation
+- Added backend foundation for tenant seat limits using entitlement key `max.users`.
+- Plan tiers remain entitlement/value driven (for example, Starter may have `max.users=10`), without hard-coding tier logic in controllers.
+- MVP seat counting rule: `active + invited` users consume seats; `disabled + removed` do not.
+- No billing provider integration, no subscription UI, and no public admin/user-management API were added.
+- Calculator endpoints remain intentionally ungated; health endpoints remain public.

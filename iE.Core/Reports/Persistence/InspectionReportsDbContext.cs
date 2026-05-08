@@ -18,6 +18,9 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
     public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
     public DbSet<ClientSubscription> ClientSubscriptions => Set<ClientSubscription>();
     public DbSet<SubscriptionEntitlement> SubscriptionEntitlements => Set<SubscriptionEntitlement>();
+    public DbSet<ReportLogEntry> ReportLogEntries => Set<ReportLogEntry>();
+    public DbSet<NdeRequest> NdeRequests => Set<NdeRequest>();
+    public DbSet<NdeRequestTypeDefinition> NdeRequestTypeDefinitions => Set<NdeRequestTypeDefinition>();
 
     public override int SaveChanges()
     {
@@ -45,8 +48,10 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
 
     private void EnforceAppendOnlyAuditEvents()
     {
-        var invalid = ChangeTracker.Entries<AuditEvent>().Any(e => e.State is EntityState.Modified or EntityState.Deleted);
-        if (invalid) throw new InvalidOperationException("AuditEvents are append-only.");
+        var invalidAudit = ChangeTracker.Entries<AuditEvent>().Any(e => e.State is EntityState.Modified or EntityState.Deleted);
+        if (invalidAudit) throw new InvalidOperationException("AuditEvents are append-only.");
+        var invalidReportLog = ChangeTracker.Entries<ReportLogEntry>().Any(e => e.State is EntityState.Modified or EntityState.Deleted);
+        if (invalidReportLog) throw new InvalidOperationException("ReportLogEntries are append-only.");
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -456,6 +461,70 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
             });
         });
 
+
+        modelBuilder.Entity<ReportLogEntry>(builder =>
+        {
+            builder.ToTable("ReportLogEntries");
+            builder.HasKey(x => x.Id);
+            builder.Property(x => x.Id).HasMaxLength(64);
+            builder.Property(x => x.ClientOrganizationId).HasMaxLength(64).IsRequired();
+            builder.Property(x => x.FacilityId).HasMaxLength(64).IsRequired();
+            builder.Property(x => x.ReportId).HasMaxLength(64).IsRequired();
+            builder.Property(x => x.EventType).HasMaxLength(64).IsRequired();
+            builder.Property(x => x.EventStatus).HasMaxLength(32);
+            builder.Property(x => x.Message).HasMaxLength(1000).IsRequired();
+            builder.Property(x => x.ActorUserId).HasMaxLength(128);
+            builder.Property(x => x.ActorExternalSubject).HasMaxLength(256);
+            builder.Property(x => x.FromStatus).HasMaxLength(32);
+            builder.Property(x => x.ToStatus).HasMaxLength(32);
+            builder.Property(x => x.RelatedNdeRequestId).HasMaxLength(64);
+            builder.Property(x => x.MetadataJson).HasMaxLength(1000);
+            builder.HasIndex(x => new { x.ClientOrganizationId, x.FacilityId, x.ReportId, x.CreatedAtUtc });
+            builder.HasIndex(x => new { x.ClientOrganizationId, x.ReportId });
+            builder.HasIndex(x => x.EventType);
+        });
+
+        modelBuilder.Entity<NdeRequest>(builder =>
+        {
+            builder.ToTable("NdeRequests");
+            builder.HasKey(x => x.Id);
+            builder.Property(x => x.Id).HasMaxLength(64);
+            builder.Property(x => x.ClientOrganizationId).HasMaxLength(64).IsRequired();
+            builder.Property(x => x.FacilityId).HasMaxLength(64).IsRequired();
+            builder.Property(x => x.ProcessUnitId).HasMaxLength(64);
+            builder.Property(x => x.AssetId).HasMaxLength(64);
+            builder.Property(x => x.ReportId).HasMaxLength(64);
+            builder.Property(x => x.RequestNumber).HasMaxLength(64);
+            builder.Property(x => x.NdeType).HasMaxLength(64).IsRequired();
+            builder.Property(x => x.Priority).HasMaxLength(32).IsRequired();
+            builder.Property(x => x.Status).HasMaxLength(32).IsRequired();
+            builder.Property(x => x.Reason).HasMaxLength(256).IsRequired();
+            builder.Property(x => x.RequestedByUserId).HasMaxLength(128);
+            builder.Property(x => x.RequestedByExternalSubject).HasMaxLength(256);
+            builder.Property(x => x.AssignedToName).HasMaxLength(256);
+            builder.Property(x => x.VendorName).HasMaxLength(256);
+            builder.Property(x => x.ResultsSummary).HasMaxLength(1000);
+            builder.Property(x => x.CancellationReason).HasMaxLength(500);
+            builder.HasIndex(x => new { x.ClientOrganizationId, x.FacilityId, x.Status });
+            builder.HasIndex(x => new { x.ClientOrganizationId, x.ReportId });
+            builder.HasIndex(x => new { x.ClientOrganizationId, x.AssetId });
+            builder.HasIndex(x => x.DueDateUtc);
+            builder.HasIndex(x => x.CreatedAtUtc);
+        });
+
+        modelBuilder.Entity<NdeRequestTypeDefinition>(builder =>
+        {
+            builder.ToTable("NdeRequestTypeDefinitions");
+            builder.HasKey(x => x.Id);
+            builder.Property(x => x.Id).HasMaxLength(64);
+            builder.Property(x => x.ClientOrganizationId).HasMaxLength(64);
+            builder.Property(x => x.Code).HasMaxLength(64).IsRequired();
+            builder.Property(x => x.DisplayName).HasMaxLength(128).IsRequired();
+            builder.Property(x => x.Description).HasMaxLength(512);
+            builder.HasIndex(x => new { x.ClientOrganizationId, x.Code });
+            builder.HasIndex(x => x.IsBuiltIn);
+            builder.HasIndex(x => x.IsActive);
+        });
 
         modelBuilder.Entity<PhotoMarkup>(builder =>
         {

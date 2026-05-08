@@ -2,6 +2,7 @@ using iE.Api;
 using iE.Api.Auth;
 using iE.Api.Tenancy;
 using iE.Core.Reports;
+using iE.Core.Reports.Domain;
 using iE.Core.Reports.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -92,7 +93,7 @@ public class StressTestSubscriptionSeedServiceTests
         db.ClientOrganizationUsers.AddRange(
             new ClientOrganizationUser { Id = "u1", ClientOrganizationId = "tenant-1", Status = ClientOrganizationUserStatuses.Active, ExternalSubject = "sub-u1", CreatedAtUtc = DateTime.UtcNow },
             new ClientOrganizationUser { Id = "u2", ClientOrganizationId = "tenant-1", Status = ClientOrganizationUserStatuses.Invited, ExternalSubject = "sub-u2", CreatedAtUtc = DateTime.UtcNow });
-        db.InspectionReports.Add(new InspectionReport { Id = "r1", ClientOrganizationId = "tenant-1", FacilityId = "f1", Status = InspectionReportStatuses.InProgress, Title = "x", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+        db.InspectionReports.Add(new InspectionReport { Id = "r1", TemplateId = "api-570-piping-external", ClientOrganizationId = "tenant-1", FacilityId = "f1", Status = InspectionReportStatuses.InProgress, ReportNumber = "R-STRESS-1", EquipmentTag = "stress-test-asset", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
 
         var cfg = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Subscriptions:EnforcementEnabled"] = "true", ["Authentication:Enabled"] = "false" }).Build();

@@ -143,3 +143,10 @@ Use this checklist before backend-focused releases.
 
 - PR #200 documents named-user seat policy (`max.users`) and explicitly disallows shared-account bypass.
 - Session/device anomaly detection is deferred to future work; not part of this release gate.
+
+## PR #201 Release Readiness Notes
+- Adds backend-only named-user session/device audit foundation (`ClientOrganizationUserSession`, `ClientOrganizationUserDevice`) and safe audit events.
+- Confirms named-user licensing model remains in place and shared-account bypass is unsupported.
+- Confirms suspicious-sharing detection is audit-only (no auto-block/session revocation yet).
+- Confirms no UI/public admin API and no billing provider integration in this PR.
+- Confirms calculator endpoints remain intentionally ungated and health endpoints remain public.

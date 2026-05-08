@@ -10,6 +10,8 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
     public DbSet<Asset> Assets => Set<Asset>();
     public DbSet<UserFacilityAccess> UserFacilityAccesses => Set<UserFacilityAccess>();
     public DbSet<ClientOrganizationUser> ClientOrganizationUsers => Set<ClientOrganizationUser>();
+    public DbSet<ClientOrganizationUserSession> ClientOrganizationUserSessions => Set<ClientOrganizationUserSession>();
+    public DbSet<ClientOrganizationUserDevice> ClientOrganizationUserDevices => Set<ClientOrganizationUserDevice>();
     public DbSet<InspectionReport> InspectionReports => Set<InspectionReport>();
     public DbSet<PhotoMarkup> PhotoMarkups => Set<PhotoMarkup>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
@@ -205,6 +207,42 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
             builder.HasIndex(cou => new { cou.ClientOrganizationId, cou.ExternalSubject }).IsUnique().HasFilter("\"ExternalSubject\" IS NOT NULL");
             builder.HasIndex(cou => new { cou.ClientOrganizationId, cou.NormalizedEmail });
             builder.HasIndex(cou => new { cou.ClientOrganizationId, cou.Status });
+        });
+
+        modelBuilder.Entity<ClientOrganizationUserSession>(builder =>
+        {
+            builder.ToTable("ClientOrganizationUserSessions");
+            builder.HasKey(x => x.Id);
+            builder.Property(x => x.Id).HasMaxLength(64);
+            builder.Property(x => x.ClientOrganizationId).HasMaxLength(64);
+            builder.Property(x => x.ClientOrganizationUserId).HasMaxLength(64);
+            builder.Property(x => x.ExternalSubject).HasMaxLength(256);
+            builder.Property(x => x.SessionKeyHash).HasMaxLength(128);
+            builder.Property(x => x.IpHash).HasMaxLength(128);
+            builder.Property(x => x.UserAgentHash).HasMaxLength(128);
+            builder.Property(x => x.DeviceId).HasMaxLength(64);
+            builder.HasIndex(x => new { x.ClientOrganizationId, x.ExternalSubject });
+            builder.HasIndex(x => new { x.ClientOrganizationId, x.ClientOrganizationUserId });
+            builder.HasIndex(x => x.LastSeenAtUtc);
+            builder.HasIndex(x => x.IsRevoked);
+        });
+
+        modelBuilder.Entity<ClientOrganizationUserDevice>(builder =>
+        {
+            builder.ToTable("ClientOrganizationUserDevices");
+            builder.HasKey(x => x.Id);
+            builder.Property(x => x.Id).HasMaxLength(64);
+            builder.Property(x => x.ClientOrganizationId).HasMaxLength(64);
+            builder.Property(x => x.ClientOrganizationUserId).HasMaxLength(64);
+            builder.Property(x => x.ExternalSubject).HasMaxLength(256);
+            builder.Property(x => x.DeviceFingerprintHash).HasMaxLength(128);
+            builder.Property(x => x.LastIpHash).HasMaxLength(128);
+            builder.Property(x => x.LastUserAgentHash).HasMaxLength(128);
+            builder.HasIndex(x => new { x.ClientOrganizationId, x.ExternalSubject });
+            builder.HasIndex(x => new { x.ClientOrganizationId, x.ClientOrganizationUserId });
+            builder.HasIndex(x => new { x.ClientOrganizationId, x.DeviceFingerprintHash });
+            builder.HasIndex(x => x.LastSeenAtUtc);
+            builder.HasIndex(x => x.IsDisabled);
         });
 
 

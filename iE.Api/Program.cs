@@ -72,6 +72,8 @@ builder.Services.AddScoped<ReportAccessGuard>();
 builder.Services.AddScoped<ReportReferenceGuard>();
 builder.Services.AddScoped<IAuditEventWriter, AuditEventWriter>();
 builder.Services.AddScoped<IAuditEventQueryService, AuditEventQueryService>();
+builder.Services.Configure<AccountSharingAuditOptions>(builder.Configuration.GetSection("AccountSharingAudit"));
+builder.Services.AddScoped<IUserSessionAuditService, UserSessionAuditService>();
 builder.Services.AddSingleton(subscriptionOptions);
 builder.Services.AddScoped<IEntitlementService, EntitlementService>();
 builder.Services.AddScoped<EntitlementGuard>();

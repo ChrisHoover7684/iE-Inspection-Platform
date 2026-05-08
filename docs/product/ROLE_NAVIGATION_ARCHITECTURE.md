@@ -399,3 +399,8 @@ The goal is to lock role hierarchy and navigation direction before incremental U
 - Build navigation and dashboards incrementally behind role-aware routing.
 - Keep approval and workflow enforcement in backend authorization/workflow services.
 - Treat this document as the contract for upcoming UI tickets, not as a direct feature release by itself.
+
+## PR #210 Update
+- Backend-only role-aware read models were added for future navigation targets defined in #209.
+- No UI components were added in this change.
+- Client visibility remains final/approved-only for reports; owner/admin visibility remains tenant/facility scoped.

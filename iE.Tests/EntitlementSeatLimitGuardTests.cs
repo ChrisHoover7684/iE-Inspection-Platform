@@ -1,4 +1,5 @@
 using iE.Api.Auth;
+using iE.Tests.TestDoubles;
 using Microsoft.Extensions.Configuration;
 
 namespace iE.Tests;
@@ -66,7 +67,7 @@ public class EntitlementSeatLimitGuardTests
         var g = Build(true, EntitlementCheckResult.Denied("provider_raw.plan.token"), new SubscriptionSeatUsageSnapshot("t1", 1, 1, 0));
         var r = await g.CheckMaxUsersAsync("t1");
         Assert.False(r.Allowed);
-        Assert.Equal("seat_limit_unavailable", r.ReasonCode);
+        Assert.Equal("entitlement_unavailable", r.ReasonCode);
         Assert.DoesNotContain("token", r.ReasonCode, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("plan", r.ReasonCode, StringComparison.OrdinalIgnoreCase);
     }

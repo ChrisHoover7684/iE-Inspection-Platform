@@ -810,3 +810,88 @@ html, body, #root {
 .api570-report .inspection-row-flags label {
     font-size: 0.9rem;
 }
+
+.app-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+}
+
+.app-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--color-border-medium);
+    background: #fff;
+}
+
+.app-title {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.app-subtitle {
+    font-size: 12px;
+    color: var(--color-muted);
+}
+
+.topbar-user-menu {
+    border: 1px solid var(--color-border-medium);
+    background: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.app-shell-body {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    min-height: 0;
+}
+
+.left-nav {
+    border-right: 1px solid var(--color-border-medium);
+    background: var(--color-bg-sidebar);
+    padding: 12px;
+}
+
+.left-nav-heading {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin: 10px 0 6px;
+    color: #475569;
+}
+
+.left-nav-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.left-nav-link {
+    display: block;
+    padding: 8px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #0f172a;
+}
+
+.left-nav-link:hover,
+.left-nav-link.active {
+    background: #e2e8f0;
+}
+
+.app-shell-main {
+    padding: 16px;
+}
+
+.page-header h1 {
+    margin: 0;
+}
+
+@media (max-width: 1024px) {
+    .app-shell-body {
+        grid-template-columns: 1fr;
+    }
+}

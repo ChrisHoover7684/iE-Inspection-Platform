@@ -404,3 +404,18 @@ The goal is to lock role hierarchy and navigation direction before incremental U
 - Backend-only role-aware read models were added for future navigation targets defined in #209.
 - No UI components were added in this change.
 - Client visibility remains final/approved-only for reports; owner/admin visibility remains tenant/facility scoped.
+
+## PR #211 implementation note: frontend app shell foundation
+
+PR #211 implements the first frontend role-aware app shell and left navigation foundation.
+
+- Adds a top bar, left navigation, grouped role-aware menu metadata, and main content region scaffolding.
+- Adds minimal placeholder route targets only where needed to support safe navigation.
+- Does **not** implement full dashboard feature screens.
+- Does **not** implement full NDE Request Log UI.
+- Does **not** implement full Report Timeline UI.
+- Does **not** implement full Asset Activity UI.
+
+### Security and authorization reminder
+Frontend role visibility is a usability convenience and **not** security enforcement.
+Authoritative access control remains backend authentication plus tenant/facility authorization.

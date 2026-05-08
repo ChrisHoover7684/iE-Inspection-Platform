@@ -36,6 +36,9 @@ public class ReportingControllerAuthorizationSweepTests
         Assert.Equal(AuditResults.Denied, evt.Result);
         Assert.Equal("CreateInstance", evt.Metadata?["route"]?.ToString());
         Assert.Equal(EntitlementKeys.ReportsCreate, evt.Metadata?["entitlementKey"]?.ToString());
+        Assert.Equal("entitlement_disabled", evt.Metadata?["reasonCode"]?.ToString());
+        Assert.NotNull(evt.Metadata);
+        Assert.Equal(3, evt.Metadata!.Count);
         Assert.False(evt.Metadata?.ContainsKey("requestBody") ?? false);
     }
 
@@ -51,6 +54,8 @@ public class ReportingControllerAuthorizationSweepTests
         Assert.Equal(403, ((ObjectResult)r.Result!).StatusCode);
         var evt = Assert.Single(writer.Events, e => e.Action == AuditActions.EntitlementLimitDenied);
         Assert.Equal(EntitlementKeys.MaxActiveReports, evt.Metadata?["entitlementKey"]?.ToString());
+        Assert.NotNull(evt.Metadata);
+        Assert.Equal(5, evt.Metadata!.Count);
         Assert.False(evt.Metadata?.ContainsKey("metadataJson") ?? false);
     }
 
@@ -135,6 +140,23 @@ public class ReportingControllerAuthorizationSweepTests
     }
 
     [Fact]
+    public async Task CreateInstance_CrossTenant_Returns404_BeforeEntitlementOrLimit()
+    {
+        var entitlement = new CountingEntitlementService(EntitlementCheckResult.Denied("entitlement_disabled"));
+        var usage = new CountingSubscriptionUsageService(new SubscriptionUsageSnapshot("22222222-2222-2222-2222-222222222222", 99));
+        var c = BuildController(true, out var db, out var a, out _, entitlementEnabled: true, entitlementService: entitlement, subscriptionUsageService: usage);
+        SetTenant(a, AuthCapabilities.ReportsWrite);
+        SeedAccess(db);
+        SeedClientOrgAndFacility(db);
+
+        var r = await c.CreateInstance(Base("r-cross-tenant", org: "22222222-2222-2222-2222-222222222222"));
+
+        Assert.IsType<NotFoundObjectResult>(r.Result);
+        Assert.Equal(0, entitlement.Calls);
+        Assert.Equal(0, usage.Calls);
+    }
+
+    [Fact]
     public async Task UpdateInstance_DoesNotRunLimitCheck()
     {
         var entitlement = new CountingEntitlementService(EntitlementCheckResult.AllowedWithLimit(1));
@@ -148,6 +170,21 @@ public class ReportingControllerAuthorizationSweepTests
         var r = await c.UpdateInstance("r-update", Base("ignored"));
 
         Assert.IsType<OkObjectResult>(r.Result);
+        Assert.Equal(0, usage.Calls);
+    }
+
+    [Fact]
+    public async Task ExportInstanceDocx_DoesNotRunLimitCheck()
+    {
+        var usage = new CountingSubscriptionUsageService(new SubscriptionUsageSnapshot("11111111-1111-1111-1111-111111111111", 99));
+        var c = BuildController(true, out var db, out var a, out var repo, entitlementEnabled: true, entitlementService: new CountingEntitlementService(EntitlementCheckResult.AllowedWithLimit(1)), subscriptionUsageService: usage);
+        SetTenant(a, AuthCapabilities.ExportsRead);
+        SeedAccess(db);
+        repo.Create(Base("r-export"));
+
+        var r = await c.ExportInstanceDocx("r-export");
+
+        Assert.IsType<FileContentResult>(r);
         Assert.Equal(0, usage.Calls);
     }
     [Fact]

@@ -50,3 +50,7 @@ Calculator endpoints remain intentionally unprotected for this phase.
 - Seat counting: `active` + `invited` consume seats; `disabled` + `removed` do not.
 - No public admin/user-management API, no UI, no email sending, and no billing provider integration in this PR.
 - Calculator endpoints remain intentionally ungated; health endpoints remain public.
+
+- `max.users` is a named-user seat limit: one active/invited tenant member record represents one named human user seat.
+- Shared logins/accounts are not supported as a bypass for seat limits.
+- Session/device sharing enforcement is not part of PR #200 (future hardening).

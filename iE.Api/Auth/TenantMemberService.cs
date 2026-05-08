@@ -56,9 +56,11 @@ public sealed class TenantMemberService(IConfiguration configuration, ITenantCon
         if (existing is not null)
         {
             existing.Status = ClientOrganizationUserStatuses.Invited;
+            existing.Email = normalizedEmail;
+            existing.NormalizedEmail = normalizedEmail;
             existing.UpdatedAtUtc = DateTime.UtcNow;
             await dbContext.SaveChangesAsync(cancellationToken);
-            await auditEventWriter.WriteAsync(AuditActions.TenantMemberInvited, "TenantMember", existing.Id, AuditResults.Success, metadata: BuildMetadata("invite", seatResult.ReasonCode, existing.Id, true, false, seatResult.ActiveSeatCount, seatResult.LimitValue));
+            await auditEventWriter.WriteAsync(AuditActions.TenantMemberInvited, "TenantMember", existing.Id, AuditResults.Success, metadata: BuildMetadata("invite", seatResult.ReasonCode, existing.Id, true, existing.ExternalSubject is not null, seatResult.ActiveSeatCount, seatResult.LimitValue));
             return TenantMemberOperationResult.Allow(seatResult.ReasonCode, existing.Id, seatResult.ActiveSeatCount, seatResult.LimitValue);
         }
 
@@ -82,13 +84,25 @@ public sealed class TenantMemberService(IConfiguration configuration, ITenantCon
         if (string.IsNullOrWhiteSpace(externalSubject)) return TenantMemberOperationResult.Deny("invalid_external_subject");
         var tenantId = ResolveTenantId(clientOrganizationId, trustedInternalRequest);
         if (tenantId is null) return TenantMemberOperationResult.Deny("tenant_context_missing");
+
         var row = await dbContext.ClientOrganizationUsers.FirstOrDefaultAsync(u => u.Id == memberId && u.ClientOrganizationId == tenantId, cancellationToken);
         if (row is null) return TenantMemberOperationResult.Deny("tenant_context_missing");
 
-        var duplicateSubject = await dbContext.ClientOrganizationUsers.AnyAsync(u => u.ClientOrganizationId == tenantId && u.Id != memberId && u.ExternalSubject == externalSubject && u.Status == ClientOrganizationUserStatuses.Active, cancellationToken);
+        var normalizedSubject = externalSubject.Trim();
+        var duplicateSubject = await dbContext.ClientOrganizationUsers.AnyAsync(u => u.ClientOrganizationId == tenantId && u.Id != memberId && u.ExternalSubject == normalizedSubject && u.Status == ClientOrganizationUserStatuses.Active, cancellationToken);
         if (duplicateSubject) return TenantMemberOperationResult.Deny("duplicate_member", row.Id);
 
-        row.ExternalSubject = externalSubject.Trim();
+        if (!IsSeatConsuming(row.Status))
+        {
+            var seatResult = await seatLimitGuard.CheckMaxUsersAsync(tenantId, cancellationToken);
+            if (!seatResult.Allowed)
+            {
+                await auditEventWriter.WriteAsync(AuditActions.TenantMemberSeatLimitDenied, "TenantMember", row.Id, AuditResults.Denied, metadata: BuildMetadata("activate", seatResult.ReasonCode, row.Id, row.NormalizedEmail is not null, true, seatResult.ActiveSeatCount, seatResult.LimitValue));
+                return TenantMemberOperationResult.Deny(seatResult.ReasonCode, row.Id, seatResult.ActiveSeatCount, seatResult.LimitValue);
+            }
+        }
+
+        row.ExternalSubject = normalizedSubject;
         row.Status = ClientOrganizationUserStatuses.Active;
         row.UpdatedAtUtc = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);

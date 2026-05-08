@@ -140,3 +140,6 @@ Use this checklist before backend-focused releases.
 - Confirms seat accounting and entitlement gate behavior for `max.users` under feature-flagged enforcement.
 - Excludes public admin API/UI, email invite delivery, and billing provider integrations.
 - Maintains public health endpoints and ungated calculator endpoints by design.
+
+- PR #200 documents named-user seat policy (`max.users`) and explicitly disallows shared-account bypass.
+- Session/device anomaly detection is deferred to future work; not part of this release gate.

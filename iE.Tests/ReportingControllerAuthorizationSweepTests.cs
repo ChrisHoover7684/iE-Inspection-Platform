@@ -251,7 +251,7 @@ public class ReportingControllerAuthorizationSweepTests
     private sealed class CountingSubscriptionUsageService(SubscriptionUsageSnapshot? snapshot) : ISubscriptionUsageService
     {
         public int Calls { get; private set; }
-        public Task<SubscriptionUsageSnapshot?> GetUsageAsync(string? clientOrganizationId = null, CancellationToken cancellationToken = default)
+        public Task<SubscriptionUsageSnapshot?> GetUsageAsync(string? clientOrganizationId = null, bool trustedInternalRequest = false, CancellationToken cancellationToken = default)
         {
             Calls++;
             return Task.FromResult(snapshot);

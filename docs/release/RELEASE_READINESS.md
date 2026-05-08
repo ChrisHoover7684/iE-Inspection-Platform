@@ -128,3 +128,9 @@ Use this checklist before backend-focused releases.
 - Billing/provider integration is still future work.
 - No UI/public admin API work added.
 - Calculator endpoints remain intentionally ungated.
+
+## PR #199 release note
+- Added backend-only tenant-user seat entitlement foundation (`max.users`) and seat-usage service/guard for future invite/member enforcement.
+- Plan tiers continue to be represented by entitlement rows and optional limit values (example: Starter `max.users = 10`).
+- No billing provider integration (Stripe/Marketplace/AppSource/payment), no subscription UI, and no public admin/user-management APIs were introduced.
+- Health endpoints remain public and calculator endpoints remain intentionally ungated.

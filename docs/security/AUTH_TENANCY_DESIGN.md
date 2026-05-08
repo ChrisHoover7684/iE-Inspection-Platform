@@ -169,6 +169,13 @@ Out of scope for this decision record:
 - External identity key (OIDC `sub`) as canonical user identifier.
 - Optional profile fields stored internally for audit readability (display name, email snapshot).
 
+### Tenant-user persistence foundation (PR #199)
+- Added backend `ClientOrganizationUser` persistence for tenant-scoped membership/seat accounting.
+- Fields: `Id`, `ClientOrganizationId`, `ExternalSubject`, optional `Email`, optional `DisplayName`, `Status`, `CreatedAtUtc`, optional `UpdatedAtUtc`, optional `LastSeenAtUtc`.
+- Allowed statuses for current seat accounting MVP: `active`, `invited`, `disabled`, `removed`.
+- Seat counting rule for entitlement enforcement foundation: `active + invited` consume seats; `disabled + removed` do not.
+- No public admin/user-management API is exposed in this phase; this is backend-only groundwork.
+
 ### Access mapping
 - Tenant membership and facility scope enforced by internal access mapping (`UserFacilityAccess`) and/or claims.
 - User may have different roles per tenant/facility.

@@ -157,19 +157,30 @@ public class UserSessionAuditServiceTests
     public async Task RecordSessionEnded_UpdatesOnlyMatchingTenantSubjectSession()
     {
         await using var db = BuildDb();
+        const string contextTenantId = "11111111-1111-1111-1111-111111111111";
         var ctx = new TenantContextAccessor
         {
-            Current = new TenantContext { ClientOrganizationId = Guid.Parse("11111111-1111-1111-1111-111111111111"), ExternalSubject = "sub1" }
+            Current = new TenantContext { ClientOrganizationId = Guid.Parse(contextTenantId), ExternalSubject = "sub1" }
         };
         var service = BuildService(db, new CapturingAuditEventWriter(), authEnabled: true, tenantAccessor: ctx, options: new AccountSharingAuditOptions { Enabled = true });
 
         await service.RecordRequestSeenAsync(null, null, "target-session", "dev", "1.1.1.1", "ua", default);
-        await service.RecordRequestSeenAsync("t2", "sub1", "other-tenant-session", "dev", "1.1.1.1", "ua", default);
+        db.ClientOrganizationUserSessions.Add(new ClientOrganizationUserSession
+        {
+            Id = "other-session",
+            ClientOrganizationId = "t2",
+            ExternalSubject = "sub1",
+            SessionKeyHash = "not-the-target-hash",
+            StartedAtUtc = DateTime.UtcNow,
+            LastSeenAtUtc = DateTime.UtcNow,
+            CreatedAtUtc = DateTime.UtcNow
+        });
+        await db.SaveChangesAsync();
+
         await service.RecordSessionEndedAsync("target-session", default);
 
-        var rows = db.ClientOrganizationUserSessions.ToList();
-        Assert.NotNull(rows.Single(x => x.ClientOrganizationId == "11111111-1111-1111-1111-111111111111").EndedAtUtc);
-        Assert.Null(rows.Single(x => x.ClientOrganizationId == "t2").EndedAtUtc);
+        Assert.NotNull(db.ClientOrganizationUserSessions.Single(x => x.ClientOrganizationId == contextTenantId).EndedAtUtc);
+        Assert.Null(db.ClientOrganizationUserSessions.Single(x => x.ClientOrganizationId == "t2").EndedAtUtc);
     }
 
     [Fact]
@@ -180,7 +191,7 @@ public class UserSessionAuditServiceTests
         var disabled = BuildService(db, writerDisabled, authEnabled: false, options: new AccountSharingAuditOptions { Enabled = false });
         var disabledResult = await disabled.DetectSuspiciousAccountSharingAsync("t1", "sub1", default);
         Assert.Equal("audit_unavailable", disabledResult.ReasonCode);
-        Assert.Empty(writerDisabled.Events.Where(x => x.Action == AuditActions.SuspiciousAccountSharingDetected));
+        Assert.DoesNotContain(writerDisabled.Events, x => x.Action == AuditActions.SuspiciousAccountSharingDetected);
 
         var writer = new CapturingAuditEventWriter();
         var enabled = BuildService(db, writer, authEnabled: false, options: new AccountSharingAuditOptions { Enabled = true, DeviceWindowHours = 24, MaxDistinctDevicesPerWindow = 2, MaxDistinctIpHashesPerWindow = 2 });
@@ -202,7 +213,7 @@ public class UserSessionAuditServiceTests
         Assert.Equal("excessive_location_count", excessiveIp.ReasonCode);
 
         Assert.All(db.ClientOrganizationUserSessions, row => Assert.False(row.IsRevoked));
-        Assert.NotEmpty(writer.Events.Where(x => x.Action == AuditActions.SuspiciousAccountSharingDetected));
+        Assert.Contains(writer.Events, x => x.Action == AuditActions.SuspiciousAccountSharingDetected);
     }
 
     [Fact]
@@ -237,20 +248,29 @@ public class UserSessionAuditServiceTests
     [Fact]
     public void AccountSharingOptions_Defaults_And_InvalidConfig_AreSafe()
     {
-        var defaults = new AccountSharingAuditOptions();
-        Assert.False(defaults.Enabled);
-        Assert.Equal(24, defaults.DeviceWindowHours);
-        Assert.Equal(5, defaults.MaxDistinctDevicesPerWindow);
-        Assert.Equal(5, defaults.MaxDistinctIpHashesPerWindow);
+        var missing = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>()).Build();
+        var missingParsed = AccountSharingAuditOptions.FromConfiguration(missing);
+        Assert.False(missingParsed.Enabled);
+        Assert.Equal(24, missingParsed.DeviceWindowHours);
+        Assert.Equal(5, missingParsed.MaxDistinctDevicesPerWindow);
+        Assert.Equal(5, missingParsed.MaxDistinctIpHashesPerWindow);
 
-        var cfg = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        var invalid = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["AccountSharingAudit:Enabled"] = "notabool",
-            ["AccountSharingAudit:DeviceWindowHours"] = "NaN"
+            ["AccountSharingAudit:DeviceWindowHours"] = "NaN",
+            ["AccountSharingAudit:MaxDistinctDevicesPerWindow"] = "0",
+            ["AccountSharingAudit:MaxDistinctIpHashesPerWindow"] = "-1"
         }).Build();
 
-        var ex = Record.Exception(() => cfg.GetValue("AccountSharingAudit:Enabled", false));
+        AccountSharingAuditOptions? parsed = null;
+        var ex = Record.Exception(() => parsed = AccountSharingAuditOptions.FromConfiguration(invalid));
         Assert.Null(ex);
+        Assert.NotNull(parsed);
+        Assert.False(parsed!.Enabled);
+        Assert.Equal(24, parsed.DeviceWindowHours);
+        Assert.Equal(5, parsed.MaxDistinctDevicesPerWindow);
+        Assert.Equal(5, parsed.MaxDistinctIpHashesPerWindow);
     }
 
     private static InspectionReportsDbContext BuildDb()

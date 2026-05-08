@@ -16,6 +16,7 @@ using iE.Core.Reports.Templates;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -72,7 +73,7 @@ builder.Services.AddScoped<ReportAccessGuard>();
 builder.Services.AddScoped<ReportReferenceGuard>();
 builder.Services.AddScoped<IAuditEventWriter, AuditEventWriter>();
 builder.Services.AddScoped<IAuditEventQueryService, AuditEventQueryService>();
-builder.Services.Configure<AccountSharingAuditOptions>(builder.Configuration.GetSection("AccountSharingAudit"));
+builder.Services.AddSingleton<IOptions<AccountSharingAuditOptions>>(_ => Options.Create(AccountSharingAuditOptions.FromConfiguration(builder.Configuration)));
 builder.Services.AddScoped<IUserSessionAuditService, UserSessionAuditService>();
 builder.Services.AddSingleton(subscriptionOptions);
 builder.Services.AddScoped<IEntitlementService, EntitlementService>();

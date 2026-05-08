@@ -172,3 +172,12 @@ Use this checklist before backend-focused releases.
 ## PR #204 backend workflow foundation
 Added backend-only ReportLogEntry and NdeRequest persistence/service foundation. No UI, vendor workflow, email sending, or automatic findings creation added.
 - PR #204 expanded: backend-only report log/NDE foundation includes built-in + tenant-custom NDE type definition support (no UI/API/email/vendor flow).
+
+## PR #205 Release Readiness Notes
+- Adds the missing database migration for PR #204 workflow models (`ReportLogEntries`, `NdeRequests`, `NdeRequestTypeDefinitions`).
+- Report Log and NDE Request Log remain backend-only.
+- No UI was added.
+- No email/vendor workflow was added.
+- No automatic findings creation was added.
+- Built-in NDE types include UTSW, PAUT, WFMT, WFPT, ETC, IRIS, Guided Wave UT, and UTT Grid.
+- Tenant-custom NDE type foundation exists, while public UI/API management remains future work.

@@ -10,7 +10,7 @@ internal static class StartupConfiguration
     {
         var connectionString = configuration.GetConnectionString(InspectionReportsConnectionStringName);
 
-        if (string.IsNullOrWhiteSpace(connectionString) || IsPlaceholderConnectionString(connectionString))
+        if (!ConnectionStringLooksSafe(connectionString))
         {
             throw new InvalidOperationException(
                 "Missing required configuration: ConnectionStrings:InspectionReports. " +
@@ -18,7 +18,7 @@ internal static class StartupConfiguration
                 "ConnectionStrings:InspectionReports via dotnet user-secrets for local development.");
         }
 
-        return connectionString;
+        return connectionString!;
     }
 
     internal static bool IsAuthenticationEnabled(IConfiguration configuration)
@@ -33,6 +33,16 @@ internal static class StartupConfiguration
         return options;
     }
 
+    internal static bool ConnectionStringLooksSafe(string? connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return false;
+        }
+
+        return !IsPlaceholderConnectionString(connectionString);
+    }
+
     private static bool IsPlaceholderConnectionString(string connectionString)
     {
         var normalized = connectionString.Trim();
@@ -45,7 +55,8 @@ internal static class StartupConfiguration
 
     internal static bool ShouldApplyMigrationsOnStartup(IConfiguration configuration)
     {
-        return configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup");
+        var value = configuration["Database:ApplyMigrationsOnStartup"];
+        return bool.TryParse(value, out var enabled) && enabled;
     }
 
     internal static bool IsSubscriptionEnforcementEnabled(IConfiguration configuration)

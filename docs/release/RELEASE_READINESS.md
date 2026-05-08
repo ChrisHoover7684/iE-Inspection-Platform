@@ -158,3 +158,13 @@ Use this checklist before backend-focused releases.
 - Confirms suspicious-sharing detection remains audit-only: no automatic blocking, session revocation, user lockout, or enforcement behavior is introduced.
 - Confirms no public user/admin API, no UI changes, and no billing/provider integrations were added.
 - Confirms calculator endpoints remain intentionally ungated and health endpoints remain public.
+
+## PR #203 Release Readiness Notes
+- Backend readiness/config/runbook hardening only (backend/tests/docs scope).
+- No UI changes, no billing/provider integration, and no public admin/user-management APIs added.
+- No automatic session blocking/revocation enforcement added; account-sharing remains audit-only.
+- Defaults remain safe: `Authentication:Enabled=false`, `Subscriptions:EnforcementEnabled=false`, `Database:ApplyMigrationsOnStartup=false` unless explicitly enabled.
+- Health endpoints remain public (`/health/live`, `/health/ready`); calculator endpoints remain intentionally ungated.
+- Staging enablement order for this phase: configure DB connection; apply migrations; seed tenant/facility/member/subscription/entitlement data; validate health/readiness; then enable auth; then enable subscription enforcement; optionally enable account-sharing audit for audit collection only.
+- Before enabling `Subscriptions:EnforcementEnabled=true`, verify seed records exist for `ClientOrganization`, `Facility`, `ProcessUnit`, `Asset` (if needed), `UserFacilityAccess`, `ClientOrganizationUser`, `SubscriptionPlan`, `ClientSubscription`, and entitlement keys `reports.create`, `reports.export`, `photos.markup`, `audit.query`, `max.activeReports`, `max.users`.
+- Migration safety for release: keep `Database:ApplyMigrationsOnStartup=true` as explicit opt-in only and take a backup before applying migrations.

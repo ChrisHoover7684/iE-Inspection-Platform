@@ -150,3 +150,11 @@ Use this checklist before backend-focused releases.
 - Confirms suspicious-sharing detection is audit-only (no auto-block/session revocation yet).
 - Confirms no UI/public admin API and no billing provider integration in this PR.
 - Confirms calculator endpoints remain intentionally ungated and health endpoints remain public.
+
+## PR #202 Release Readiness Notes
+- Hardens backend-only session/device audit safety coverage from PR #201 with expanded tests for tenant resolution, privacy hashing, tenant/subject isolation, suspicious-sharing reason codes, and safe audit metadata keys.
+- Confirms named-user seat policy remains in effect (`max.users` is one active/invited member per human); shared logins remain unsupported for bypass.
+- Confirms legitimate single-user multi-device usage remains allowed.
+- Confirms suspicious-sharing detection remains audit-only: no automatic blocking, session revocation, user lockout, or enforcement behavior is introduced.
+- Confirms no public user/admin API, no UI changes, and no billing/provider integrations were added.
+- Confirms calculator endpoints remain intentionally ungated and health endpoints remain public.

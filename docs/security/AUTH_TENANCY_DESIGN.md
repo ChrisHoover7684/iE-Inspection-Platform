@@ -469,3 +469,12 @@ Facility moves remain blocked on update paths pending a dedicated future workflo
 - No billing provider integration in this phase.
 - Calculator endpoints remain intentionally ungated.
 - Health endpoints remain public.
+
+## PR #202 session/device audit safety hardening
+- PR #202 adds backend test hardening for `UserSessionAuditService` tenant resolution, privacy hashing, session/device row behavior, suspicious-sharing signals, audit metadata safety, and configuration defaults.
+- Named-user seat policy remains unchanged: one active/invited `ClientOrganizationUser` record equals one named human seat.
+- Shared logins/accounts remain unsupported as a way to bypass `max.users`.
+- Legitimate single-user multi-device usage remains allowed.
+- Session/device suspicious-sharing detection remains audit-only in this phase.
+- No automatic blocking, session revocation, user lockout, public user/admin APIs, UI, or billing/provider integration were added.
+- Calculator endpoints remain intentionally ungated; health endpoints remain public.

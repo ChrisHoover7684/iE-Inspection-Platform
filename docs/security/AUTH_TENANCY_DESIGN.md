@@ -493,3 +493,8 @@ This update is backend readiness/config/runbook hardening only.
 ## PR #204 backend workflow foundation
 Added backend-only ReportLogEntry and NdeRequest persistence/service foundation. No UI, vendor workflow, email sending, or automatic findings creation added.
 - PR #204 expanded: backend-only report log/NDE foundation includes built-in + tenant-custom NDE type definition support (no UI/API/email/vendor flow).
+
+## PR #207 Internal stress-test plan and named-user policy
+- Internal stress-test plan `company_stress_test_90d` enables unlimited named users through `max.users=null` and unlimited active reports through `max.activeReports=null`.
+- Unlimited access does **not** permit shared login usage; licensing remains named-user based.
+- `AccountSharingAudit` remains audit-only and may be used to detect suspicious shared-account behavior during stress tests.

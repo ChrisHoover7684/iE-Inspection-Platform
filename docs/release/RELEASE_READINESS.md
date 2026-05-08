@@ -195,3 +195,9 @@ Added backend-only ReportLogEntry and NdeRequest persistence/service foundation.
 - No UI, email/vendor workflow, or automatic findings generation was added.
 - NDE `Canceled` remains terminal and traceability is preserved.
 - Future UI timeline/status history can query report log entries.
+
+## PR #207 release note: backend-only internal stress-test readiness
+- Introduces internal `company_stress_test_90d` plan readiness for controlled company stress testing.
+- Grants unlimited named users (`max.users=null`) and unlimited active reports (`max.activeReports=null`) while keeping enforcement behavior intact.
+- No billing provider identifiers, payloads, checkout, marketplace, or public admin APIs were added.
+- No frontend/UI changes were introduced.

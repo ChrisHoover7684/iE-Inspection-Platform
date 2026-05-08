@@ -59,6 +59,23 @@ internal static class StartupConfiguration
         return bool.TryParse(value, out var enabled) && enabled;
     }
 
+
+    internal static StressTestSubscriptionSeedOptions GetStressTestSeedOptions(IConfiguration configuration)
+    {
+        var section = configuration.GetSection("StressTestSeed");
+        var enabled = bool.TryParse(section["Enabled"], out var parsedEnabled) && parsedEnabled;
+        var clientOrganizationId = section["ClientOrganizationId"];
+        var startsAtRaw = section["StartsAtUtc"];
+        DateTime? startsAtUtc = null;
+        if (!string.IsNullOrWhiteSpace(startsAtRaw) && DateTime.TryParse(startsAtRaw, out var parsedStart))
+        {
+            startsAtUtc = parsedStart.Kind == DateTimeKind.Utc ? parsedStart : DateTime.SpecifyKind(parsedStart, DateTimeKind.Utc);
+        }
+
+        var durationDays = int.TryParse(section["DurationDays"], out var parsedDays) ? parsedDays : StressTestPlanConstants.IntendedDurationDays;
+        return new StressTestSubscriptionSeedOptions(enabled, clientOrganizationId, startsAtUtc, durationDays);
+    }
+
     internal static bool IsSubscriptionEnforcementEnabled(IConfiguration configuration)
     {
         var value = configuration["Subscriptions:EnforcementEnabled"];

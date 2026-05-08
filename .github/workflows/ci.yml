@@ -76,6 +76,10 @@ jobs:
         working-directory: iE.Web
         run: npm ci
 
+      - name: Run frontend tests
+        working-directory: iE.Web
+        run: npm run test
+
       - name: Build frontend
         working-directory: iE.Web
         run: npm run build

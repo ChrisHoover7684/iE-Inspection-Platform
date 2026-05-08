@@ -40,3 +40,19 @@ This PR should be treated as **planning/navigation architecture only** and as a 
 ### Security statement
 Frontend role-based visibility is UI convenience only and not enforcement.
 Backend authentication and tenant/facility authorization remain authoritative.
+
+
+## PR #212 — Frontend testing foundation for role-aware app shell/navigation
+
+### What this PR includes
+- Adds frontend test tooling (Vitest, React Testing Library, jest-dom, jsdom).
+- Adds tests for role navigation visibility, current role normalization, LeftNavigation rendering, and AppShell shell behavior.
+- Adds frontend CI step to run `npm run test` before frontend build.
+
+### What this PR does not include
+- No new workflow feature screens (dashboard, NDE Request Log, report timeline, asset activity).
+- No backend/API authorization, tenancy, or workflow enforcement changes.
+
+### Security statement
+Frontend role visibility remains a UI convenience only.
+Backend authentication and authorization remain authoritative.

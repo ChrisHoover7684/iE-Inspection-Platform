@@ -50,6 +50,7 @@ internal static class StartupConfiguration
 
     internal static bool IsSubscriptionEnforcementEnabled(IConfiguration configuration)
     {
-        return configuration.GetValue<bool>("Subscriptions:EnforcementEnabled");
+        var value = configuration["Subscriptions:EnforcementEnabled"];
+        return bool.TryParse(value, out var enabled) && enabled;
     }
 }

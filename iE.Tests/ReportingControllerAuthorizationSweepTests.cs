@@ -151,7 +151,8 @@ public class ReportingControllerAuthorizationSweepTests
 
         var r = await c.CreateInstance(Base("r-cross-tenant", org: "22222222-2222-2222-2222-222222222222"));
 
-        Assert.IsType<NotFoundObjectResult>(r.Result);
+        var objectResult = Assert.IsType<ObjectResult>(r.Result);
+        Assert.Equal(404, objectResult.StatusCode);
         Assert.Equal(0, entitlement.Calls);
         Assert.Equal(0, usage.Calls);
     }
@@ -177,14 +178,15 @@ public class ReportingControllerAuthorizationSweepTests
     public async Task ExportInstanceDocx_DoesNotRunLimitCheck()
     {
         var usage = new CountingSubscriptionUsageService(new SubscriptionUsageSnapshot("11111111-1111-1111-1111-111111111111", 99));
-        var c = BuildController(true, out var db, out var a, out var repo, entitlementEnabled: true, entitlementService: new CountingEntitlementService(EntitlementCheckResult.AllowedWithLimit(1)), subscriptionUsageService: usage);
+        var c = BuildController(true, out var db, out var a, out var repo, entitlementEnabled: true, entitlementService: new CountingEntitlementService(EntitlementCheckResult.Denied("entitlement_disabled")), subscriptionUsageService: usage);
         SetTenant(a, AuthCapabilities.ExportsRead);
         SeedAccess(db);
         repo.Create(Base("r-export"));
 
         var r = await c.ExportInstanceDocx("r-export");
 
-        Assert.IsType<FileContentResult>(r);
+        var objectResult = Assert.IsType<ObjectResult>(r);
+        Assert.Equal(403, objectResult.StatusCode);
         Assert.Equal(0, usage.Calls);
     }
     [Fact]

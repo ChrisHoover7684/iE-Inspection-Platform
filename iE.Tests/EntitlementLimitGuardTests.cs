@@ -41,7 +41,7 @@ public class EntitlementLimitGuardTests
         var r = await g.CheckMaxActiveReportsAsync("t1");
 
         Assert.False(r.Allowed);
-        Assert.Equal("limit_unavailable", r.ReasonCode);
+        Assert.Equal("entitlement_unavailable", r.ReasonCode);
         Assert.DoesNotContain("plan", r.ReasonCode, StringComparison.OrdinalIgnoreCase);
     }
 

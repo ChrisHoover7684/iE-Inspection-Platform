@@ -1,6 +1,7 @@
 using iE.Api.Auth;
 using iE.Api.Controllers;
 using iE.Api.Tenancy;
+using iE.Api.Workflow;
 using iE.Core.Reports;
 using iE.Core.Reports.Domain;
 using iE.Core.Reports.Persistence;
@@ -122,8 +123,8 @@ public class ReportingControllerReferenceValidationTests
         var entitlementConfig = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Subscriptions:EnforcementEnabled"] = "false" }).Build();
         var entitlementGuard = new EntitlementGuard(entitlementConfig, new StubEntitlementService());
         var limitGuard = new EntitlementLimitGuard(entitlementConfig, entitlementGuard, new StubSubscriptionUsageService());
-        var referenceGuard = new ReportReferenceGuard(config, db, auditWriter);
-        var controller = new ReportingController(new InspectionReportRepository(db), new InspectionReportFactory(), null!, null!, null!, null!, null!, null!, null!, new InMemoryReportTemplateRegistry(), null!, null!, null!, null!, guard, referenceGuard, entitlementGuard, limitGuard, auditWriter);
+        var referenceGuard = new ReportReferenceGuard(config, db, auditWriter, new ReportLogService(db, new NoopAuditEventWriter()), accessor);
+        var controller = new ReportingController(new InspectionReportRepository(db), new InspectionReportFactory(), null!, null!, null!, null!, null!, null!, null!, new InMemoryReportTemplateRegistry(), null!, null!, null!, null!, guard, referenceGuard, entitlementGuard, limitGuard, auditWriter, new ReportLogService(db, new NoopAuditEventWriter()), accessor);
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         return controller;
     }

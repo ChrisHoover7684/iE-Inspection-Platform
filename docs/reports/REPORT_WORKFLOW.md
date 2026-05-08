@@ -27,3 +27,11 @@ PR #204 is backend-only.
 - No UI was added.
 - No vendor workflow/email was added.
 - No automatic findings creation was added.
+
+
+## PR #206 report workflow timeline wiring
+- Wired `ReportLogEntry` writes into existing report lifecycle backend actions (create, create-from-template, update, submit/start/approve/return review, and status changes).
+- `ReportLogEntry` remains business workflow history and does not replace `AuditEvent`.
+- No UI, email/vendor workflow, or automatic findings generation was added.
+- NDE `Canceled` remains terminal and traceability is preserved.
+- Future UI timeline/status history can query report log entries.

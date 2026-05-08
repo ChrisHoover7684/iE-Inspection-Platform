@@ -2,6 +2,14 @@ namespace iE.Api.Workflow;
 
 public static class ReportLogEventTypes
 {
+    public const string ReportCreated = "report_created";
+    public const string ReportUpdated = "report_updated";
+    public const string ReportSubmitted = "report_submitted";
+    public const string ReviewStarted = "review_started";
+    public const string ReviewApproved = "review_approved";
+    public const string ReviewReturned = "review_returned";
+    public const string ReportFinalized = "report_finalized";
+    public const string StatusChanged = "status_changed";
     public const string NdeRequestCreated = "nde_request_created";
     public const string NdeRequestStatusChanged = "nde_request_status_changed";
     public const string NdeResultsReceived = "nde_results_received";

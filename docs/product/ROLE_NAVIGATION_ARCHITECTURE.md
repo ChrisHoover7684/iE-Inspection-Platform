@@ -463,6 +463,31 @@ PR #212 adds a frontend test foundation focused on role-aware navigation metadat
   - Guided Wave UT
   - Other / Custom
 
+- Supplemental Inspections
+  - Soil-to-Air Interface (SAI)
+  - Injection Point Inspection
+  - Mix Point Inspection
+  - HF Alky Flange Inspection
+  - CUI Inspection
+  - CUF Inspection
+  - Dead Leg Inspection
+  - Corrosion Under Pipe Supports (CUPS)
+  - Buried Piping / Transition Inspection
+  - Small-Bore Connection Inspection
+  - Flange / Bolting / Gasket Inspection
+  - Coating / External Corrosion Inspection
+  - Fireproofing Interface Inspection
+  - Insulation Penetration Inspection
+  - Vibration / Fatigue Follow-up
+  - Weld / HAZ Follow-up
+  - Other / Custom Supplemental Inspection
+
+### Supplemental inspection planning note
+- These are placeholders/planning categories only in this PR.
+- Do not build these report screens yet.
+- Do not add backend models for these yet.
+- These should appear in future Create Report flow and report-workspace tooling, not as a flat global left-nav list.
+
 ## Report-authoring tool panel direction
 - Left navigation remains the primary app navigation.
 - Report-authoring tools should live inside the report workspace rather than global navigation.

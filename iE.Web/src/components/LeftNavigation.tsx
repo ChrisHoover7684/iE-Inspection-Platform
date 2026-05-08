@@ -21,7 +21,7 @@ export function LeftNavigation({ groups, isCollapsed, onToggleCollapsed }: LeftN
 
       {groups.map((group) => (
         <section key={group.key} className="left-nav-group" aria-labelledby={`group-${group.key}`}>
-          <h2 id={`group-${group.key}`} className="left-nav-heading">
+          <h2 id={`group-${group.key}`} className="left-nav-heading" aria-label={group.label}>
             {isCollapsed ? group.label.charAt(0) : group.label}
           </h2>
           <ul className="left-nav-list">
@@ -29,6 +29,7 @@ export function LeftNavigation({ groups, isCollapsed, onToggleCollapsed }: LeftN
               <li key={item.key}>
                 <NavLink
                   to={item.route}
+                  aria-label={item.label}
                   title={item.label}
                   className={({ isActive }) => `left-nav-link${isActive ? ' active' : ''}`}
                 >

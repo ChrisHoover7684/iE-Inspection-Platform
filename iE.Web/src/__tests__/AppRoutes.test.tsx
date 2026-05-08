@@ -1,10 +1,12 @@
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import App from '../App';
 import { allNavigationRoutes } from '../navigation/roleNavigation';
 
 const nonPlaceholderRoutes = new Set(['/dashboard', '/calculators/corrosion-rate']);
+
+afterEach(() => cleanup());
 
 describe('App routes', () => {
   it.each(allNavigationRoutes)('route %s resolves without dashboard fallback', (route: string) => {

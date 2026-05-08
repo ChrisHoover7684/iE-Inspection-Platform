@@ -2,6 +2,7 @@ using iE.Api;
 using iE.Api.Auth;
 using iE.Api.Middleware;
 using iE.Api.Tenancy;
+using iE.Api.Workflow;
 using iE.Core.MaterialStress.Services;
 using iE.Core.Mechanical.PressureVessels;
 using iE.Core.Reports.Checklists;
@@ -84,6 +85,8 @@ builder.Services.AddScoped<EntitlementLimitGuard>();
 builder.Services.AddScoped<EntitlementSeatLimitGuard>();
 builder.Services.AddScoped<ITenantMemberService, TenantMemberService>();
 builder.Services.AddScoped<IBackendReadinessSnapshotService, BackendReadinessSnapshotService>();
+builder.Services.AddScoped<IReportLogService, ReportLogService>();
+builder.Services.AddScoped<INdeRequestService, NdeRequestService>();
 
 if (authenticationEnabled)
 {

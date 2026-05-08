@@ -30,3 +30,6 @@
 - `/health/live` is public and should only represent process liveness.
 - `/health/ready` is public and should represent database readiness checks.
 - Auth/subscription/account-sharing/audit issues should not mark liveness down.
+
+## PR #204 backend workflow foundation
+Added backend-only ReportLogEntry and NdeRequest persistence/service foundation. No UI, vendor workflow, email sending, or automatic findings creation added.

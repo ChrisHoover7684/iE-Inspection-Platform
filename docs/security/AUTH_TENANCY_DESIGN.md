@@ -489,3 +489,6 @@ This update is backend readiness/config/runbook hardening only.
 - Calculator endpoints remain intentionally ungated by auth/subscriptions.
 - `Subscriptions:EnforcementEnabled` default remains `false`.
 - `AccountSharingAudit` remains audit-only.
+
+## PR #204 backend workflow foundation
+Added backend-only ReportLogEntry and NdeRequest persistence/service foundation. No UI, vendor workflow, email sending, or automatic findings creation added.

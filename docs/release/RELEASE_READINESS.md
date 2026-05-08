@@ -168,3 +168,6 @@ Use this checklist before backend-focused releases.
 - Staging enablement order for this phase: configure DB connection; apply migrations; seed tenant/facility/member/subscription/entitlement data; validate health/readiness; then enable auth; then enable subscription enforcement; optionally enable account-sharing audit for audit collection only.
 - Before enabling `Subscriptions:EnforcementEnabled=true`, verify seed records exist for `ClientOrganization`, `Facility`, `ProcessUnit`, `Asset` (if needed), `UserFacilityAccess`, `ClientOrganizationUser`, `SubscriptionPlan`, `ClientSubscription`, and entitlement keys `reports.create`, `reports.export`, `photos.markup`, `audit.query`, `max.activeReports`, `max.users`.
 - Migration safety for release: keep `Database:ApplyMigrationsOnStartup=true` as explicit opt-in only and take a backup before applying migrations.
+
+## PR #204 backend workflow foundation
+Added backend-only ReportLogEntry and NdeRequest persistence/service foundation. No UI, vendor workflow, email sending, or automatic findings creation added.

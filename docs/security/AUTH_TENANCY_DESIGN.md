@@ -459,3 +459,13 @@ Facility moves remain blocked on update paths pending a dedicated future workflo
 
 - Named-user licensing policy for PR #200: one active/invited member record equals one human seat; shared logins are not allowed for bypass.
 - No session/device enforcement is added in this phase; legitimate multi-device use for a single user remains allowed.
+
+## PR #201 named-user session/device audit foundation
+- Adds backend-only `ClientOrganizationUserSession` and `ClientOrganizationUserDevice` persistence as an audit foundation.
+- Named-user seats remain the licensing model (`max.users`); shared logins are not supported.
+- Legitimate single-user multi-device use remains allowed.
+- Detection is audit-only in this phase: no automatic blocking/revocation.
+- No UI/public admin APIs in this phase.
+- No billing provider integration in this phase.
+- Calculator endpoints remain intentionally ungated.
+- Health endpoints remain public.

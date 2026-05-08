@@ -91,3 +91,36 @@ public class ClientOrganizationUser
     public DateTime? LastSeenAtUtc { get; set; }
     public ClientOrganization? ClientOrganization { get; set; }
 }
+
+public class ClientOrganizationUserSession
+{
+    public string Id { get; set; } = string.Empty;
+    public string ClientOrganizationId { get; set; } = string.Empty;
+    public string? ClientOrganizationUserId { get; set; }
+    public string ExternalSubject { get; set; } = string.Empty;
+    public string? SessionKeyHash { get; set; }
+    public DateTime StartedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime LastSeenAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime? EndedAtUtc { get; set; }
+    public string? IpHash { get; set; }
+    public string? UserAgentHash { get; set; }
+    public string? DeviceId { get; set; }
+    public bool IsRevoked { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+public class ClientOrganizationUserDevice
+{
+    public string Id { get; set; } = string.Empty;
+    public string ClientOrganizationId { get; set; } = string.Empty;
+    public string? ClientOrganizationUserId { get; set; }
+    public string ExternalSubject { get; set; } = string.Empty;
+    public string DeviceFingerprintHash { get; set; } = string.Empty;
+    public DateTime FirstSeenAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime LastSeenAtUtc { get; set; } = DateTime.UtcNow;
+    public string? LastIpHash { get; set; }
+    public string? LastUserAgentHash { get; set; }
+    public bool IsTrusted { get; set; }
+    public bool IsDisabled { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+}

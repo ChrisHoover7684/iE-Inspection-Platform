@@ -15,6 +15,10 @@ public static class AuditActions
     public const string TenantMemberDisabled = "TenantMemberDisabled";
     public const string TenantMemberRemoved = "TenantMemberRemoved";
     public const string TenantMemberSeatLimitDenied = "TenantMemberSeatLimitDenied";
+    public const string UserSessionSeen = "UserSessionSeen";
+    public const string UserDeviceSeen = "UserDeviceSeen";
+    public const string UserSessionEnded = "UserSessionEnded";
+    public const string SuspiciousAccountSharingDetected = "SuspiciousAccountSharingDetected";
 }
 
 public static class AuditResourceTypes
@@ -35,5 +39,6 @@ public static class AuditMetadataKeys
     public static readonly HashSet<string> Sensitive = new(StringComparer.OrdinalIgnoreCase)
     {
         "token", "accessToken", "refreshToken", "idToken", "authorization", "authHeader", "password", "secret", "apiKey", "connectionString", "rawPayload", "requestBody", "responseBody", "markupJson", "stackTrace"
+        , "ipAddress", "userAgent", "providerPayload", "rawPlan", "rawSubscription", "metadataJson"
     };
 }

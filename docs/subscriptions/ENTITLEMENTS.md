@@ -54,3 +54,11 @@ Calculator endpoints remain intentionally unprotected for this phase.
 - `max.users` is a named-user seat limit: one active/invited tenant member record represents one named human user seat.
 - Shared logins/accounts are not supported as a bypass for seat limits.
 - Session/device sharing enforcement is not part of PR #200 (future hardening).
+
+## PR #201 session/device audit-only foundation
+- Backend-only session/device audit persistence and conservative suspicious-sharing detection hooks were added.
+- Named-user seats remain one active/invited member per human; shared logins are unsupported.
+- Multi-device use for a legitimate single user remains allowed.
+- No enforcement/deny behavior yet; audit-only reason codes.
+- No UI/public admin API and no billing provider integration in this PR.
+- Calculator endpoints remain intentionally ungated and health endpoints remain public.

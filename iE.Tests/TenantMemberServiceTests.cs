@@ -29,7 +29,7 @@ public class TenantMemberServiceTests
     {
         db = Db(); SeedSubscription(db, "t1", limit, includeEntitlement); SeedSubscription(db, "11111111-1111-1111-1111-111111111111", limit, includeEntitlement);
         var cfg = Cfg(enforcementEnabled, authEnabled);
-        var tenant = new TenantContextAccessor(); if (setTenant) tenant.Current = new TenantContext { ClientOrganizationId = Guid.Parse(tenantId) };
+        var tenant = new TenantContextAccessor(); if (authEnabled && setTenant) tenant.Current = new TenantContext { ClientOrganizationId = Guid.Parse(tenantId) };
         var guard = new EntitlementSeatLimitGuard(cfg, new EntitlementGuard(cfg, new EntitlementService(cfg, tenant, db)), new SubscriptionSeatUsageService(cfg, tenant, db));
         audit = new CapturingAuditWriter();
         return new TenantMemberService(cfg, tenant, db, guard, audit);

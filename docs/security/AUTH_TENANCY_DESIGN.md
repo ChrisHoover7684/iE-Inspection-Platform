@@ -492,3 +492,4 @@ This update is backend readiness/config/runbook hardening only.
 
 ## PR #204 backend workflow foundation
 Added backend-only ReportLogEntry and NdeRequest persistence/service foundation. No UI, vendor workflow, email sending, or automatic findings creation added.
+- PR #204 expanded: backend-only report log/NDE foundation includes built-in + tenant-custom NDE type definition support (no UI/API/email/vendor flow).

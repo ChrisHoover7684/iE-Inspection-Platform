@@ -17,6 +17,7 @@ public sealed class ReportLogService(InspectionReportsDbContext db, IAuditEventW
         var entry = new ReportLogEntry { ClientOrganizationId = tenantId, FacilityId = facilityId, ReportId = reportId, RelatedNdeRequestId = ndeRequestId, EventType = eventType, EventStatus = status, Message = message.Length > 1000 ? message[..1000] : message };
         db.ReportLogEntries.Add(entry);
         await db.SaveChangesAsync(ct);
+        await audit.WriteAsync("ReportLogEntryAdded","ReportLogEntry",entry.Id,"Success",facilityId,new Dictionary<string, object?>{{"operation","add"},{"reasonCode",WorkflowReasonCodes.Created},{"reportId",reportId},{"ndeRequestId",ndeRequestId},{"status",status},{"eventType",eventType}},ct);
         return new(true, WorkflowReasonCodes.Created, entry.Id, status);
     }
 

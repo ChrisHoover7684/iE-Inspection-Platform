@@ -87,6 +87,7 @@ builder.Services.AddScoped<ITenantMemberService, TenantMemberService>();
 builder.Services.AddScoped<IBackendReadinessSnapshotService, BackendReadinessSnapshotService>();
 builder.Services.AddScoped<IReportLogService, ReportLogService>();
 builder.Services.AddScoped<INdeRequestService, NdeRequestService>();
+builder.Services.AddScoped<INdeRequestTypeService, NdeRequestTypeService>();
 
 if (authenticationEnabled)
 {

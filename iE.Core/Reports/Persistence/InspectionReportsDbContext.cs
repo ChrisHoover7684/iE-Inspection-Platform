@@ -20,6 +20,7 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
     public DbSet<SubscriptionEntitlement> SubscriptionEntitlements => Set<SubscriptionEntitlement>();
     public DbSet<ReportLogEntry> ReportLogEntries => Set<ReportLogEntry>();
     public DbSet<NdeRequest> NdeRequests => Set<NdeRequest>();
+    public DbSet<NdeRequestTypeDefinition> NdeRequestTypeDefinitions => Set<NdeRequestTypeDefinition>();
 
     public override int SaveChanges()
     {
@@ -509,6 +510,20 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
             builder.HasIndex(x => new { x.ClientOrganizationId, x.AssetId });
             builder.HasIndex(x => x.DueDateUtc);
             builder.HasIndex(x => x.CreatedAtUtc);
+        });
+
+        modelBuilder.Entity<NdeRequestTypeDefinition>(builder =>
+        {
+            builder.ToTable("NdeRequestTypeDefinitions");
+            builder.HasKey(x => x.Id);
+            builder.Property(x => x.Id).HasMaxLength(64);
+            builder.Property(x => x.ClientOrganizationId).HasMaxLength(64);
+            builder.Property(x => x.Code).HasMaxLength(64).IsRequired();
+            builder.Property(x => x.DisplayName).HasMaxLength(128).IsRequired();
+            builder.Property(x => x.Description).HasMaxLength(512);
+            builder.HasIndex(x => new { x.ClientOrganizationId, x.Code });
+            builder.HasIndex(x => x.IsBuiltIn);
+            builder.HasIndex(x => x.IsActive);
         });
 
         modelBuilder.Entity<PhotoMarkup>(builder =>

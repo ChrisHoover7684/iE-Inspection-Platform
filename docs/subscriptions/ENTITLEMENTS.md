@@ -62,3 +62,12 @@ Calculator endpoints remain intentionally unprotected for this phase.
 - No enforcement/deny behavior yet; audit-only reason codes.
 - No UI/public admin API and no billing provider integration in this PR.
 - Calculator endpoints remain intentionally ungated and health endpoints remain public.
+
+## PR #202 session/device audit safety hardening
+- Added backend-only safety/regression tests that harden the PR #201 session/device audit foundation.
+- Named-user seats remain the licensing model (`max.users`): one active/invited tenant member record equals one named human seat.
+- Shared logins/accounts remain unsupported for seat-limit bypass.
+- Legitimate single-user multi-device use remains allowed.
+- Suspicious-sharing detection remains audit-only (no automatic block/revoke/lockout behavior).
+- No public user/admin API, no UI, and no billing/provider integration were added.
+- Calculator endpoints remain intentionally ungated; health endpoints remain public.

@@ -14,6 +14,21 @@ public sealed class AccountSharingAuditOptions
     public int DeviceWindowHours { get; init; } = 24;
     public int MaxDistinctDevicesPerWindow { get; init; } = 5;
     public int MaxDistinctIpHashesPerWindow { get; init; } = 5;
+
+    public static AccountSharingAuditOptions FromConfiguration(IConfiguration configuration)
+    {
+        var section = configuration.GetSection("AccountSharingAudit");
+        return new AccountSharingAuditOptions
+        {
+            Enabled = bool.TryParse(section["Enabled"], out var enabled) && enabled,
+            DeviceWindowHours = TryPositiveInt(section["DeviceWindowHours"], 24),
+            MaxDistinctDevicesPerWindow = TryPositiveInt(section["MaxDistinctDevicesPerWindow"], 5),
+            MaxDistinctIpHashesPerWindow = TryPositiveInt(section["MaxDistinctIpHashesPerWindow"], 5)
+        };
+    }
+
+    private static int TryPositiveInt(string? value, int fallback)
+        => int.TryParse(value, out var parsed) && parsed > 0 ? parsed : fallback;
 }
 
 public sealed record UserSessionAuditResult(bool Success, string ReasonCode, int DistinctDeviceCount = 0, int DistinctIpHashCount = 0);

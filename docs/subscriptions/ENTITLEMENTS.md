@@ -84,3 +84,11 @@ Before enabling `Subscriptions:EnforcementEnabled=true`, ensure tenant seed read
 - `UserFacilityAccess`, `ClientOrganizationUser`
 - `SubscriptionPlan`, `ClientSubscription`
 - Entitlements: `reports.create`, `reports.export`, `photos.markup`, `audit.query`, `max.activeReports`, `max.users`
+
+## PR #207 Internal Company Stress-Test Readiness
+- Adds internal-only stress-test plan constants for `company_stress_test_90d` (90-day window).
+- Internal seed service can create/verify `SubscriptionPlan`, `ClientSubscription`, and required entitlements without billing provider integration.
+- Unlimited named users are supported by `max.users` with `LimitValue=null`; one active/invited `ClientOrganizationUser` remains one named human seat. Shared logins remain unsupported.
+- Unlimited active reports are supported by `max.activeReports` with `LimitValue=null`.
+- If `max.facilities` entitlement is absent for a plan, that key remains future work; if present, stress-test seed normalizes it to `LimitValue=null`.
+- `Subscriptions:EnforcementEnabled` remains the global enforcement gate (default `false`); this plan does not disable enforcement.

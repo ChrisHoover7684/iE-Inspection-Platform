@@ -57,3 +57,9 @@ Added backend-only ReportLogEntry and NdeRequest persistence/service foundation.
 - No UI, email/vendor workflow, or automatic findings generation was added.
 - NDE `Canceled` remains terminal and traceability is preserved.
 - Future UI timeline/status history can query report log entries.
+
+## Internal stress-test seed readiness (PR #207)
+- Config defaults are safe and disabled: `StressTestSeed:Enabled=false`, `StressTestSeed:DurationDays=90`, optional `StartsAtUtc`, required `ClientOrganizationId` when enabled.
+- Internal only: no public admin API, no UI, no billing provider or checkout integration.
+- Entitlements seeded for `company_stress_test_90d`: `reports.create`, `reports.export`, `photos.markup`, `audit.query`, `max.activeReports=null`, `max.users=null`.
+- If `max.facilities` exists for the plan, it is normalized to `null` for unlimited capacity.

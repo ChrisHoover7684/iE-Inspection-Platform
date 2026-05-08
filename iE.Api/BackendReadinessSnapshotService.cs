@@ -1,3 +1,4 @@
+using iE.Api.Auth;
 using iE.Core.Reports.Persistence;
 
 namespace iE.Api;

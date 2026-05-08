@@ -18,7 +18,7 @@ internal static class StartupConfiguration
                 "ConnectionStrings:InspectionReports via dotnet user-secrets for local development.");
         }
 
-        return connectionString;
+        return connectionString!;
     }
 
     internal static bool IsAuthenticationEnabled(IConfiguration configuration)

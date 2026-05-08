@@ -29,7 +29,7 @@ export type NavigationGroup = {
   items: NavigationItem[];
 };
 
-const allItems: NavigationItem[] = [
+export const allNavigationItems: NavigationItem[] = [
   { key: 'dashboard', label: 'Dashboard', route: '/dashboard', group: 'dashboard' },
   { key: 'ndeRequests', label: 'NDE Requests', route: '/nde-requests', group: 'work' },
   { key: 'approvalQueue', label: 'Approval Queue', route: '/approval-queue', group: 'work' },
@@ -78,7 +78,7 @@ const roleItemKeys: Record<AppRole, string[]> = {
 
 export function getNavigationForRole(role: AppRole): NavigationGroup[] {
   const allowedKeys = new Set(roleItemKeys[role]);
-  const visibleItems = allItems.filter((item) => allowedKeys.has(item.key));
+  const visibleItems = allNavigationItems.filter((item) => allowedKeys.has(item.key));
 
   return (Object.keys(groupLabels) as NavigationGroupKey[])
     .map((groupKey) => ({
@@ -88,3 +88,6 @@ export function getNavigationForRole(role: AppRole): NavigationGroup[] {
     }))
     .filter((group) => group.items.length > 0);
 }
+
+
+export const navigationRoutes = allNavigationItems.map((item) => item.route);

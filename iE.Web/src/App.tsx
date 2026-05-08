@@ -8,6 +8,7 @@ import { PipeLookupCalculatorPage } from './PipeLookupCalculatorPage';
 import { PressureVesselCalculatorPage } from './PressureVesselCalculatorPage';
 import { AppShell } from './components/AppShell';
 import { PlaceholderPage } from './pages/PlaceholderPage';
+import { appPlaceholderRoutes } from './navigation/appRoutes';
 
 function ShellRoute({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>;
@@ -24,9 +25,14 @@ export default function App() {
       <Route path="/calculators/pipe-lookup" element={<ShellRoute><PipeLookupCalculatorPage /></ShellRoute>} />
       <Route path="/calculators/pressure-vessels" element={<ShellRoute><PressureVesselCalculatorPage /></ShellRoute>} />
 
-      <Route path="/nde-requests" element={<ShellRoute><PlaceholderPage title="NDE Requests" description="Coming soon: NDE request queue and workflows." /></ShellRoute>} />
-      <Route path="/reports" element={<ShellRoute><PlaceholderPage title="Reports" description="Coming soon: role-filtered report views and actions." /></ShellRoute>} />
-      <Route path="/users-access" element={<ShellRoute><PlaceholderPage title="Admin" description="Coming soon: user and access administration." /></ShellRoute>} />
+      {appPlaceholderRoutes.map((route) => (
+        <Route
+          key={route.path}
+          path={route.path}
+          element={<ShellRoute><PlaceholderPage title={route.title} description={route.description} /></ShellRoute>}
+        />
+      ))}
+
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );

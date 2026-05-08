@@ -55,7 +55,8 @@ internal static class StartupConfiguration
 
     internal static bool ShouldApplyMigrationsOnStartup(IConfiguration configuration)
     {
-        return configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup");
+        var value = configuration["Database:ApplyMigrationsOnStartup"];
+        return bool.TryParse(value, out var enabled) && enabled;
     }
 
     internal static bool IsSubscriptionEnforcementEnabled(IConfiguration configuration)

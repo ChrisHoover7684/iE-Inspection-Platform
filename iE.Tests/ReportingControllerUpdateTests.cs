@@ -187,7 +187,7 @@ public class ReportingControllerUpdateTests
         var entitlementConfig = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Subscriptions:EnforcementEnabled"] = "false" }).Build();
         var entitlementGuard = new EntitlementGuard(entitlementConfig, new StubEntitlementService());
         var limitGuard = new EntitlementLimitGuard(entitlementConfig, entitlementGuard, new StubSubscriptionUsageService());
-        var referenceGuard = new ReportReferenceGuard(config, db, new NoopAuditEventWriter(), new ReportLogService(db, new NoopAuditEventWriter()), accessor);
+        var referenceGuard = new ReportReferenceGuard(config, db, new NoopAuditEventWriter());
         repo = new InspectionReportRepository(db);
 
         var controller = new ReportingController(repo, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, guard, referenceGuard, entitlementGuard, limitGuard, new NoopAuditEventWriter(), new ReportLogService(db, new NoopAuditEventWriter()), accessor);

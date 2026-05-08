@@ -123,7 +123,7 @@ public class ReportingControllerReferenceValidationTests
         var entitlementConfig = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Subscriptions:EnforcementEnabled"] = "false" }).Build();
         var entitlementGuard = new EntitlementGuard(entitlementConfig, new StubEntitlementService());
         var limitGuard = new EntitlementLimitGuard(entitlementConfig, entitlementGuard, new StubSubscriptionUsageService());
-        var referenceGuard = new ReportReferenceGuard(config, db, auditWriter, new ReportLogService(db, new NoopAuditEventWriter()), accessor);
+        var referenceGuard = new ReportReferenceGuard(config, db, auditWriter);
         var controller = new ReportingController(new InspectionReportRepository(db), new InspectionReportFactory(), null!, null!, null!, null!, null!, null!, null!, new InMemoryReportTemplateRegistry(), null!, null!, null!, null!, guard, referenceGuard, entitlementGuard, limitGuard, auditWriter, new ReportLogService(db, new NoopAuditEventWriter()), accessor);
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         return controller;

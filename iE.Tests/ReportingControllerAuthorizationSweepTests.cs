@@ -223,7 +223,7 @@ public class ReportingControllerAuthorizationSweepTests
         var entitlementConfig = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Subscriptions:EnforcementEnabled"] = entitlementEnabled.ToString().ToLowerInvariant() }).Build();
         var entitlementGuard = new EntitlementGuard(entitlementConfig, entitlementService ?? new StubEntitlementService(entitlementAllowed ? EntitlementCheckResult.AllowedWithLimit(limitValue) : EntitlementCheckResult.Denied("entitlement_disabled")));
         var limitGuard = new EntitlementLimitGuard(entitlementConfig, entitlementGuard, subscriptionUsageService ?? new StubSubscriptionUsageService(usage));
-        var referenceGuard = new ReportReferenceGuard(config, db, new NoopAuditEventWriter(), new ReportLogService(db, new NoopAuditEventWriter()), accessor);
+        var referenceGuard = new ReportReferenceGuard(config, db, new NoopAuditEventWriter());
         repo = new InspectionReportRepository(db);
 
         var controller = new ReportingController(repo, new InspectionReportFactory(), null!, null!, new ReportDraftBuilder(new SummaryBuilder(), new ReportValidationService(new InspectionTagRuleEngine()), new RepairRecommendationBuilder()), null!, new ObservationChecklistService(), new ChecklistMergeService(), new ReportWorkflowService(), new InMemoryReportTemplateRegistry(), new InspectionTagRuleEngine(), null!, null!, null!, guard, referenceGuard, entitlementGuard, limitGuard, auditWriter ?? new NoopAuditEventWriter(), new ReportLogService(db, new NoopAuditEventWriter()), accessor);

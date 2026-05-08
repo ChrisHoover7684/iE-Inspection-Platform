@@ -1,6 +1,7 @@
 using iE.Tests.TestDoubles;
 using iE.Api.Auth;
 using iE.Api.Controllers;
+using iE.Api.Workflow;
 using iE.Api.Tenancy;
 using iE.Core.Reports;
 using iE.Core.Reports.Domain;
@@ -151,6 +152,31 @@ public class ReportingControllerUpdateTests
         Assert.Equal(403, objectResult.StatusCode);
     }
 
+    [Fact]
+    public async Task UpdateInstance_WritesReportUpdated_AndStatusChanged_WhenStatusChanges()
+    {
+        var controller = BuildController(false, out var db, out _, out var repo);
+        repo.Create(new InspectionReport { Id = "r-log", ClientOrganizationId = "client-a", FacilityId = "facility-a", CreatedAt = DateTime.UtcNow, Status = InspectionReportStatuses.Draft });
+        var submitted = new InspectionReport { Status = InspectionReportStatuses.ReadyForReview };
+        await controller.UpdateInstance("r-log", submitted);
+        var logs = db.ReportLogEntries.Where(x => x.ReportId == "r-log").OrderBy(x => x.CreatedAtUtc).ToList();
+        Assert.Contains(logs, x => x.EventType == ReportLogEventTypes.ReportUpdated);
+        var status = Assert.Single(logs.Where(x => x.EventType == ReportLogEventTypes.StatusChanged));
+        Assert.Equal(InspectionReportStatuses.Draft, status.FromStatus);
+        Assert.Equal(InspectionReportStatuses.ReadyForReview, status.ToStatus);
+    }
+
+    [Fact]
+    public async Task UpdateInstance_CrossTenant_WritesNoReportLogs()
+    {
+        var controller = BuildController(true, out var db, out var accessor, out var repo);
+        accessor.Current = new TenantContext { IsAuthenticated = true, ExternalSubject = "subject-1", ClientOrganizationId = Guid.Parse("11111111-1111-1111-1111-111111111111"), Capabilities = [AuthCapabilities.ReportsWrite] };
+        SeedAccess(db, "subject-1", "11111111-1111-1111-1111-111111111111", "facility-a");
+        repo.Create(new InspectionReport { Id = "r-no-log", ClientOrganizationId = "22222222-2222-2222-2222-222222222222", FacilityId = "facility-a", CreatedAt = DateTime.UtcNow, Status = InspectionReportStatuses.Draft });
+        await controller.UpdateInstance("r-no-log", new InspectionReport { Status = InspectionReportStatuses.ReadyForReview });
+        Assert.DoesNotContain(db.ReportLogEntries, x => x.ReportId == "r-no-log");
+    }
+
     private static ReportingController BuildController(bool authEnabled, out InspectionReportsDbContext db, out TenantContextAccessor accessor, out InspectionReportRepository repo)
     {
         var options = new DbContextOptionsBuilder<InspectionReportsDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
@@ -164,7 +190,7 @@ public class ReportingControllerUpdateTests
         var referenceGuard = new ReportReferenceGuard(config, db, new NoopAuditEventWriter());
         repo = new InspectionReportRepository(db);
 
-        var controller = new ReportingController(repo, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, guard, referenceGuard, entitlementGuard, limitGuard, new NoopAuditEventWriter());
+        var controller = new ReportingController(repo, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, guard, referenceGuard, entitlementGuard, limitGuard, new NoopAuditEventWriter(), new ReportLogService(db, new NoopAuditEventWriter()), accessor);
         controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()

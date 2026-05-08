@@ -15,6 +15,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using iE.Api.Extensions;
 using iE.Api.Auth;
+using iE.Api.Tenancy;
+using iE.Api.Workflow;
 
 namespace iE.Api.Controllers;
 
@@ -39,7 +41,9 @@ public class ReportingController(
     ReportReferenceGuard reportReferenceGuard,
     EntitlementGuard entitlementGuard,
     EntitlementLimitGuard entitlementLimitGuard,
-    IAuditEventWriter auditEventWriter) : ControllerBase
+    IAuditEventWriter auditEventWriter,
+    IReportLogService reportLogService,
+    ITenantContextAccessor tenantContextAccessor) : ControllerBase
 {
     private async Task<ActionResult?> EnforceReportAccessAsync(InspectionReport report, string reportIdForMessage, string capability, string forbiddenMessage)
     {
@@ -413,6 +417,7 @@ public class ReportingController(
 
         var created = inspectionReportRepository.Create(report);
         await auditEventWriter.WriteAsync(AuditActions.ReportCreated, AuditResourceTypes.Report, created.Id, AuditResults.Success, created.FacilityId);
+        await reportLogService.AddReportCreatedAsync(created.ClientOrganizationId, created.FacilityId, created.Id, "Report created.", created.CreatedByUserId, tenantContextAccessor.Current.ExternalSubject);
         return CreatedAtAction(nameof(GetInstanceById), new { id = created.Id }, created);
     }
 
@@ -449,8 +454,14 @@ public class ReportingController(
             return updateReferenceValidation;
         }
 
+        var originalStatus = existing.Status;
         var updated = inspectionReportRepository.Update(id, report);
         await auditEventWriter.WriteAsync(AuditActions.ReportUpdated, AuditResourceTypes.Report, updated.Id, AuditResults.Success, updated.FacilityId);
+        await reportLogService.AddReportUpdatedAsync(updated.ClientOrganizationId, updated.FacilityId, updated.Id, updated.Status, "Report updated.", updated.UpdatedByUserId, tenantContextAccessor.Current.ExternalSubject);
+        if (!string.Equals(originalStatus, updated.Status, StringComparison.Ordinal))
+        {
+            await reportLogService.AddStatusChangeAsync(updated.ClientOrganizationId, updated.FacilityId, updated.Id, originalStatus, updated.Status, "Report status changed.", updated.UpdatedByUserId, tenantContextAccessor.Current.ExternalSubject);
+        }
         return Ok(updated);
     }
 
@@ -528,6 +539,7 @@ public class ReportingController(
 
         var created = inspectionReportRepository.Create(report);
         await auditEventWriter.WriteAsync(AuditActions.ReportCreated, AuditResourceTypes.Report, created.Id, AuditResults.Success, created.FacilityId, new Dictionary<string, object?> { ["templateId"] = templateId, ["route"] = "CreateInstanceFromTemplate" });
+        await reportLogService.AddReportCreatedAsync(created.ClientOrganizationId, created.FacilityId, created.Id, "Report created from template.", created.CreatedByUserId, tenantContextAccessor.Current.ExternalSubject);
         return CreatedAtAction(nameof(GetInstanceById), new { id = created.Id }, created);
     }
 
@@ -632,12 +644,18 @@ public class ReportingController(
             });
         }
 
+        var fromStatus = report.Status;
         reportWorkflowService.SubmitForReview(report);
         report.UpdatedAt = DateTime.UtcNow;
         reportAccessGuard.ApplyUpdateOwnership(report);
         inspectionReportRepository.Update(id, report);
 
         await auditEventWriter.WriteAsync("ReportSubmittedForReview", AuditResourceTypes.Report, id, AuditResults.Success, report.FacilityId);
+        await reportLogService.AddReportSubmittedAsync(report.ClientOrganizationId, report.FacilityId, report.Id, report.Status, "Report submitted for review.", report.UpdatedByUserId, tenantContextAccessor.Current.ExternalSubject);
+        if (!string.Equals(fromStatus, report.Status, StringComparison.Ordinal))
+        {
+            await reportLogService.AddStatusChangeAsync(report.ClientOrganizationId, report.FacilityId, report.Id, fromStatus, report.Status, "Report status changed.", report.UpdatedByUserId, tenantContextAccessor.Current.ExternalSubject);
+        }
         return Ok(new
         {
             message = "Report submitted for review",
@@ -668,12 +686,18 @@ public class ReportingController(
             });
         }
 
+        var fromStatus = report.Status;
         reportWorkflowService.StartReview(report);
         report.UpdatedAt = DateTime.UtcNow;
         reportAccessGuard.ApplyUpdateOwnership(report);
         inspectionReportRepository.Update(id, report);
 
         await auditEventWriter.WriteAsync("ReviewStarted", AuditResourceTypes.Report, id, AuditResults.Success, report.FacilityId);
+        await reportLogService.AddReviewStartedAsync(report.ClientOrganizationId, report.FacilityId, report.Id, report.Status, "Review started.", report.UpdatedByUserId, tenantContextAccessor.Current.ExternalSubject);
+        if (!string.Equals(fromStatus, report.Status, StringComparison.Ordinal))
+        {
+            await reportLogService.AddStatusChangeAsync(report.ClientOrganizationId, report.FacilityId, report.Id, fromStatus, report.Status, "Report status changed.", report.UpdatedByUserId, tenantContextAccessor.Current.ExternalSubject);
+        }
         return Ok(new
         {
             message = "Review started",
@@ -704,12 +728,18 @@ public class ReportingController(
             });
         }
 
+        var fromStatus = report.Status;
         reportWorkflowService.Approve(report);
         report.UpdatedAt = DateTime.UtcNow;
         reportAccessGuard.ApplyUpdateOwnership(report);
         inspectionReportRepository.Update(id, report);
 
         await auditEventWriter.WriteAsync("ReportApproved", AuditResourceTypes.Report, id, AuditResults.Success, report.FacilityId);
+        await reportLogService.AddReviewApprovedAsync(report.ClientOrganizationId, report.FacilityId, report.Id, report.Status, "Review approved.", report.UpdatedByUserId, tenantContextAccessor.Current.ExternalSubject);
+        if (!string.Equals(fromStatus, report.Status, StringComparison.Ordinal))
+        {
+            await reportLogService.AddStatusChangeAsync(report.ClientOrganizationId, report.FacilityId, report.Id, fromStatus, report.Status, "Report status changed.", report.UpdatedByUserId, tenantContextAccessor.Current.ExternalSubject);
+        }
         return Ok(new
         {
             message = "Report approved",
@@ -748,12 +778,18 @@ public class ReportingController(
             });
         }
 
+        var fromStatus = report.Status;
         reportWorkflowService.ReturnForRevision(report, request.ReviewerComments);
         report.UpdatedAt = DateTime.UtcNow;
         reportAccessGuard.ApplyUpdateOwnership(report);
         inspectionReportRepository.Update(id, report);
 
         await auditEventWriter.WriteAsync("ReportReturnedForRevision", AuditResourceTypes.Report, id, AuditResults.Success, report.FacilityId);
+        await reportLogService.AddReviewReturnedAsync(report.ClientOrganizationId, report.FacilityId, report.Id, report.Status, "Review returned for revision.", report.UpdatedByUserId, tenantContextAccessor.Current.ExternalSubject);
+        if (!string.Equals(fromStatus, report.Status, StringComparison.Ordinal))
+        {
+            await reportLogService.AddStatusChangeAsync(report.ClientOrganizationId, report.FacilityId, report.Id, fromStatus, report.Status, "Report status changed.", report.UpdatedByUserId, tenantContextAccessor.Current.ExternalSubject);
+        }
         return Ok(new
         {
             message = "Report returned for revision",

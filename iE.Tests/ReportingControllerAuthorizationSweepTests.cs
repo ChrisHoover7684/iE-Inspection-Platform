@@ -2,6 +2,7 @@ using iE.Tests.TestDoubles;
 using iE.Api.Contracts;
 using iE.Api.Auth;
 using iE.Api.Controllers;
+using iE.Api.Workflow;
 using iE.Api.Tenancy;
 using iE.Core.Reports;
 using iE.Core.Reports.Checklists;
@@ -225,7 +226,7 @@ public class ReportingControllerAuthorizationSweepTests
         var referenceGuard = new ReportReferenceGuard(config, db, new NoopAuditEventWriter());
         repo = new InspectionReportRepository(db);
 
-        var controller = new ReportingController(repo, new InspectionReportFactory(), null!, null!, new ReportDraftBuilder(new SummaryBuilder(), new ReportValidationService(new InspectionTagRuleEngine()), new RepairRecommendationBuilder()), null!, new ObservationChecklistService(), new ChecklistMergeService(), new ReportWorkflowService(), new InMemoryReportTemplateRegistry(), new InspectionTagRuleEngine(), null!, null!, null!, guard, referenceGuard, entitlementGuard, limitGuard, auditWriter ?? new NoopAuditEventWriter());
+        var controller = new ReportingController(repo, new InspectionReportFactory(), null!, null!, new ReportDraftBuilder(new SummaryBuilder(), new ReportValidationService(new InspectionTagRuleEngine()), new RepairRecommendationBuilder()), null!, new ObservationChecklistService(), new ChecklistMergeService(), new ReportWorkflowService(), new InMemoryReportTemplateRegistry(), new InspectionTagRuleEngine(), null!, null!, null!, guard, referenceGuard, entitlementGuard, limitGuard, auditWriter ?? new NoopAuditEventWriter(), new ReportLogService(db, new NoopAuditEventWriter()), accessor);
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         return controller;
     }

@@ -111,7 +111,7 @@ public sealed class StressTestSubscriptionSeedService(InspectionReportsDbContext
                     PlanId = plan.Id,
                     EntitlementKey = key,
                     Enabled = true,
-                    LimitValue = key is EntitlementKeys.MaxActiveReports or EntitlementKeys.MaxUsers ? null : null,
+                    LimitValue = null,
                     CreatedAt = now,
                     UpdatedAt = now
                 };

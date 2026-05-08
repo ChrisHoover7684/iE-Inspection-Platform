@@ -54,6 +54,25 @@ public class StressTestSubscriptionSeedServiceTests
     }
 
     [Fact]
+    public async Task Seed_DoesNotStoreBillingProviderIdentifiersOrSecrets()
+    {
+        var db = Db();
+        var service = new StressTestSubscriptionSeedService(db);
+
+        await service.SeedAsync(new StressTestSubscriptionSeedOptions(true, "tenant-1", new DateTime(2026, 5, 1, 0, 0, 0, DateTimeKind.Utc)));
+
+        var plan = Assert.Single(db.SubscriptionPlans);
+        Assert.True(string.IsNullOrWhiteSpace(plan.MetadataJson));
+
+        Assert.All(db.SubscriptionEntitlements, e =>
+        {
+            Assert.DoesNotContain("stripe", e.EntitlementKey, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("marketplace", e.EntitlementKey, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("token", e.EntitlementKey, StringComparison.OrdinalIgnoreCase);
+        });
+    }
+
+    [Fact]
     public async Task InvalidConfig_DoesNotSeed()
     {
         var db = Db();
@@ -101,6 +120,18 @@ public class StressTestSubscriptionSeedServiceTests
         Assert.True(opts.Enabled);
         Assert.Equal("tenant-1", opts.ClientOrganizationId);
         Assert.Equal(StressTestPlanConstants.IntendedDurationDays, opts.DurationDays);
+    }
+
+    [Fact]
+    public void StartupStressConfig_InvalidEnabledValue_FailsSafeToDisabled()
+    {
+        var cfg = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["StressTestSeed:Enabled"] = "not-a-bool"
+        }).Build();
+
+        var opts = StartupConfiguration.GetStressTestSeedOptions(cfg);
+        Assert.False(opts.Enabled);
     }
 
     static InspectionReportsDbContext Db() => new(new DbContextOptionsBuilder<InspectionReportsDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);

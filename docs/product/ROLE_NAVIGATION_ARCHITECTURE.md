@@ -419,3 +419,12 @@ PR #211 implements the first frontend role-aware app shell and left navigation f
 ### Security and authorization reminder
 Frontend role visibility is a usability convenience and **not** security enforcement.
 Authoritative access control remains backend authentication plus tenant/facility authorization.
+
+
+## PR #212 testing note: role-aware navigation/app shell test foundation
+
+PR #212 adds a frontend test foundation focused on role-aware navigation metadata and app shell rendering.
+
+- Coverage targets role navigation visibility rules per role, temporary role normalization behavior, and shell/navigation rendering contracts.
+- No new workflow feature screens are implemented in this PR.
+- Frontend role visibility remains UI convenience only; backend authorization remains authoritative.

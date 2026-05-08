@@ -1,5 +1,7 @@
 using iE.Api.Auth;
 using iE.Api.Workflow;
+using iE.Core.Reports;
+using iE.Core.Reports.Domain;
 using iE.Core.Reports.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -209,6 +211,71 @@ public class NdeRequestWorkflowTests
         }
     }
 
+
+    [Fact]
+    public async Task Cancelled_Kills_Request()
+    {
+        using var db = Db();
+        var svc = CreateService(db);
+
+        var created = await svc.CreateDraftAsync("tenant-a", "facility-a", null, null, null, "pt", "normal", "reason");
+        var canceled = await svc.CancelAsync(created.Id!, new string('c', 900));
+        Assert.True(canceled.Success);
+
+        var saved = await db.NdeRequests.SingleAsync(x => x.Id == created.Id);
+        Assert.Equal(NdeRequestStatuses.Canceled, saved.Status);
+        Assert.NotNull(saved.CanceledAtUtc);
+        Assert.NotNull(saved.UpdatedAtUtc);
+        Assert.Equal(500, saved.CancellationReason!.Length);
+
+        Assert.Equal(WorkflowReasonCodes.InvalidStatusTransition, (await svc.RequestAsync(created.Id!)).ReasonCode);
+        Assert.Equal(WorkflowReasonCodes.InvalidStatusTransition, (await svc.ScheduleAsync(created.Id!)).ReasonCode);
+        Assert.Equal(WorkflowReasonCodes.InvalidStatusTransition, (await svc.MarkInProgressAsync(created.Id!)).ReasonCode);
+        Assert.Equal(WorkflowReasonCodes.InvalidStatusTransition, (await svc.RecordResultsReceivedAsync(created.Id!, "x")).ReasonCode);
+        Assert.Equal(WorkflowReasonCodes.InvalidStatusTransition, (await svc.CloseAsync(created.Id!)).ReasonCode);
+    }
+
+    [Fact]
+    public async Task Cancelled_Writes_ReportLog_For_Linked_Report()
+    {
+        using var db = Db();
+        SeedReferences(db);
+        var audit = new RecordingAuditWriter();
+        var svc = CreateService(db, audit);
+
+        var created = await svc.CreateDraftAsync("tenant-a", "facility-a", "report-a", null, null, "pt", "normal", "reason");
+        var canceled = await svc.CancelAsync(created.Id!, "cancel now");
+        Assert.True(canceled.Success);
+
+        var entry = await db.ReportLogEntries.SingleAsync(x => x.RelatedNdeRequestId == created.Id && x.EventType == ReportLogEventTypes.NdeRequestCancelled);
+        Assert.Equal(NdeRequestStatuses.Canceled, entry.EventStatus);
+        Assert.Equal("NDE request cancelled", entry.Message);
+    }
+
+    [Fact]
+    public async Task Cancelled_Audit_Metadata_Is_AllowListed()
+    {
+        using var db = Db();
+        var audit = new RecordingAuditWriter();
+        var svc = CreateService(db, audit);
+
+        var created = await svc.CreateDraftAsync("tenant-a", "facility-a", null, null, null, "pt", "normal", "reason");
+        var canceled = await svc.CancelAsync(created.Id!, "cancel now");
+        Assert.True(canceled.Success);
+
+        var evt = audit.Events.Last(x => x.Action == "NdeRequestCancelled");
+        var allow = new HashSet<string> { "operation", "reasonCode", "reportId", "ndeRequestId", "status", "eventType", "hasAsset", "hasProcessUnit" };
+        var deny = new[] { "raw request body", "raw email", "tokens", "authorization headers", "provider payloads", "raw subscription", "raw plan", "metadataJson", "connection strings", "secrets" };
+
+        Assert.NotNull(evt.Metadata);
+        Assert.All(evt.Metadata!.Keys, key => Assert.Contains(key, allow));
+        Assert.Equal(ReportLogEventTypes.NdeRequestCancelled, evt.Metadata["eventType"]);
+        foreach (var marker in deny)
+        {
+            Assert.DoesNotContain(evt.Metadata.Keys, key => key.Contains(marker, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
     private static NdeRequestService CreateService(InspectionReportsDbContext db, IAuditEventWriter? audit = null)
     {
         audit ??= new RecordingAuditWriter();
@@ -219,8 +286,9 @@ public class NdeRequestWorkflowTests
 
     private static void SeedReferences(InspectionReportsDbContext db)
     {
-        db.Assets.Add(new Asset { Id = "asset-a", FacilityId = "facility-a", EquipmentTag = "tag", EquipmentType = "type", Service = "svc" });
-        db.InspectionReports.Add(new InspectionReport { Id = "report-a", ClientOrganizationId = "tenant-a", FacilityId = "facility-a", ReportNumber = "R-1", ReportType = ReportType.Internal, InspectionDate = DateTime.UtcNow, InspectorName = "inspector", AssetId = "asset-a" });
+        db.ProcessUnits.Add(new ProcessUnit { Id = "process-a", FacilityId = "facility-a", Name = "Unit", UnitCode = "U1", IsActive = true });
+        db.Assets.Add(new Asset { Id = "asset-a", FacilityId = "facility-a", ProcessUnitId = "process-a", EquipmentTag = "tag", EquipmentType = "type", Service = "svc", IsActive = true });
+        db.InspectionReports.Add(new InspectionReport { Id = "report-a", TemplateId = "api-570-piping-external", ClientOrganizationId = "tenant-a", FacilityId = "facility-a", Status = InspectionReportStatuses.Draft, CreatedAt = DateTime.UtcNow, ReportNumber = "R-1", EquipmentTag = "tag", AssetId = "asset-a" });
         db.SaveChanges();
     }
 

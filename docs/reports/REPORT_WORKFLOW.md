@@ -21,3 +21,9 @@ PR #204 is backend-only.
 - No automatic findings creation was added.
 - Built-in NDE types include UTSW, PAUT, WFMT, WFPT, ETC, IRIS, Guided Wave UT, and UTT Grid.
 - Tenant-custom NDE type foundation exists, but public UI/API management remains future work.
+
+- NDE requests support a user-facing "Cancelled" action (internal status code remains `canceled`).
+- Cancelled is terminal and kills request workflow transitions; the request is preserved (not deleted) for traceability.
+- No UI was added.
+- No vendor workflow/email was added.
+- No automatic findings creation was added.

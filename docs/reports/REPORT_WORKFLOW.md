@@ -40,3 +40,8 @@ PR #204 is backend-only.
 - PR #208 is CSS/layout cleanup only for the existing API 570 report entry page foundation.
 - No new UI feature was added.
 - Future UI work will build on this foundation for Report Log, NDE Request Log, NDE queues, report timeline, and asset activity views.
+
+## PR #209 role-aware navigation architecture planning reference
+- PR #209 defines product/UI planning guidance for role hierarchy, left-navigation structure, role-scoped dashboard queues, and report/request visibility.
+- This is documentation/navigation metadata planning only and does not change backend workflow services or status enforcement.
+- See `docs/product/ROLE_NAVIGATION_ARCHITECTURE.md` for the role matrix and future UI contracts for NDE Request Log and report library behavior.

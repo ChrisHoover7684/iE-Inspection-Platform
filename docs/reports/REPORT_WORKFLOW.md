@@ -45,3 +45,8 @@ PR #204 is backend-only.
 - PR #209 defines product/UI planning guidance for role hierarchy, left-navigation structure, role-scoped dashboard queues, and report/request visibility.
 - This is documentation/navigation metadata planning only and does not change backend workflow services or status enforcement.
 - See `docs/product/ROLE_NAVIGATION_ARCHITECTURE.md` for the role matrix and future UI contracts for NDE Request Log and report library behavior.
+
+## PR #210 Read Model Layer
+- Backend read models added for report workflow timeline, report library, NDE request summaries, owner approval queue, client NDE log, and asset activity.
+- No frontend workflow screens are introduced in this PR.
+- API inspections remain running-log/report-library oriented and NDE workflow remains request/approval/report-review oriented.

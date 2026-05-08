@@ -63,3 +63,9 @@ Added backend-only ReportLogEntry and NdeRequest persistence/service foundation.
 - Internal only: no public admin API, no UI, no billing provider or checkout integration.
 - Entitlements seeded for `company_stress_test_90d`: `reports.create`, `reports.export`, `photos.markup`, `audit.query`, `max.activeReports=null`, `max.users=null`.
 - If `max.facilities` exists for the plan, it is normalized to `null` for unlimited capacity.
+
+## PR #210 Backend Read Models
+- Adds backend-only workflow read/query models for dashboard/log use-cases; no UI was added.
+- Read models are tenant/facility scoped and designed for future Client/Owner dashboards, NDE request log, report library, report timeline, and asset activity views.
+- Client-facing report visibility remains final/approved only.
+- Owner/Admin visibility remains scoped to tenant/facility access.

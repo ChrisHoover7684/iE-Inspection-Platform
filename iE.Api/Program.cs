@@ -89,6 +89,7 @@ builder.Services.AddScoped<IStressTestSubscriptionSeedService, StressTestSubscri
 builder.Services.AddScoped<IReportLogService, ReportLogService>();
 builder.Services.AddScoped<INdeRequestService, NdeRequestService>();
 builder.Services.AddScoped<INdeRequestTypeService, NdeRequestTypeService>();
+builder.Services.AddScoped<IWorkflowReadModelService, WorkflowReadModelService>();
 
 if (authenticationEnabled)
 {

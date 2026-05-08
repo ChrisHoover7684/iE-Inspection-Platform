@@ -32,6 +32,17 @@ public class EntitlementGuardTests
         Assert.Equal("entitlement_allowed", result.ReasonCode);
     }
 
+    [Fact]
+    public async Task Enforcement_Enabled_UnknownReasonCode_MapsToEntitlementUnavailable()
+    {
+        var guard = Build(true, EntitlementCheckResult.Denied("provider_raw_json:plan_123"));
+        var result = await guard.CheckAsync("reports.create");
+
+        Assert.False(result.Allowed);
+        Assert.Equal("entitlement_unavailable", result.ReasonCode);
+        Assert.DoesNotContain("plan_", result.ReasonCode, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static EntitlementGuard Build(bool enforcement, EntitlementCheckResult serviceResult)
     {
         var cfg = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>

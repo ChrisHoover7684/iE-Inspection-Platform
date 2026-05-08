@@ -120,3 +120,11 @@ Use this checklist before backend-focused releases.
 - Added backend-only enforcement for subscription `max.activeReports` on persisted report creation paths, feature-flagged by `Subscriptions:EnforcementEnabled` (default `false`).
 - Active report count for this MVP is non-`Final` tenant-scoped reports.
 - No web UI, billing integration, or public subscription administration APIs were introduced.
+
+## PR #198 release note
+- Backend-only safety/regression coverage added for subscription enforcement startup/config behavior, safe reason-code handling, and enforcement check ordering.
+- Entitlement-denial and limit-denial audit metadata coverage confirms allow-listed fields only.
+- Subscription enforcement remains feature-flagged (`Subscriptions:EnforcementEnabled` default `false`).
+- Billing/provider integration is still future work.
+- No UI/public admin API work added.
+- Calculator endpoints remain intentionally ungated.

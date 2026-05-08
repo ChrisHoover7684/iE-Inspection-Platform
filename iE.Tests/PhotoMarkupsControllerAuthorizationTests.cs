@@ -32,8 +32,26 @@ public class PhotoMarkupsControllerAuthorizationTests
         Assert.Equal(AuditResults.Denied, evt.Result);
         Assert.Equal("CreatePhotoMarkup", evt.Metadata?["route"]?.ToString());
         Assert.Equal(EntitlementKeys.PhotosMarkup, evt.Metadata?["entitlementKey"]?.ToString());
+        Assert.Equal("entitlement_disabled", evt.Metadata?["reasonCode"]?.ToString());
+        Assert.NotNull(evt.Metadata);
+        Assert.Equal(3, evt.Metadata!.Count);
         Assert.False(evt.Metadata?.ContainsKey("requestBody") ?? false);
         Assert.False(evt.Metadata?.ContainsKey("rawPlan") ?? false);
+    }
+
+    [Fact]
+    public async Task MissingWriteCapability_ReturnsForbidden_BeforeEntitlementCheck()
+    {
+        var entitlement = new CountingEntitlementService(EntitlementCheckResult.Denied("entitlement_disabled"));
+        var controller = BuildController(true, out var db, out var accessor, out _, entitlementEnabled: true, entitlementService: entitlement);
+        SeedFacilityAccess(db, "facility-a");
+        SeedReportWithPhoto(db, reportId: "r-no-write-ent", photoId: "p-no-write-ent");
+        SetTenant(accessor, AuthCapabilities.PhotosRead);
+
+        var create = await controller.Create("p-no-write-ent", ValidRequest());
+
+        Assert.Equal(403, ((ObjectResult)create.Result!).StatusCode);
+        Assert.Equal(0, entitlement.Calls);
     }
     [Fact]
     public async Task AuthDisabled_AllowsReadAndWriteForKnownPhoto()
@@ -144,7 +162,7 @@ public class PhotoMarkupsControllerAuthorizationTests
 
     private static CreatePhotoMarkupRequest ValidRequest() => new() { MarkupJson = "{\"annotations\":[{\"type\":\"circle\"}]}" };
 
-    private static PhotoMarkupsController BuildController(bool authEnabled, out InspectionReportsDbContext db, out TenantContextAccessor accessor, out PhotoMarkupRepository repo, bool entitlementEnabled = false, bool entitlementAllowed = true, IAuditEventWriter? auditWriter = null)
+    private static PhotoMarkupsController BuildController(bool authEnabled, out InspectionReportsDbContext db, out TenantContextAccessor accessor, out PhotoMarkupRepository repo, bool entitlementEnabled = false, bool entitlementAllowed = true, IAuditEventWriter? auditWriter = null, IEntitlementService? entitlementService = null)
     {
         var options = new DbContextOptionsBuilder<InspectionReportsDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
         db = new InspectionReportsDbContext(options);
@@ -152,7 +170,7 @@ public class PhotoMarkupsControllerAuthorizationTests
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Authentication:Enabled"] = authEnabled.ToString() }).Build();
         var guard = new ReportAccessGuard(config, accessor, db);
         var entitlementConfig = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Subscriptions:EnforcementEnabled"] = entitlementEnabled.ToString().ToLowerInvariant() }).Build();
-        var entitlementGuard = new EntitlementGuard(entitlementConfig, new StubEntitlementService(entitlementAllowed ? EntitlementCheckResult.AllowedWithLimit(null) : EntitlementCheckResult.Denied("entitlement_disabled")));
+        var entitlementGuard = new EntitlementGuard(entitlementConfig, entitlementService ?? new StubEntitlementService(entitlementAllowed ? EntitlementCheckResult.AllowedWithLimit(null) : EntitlementCheckResult.Denied("entitlement_disabled")));
         repo = new PhotoMarkupRepository(db);
 
         var controller = new PhotoMarkupsController(repo, guard, entitlementGuard, auditWriter ?? new NoopAuditEventWriter());
@@ -218,6 +236,16 @@ public class PhotoMarkupsControllerAuthorizationTests
         {
             Events.Add((action, resourceType, resourceId, result, facilityId, metadata));
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class CountingEntitlementService(EntitlementCheckResult result) : IEntitlementService
+    {
+        public int Calls { get; private set; }
+        public Task<EntitlementCheckResult> CheckAsync(string entitlementKey, string? clientOrganizationId = null, bool trustedInternalRequest = false, CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            return Task.FromResult(result);
         }
     }
 }

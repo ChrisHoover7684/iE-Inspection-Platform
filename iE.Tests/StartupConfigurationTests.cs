@@ -79,6 +79,59 @@ public class StartupConfigurationTests
         Assert.True(shouldApply);
     }
 
+
+    [Fact]
+    public void SubscriptionEnforcement_DefaultsToFalse()
+    {
+        var configuration = BuildConfiguration();
+
+        var enabled = StartupConfiguration.IsSubscriptionEnforcementEnabled(configuration);
+
+        Assert.False(enabled);
+    }
+
+    [Fact]
+    public void SubscriptionEnforcement_WhenTrue_ReturnsTrue()
+    {
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["Subscriptions:EnforcementEnabled"] = "true"
+        });
+
+        var enabled = StartupConfiguration.IsSubscriptionEnforcementEnabled(configuration);
+
+        Assert.True(enabled);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("not-a-bool")]
+    [InlineData("123")]
+    public void SubscriptionEnforcement_InvalidOrMissingValue_FailsSafeToFalse(string value)
+    {
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["Subscriptions:EnforcementEnabled"] = value
+        });
+
+        var enabled = StartupConfiguration.IsSubscriptionEnforcementEnabled(configuration);
+
+        Assert.False(enabled);
+    }
+
+    [Fact]
+    public void LocalDevDefaults_AuthDisabled_SubscriptionEnforcementDisabled()
+    {
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["Authentication:Enabled"] = "false",
+            ["Subscriptions:EnforcementEnabled"] = "false"
+        });
+
+        Assert.False(StartupConfiguration.IsAuthenticationEnabled(configuration));
+        Assert.False(StartupConfiguration.IsSubscriptionEnforcementEnabled(configuration));
+    }
+
     private static IConfiguration BuildConfiguration(Dictionary<string, string?>? values = null)
     {
         return new ConfigurationBuilder()

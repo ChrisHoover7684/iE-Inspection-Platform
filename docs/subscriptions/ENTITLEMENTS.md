@@ -29,3 +29,10 @@ Calculator endpoints remain intentionally unprotected for this phase.
 - MVP active report definition: all tenant reports with status other than `Final`.
 - Enforcement is applied only to persisted report creation paths (`CreateInstance`, `CreateInstanceFromTemplate`, and create branch of `BuildDraftFromChecklist`).
 - No billing provider integration, UI, or public subscription/admin APIs in this PR.
+
+## PR #198 safety/regression hardening
+- Subscription enforcement remains feature-flagged via `Subscriptions:EnforcementEnabled` (default `false`).
+- Added backend safety/regression coverage for startup configuration behavior, entitlement denial safety mapping, guard ordering, and audit metadata allow-listing.
+- Billing provider integration is still future work; no Stripe/Marketplace/AppSource/payment integration in this PR.
+- No UI and no public subscription/admin APIs were added.
+- Calculator endpoints remain intentionally ungated.

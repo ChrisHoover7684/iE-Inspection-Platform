@@ -10,7 +10,7 @@ internal static class StartupConfiguration
     {
         var connectionString = configuration.GetConnectionString(InspectionReportsConnectionStringName);
 
-        if (string.IsNullOrWhiteSpace(connectionString) || IsPlaceholderConnectionString(connectionString))
+        if (!ConnectionStringLooksSafe(connectionString))
         {
             throw new InvalidOperationException(
                 "Missing required configuration: ConnectionStrings:InspectionReports. " +
@@ -31,6 +31,16 @@ internal static class StartupConfiguration
         var options = new AuthOptions();
         configuration.GetSection("Authentication:JwtBearer").Bind(options);
         return options;
+    }
+
+    internal static bool ConnectionStringLooksSafe(string? connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return false;
+        }
+
+        return !IsPlaceholderConnectionString(connectionString);
     }
 
     private static bool IsPlaceholderConnectionString(string connectionString)

@@ -478,3 +478,14 @@ Facility moves remain blocked on update paths pending a dedicated future workflo
 - Session/device suspicious-sharing detection remains audit-only in this phase.
 - No automatic blocking, session revocation, user lockout, public user/admin APIs, UI, or billing/provider integration were added.
 - Calculator endpoints remain intentionally ungated; health endpoints remain public.
+
+## #203 backend readiness hardening note
+This update is backend readiness/config/runbook hardening only.
+- No UI changes.
+- No billing provider integration.
+- No public user/admin management APIs.
+- No automatic session blocking/revocation.
+- Health endpoints remain public (`/health/live`, `/health/ready`).
+- Calculator endpoints remain intentionally ungated by auth/subscriptions.
+- `Subscriptions:EnforcementEnabled` default remains `false`.
+- `AccountSharingAudit` remains audit-only.

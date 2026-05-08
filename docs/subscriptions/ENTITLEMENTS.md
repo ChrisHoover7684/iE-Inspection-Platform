@@ -71,3 +71,16 @@ Calculator endpoints remain intentionally unprotected for this phase.
 - Suspicious-sharing detection remains audit-only (no automatic block/revoke/lockout behavior).
 - No public user/admin API, no UI, and no billing/provider integration were added.
 - Calculator endpoints remain intentionally ungated; health endpoints remain public.
+
+## #203 operational readiness note
+This PR only hardens backend release/configuration readiness.
+- No UI additions.
+- No Stripe/Marketplace/AppSource/payment integration.
+- No new public admin/user APIs.
+- No automatic session blocking/revocation.
+
+Before enabling `Subscriptions:EnforcementEnabled=true`, ensure tenant seed readiness:
+- `ClientOrganization`, `Facility`, `ProcessUnit`, `Asset` (when needed)
+- `UserFacilityAccess`, `ClientOrganizationUser`
+- `SubscriptionPlan`, `ClientSubscription`
+- Entitlements: `reports.create`, `reports.export`, `photos.markup`, `audit.query`, `max.activeReports`, `max.users`

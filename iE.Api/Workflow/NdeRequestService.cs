@@ -33,7 +33,37 @@ public sealed class NdeRequestService(InspectionReportsDbContext db,IReportLogSe
         return new(true,WorkflowReasonCodes.Created,x.Id,x.Status);
     }
 
-    async Task<WorkflowOperationResult> Move(string id,string to,string? summary=null,CancellationToken ct=default){var x=await db.NdeRequests.FirstOrDefaultAsync(x=>x.Id==id,ct); if(x is null) return new(false,WorkflowReasonCodes.NotFound); if(!Allowed(x.Status,to)) return new(false,WorkflowReasonCodes.InvalidStatusTransition,x.Id,x.Status); x.Status=to; x.UpdatedAtUtc=DateTime.UtcNow; if(to==NdeRequestStatuses.ResultsReceived){x.ResultsReceivedAtUtc=DateTime.UtcNow; x.ResultsSummary=summary?.Length>1000?summary[..1000]:summary;} if(to==NdeRequestStatuses.Closed) x.ClosedAtUtc=DateTime.UtcNow; if(to==NdeRequestStatuses.Canceled){x.CanceledAtUtc=DateTime.UtcNow; x.CancellationReason=summary?.Length>500?summary[..500]:summary;} await db.SaveChangesAsync(ct); if(x.ReportId is not null){var et=to==NdeRequestStatuses.ResultsReceived?ReportLogEventTypes.NdeResultsReceived:ReportLogEventTypes.NdeRequestStatusChanged; await reportLog.AddNdeLinkedEventAsync(x.ClientOrganizationId,x.FacilityId,x.ReportId,x.Id,et,$"NDE request moved to {to}",to,ct);} await audit.WriteAsync(to==NdeRequestStatuses.ResultsReceived?"NdeResultsReceived":"NdeRequestStatusChanged","NdeRequest",x.Id,"Success",x.FacilityId,new Dictionary<string, object?>{{"operation","status_change"},{"reasonCode",WorkflowReasonCodes.Updated},{"reportId",x.ReportId},{"ndeRequestId",x.Id},{"status",x.Status}},ct); return new(true,WorkflowReasonCodes.Updated,x.Id,x.Status);}    
+    async Task<WorkflowOperationResult> Move(string id,string to,string? summary=null,CancellationToken ct=default){
+        var x=await db.NdeRequests.FirstOrDefaultAsync(x=>x.Id==id,ct);
+        if(x is null) return new(false,WorkflowReasonCodes.NotFound);
+        if(!Allowed(x.Status,to)) return new(false,WorkflowReasonCodes.InvalidStatusTransition,x.Id,x.Status);
+
+        x.Status=to;
+        x.UpdatedAtUtc=DateTime.UtcNow;
+
+        if(to==NdeRequestStatuses.ResultsReceived){x.ResultsReceivedAtUtc=DateTime.UtcNow; x.ResultsSummary=summary?.Length>1000?summary[..1000]:summary;}
+        if(to==NdeRequestStatuses.Closed) x.ClosedAtUtc=DateTime.UtcNow;
+        if(to==NdeRequestStatuses.Canceled){x.CanceledAtUtc=DateTime.UtcNow; x.CancellationReason=summary?.Length>500?summary[..500]:summary;}
+
+        await db.SaveChangesAsync(ct);
+
+        var eventType = to switch
+        {
+            var t when t==NdeRequestStatuses.ResultsReceived => ReportLogEventTypes.NdeResultsReceived,
+            var t when t==NdeRequestStatuses.Canceled => ReportLogEventTypes.NdeRequestCancelled,
+            _ => ReportLogEventTypes.NdeRequestStatusChanged
+        };
+
+        if(x.ReportId is not null)
+        {
+            var message = to==NdeRequestStatuses.Canceled ? "NDE request cancelled" : $"NDE request moved to {to}";
+            await reportLog.AddNdeLinkedEventAsync(x.ClientOrganizationId,x.FacilityId,x.ReportId,x.Id,eventType,message,to,ct);
+        }
+
+        var action = to==NdeRequestStatuses.ResultsReceived ? "NdeResultsReceived" : to==NdeRequestStatuses.Canceled ? "NdeRequestCancelled" : "NdeRequestStatusChanged";
+        await audit.WriteAsync(action,"NdeRequest",x.Id,"Success",x.FacilityId,new Dictionary<string, object?>{{"operation",to==NdeRequestStatuses.Canceled?"cancel":"status_change"},{"reasonCode",WorkflowReasonCodes.Updated},{"reportId",x.ReportId},{"ndeRequestId",x.Id},{"status",x.Status},{"eventType",eventType},{"hasAsset",x.AssetId is not null},{"hasProcessUnit",x.ProcessUnitId is not null}},ct);
+        return new(true,WorkflowReasonCodes.Updated,x.Id,x.Status);}
+
     public Task<WorkflowOperationResult> RequestAsync(string id, CancellationToken ct=default)=>Move(id,NdeRequestStatuses.Requested,ct:ct);
     public Task<WorkflowOperationResult> ScheduleAsync(string id, CancellationToken ct=default)=>Move(id,NdeRequestStatuses.Scheduled,ct:ct);
     public Task<WorkflowOperationResult> MarkInProgressAsync(string id, CancellationToken ct=default)=>Move(id,NdeRequestStatuses.InProgress,ct:ct);

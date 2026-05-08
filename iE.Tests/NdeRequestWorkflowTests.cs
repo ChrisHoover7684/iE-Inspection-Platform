@@ -196,7 +196,7 @@ public class NdeRequestWorkflowTests
         db.ReportLogEntries.Remove(entry);
         Assert.Throws<InvalidOperationException>(() => db.SaveChanges());
 
-        var allow = new HashSet<string> { "operation", "reasonCode", "reportId", "ndeRequestId", "status", "eventType", "hasAsset", "hasProcessUnit" };
+        var allow = new HashSet<string> { "operation", "reasonCode", "reportId", "ndeRequestId", "status", "eventType", "hasAsset", "hasProcessUnit", "hasNdeRequest" };
         var deny = new[] { "raw request body", "raw email", "tokens", "authorization headers", "provider payloads", "raw subscription", "raw plan", "metadataJson", "connection strings", "secrets" };
 
         Assert.NotEmpty(audit.Events);
@@ -264,7 +264,7 @@ public class NdeRequestWorkflowTests
         Assert.True(canceled.Success);
 
         var evt = audit.Events.Last(x => x.Action == "NdeRequestCancelled");
-        var allow = new HashSet<string> { "operation", "reasonCode", "reportId", "ndeRequestId", "status", "eventType", "hasAsset", "hasProcessUnit" };
+        var allow = new HashSet<string> { "operation", "reasonCode", "reportId", "ndeRequestId", "status", "eventType", "hasAsset", "hasProcessUnit", "hasNdeRequest" };
         var deny = new[] { "raw request body", "raw email", "tokens", "authorization headers", "provider payloads", "raw subscription", "raw plan", "metadataJson", "connection strings", "secrets" };
 
         Assert.NotNull(evt.Metadata);

@@ -140,16 +140,16 @@ public class ReportingControllerAuthorizationSweepTests
     }
 
     [Fact]
-    public async Task CreateInstance_CrossTenant_Returns404_BeforeEntitlementOrLimit()
+    public async Task UpdateInstance_CrossTenant_Returns404_BeforeEntitlementOrLimit()
     {
         var entitlement = new CountingEntitlementService(EntitlementCheckResult.Denied("entitlement_disabled"));
         var usage = new CountingSubscriptionUsageService(new SubscriptionUsageSnapshot("22222222-2222-2222-2222-222222222222", 99));
-        var c = BuildController(true, out var db, out var a, out _, entitlementEnabled: true, entitlementService: entitlement, subscriptionUsageService: usage);
+        var c = BuildController(true, out var db, out var a, out var repo, entitlementEnabled: true, entitlementService: entitlement, subscriptionUsageService: usage);
         SetTenant(a, AuthCapabilities.ReportsWrite);
         SeedAccess(db);
-        SeedClientOrgAndFacility(db);
+        repo.Create(Base("r-cross-tenant-update", org: "22222222-2222-2222-2222-222222222222"));
 
-        var r = await c.CreateInstance(Base("r-cross-tenant", org: "22222222-2222-2222-2222-222222222222"));
+        var r = await c.UpdateInstance("r-cross-tenant-update", Base("ignored"));
 
         var objectResult = Assert.IsType<ObjectResult>(r.Result);
         Assert.Equal(404, objectResult.StatusCode);

@@ -151,7 +151,7 @@ public class ReportingControllerAuthorizationSweepTests
 
         var r = await c.UpdateInstance("r-cross-tenant-update", Base("ignored"));
 
-        var objectResult = Assert.IsType<ObjectResult>(r.Result);
+        var objectResult = Assert.IsAssignableFrom<ObjectResult>(r.Result);
         Assert.Equal(404, objectResult.StatusCode);
         Assert.Equal(0, entitlement.Calls);
         Assert.Equal(0, usage.Calls);

@@ -116,6 +116,40 @@ public class ReportingControllerAuthorizationSweepTests
         var r = await c.CreateInstance(Base("r-unlimited"));
         Assert.IsType<CreatedAtActionResult>(r.Result);
     }
+
+    [Fact]
+    public async Task CreateInstance_MissingWriteCapability_Returns403_BeforeEntitlementOrLimit()
+    {
+        var entitlement = new CountingEntitlementService(EntitlementCheckResult.Denied("entitlement_disabled"));
+        var usage = new CountingSubscriptionUsageService(new SubscriptionUsageSnapshot("11111111-1111-1111-1111-111111111111", 99));
+        var c = BuildController(true, out var db, out var a, out _, entitlementEnabled: true, entitlementService: entitlement, subscriptionUsageService: usage);
+        SetTenant(a, AuthCapabilities.ReportsRead);
+        SeedAccess(db);
+        SeedClientOrgAndFacility(db);
+
+        var r = await c.CreateInstance(Base("r-missing-write"));
+
+        Assert.Equal(403, ((ObjectResult)r.Result!).StatusCode);
+        Assert.Equal(0, entitlement.Calls);
+        Assert.Equal(0, usage.Calls);
+    }
+
+    [Fact]
+    public async Task UpdateInstance_DoesNotRunLimitCheck()
+    {
+        var entitlement = new CountingEntitlementService(EntitlementCheckResult.AllowedWithLimit(1));
+        var usage = new CountingSubscriptionUsageService(new SubscriptionUsageSnapshot("11111111-1111-1111-1111-111111111111", 99));
+        var c = BuildController(true, out var db, out var a, out var repo, entitlementEnabled: true, entitlementService: entitlement, subscriptionUsageService: usage);
+        SetTenant(a, AuthCapabilities.ReportsWrite);
+        SeedAccess(db);
+        SeedClientOrgAndFacility(db);
+        repo.Create(Base("r-update"));
+
+        var r = await c.UpdateInstance("r-update", Base("ignored"));
+
+        Assert.IsType<OkObjectResult>(r.Result);
+        Assert.Equal(0, usage.Calls);
+    }
     [Fact]
     public async Task CreateFromTemplate_MissingWrite_ReturnsForbidden() { var c = BuildController(true, out var db, out var a, out _); SetTenant(a, AuthCapabilities.ReportsRead); SeedAccess(db); var r = await c.CreateInstanceFromTemplate("api-570-piping-external", null, "facility-a", null, null, null); Assert.Equal(403, ((ObjectResult)r.Result!).StatusCode); }
     [Fact]
@@ -139,7 +173,7 @@ public class ReportingControllerAuthorizationSweepTests
     private static void SeedClientOrgAndFacility(InspectionReportsDbContext db) { db.ClientOrganizations.Add(new ClientOrganization { Id = "11111111-1111-1111-1111-111111111111", Name = "Test Org", IsActive = true }); db.Facilities.Add(new Facility { Id = "facility-a", ClientOrganizationId = "11111111-1111-1111-1111-111111111111", Name = "Test Facility", IsActive = true }); db.SaveChanges(); }
     private static void SeedDemoProcessUnitAndAsset(InspectionReportsDbContext db) { db.ProcessUnits.Add(new ProcessUnit { Id = "unit-demo-crude", FacilityId = "facility-a", Name = "Crude Unit", UnitCode = "001", IsActive = true }); db.Assets.Add(new Asset { Id = "asset-demo-piping-system", FacilityId = "facility-a", ProcessUnitId = "unit-demo-crude", EquipmentTag = "TAG-1", EquipmentType = "Piping", Service = "Service", IsActive = true }); db.SaveChanges(); }
 
-    private static ReportingController BuildController(bool authEnabled, out InspectionReportsDbContext db, out TenantContextAccessor accessor, out InspectionReportRepository repo, bool entitlementEnabled = false, bool entitlementAllowed = true, SubscriptionUsageSnapshot? usage = null, int? limitValue = null, IAuditEventWriter? auditWriter = null)
+    private static ReportingController BuildController(bool authEnabled, out InspectionReportsDbContext db, out TenantContextAccessor accessor, out InspectionReportRepository repo, bool entitlementEnabled = false, bool entitlementAllowed = true, SubscriptionUsageSnapshot? usage = null, int? limitValue = null, IAuditEventWriter? auditWriter = null, IEntitlementService? entitlementService = null, ISubscriptionUsageService? subscriptionUsageService = null)
     {
         var options = new DbContextOptionsBuilder<InspectionReportsDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
         db = new InspectionReportsDbContext(options);
@@ -147,8 +181,8 @@ public class ReportingControllerAuthorizationSweepTests
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Authentication:Enabled"] = authEnabled.ToString() }).Build();
         var guard = new ReportAccessGuard(config, accessor, db);
         var entitlementConfig = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Subscriptions:EnforcementEnabled"] = entitlementEnabled.ToString().ToLowerInvariant() }).Build();
-        var entitlementGuard = new EntitlementGuard(entitlementConfig, new StubEntitlementService(entitlementAllowed ? EntitlementCheckResult.AllowedWithLimit(limitValue) : EntitlementCheckResult.Denied("entitlement_disabled")));
-        var limitGuard = new EntitlementLimitGuard(entitlementConfig, entitlementGuard, new StubSubscriptionUsageService(usage));
+        var entitlementGuard = new EntitlementGuard(entitlementConfig, entitlementService ?? new StubEntitlementService(entitlementAllowed ? EntitlementCheckResult.AllowedWithLimit(limitValue) : EntitlementCheckResult.Denied("entitlement_disabled")));
+        var limitGuard = new EntitlementLimitGuard(entitlementConfig, entitlementGuard, subscriptionUsageService ?? new StubSubscriptionUsageService(usage));
         var referenceGuard = new ReportReferenceGuard(config, db, new NoopAuditEventWriter());
         repo = new InspectionReportRepository(db);
 
@@ -164,6 +198,26 @@ public class ReportingControllerAuthorizationSweepTests
         {
             Events.Add((action, resourceType, resourceId, result, facilityId, metadata));
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class CountingEntitlementService(EntitlementCheckResult result) : IEntitlementService
+    {
+        public int Calls { get; private set; }
+        public Task<EntitlementCheckResult> CheckAsync(string entitlementKey, string? clientOrganizationId = null, bool trustedInternalRequest = false, CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            return Task.FromResult(result);
+        }
+    }
+
+    private sealed class CountingSubscriptionUsageService(SubscriptionUsageSnapshot? snapshot) : ISubscriptionUsageService
+    {
+        public int Calls { get; private set; }
+        public Task<SubscriptionUsageSnapshot?> GetUsageAsync(string? clientOrganizationId = null, CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            return Task.FromResult(snapshot);
         }
     }
 }

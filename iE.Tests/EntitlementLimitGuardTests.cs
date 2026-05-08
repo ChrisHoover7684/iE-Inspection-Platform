@@ -34,9 +34,20 @@ public class EntitlementLimitGuardTests
         Assert.False(r.Allowed);
     }
 
+    [Fact]
+    public async Task UnknownEntitlementReasonCode_MapsToLimitUnavailable()
+    {
+        var g = Build(true, EntitlementCheckResult.Denied("provider_payload.subscription.plan"), new SubscriptionUsageSnapshot("t1", 1));
+        var r = await g.CheckMaxActiveReportsAsync("t1");
+
+        Assert.False(r.Allowed);
+        Assert.Equal("limit_unavailable", r.ReasonCode);
+        Assert.DoesNotContain("plan", r.ReasonCode, StringComparison.OrdinalIgnoreCase);
+    }
+
     static EntitlementLimitGuard Build(bool enabled, EntitlementCheckResult result, SubscriptionUsageSnapshot? usage)
     {
-        var cfg = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?>{{"Subscriptions:EnforcementEnabled",enabled.ToString().ToLowerInvariant()}}).Build();
+        var cfg = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Subscriptions:EnforcementEnabled"] = enabled.ToString().ToLowerInvariant() }).Build();
         var e = new EntitlementGuard(cfg, new StubEntitlementService(result));
         return new EntitlementLimitGuard(cfg, e, new StubSubscriptionUsageService(usage));
     }

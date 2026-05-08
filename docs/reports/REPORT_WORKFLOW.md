@@ -35,3 +35,8 @@ PR #204 is backend-only.
 - No UI, email/vendor workflow, or automatic findings generation was added.
 - NDE `Canceled` remains terminal and traceability is preserved.
 - Future UI timeline/status history can query report log entries.
+
+## PR #208 frontend layout foundation cleanup
+- PR #208 is CSS/layout cleanup only for the existing API 570 report entry page foundation.
+- No new UI feature was added.
+- Future UI work will build on this foundation for Report Log, NDE Request Log, NDE queues, report timeline, and asset activity views.

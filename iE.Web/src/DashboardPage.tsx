@@ -1,439 +1,64 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ApiError, reportingApi } from './api';
-import type { InspectionReport } from './types';
+import { Link } from 'react-router-dom';
 
-type SortColumn =
-  | 'reportNumber'
-  | 'templateId'
-  | 'facilityId'
-  | 'equipmentTag'
-  | 'circuitId'
-  | 'service'
-  | 'status'
-  | 'findings'
-  | 'recommendations'
-  | 'updatedAt';
-
-type SortDirection = 'asc' | 'desc';
-type DashboardSlicer = 'all' | 'draft' | 'inreview' | 'completed' | 'rejected';
-type ReportColumnKey =
-  | 'select'
-  | 'reportNumber'
-  | 'reportType'
-  | 'client'
-  | 'facility'
-  | 'unit'
-  | 'systemId'
-  | 'circuitId'
-  | 'service'
-  | 'status'
-  | 'updatedDate'
-  | 'actions';
-
-const getErrorMessage = (error: unknown, fallback: string) =>
-  error instanceof ApiError ? error.message : error instanceof Error ? error.message : fallback;
-
-const formatDateTime = (value?: string | null) => {
-  if (!value) return '—';
-  return new Date(value).toLocaleString();
+type HomeCardProps = {
+  title: string;
+  description: string;
+  links: Array<{ to: string; label: string }>;
 };
 
-const normalizeStatus = (status?: string | null) => (status || '').replace(/[^a-z]/gi, '').toLowerCase();
-
-const getReportType = (report: InspectionReport) => {
-  if (report.templateId?.toLowerCase().includes('570')) return 'API 570';
-  if (report.templateId?.toLowerCase().includes('510')) return 'API 510';
-  if (report.templateId?.toLowerCase().includes('sti')) return 'STI-SP001';
-  return report.templateId || 'General';
-};
+function HomeCard({ title, description, links }: HomeCardProps) {
+  return (
+    <section className="card home-card" aria-label={title}>
+      <h2>{title}</h2>
+      <p className="muted">{description}</p>
+      <div className="home-card-links">
+        {links.map((link) => (
+          <Link key={link.to} to={link.to} className="home-card-link">
+            {link.label}
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export function DashboardPage() {
-  const navigate = useNavigate();
-  const [reports, setReports] = useState<InspectionReport[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [sortColumn, setSortColumn] = useState<SortColumn>('updatedAt');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [columnFilters, setColumnFilters] = useState({
-    reportNumber: '',
-    reportType: '',
-    client: '',
-    facility: '',
-    unit: '',
-    systemId: '',
-    circuitId: '',
-    service: '',
-    status: '',
-    updatedDate: ''
-  });
-  const [selectedReportIds, setSelectedReportIds] = useState<string[]>([]);
-  const [activeSlicer, setActiveSlicer] = useState<DashboardSlicer>('all');
-  const [columnWidths, setColumnWidths] = useState<Record<ReportColumnKey, number>>({
-    select: 72, reportNumber: 260, reportType: 130, client: 150, facility: 150, unit: 140,
-    systemId: 120, circuitId: 120, service: 120, status: 120,
-    updatedDate: 180, actions: 96
-  });
-
-  useEffect(() => {
-    let activeColumn: ReportColumnKey | null = null;
-    let startX = 0;
-    let initialWidth = 0;
-    const onPointerMove = (event: PointerEvent) => {
-      if (!activeColumn) return;
-      const width = Math.max(80, initialWidth + event.clientX - startX);
-      setColumnWidths((prev) => ({ ...prev, [activeColumn as ReportColumnKey]: width }));
-    };
-    const onPointerUp = () => { activeColumn = null; };
-    const onResizeStart = (event: Event) => {
-      const customEvent = event as CustomEvent<{ column: ReportColumnKey; startX: number }>;
-      activeColumn = customEvent.detail.column;
-      startX = customEvent.detail.startX;
-      initialWidth = columnWidths[activeColumn];
-    };
-
-    window.addEventListener('report-col-resize-start', onResizeStart);
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
-    return () => {
-      window.removeEventListener('report-col-resize-start', onResizeStart);
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onPointerUp);
-    };
-  }, [columnWidths]);
-
-  useEffect(() => {
-    (async () => {
-      setIsLoading(true);
-      setError('');
-      try {
-        const instances = await reportingApi.getInstances();
-        setReports(instances);
-      } catch (loadError) {
-        setError(getErrorMessage(loadError, 'Unable to load reports.'));
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, []);
-
-  const statusCounts = useMemo(() => {
-    const totalReports = reports.length;
-    const draftReports = reports.filter((r) => normalizeStatus(r.status) === 'draft').length;
-    const inReview = reports.filter((r) => ['inreview', 'submittedforreview'].includes(normalizeStatus(r.status))).length;
-    const completed = reports.filter((r) => ['approved', 'complete'].includes(normalizeStatus(r.status))).length;
-    const openFindings = reports.reduce((count, report) => count + (report.findings?.length || 0), 0);
-    const recommendations = reports.reduce((count, report) => (
-      count + (report.findings?.filter((finding) => Boolean(finding.repairRecommendation)).length || 0)
-    ), 0);
-
-    return { totalReports, draftReports, inReview, completed, openFindings, recommendations };
-  }, [reports]);
-
-  const statusOptions = useMemo(
-    () => ['all', ...Array.from(new Set(reports.map((r) => r.status || 'Unknown')))],
-    [reports]
-  );
-
-  const typeOptions = useMemo(() => ['all', ...Array.from(new Set(reports.map(getReportType)))], [reports]);
-
-  const clearAllFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('all');
-    setTypeFilter('all');
-    setColumnFilters({
-      reportNumber: '',
-      reportType: '',
-      client: '',
-      facility: '',
-      unit: '',
-      systemId: '',
-      circuitId: '',
-      service: '',
-      status: '',
-      updatedDate: ''
-    });
-    setActiveSlicer('all');
-  };
-
-  const filteredReports = useMemo(() => {
-    const loweredSearch = searchTerm.toLowerCase().trim();
-    const matchesColumnFilter = (value: string | number | undefined | null, filter: string) => {
-      if (!filter.trim()) return true;
-      return String(value || '').toLowerCase().includes(filter.toLowerCase().trim());
-    };
-
-    return reports
-      .filter((report) => (
-        statusFilter === 'all' ? true : statusFilter === (report.status || 'Unknown')
-      ))
-      .filter((report) => {
-        const normalized = normalizeStatus(report.status);
-        if (activeSlicer === 'all') return true;
-        if (activeSlicer === 'draft') return normalized === 'draft';
-        if (activeSlicer === 'inreview') return ['inreview', 'submittedforreview'].includes(normalized);
-        if (activeSlicer === 'completed') return ['approved', 'complete'].includes(normalized);
-        return ['rejectedwithcomments', 'returnedforrevision', 'rejected'].includes(normalized);
-      })
-      .filter((report) => (
-        typeFilter === 'all' ? true : typeFilter === getReportType(report)
-      ))
-      .filter((report) => {
-        if (!loweredSearch) return true;
-        const rowText = [
-          report.reportNumber,
-          getReportType(report),
-          report.clientOrganizationId,
-          report.facilityId,
-          report.unit || report.processUnitId,
-          report.systemId,
-          report.circuitId,
-          report.service,
-          report.status,
-          report.equipmentTag
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
-        return rowText.includes(loweredSearch);
-      })
-      .filter((report) => (
-        matchesColumnFilter(report.reportNumber || report.id, columnFilters.reportNumber)
-        && matchesColumnFilter(getReportType(report), columnFilters.reportType)
-        && matchesColumnFilter(report.clientOrganizationId || '—', columnFilters.client)
-        && matchesColumnFilter(report.facilityId || '—', columnFilters.facility)
-        && matchesColumnFilter(report.unit || report.processUnitId || '—', columnFilters.unit)
-        && matchesColumnFilter(report.systemId || '—', columnFilters.systemId)
-        && matchesColumnFilter(report.circuitId || '—', columnFilters.circuitId)
-        && matchesColumnFilter(report.service || '—', columnFilters.service)
-        && matchesColumnFilter(report.status || 'Unknown', columnFilters.status)
-        && matchesColumnFilter(formatDateTime(report.updatedAt || report.createdAt), columnFilters.updatedDate)
-      ))
-      .sort((a, b) => {
-        const valueFor = (report: InspectionReport) => {
-          switch (sortColumn) {
-            case 'reportNumber':
-              return report.reportNumber || report.id;
-            case 'templateId':
-              return getReportType(report);
-            case 'facilityId':
-              return report.facilityId || '';
-            case 'equipmentTag':
-              return report.equipmentTag || '';
-            case 'circuitId':
-              return report.circuitId || '';
-            case 'service':
-              return report.service || '';
-            case 'status':
-              return report.status || '';
-            case 'findings':
-              return report.findings?.length || 0;
-            case 'recommendations':
-              return report.findings?.filter((finding) => Boolean(finding.repairRecommendation)).length || 0;
-            case 'updatedAt':
-            default:
-              return report.updatedAt || report.createdAt || '';
-          }
-        };
-
-        const left = valueFor(a);
-        const right = valueFor(b);
-        const comparison = typeof left === 'number' && typeof right === 'number'
-          ? left - right
-          : String(left).localeCompare(String(right));
-        return sortDirection === 'asc' ? comparison : -comparison;
-      });
-  }, [reports, searchTerm, statusFilter, typeFilter, activeSlicer, columnFilters, sortColumn, sortDirection]);
-
-  const renderResizeHandle = (column: ReportColumnKey) => (
-    <span
-      className="column-resize-handle"
-      role="separator"
-      aria-orientation="vertical"
-      aria-label={`Resize ${column} column`}
-      onPointerDown={(event) => {
-        event.preventDefault();
-        event.currentTarget.setPointerCapture(event.pointerId);
-        window.dispatchEvent(new CustomEvent('report-col-resize-start', { detail: { column, startX: event.clientX } }));
-      }}
-    />
-  );
-
-  const onSort = (column: SortColumn) => {
-    if (sortColumn === column) {
-      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-      return;
-    }
-    setSortColumn(column);
-    setSortDirection('asc');
-  };
-
-  const isAllVisibleSelected = filteredReports.length > 0
-    && filteredReports.every((report) => selectedReportIds.includes(report.id));
-
-  const toggleReportSelection = (reportId: string, checked: boolean) => {
-    setSelectedReportIds((prev) => {
-      if (checked) return prev.includes(reportId) ? prev : [...prev, reportId];
-      return prev.filter((id) => id !== reportId);
-    });
-  };
-
-  const toggleSelectAllVisible = (checked: boolean) => {
-    if (!checked) {
-      setSelectedReportIds((prev) => prev.filter((id) => !filteredReports.some((report) => report.id === id)));
-      return;
-    }
-    setSelectedReportIds((prev) => Array.from(new Set([...prev, ...filteredReports.map((report) => report.id)])));
-  };
-
-  const openReport = (report: InspectionReport) => {
-    navigate('/reports/api-570-piping-external', { state: { reportId: report.id } });
-  };
-
   return (
-    <div className="dashboard-shell">
-      <section className="dashboard-content">
-        <header className="dashboard-topbar card">
-          <h1>Dashboard</h1>
-          <input
-            type="search"
-            placeholder="Search reports, client, facility..."
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-          />
-          <button type="button" className="new-report-btn" onClick={() => navigate('/reports/api-570-piping-external')}>
-            New Report
-          </button>
-          <div className="profile-pill">Inspector User</div>
-        </header>
-
-        <main className="dashboard-main">
-          <section className="dashboard-status-section">
-            <div className="dashboard-card-grid">
-            <article className={`card slicer-card ${activeSlicer === 'all' ? 'active' : ''}`} onClick={() => setActiveSlicer('all')}><h3>Total Reports</h3><p>{statusCounts.totalReports}</p></article>
-            <article className={`card slicer-card ${activeSlicer === 'draft' ? 'active' : ''}`} onClick={() => setActiveSlicer('draft')}><h3>Draft Reports</h3><p>{statusCounts.draftReports}</p></article>
-            <article className={`card slicer-card ${activeSlicer === 'inreview' ? 'active' : ''}`} onClick={() => setActiveSlicer('inreview')}><h3>In Review</h3><p>{statusCounts.inReview}</p></article>
-            <article className={`card slicer-card ${activeSlicer === 'completed' ? 'active' : ''}`} onClick={() => setActiveSlicer('completed')}><h3>Completed</h3><p>{statusCounts.completed}</p></article>
-            <article className="card"><h3>Open Findings</h3><p>{statusCounts.openFindings}</p></article>
-            <article className="card"><h3>Recommendations</h3><p>{statusCounts.recommendations}</p></article>
-            </div>
-          </section>
-
-          <section className="card reports-panel dashboard-reports-section">
-            <div className="reports-filters">
-              <input
-                type="search"
-                placeholder="Filter table..."
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-              />
-              <select
-                aria-label="Status filter"
-                value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value)}
-              >
-                {statusOptions.map((status) => <option key={status} value={status}>{status === 'all' ? 'All Statuses' : status}</option>)}
-              </select>
-              <select
-                aria-label="Report type filter"
-                value={typeFilter}
-                onChange={(event) => setTypeFilter(event.target.value)}
-              >
-                {typeOptions.map((type) => <option key={type} value={type}>{type === 'all' ? 'All Report Types' : type}</option>)}
-              </select>
-              <button type="button" className="clear-filters-btn" onClick={clearAllFilters}>Clear All Filters</button>
-            </div>
-            <div className="bulk-action-toolbar">
-              <span>{selectedReportIds.length} selected</span>
-              <button type="button" disabled={selectedReportIds.length === 0}>Download</button>
-              <button type="button" disabled={selectedReportIds.length === 0}>Edit</button>
-              <button type="button" disabled={selectedReportIds.length === 0}>Change Status</button>
-            </div>
-
-            {error && <p className="error">{error}</p>}
-            {isLoading ? <p>Loading reports...</p> : (
-              <div className="reports-table-wrap">
-                <table>
-                  <colgroup>
-                    {Object.values(columnWidths).map((width, index) => <col key={index} style={{ width }} />)}
-                  </colgroup>
-                  <thead>
-                    <tr className="column-filter-row">
-                      <th className="select-column select-all-label">Select All{renderResizeHandle('select')}</th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.reportNumber} onChange={(event) => setColumnFilters((prev) => ({ ...prev, reportNumber: event.target.value }))} />{renderResizeHandle('reportNumber')}</th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.reportType} onChange={(event) => setColumnFilters((prev) => ({ ...prev, reportType: event.target.value }))} />{renderResizeHandle('reportType')}</th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.client} onChange={(event) => setColumnFilters((prev) => ({ ...prev, client: event.target.value }))} />{renderResizeHandle('client')}</th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.facility} onChange={(event) => setColumnFilters((prev) => ({ ...prev, facility: event.target.value }))} />{renderResizeHandle('facility')}</th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.unit} onChange={(event) => setColumnFilters((prev) => ({ ...prev, unit: event.target.value }))} />{renderResizeHandle('unit')}</th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.systemId} onChange={(event) => setColumnFilters((prev) => ({ ...prev, systemId: event.target.value }))} />{renderResizeHandle('systemId')}</th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.circuitId} onChange={(event) => setColumnFilters((prev) => ({ ...prev, circuitId: event.target.value }))} />{renderResizeHandle('circuitId')}</th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.service} onChange={(event) => setColumnFilters((prev) => ({ ...prev, service: event.target.value }))} />{renderResizeHandle('service')}</th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.status} onChange={(event) => setColumnFilters((prev) => ({ ...prev, status: event.target.value }))} />{renderResizeHandle('status')}</th>
-                      <th><input type="search" placeholder="Filter..." value={columnFilters.updatedDate} onChange={(event) => setColumnFilters((prev) => ({ ...prev, updatedDate: event.target.value }))} />{renderResizeHandle('updatedDate')}</th>
-                      <th>{renderResizeHandle('actions')}</th>
-                    </tr>
-                    <tr>
-                      <th className="select-column">
-                        <input
-                          type="checkbox"
-                          aria-label="Select all visible reports"
-                          checked={isAllVisibleSelected}
-                          onChange={(event) => toggleSelectAllVisible(event.target.checked)}
-                        />
-                      </th>
-                      <th><button type="button" onClick={() => onSort('reportNumber')}>Report Number</button></th>
-                      <th><button type="button" onClick={() => onSort('templateId')}>Report Type</button></th>
-                      <th>Client</th>
-                      <th><button type="button" onClick={() => onSort('facilityId')}>Facility</button></th>
-                      <th>Unit</th>
-                      <th>System ID</th>
-                      <th><button type="button" onClick={() => onSort('circuitId')}>Circuit ID</button></th>
-                      <th><button type="button" onClick={() => onSort('service')}>Service</button></th>
-                      <th><button type="button" onClick={() => onSort('status')}>Status</button></th>
-                      <th><button type="button" onClick={() => onSort('updatedAt')}>Updated Date</button></th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredReports.map((report) => (
-                      <tr key={report.id} onClick={() => openReport(report)} role="button" tabIndex={0}>
-                        <td className="select-column">
-                          <input
-                            type="checkbox"
-                            aria-label={`Select report ${report.reportNumber || report.id}`}
-                            checked={selectedReportIds.includes(report.id)}
-                            onClick={(event) => event.stopPropagation()}
-                            onChange={(event) => toggleReportSelection(report.id, event.target.checked)}
-                          />
-                        </td>
-                        <td>{report.reportNumber || report.id}</td>
-                        <td>{getReportType(report)}</td>
-                        <td>{report.clientOrganizationId || '—'}</td>
-                        <td>{report.facilityId || '—'}</td>
-                        <td>{report.unit || report.processUnitId || '—'}</td>
-                        <td>{report.systemId || '—'}</td>
-                        <td>{report.circuitId || '—'}</td>
-                        <td>{report.service || '—'}</td>
-                        <td>{report.status || 'Unknown'}</td>
-                        <td>{formatDateTime(report.updatedAt || report.createdAt)}</td>
-                        <td>
-                          <div className="row-action-toolbar">
-                            <button type="button" onClick={(event) => { event.stopPropagation(); openReport(report); }}>Open</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        </main>
+    <div className="home-dashboard">
+      <section className="card home-hero">
+        <h2>Welcome</h2>
+        <p className="muted">Use the sections below to access the primary product areas.</p>
       </section>
+
+      <div className="home-card-grid">
+        <HomeCard
+          title="Engineering Tools"
+          description="Calculators and reference tools that support engineering and inspection decisions."
+          links={[
+            { to: '/calculators/corrosion-rate', label: 'Corrosion Rate Calculator' },
+            { to: '/calculators/pipe-lookup', label: 'Pipe Lookup Calculator' },
+            { to: '/engineering-tools/criteria-references', label: 'Criteria / References' },
+          ]}
+        />
+        <HomeCard
+          title="API Inspection Reports"
+          description="Access API inspection report queues, status slices, and report actions."
+          links={[
+            { to: '/reports', label: 'Open API Inspection Reports' },
+            { to: '/reports/api-570-piping-external', label: 'Start API 570 Piping External Report' },
+            { to: '/api-inspection-log', label: 'API Inspection Log' },
+          ]}
+        />
+        <HomeCard
+          title="NDE Log / Reports"
+          description="Track NDE requests and reports separately from API inspection report workflows."
+          links={[
+            { to: '/nde-requests', label: 'NDE Requests' },
+            { to: '/nde-reports', label: 'NDE Reports' },
+            { to: '/schedule', label: 'Schedule' },
+          ]}
+        />
+      </div>
     </div>
   );
 }

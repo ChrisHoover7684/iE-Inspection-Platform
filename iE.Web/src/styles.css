@@ -759,19 +759,26 @@ html, body, #root {
     font-size: 0.9rem;
 }
 
-.app-shell {
+ .app-shell {
     min-height: 100vh;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
+    background: #f3f5f9;
 }
 
 .app-topbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 16px;
+    gap: 16px;
+    padding: 12px 20px;
     border-bottom: 1px solid var(--color-border-medium);
     background: #fff;
+}
+
+.app-topbar-brand {
+    display: grid;
+    gap: 2px;
 }
 
 .app-title {
@@ -784,6 +791,21 @@ html, body, #root {
     color: var(--color-muted);
 }
 
+.app-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.topbar-user-chip {
+    border: 1px solid var(--color-border-medium);
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 12px;
+    color: #334155;
+    background: #f8fafc;
+}
+
 .topbar-user-menu {
     border: 1px solid var(--color-border-medium);
     background: #fff;
@@ -793,7 +815,6 @@ html, body, #root {
 
 .app-shell-body {
     display: flex;
-    grid-template-columns: minmax(0, 1fr);
     min-height: 0;
 }
 
@@ -801,32 +822,41 @@ html, body, #root {
     width: 260px;
     border-right: 1px solid var(--color-border-medium);
     background: var(--color-bg-sidebar);
-    padding: 12px;
+    padding: 10px;
     transition: width 0.2s ease;
 }
 
 .left-nav.collapsed {
     width: 64px;
+    padding-inline: 8px;
+}
+
+.left-nav-header {
+    margin-bottom: 8px;
 }
 
 .left-nav-toggle {
     width: 100%;
-    margin-bottom: 8px;
     border: 1px solid var(--color-border-medium);
-    border-radius: 6px;
-    background: #fff;
+    border-radius: 8px;
+    background: #f8fafc;
     cursor: pointer;
+    font-weight: 700;
+    padding: 8px;
 }
 
 .left-nav-heading {
     overflow: hidden;
     white-space: nowrap;
-
-    font-size: 12px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: .04em;
-    margin: 10px 0 6px;
-    color: #475569;
+    letter-spacing: .06em;
+    margin: 12px 2px 6px;
+    color: #64748b;
+}
+
+.left-nav-group {
+    margin-bottom: 8px;
 }
 
 .left-nav-list {
@@ -838,12 +868,12 @@ html, body, #root {
 .left-nav-link {
     overflow: hidden;
     white-space: nowrap;
-
     display: block;
-    padding: 8px 10px;
-    border-radius: 6px;
+    padding: 9px 10px;
+    border-radius: 8px;
     text-decoration: none;
     color: #0f172a;
+    border: 1px solid transparent;
 }
 
 .left-nav-link:hover,
@@ -851,17 +881,108 @@ html, body, #root {
     background: #e2e8f0;
 }
 
+.left-nav-link.active {
+    border-color: #93c5fd;
+    box-shadow: inset 3px 0 0 #2563eb;
+}
+
+.left-nav.collapsed .left-nav-heading,
+.left-nav.collapsed .left-nav-link {
+    text-align: center;
+}
+
+.left-nav.collapsed .left-nav-link {
+    padding-inline: 4px;
+    font-size: 11px;
+}
+
 .app-shell-main {
-    padding: 16px;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    padding: 18px;
+}
+
+.page-header {
+    margin-bottom: 14px;
 }
 
 .page-header h1 {
     margin: 0;
 }
 
+.placeholder-page {
+    max-width: 760px;
+    padding: 20px;
+    margin-top: 0;
+}
+
+.placeholder-eyebrow {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #334155;
+}
+
+.placeholder-page h2 {
+    margin: 0 0 10px;
+}
+
+.placeholder-page p {
+    margin: 0 0 10px;
+}
+
 @media (max-width: 1024px) {
     .left-nav,
     .left-nav.collapsed {
         width: 100%;
+    }
+}
+
+.home-dashboard {
+    display: grid;
+    gap: 14px;
+}
+
+.home-hero h2 {
+    margin: 0 0 8px;
+}
+
+.home-hero p {
+    margin: 0;
+}
+
+.home-card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.home-card {
+    margin: 0;
+    display: grid;
+    gap: 10px;
+}
+
+.home-card h2,
+.home-card p {
+    margin: 0;
+}
+
+.home-card-links {
+    display: grid;
+    gap: 8px;
+}
+
+.home-card-link {
+    text-decoration: none;
+    font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+    .home-card-grid {
+        grid-template-columns: 1fr;
     }
 }

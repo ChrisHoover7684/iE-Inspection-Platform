@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../App';
@@ -45,9 +45,11 @@ describe('App routes', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('heading', { name: 'Engineering Tools' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'API Inspection Reports' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'NDE Log / Reports' })).toBeInTheDocument();
+    const main = within(screen.getByRole('main'));
+
+    expect(main.getByRole('heading', { name: 'Engineering Tools' })).toBeInTheDocument();
+    expect(main.getByRole('heading', { name: 'API Inspection Reports' })).toBeInTheDocument();
+    expect(main.getByRole('heading', { name: 'NDE Log / Reports' })).toBeInTheDocument();
     expect(reportingApi.getInstances).not.toHaveBeenCalled();
   });
 

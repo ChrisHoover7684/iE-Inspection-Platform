@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { corrosionRateApi } from './api';
+import { calculateCorrosionRate } from './engineering/calculations/corrosionRate';
 import type { CorrosionRateInput, CorrosionRateResult } from './types';
 
 const defaultInput: CorrosionRateInput = {
@@ -19,10 +19,30 @@ export function CorrosionRateCalculatorPage() {
   const [result, setResult] = useState<CorrosionRateResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const calculate = async () => {
+  const calculate = () => {
     setError(null);
     try {
-      const response = await corrosionRateApi.calculate(input);
+      const computed = calculateCorrosionRate({
+        initialThicknessInches: input.initialThicknessInches,
+        finalThicknessInches: input.finalThicknessInches,
+        exposureTimeYears: Number(input.exposureTimeYears ?? 0),
+        inspectionFactor: input.inspectionFactor,
+        currentThicknessInches: input.currentThicknessInches,
+        tminInches: input.tminInches
+      });
+
+      const response: CorrosionRateResult = {
+        thicknessLossInches: computed.outputs.thicknessLossInches,
+        exposureTimeYears: Number(input.exposureTimeYears ?? 0),
+        corrosionRateInchesPerYear: computed.outputs.corrosionRateInchesPerYear,
+        corrosionRateMpy: computed.outputs.corrosionRateMpy,
+        corrosionRateMmPerYear: computed.outputs.corrosionRateMmPerYear,
+        remainingLifeYears: computed.outputs.remainingLifeYears,
+        nextInspectionYears: computed.outputs.nextInspectionYears,
+        nextInspectionDate: null,
+        warnings: computed.warnings.map((w) => w.message),
+        display: ''
+      };
       setResult(response);
     } catch (e) {
       setResult(null);
@@ -39,7 +59,7 @@ export function CorrosionRateCalculatorPage() {
       <label>Current Thickness (in)<input type="number" value={input.currentThicknessInches} onChange={(e) => setInput({ ...input, currentThicknessInches: Number(e.target.value) })} /></label>
       <label>Tmin (in)<input type="number" value={input.tminInches} onChange={(e) => setInput({ ...input, tminInches: Number(e.target.value) })} /></label>
       <label>Inspection Factor<input type="number" value={input.inspectionFactor} onChange={(e) => setInput({ ...input, inspectionFactor: Number(e.target.value) })} /></label>
-      <button onClick={() => void calculate()}>Calculate</button>
+      <button onClick={calculate}>Calculate</button>
     </div>
     {error && <div className="alert error">{error}</div>}
     {result && <div className="card stack">

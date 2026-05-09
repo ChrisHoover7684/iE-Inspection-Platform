@@ -34,7 +34,7 @@ describe('getNavigationForRole', () => {
   it('viewer includes read-only items and excludes internal/admin items', () => {
     const labels = labelsFor('viewer');
 
-    expect(labels).toEqual(expect.arrayContaining(['Reports', 'Assets', 'Downloads']));
+    expect(labels).toEqual(expect.arrayContaining(['API Inspection Reports', 'Assets', 'Downloads']));
     expect(labels).not.toEqual(expect.arrayContaining(['Users & Access', 'Audit Log', 'Settings', 'NDE Requests']));
   });
 

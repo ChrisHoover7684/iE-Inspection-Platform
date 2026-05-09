@@ -3,6 +3,7 @@ import { Api570PipingExternalEntryPage } from './Api570PipingExternalEntryPage';
 import { ReportEditPage } from './ReportEditPage';
 import { ReportsTestDashboardPage } from './ReportsTestDashboardPage';
 import { DashboardPage } from './DashboardPage';
+import { ApiInspectionReportsPage } from './ApiInspectionReportsPage';
 import { CorrosionRateCalculatorPage } from './CorrosionRateCalculatorPage';
 import { PipeLookupCalculatorPage } from './PipeLookupCalculatorPage';
 import { PressureVesselCalculatorPage } from './PressureVesselCalculatorPage';
@@ -27,7 +28,7 @@ export default function App() {
       <Route path="/calculators/pressure-vessels" element={<ShellRoute><PressureVesselCalculatorPage /></ShellRoute>} />
 
       <Route path="/nde-requests" element={placeholder('NDE Requests', 'Coming soon: NDE request queue and workflows.')} />
-      <Route path="/reports" element={placeholder('Reports', 'Coming soon: role-filtered report views and actions within report workspaces.')} />
+      <Route path="/reports" element={<ShellRoute><ApiInspectionReportsPage /></ShellRoute>} />
       <Route path="/downloads" element={placeholder('Downloads', 'Coming soon: downloadable report and file library.')} />
       <Route path="/assets" element={placeholder('Assets', 'Coming soon: asset register and activity screens.')} />
       <Route path="/help" element={placeholder('Help', 'Coming soon: support resources and guidance.')} />

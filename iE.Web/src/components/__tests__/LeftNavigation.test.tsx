@@ -15,7 +15,7 @@ describe('LeftNavigation', () => {
     );
 
     expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Home' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Admin' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Collapse navigation' })).toBeInTheDocument();
   });

@@ -31,7 +31,7 @@ export type NavigationGroup = {
 };
 
 const allItems: NavigationItem[] = [
-  { key: 'dashboard', label: 'Dashboard', route: '/dashboard', group: 'dashboard' },
+  { key: 'dashboard', label: 'Home', route: '/dashboard', group: 'dashboard' },
   { key: 'ndeRequests', label: 'NDE Requests', route: '/nde-requests', group: 'work' },
   { key: 'approvalQueue', label: 'Approval Queue', route: '/approval-queue', group: 'work' },
   { key: 'schedule', label: 'Schedule', route: '/schedule', group: 'work' },
@@ -41,7 +41,7 @@ const allItems: NavigationItem[] = [
   { key: 'myReports', label: 'My Reports', route: '/my-reports', group: 'reports' },
   { key: 'returnedReports', label: 'Returned Reports', route: '/returned-reports', group: 'reports' },
   { key: 'ndeReports', label: 'NDE Reports', route: '/nde-reports', group: 'reports' },
-  { key: 'reports', label: 'Reports', route: '/reports', group: 'reports' },
+  { key: 'reports', label: 'API Inspection Reports', route: '/reports', group: 'reports' },
   { key: 'exports', label: 'Exports', route: '/exports', group: 'reports' },
   { key: 'downloads', label: 'Downloads', route: '/downloads', group: 'reports' },
   { key: 'assets', label: 'Assets', route: '/assets', group: 'assets' },
@@ -61,7 +61,7 @@ const allItems: NavigationItem[] = [
 ];
 
 const groupLabels: Record<NavigationGroupKey, string> = {
-  dashboard: 'Dashboard',
+  dashboard: 'Home',
   work: 'Work',
   reports: 'Reports',
   assets: 'Assets',

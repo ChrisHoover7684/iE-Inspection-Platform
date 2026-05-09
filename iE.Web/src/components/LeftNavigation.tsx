@@ -10,14 +10,16 @@ type LeftNavigationProps = {
 export function LeftNavigation({ groups, isCollapsed, onToggleCollapsed }: LeftNavigationProps) {
   return (
     <nav className={`left-nav${isCollapsed ? ' collapsed' : ''}`} aria-label="Primary">
-      <button
-        type="button"
-        className="left-nav-toggle"
-        aria-label={isCollapsed ? 'Expand navigation' : 'Collapse navigation'}
-        onClick={onToggleCollapsed}
-      >
-        {isCollapsed ? '»' : '«'}
-      </button>
+      <div className="left-nav-header">
+        <button
+          type="button"
+          className="left-nav-toggle"
+          aria-label={isCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+          onClick={onToggleCollapsed}
+        >
+          {isCollapsed ? '»' : '«'}
+        </button>
+      </div>
 
       {groups.map((group) => (
         <section key={group.key} className="left-nav-group" aria-labelledby={`group-${group.key}`}>

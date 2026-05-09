@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { getCurrentUserRole } from '../navigation/currentUserRole';
 import { getNavigationForRole } from '../navigation/roleNavigation';
@@ -13,6 +13,7 @@ export function AppShell({ children }: AppShellProps) {
   const role = getCurrentUserRole();
   const groups = useMemo(() => getNavigationForRole(role), [role]);
   const location = useLocation();
+  const [isNavCollapsed, setIsNavCollapsed] = useState(false);
 
   const currentItem = groups.flatMap((g) => g.items).find((item) => item.route === location.pathname);
 
@@ -20,7 +21,11 @@ export function AppShell({ children }: AppShellProps) {
     <div className="app-shell">
       <TopBar />
       <div className="app-shell-body">
-        <LeftNavigation groups={groups} />
+        <LeftNavigation
+          groups={groups}
+          isCollapsed={isNavCollapsed}
+          onToggleCollapsed={() => setIsNavCollapsed((prev) => !prev)}
+        />
         <main className="app-shell-main">
           <header className="page-header">
             <h1>{currentItem?.label ?? 'Coming soon'}</h1>

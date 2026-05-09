@@ -428,3 +428,109 @@ PR #212 adds a frontend test foundation focused on role-aware navigation metadat
 - Coverage targets role navigation visibility rules per role, temporary role normalization behavior, and shell/navigation rendering contracts.
 - No new workflow feature screens are implemented in this PR.
 - Frontend role visibility remains UI convenience only; backend authorization remains authoritative.
+
+## Report creation hierarchy
+- API 570 Piping
+  - External Visual
+  - CUI External
+- API 510 Pressure Vessel
+  - External Visual
+  - Internal Visual
+  - Shell & Tube Exchanger
+  - Hairpin Exchanger
+  - Plate & Frame Exchanger
+  - Towers
+  - Drums
+- API 653 Tanks
+  - External
+  - Internal
+  - Floor
+  - Shell
+  - Roof
+- NDE Reports
+  - UT Thickness
+  - UTT Grid
+  - UTSW
+  - PAUT
+  - PT / WFPT
+  - MT / WFMT
+  - RT
+  - PMI
+  - Hardness
+  - Boroscope
+  - ETC
+  - IRIS
+  - Guided Wave UT
+  - Other / Custom
+
+- Supplemental Inspections
+  - Soil-to-Air Interface (SAI)
+  - Injection Point Inspection
+  - Mix Point Inspection
+  - HF Alky Flange Inspection
+  - CUI Inspection
+  - CUF Inspection
+  - Dead Leg Inspection
+  - Corrosion Under Pipe Supports (CUPS)
+  - Buried Piping / Transition Inspection
+  - Small-Bore Connection Inspection
+  - Flange / Bolting / Gasket Inspection
+  - Coating / External Corrosion Inspection
+  - Fireproofing Interface Inspection
+  - Insulation Penetration Inspection
+  - Vibration / Fatigue Follow-up
+  - Weld / HAZ Follow-up
+  - Other / Custom Supplemental Inspection
+
+### Supplemental inspection planning note
+- These are placeholders/planning categories only in this PR.
+- Do not build these report screens yet.
+- Do not add backend models for these yet.
+- These should appear in future Create Report flow and report-workspace tooling, not as a flat global left-nav list.
+
+## Report-authoring tool panel direction
+- Left navigation remains the primary app navigation.
+- Report-authoring tools should live inside the report workspace rather than global navigation.
+- Tools should be context-sensitive based on report type.
+- API 570 report workspace tool examples:
+  - B31.3 thickness check
+  - Corrosion rate
+  - Remaining life
+  - NDE request insertion
+  - Thickness grid
+  - Damage mechanism lookup
+- API 510 report workspace tool examples:
+  - Pressure vessel calculations
+  - PCC-1 criteria
+  - Nozzle/head/shell checks
+  - Exchanger-specific sections
+
+## Global navigation guidance
+- Do not use a global left-nav "Report Actions" group for generic Create/View/Edit links.
+- Create/View/Edit should exist as actions within report listing/detail/workspace screens.
+
+
+## Common Supplemental Report Tools
+- Corrosion Rate
+- Remaining Life
+- Tmin / Required Thickness Check
+- Thickness Trend / Grid Review
+- Damage Mechanism Lookup
+- NDE Request Insertion
+- Photo Markup Insertion
+- Finding / Recommendation Insertion
+
+### Common supplemental tools planning note
+- Corrosion Rate is applicable across equipment types, not only API 570 piping.
+- Common supplemental report tools should be available in future report workspaces where relevant.
+- These are planning/tooling placeholders only in this PR.
+- Do not build these tools/screens in this PR.
+- Do not change calculator/formula code in this PR.
+
+## Engineering tools organization direction
+- Engineering Tools in the global left nav is only a high-level entry point.
+- The full engineering tool library is future work and is not implemented in this PR.
+- Tools such as API 653 calculations, corrosion rate, PCC-1 criteria, B31.3, pressure vessel calculations, damage mechanisms, and report-specific insert/check tools should be organized into:
+  1. Engineering Tools library
+  2. Context-sensitive report workspace tool panel
+- Do not add all tools as a flat global left-nav list.

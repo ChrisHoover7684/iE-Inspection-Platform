@@ -1,0 +1,25 @@
+import { cleanup, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { afterEach, describe, expect, it } from 'vitest';
+import App from '../App';
+import { allNavigationRoutes } from '../navigation/roleNavigation';
+
+const nonPlaceholderRoutes = new Set(['/dashboard', '/calculators/corrosion-rate']);
+
+afterEach(() => cleanup());
+
+describe('App routes', () => {
+  it.each(allNavigationRoutes)('route %s resolves without dashboard fallback', (route: string) => {
+    render(
+      <MemoryRouter initialEntries={[route]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    if (nonPlaceholderRoutes.has(route)) {
+      expect(screen.queryByText(/Coming soon:/)).not.toBeInTheDocument();
+    } else {
+      expect(screen.getByText(/Coming soon:/)).toBeInTheDocument();
+    }
+  });
+});

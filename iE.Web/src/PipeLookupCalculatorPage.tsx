@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { pipeLookupApi } from './api';
+import { calculatePipeDimensions } from './engineering/calculations/pipeLookup';
 import type { PipeLookupResult } from './types';
 
 export function PipeLookupCalculatorPage() {
@@ -31,7 +32,19 @@ export function PipeLookupCalculatorPage() {
   const lookup = async () => {
     setError(null);
     try {
-      setResult(await pipeLookupApi.lookup({ nps, schedule }));
+      const lookedUp = await pipeLookupApi.lookup({ nps, schedule });
+      const computed = calculatePipeDimensions({
+        nps: lookedUp.nps,
+        schedule: lookedUp.schedule,
+        outsideDiameter: lookedUp.outsideDiameter,
+        nominalThickness: lookedUp.nominalThickness
+      });
+      setResult({
+        ...lookedUp,
+        insideDiameter: computed.outputs.insideDiameter,
+        lowerLimitMinus12_5: computed.outputs.lowerLimitMinus12_5,
+        upperLimitPlus12_5: computed.outputs.upperLimitPlus12_5
+      });
     } catch (e) {
       setResult(null);
       setError(e instanceof Error ? e.message : 'Lookup failed');

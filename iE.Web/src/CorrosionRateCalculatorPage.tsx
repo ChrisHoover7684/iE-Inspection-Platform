@@ -37,11 +37,11 @@ export function CorrosionRateCalculatorPage() {
         corrosionRateInchesPerYear: computed.outputs.corrosionRateInchesPerYear,
         corrosionRateMpy: computed.outputs.corrosionRateMpy,
         corrosionRateMmPerYear: computed.outputs.corrosionRateMmPerYear,
-        remainingLifeYears: computed.outputs.remainingLifeYears,
-        nextInspectionYears: computed.outputs.nextInspectionYears,
+        remainingLifeYears: computed.outputs.remainingLifeYears !== null ? Math.max(computed.outputs.remainingLifeYears, 0) : null,
+        nextInspectionYears: computed.outputs.nextInspectionYears !== null ? Math.max(computed.outputs.nextInspectionYears, 0) : null,
         nextInspectionDate: null,
-        warnings: computed.warnings.map((w) => w.message),
-        display: ''
+        warnings: computed.warnings.map((w) => `[${w.severity.toUpperCase()}] ${w.message}`),
+        display: computed.insertLabel
       };
       setResult(response);
     } catch (e) {

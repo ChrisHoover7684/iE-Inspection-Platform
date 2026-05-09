@@ -298,7 +298,7 @@ export function ApiInspectionReportsPage() {
     <div className="dashboard-shell">
       <section className="dashboard-content">
         <header className="dashboard-topbar card">
-          <h1>API Inspection Reports</h1>
+          <h2>API Inspection Reports</h2>
           <input
             type="search"
             placeholder="Search reports, client, facility..."

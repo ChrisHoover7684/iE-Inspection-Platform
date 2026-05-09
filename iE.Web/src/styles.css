@@ -819,14 +819,16 @@ html, body, #root {
 }
 
 .left-nav {
+    flex: 0 0 260px;
     width: 260px;
     border-right: 1px solid var(--color-border-medium);
     background: var(--color-bg-sidebar);
     padding: 10px;
-    transition: width 0.2s ease;
+    transition: width 0.2s ease, flex-basis 0.2s ease;
 }
 
 .left-nav.collapsed {
+    flex-basis: 64px;
     width: 64px;
     padding-inline: 8px;
 }
@@ -935,8 +937,13 @@ html, body, #root {
 }
 
 @media (max-width: 1024px) {
+    .app-shell-body {
+        flex-direction: column;
+    }
+
     .left-nav,
     .left-nav.collapsed {
+        flex-basis: auto;
         width: 100%;
     }
 }

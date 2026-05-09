@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../App';
@@ -51,14 +51,14 @@ describe('App routes', () => {
     expect(reportingApi.getInstances).not.toHaveBeenCalled();
   });
 
-  it('loads API Inspection Reports page from /reports', () => {
+  it('loads API Inspection Reports page from /reports', async () => {
     render(
       <MemoryRouter initialEntries={['/reports']}>
         <App />
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('heading', { name: 'API Inspection Reports' })).toBeInTheDocument();
-    expect(reportingApi.getInstances).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('heading', { level: 1, name: 'API Inspection Reports' })).toBeInTheDocument();
+    await waitFor(() => expect(reportingApi.getInstances).toHaveBeenCalledTimes(1));
   });
 });

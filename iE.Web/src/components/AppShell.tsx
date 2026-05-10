@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { getCurrentUserRole } from '../navigation/currentUserRole';
-import { getNavigationForRole } from '../navigation/roleNavigation';
+import { getNavigationForRole, getNavigationItemForRoute } from '../navigation/roleNavigation';
 import { LeftNavigation } from './LeftNavigation';
 import { TopBar } from './TopBar';
 
@@ -16,7 +16,7 @@ export function AppShell({ children }: AppShellProps) {
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
   const isApi570ReportRoute = location.pathname === '/reports/api-570-piping-external';
 
-  const currentItem = groups.flatMap((g) => g.items).find((item) => item.route === location.pathname);
+  const currentItem = getNavigationItemForRoute(location.pathname);
 
   return (
     <div className="app-shell">

@@ -55,6 +55,24 @@ describe('App routes', () => {
 
 
 
+
+  it.each([
+    ['/results-received', 'Results Received'],
+    ['/schedule', 'Schedule'],
+    ['/overdue', 'Overdue'],
+    ['/cancelled', 'Cancelled'],
+    ['/nde-reports', 'NDE Reports'],
+  ])('renders route header %s as %s', (route: string, expectedHeader: string) => {
+    render(
+      <MemoryRouter initialEntries={[route]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: expectedHeader })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 1, name: 'Coming soon' })).not.toBeInTheDocument();
+  });
+
   it('scopes NDE reports route to report-centric statuses', () => {
     render(
       <MemoryRouter initialEntries={['/nde-reports']}>

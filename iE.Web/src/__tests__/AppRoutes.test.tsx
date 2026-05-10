@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../App';
 import { allNavigationRoutes } from '../navigation/roleNavigation';
-import { reportingApi } from '../api';
+import { ndeApi, reportingApi } from '../api';
 
 vi.mock('../api', async () => {
   const actual = await vi.importActual<typeof import('../api')>('../api');
@@ -12,6 +12,19 @@ vi.mock('../api', async () => {
     reportingApi: {
       ...actual.reportingApi,
       getInstances: vi.fn().mockResolvedValue([]),
+    },
+    ndeApi: {
+      ...actual.ndeApi,
+      getLogItems: vi.fn().mockResolvedValue([
+        { id: 'nde-005', requestNumber: 'NDE-24-005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09', reportStatus: 'Results Received', reportNumber: 'RPT-24-005' },
+        { id: 'nde-006', requestNumber: 'NDE-24-006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Report Ready', reportNumber: 'RPT-24-006', reportFileName: 'NDE-24-006-report.pdf', reportDownloadUrl: '/demo-downloads/NDE-24-006-report.pdf' },
+        { id: 'nde-007', requestNumber: 'NDE-24-007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Downloaded', reportNumber: 'RPT-24-007', reportFileName: 'NDE-24-007-report.pdf', reportDownloadUrl: '/demo-downloads/NDE-24-007-report.pdf' },
+        { id: 'nde-001', requestNumber: 'NDE-24-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started' },
+        { id: 'nde-003', requestNumber: 'NDE-24-003', equipmentTag: 'E-4401', method: 'MT', status: 'Scheduled', priority: 'Normal', requestedBy: 'T. Nguyen', assignedTo: 'R. Hall', dueDate: '2026-05-13', reportStatus: 'Not Available' },
+        { id: 'nde-008', requestNumber: 'NDE-24-008', equipmentTag: 'PSV-91', method: 'UT Thickness', status: 'Cancelled', priority: 'Low', requestedBy: 'C. White', assignedTo: 'B. Young', dueDate: '2026-05-04', reportStatus: 'Not Started' },
+        { id: 'nde-009', requestNumber: 'NDE-24-009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01', reportStatus: 'Results Received', reportNumber: 'RPT-24-009' },
+        { id: 'nde-010', requestNumber: 'NDE-24-010', assetTag: 'P-300C', method: 'PAUT', status: 'Scheduled', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Report Ready', reportNumber: 'RPT-24-010', reportFileName: 'NDE-24-010-report.pdf', reportDownloadUrl: '/demo-downloads/NDE-24-010-report.pdf' }
+      ]),
     },
   };
 });
@@ -73,14 +86,26 @@ describe('App routes', () => {
     expect(screen.queryByRole('heading', { level: 1, name: 'Coming soon' })).not.toBeInTheDocument();
   });
 
-  it('scopes NDE reports route to report-centric statuses', () => {
+
+  it('loads NDE rows from ndeApi without real backend calls', async () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-requests']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('NDE-24-001')).toBeInTheDocument();
+    expect(ndeApi.getLogItems).toHaveBeenCalledTimes(1);
+  });
+
+  it('scopes NDE reports route to report-centric statuses', async () => {
     render(
       <MemoryRouter initialEntries={['/nde-reports']}>
         <App />
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('NDE-24-005')).toBeInTheDocument();
+    expect(await screen.findByText('NDE-24-005')).toBeInTheDocument();
     expect(screen.getByText('NDE-24-006')).toBeInTheDocument();
     expect(screen.getByText('NDE-24-007')).toBeInTheDocument();
     expect(screen.queryByText('NDE-24-002')).not.toBeInTheDocument();

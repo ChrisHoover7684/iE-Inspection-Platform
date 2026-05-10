@@ -30,7 +30,8 @@ import type {
   NozzleThicknessResult,
   HeadType,
   NozzleType,
-  Ug45TableEntry
+  Ug45TableEntry,
+  NdeLogItem
 } from './types';
 
 const DEFAULT_API_BASE_URL = 'http://localhost:5229';
@@ -144,4 +145,9 @@ export const pressureVesselApi = {
   getHeadTypes: () => apiFetch<HeadType[]>('/api/mechanical/pressure-vessels/heads/types'),
   getNozzleTypes: () => apiFetch<NozzleType[]>('/api/mechanical/pressure-vessels/nozzles/types'),
   getUg45Table: () => apiFetch<Ug45TableEntry[]>('/api/mechanical/pressure-vessels/ug45-table')
+};
+
+
+export const ndeApi = {
+  getLogItems: () => apiFetch<NdeLogItem[]>('/api/nde/log', undefined, 'GET /api/nde/log')
 };

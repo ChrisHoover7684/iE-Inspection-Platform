@@ -28,6 +28,7 @@ export type NdeLogItem = {
 
 type NdeWorkspacePageProps = {
   initialStatus?: NdeLogStatus | 'All';
+  initialStatuses?: NdeLogStatus[];
   title?: string;
   description?: string;
 };
@@ -45,10 +46,24 @@ const statusOptions: Array<NdeLogStatus | 'All'> = [
   'Overdue',
 ];
 
-const mockRows: NdeLogItem[] = [];
+// Frontend-only demo/read-model data for NDE workspace usability.
+// Replace with backend read-model data when the NDE workflow API is connected.
+const mockRows: NdeLogItem[] = [
+  { id: 'nde-001', requestNumber: 'NDE-24-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20' },
+  { id: 'nde-002', requestNumber: 'NDE-24-002', circuitId: 'CIR-4A-220', method: 'RT', status: 'Requested', priority: 'High', requestedBy: 'M. Patel', assignedTo: 'S. Owens', dueDate: '2026-05-17' },
+  { id: 'nde-003', requestNumber: 'NDE-24-003', equipmentTag: 'E-4401', method: 'MT', status: 'Scheduled', priority: 'Normal', requestedBy: 'T. Nguyen', assignedTo: 'R. Hall', dueDate: '2026-05-13' },
+  { id: 'nde-004', requestNumber: 'NDE-24-004', assetTag: 'HX-22B', method: 'PT', status: 'In Progress', priority: 'Critical', requestedBy: 'A. Lopez', assignedTo: 'D. Kim', dueDate: '2026-05-12' },
+  { id: 'nde-005', requestNumber: 'NDE-24-005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09' },
+  { id: 'nde-006', requestNumber: 'NDE-24-006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08' },
+  { id: 'nde-007', requestNumber: 'NDE-24-007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05' },
+  { id: 'nde-008', requestNumber: 'NDE-24-008', equipmentTag: 'PSV-91', method: 'UT Thickness', status: 'Cancelled', priority: 'Low', requestedBy: 'C. White', assignedTo: 'B. Young', dueDate: '2026-05-04' },
+  { id: 'nde-009', requestNumber: 'NDE-24-009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01' },
+  { id: 'nde-010', requestNumber: 'NDE-24-010', assetTag: 'P-300C', method: 'PAUT', status: 'Scheduled', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14' },
+];
 
 export function NdeWorkspacePage({
   initialStatus = 'All',
+  initialStatuses,
   title = 'NDE Requests',
   description = 'Track NDE requests and reports without mixing API inspection report workflow data.',
 }: NdeWorkspacePageProps) {
@@ -59,8 +74,17 @@ export function NdeWorkspacePage({
     setStatusFilter(initialStatus);
   }, [initialStatus]);
 
+  const baseItems = useMemo(() => {
+    if (!initialStatuses || initialStatuses.length === 0) {
+      return mockRows;
+    }
+
+    const statuses = new Set(initialStatuses);
+    return mockRows.filter((row) => statuses.has(row.status));
+  }, [initialStatuses]);
+
   const filteredItems = useMemo(() => {
-    return mockRows.filter((row) => {
+    return baseItems.filter((row) => {
       const byStatus = statusFilter === 'All' || row.status === statusFilter;
       const bySearch =
         searchText.trim().length === 0
@@ -80,13 +104,13 @@ export function NdeWorkspacePage({
 
       return byStatus && bySearch;
     });
-  }, [searchText, statusFilter]);
+  }, [baseItems, searchText, statusFilter]);
 
   const summary = {
-    total: mockRows.length,
-    open: mockRows.filter((item) => !['Closed', 'Cancelled'].includes(item.status)).length,
-    resultsReceived: mockRows.filter((item) => item.status === 'Results Received').length,
-    overdue: mockRows.filter((item) => item.status === 'Overdue').length,
+    total: baseItems.length,
+    open: baseItems.filter((item) => !['Closed', 'Cancelled'].includes(item.status)).length,
+    resultsReceived: baseItems.filter((item) => item.status === 'Results Received').length,
+    overdue: baseItems.filter((item) => item.status === 'Overdue').length,
   };
 
   return (

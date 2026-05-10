@@ -24,6 +24,10 @@ export type NdeLogItem = {
   assignedTo?: string;
   dueDate?: string;
   resultReceivedDate?: string;
+  reportStatus: 'Not Started' | 'In Progress' | 'Results Received' | 'Report Ready' | 'Downloaded' | 'Not Available';
+  reportNumber?: string;
+  reportFileName?: string;
+  reportDownloadUrl?: string;
 };
 
 type NdeWorkspacePageProps = {
@@ -49,16 +53,16 @@ const statusOptions: Array<NdeLogStatus | 'All'> = [
 // Frontend-only demo/read-model data for NDE workspace usability.
 // Replace with backend read-model data when the NDE workflow API is connected.
 const mockRows: NdeLogItem[] = [
-  { id: 'nde-001', requestNumber: 'NDE-24-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20' },
-  { id: 'nde-002', requestNumber: 'NDE-24-002', circuitId: 'CIR-4A-220', method: 'RT', status: 'Requested', priority: 'High', requestedBy: 'M. Patel', assignedTo: 'S. Owens', dueDate: '2026-05-17' },
-  { id: 'nde-003', requestNumber: 'NDE-24-003', equipmentTag: 'E-4401', method: 'MT', status: 'Scheduled', priority: 'Normal', requestedBy: 'T. Nguyen', assignedTo: 'R. Hall', dueDate: '2026-05-13' },
-  { id: 'nde-004', requestNumber: 'NDE-24-004', assetTag: 'HX-22B', method: 'PT', status: 'In Progress', priority: 'Critical', requestedBy: 'A. Lopez', assignedTo: 'D. Kim', dueDate: '2026-05-12' },
-  { id: 'nde-005', requestNumber: 'NDE-24-005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09' },
-  { id: 'nde-006', requestNumber: 'NDE-24-006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08' },
-  { id: 'nde-007', requestNumber: 'NDE-24-007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05' },
-  { id: 'nde-008', requestNumber: 'NDE-24-008', equipmentTag: 'PSV-91', method: 'UT Thickness', status: 'Cancelled', priority: 'Low', requestedBy: 'C. White', assignedTo: 'B. Young', dueDate: '2026-05-04' },
-  { id: 'nde-009', requestNumber: 'NDE-24-009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01' },
-  { id: 'nde-010', requestNumber: 'NDE-24-010', assetTag: 'P-300C', method: 'PAUT', status: 'Scheduled', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14' },
+  { id: 'nde-001', requestNumber: 'NDE-24-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started' },
+  { id: 'nde-002', requestNumber: 'NDE-24-002', circuitId: 'CIR-4A-220', method: 'RT', status: 'Requested', priority: 'High', requestedBy: 'M. Patel', assignedTo: 'S. Owens', dueDate: '2026-05-17', reportStatus: 'In Progress', reportNumber: 'RPT-24-002' },
+  { id: 'nde-003', requestNumber: 'NDE-24-003', equipmentTag: 'E-4401', method: 'MT', status: 'Scheduled', priority: 'Normal', requestedBy: 'T. Nguyen', assignedTo: 'R. Hall', dueDate: '2026-05-13', reportStatus: 'Not Available' },
+  { id: 'nde-004', requestNumber: 'NDE-24-004', assetTag: 'HX-22B', method: 'PT', status: 'In Progress', priority: 'Critical', requestedBy: 'A. Lopez', assignedTo: 'D. Kim', dueDate: '2026-05-12', reportStatus: 'In Progress', reportNumber: 'RPT-24-004' },
+  { id: 'nde-005', requestNumber: 'NDE-24-005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09', reportStatus: 'Results Received', reportNumber: 'RPT-24-005' },
+  { id: 'nde-006', requestNumber: 'NDE-24-006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Report Ready', reportNumber: 'RPT-24-006', reportFileName: 'NDE-24-006-report.pdf', reportDownloadUrl: '/demo-downloads/NDE-24-006-report.pdf' },
+  { id: 'nde-007', requestNumber: 'NDE-24-007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Downloaded', reportNumber: 'RPT-24-007', reportFileName: 'NDE-24-007-report.pdf', reportDownloadUrl: '/demo-downloads/NDE-24-007-report.pdf' },
+  { id: 'nde-008', requestNumber: 'NDE-24-008', equipmentTag: 'PSV-91', method: 'UT Thickness', status: 'Cancelled', priority: 'Low', requestedBy: 'C. White', assignedTo: 'B. Young', dueDate: '2026-05-04', reportStatus: 'Not Started' },
+  { id: 'nde-009', requestNumber: 'NDE-24-009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01', reportStatus: 'Results Received', reportNumber: 'RPT-24-009' },
+  { id: 'nde-010', requestNumber: 'NDE-24-010', assetTag: 'P-300C', method: 'PAUT', status: 'Scheduled', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Report Ready', reportNumber: 'RPT-24-010', reportFileName: 'NDE-24-010-report.pdf', reportDownloadUrl: '/demo-downloads/NDE-24-010-report.pdf' },
 ];
 
 type NdeTransition = { label: string; status: NdeLogStatus };
@@ -97,6 +101,8 @@ export function NdeWorkspacePage({
   const [statusFilter, setStatusFilter] = useState<NdeLogStatus | 'All'>(initialStatus);
   const [searchText, setSearchText] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedForBulkDownload, setSelectedForBulkDownload] = useState<string[]>([]);
+  const [bulkMessage, setBulkMessage] = useState<string>('');
 
   useEffect(() => {
     setStatusFilter(initialStatus);
@@ -152,6 +158,44 @@ export function NdeWorkspacePage({
       return byStatus && bySearch;
     });
   }, [baseItems, searchText, statusFilter]);
+
+  const visibleIds = useMemo(() => filteredItems.map((item) => item.id), [filteredItems]);
+  const visibleSelectedCount = useMemo(() => selectedForBulkDownload.filter((id) => visibleIds.includes(id)).length, [selectedForBulkDownload, visibleIds]);
+  const isDownloadableReport = (item: NdeLogItem) =>
+    ['Report Ready', 'Downloaded'].includes(item.reportStatus)
+    && Boolean(item.reportDownloadUrl)
+    && Boolean(item.reportFileName);
+
+  const downloadableSelectedItems = useMemo(() => filteredItems.filter((item) => selectedForBulkDownload.includes(item.id) && isDownloadableReport(item)), [filteredItems, selectedForBulkDownload]);
+
+  const triggerDownload = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportVisibleTable = () => {
+    const headers = ['Request #', 'Asset / Circuit / Equipment', 'Method', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
+    const rows = filteredItems.map((item) => [
+      item.requestNumber,
+      item.assetTag ?? item.circuitId ?? item.equipmentTag ?? '—',
+      item.method,
+      item.status,
+      item.priority,
+      item.dueDate ?? '—',
+      item.resultReceivedDate ?? '—',
+      item.reportStatus,
+      item.reportNumber ?? '—',
+    ]);
+    const csv = [headers, ...rows].map((line) => line.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    triggerDownload(url, 'nde-log-export.csv');
+    URL.revokeObjectURL(url);
+  };
 
 
   const selectedItem = useMemo(
@@ -209,6 +253,26 @@ export function NdeWorkspacePage({
             <button key={transition.label} type="button" onClick={() => applyStatusToSelection(transition.status)}>{transition.label}</button>
           ))}
         </div>
+        <div className="nde-download-actions" role="group" aria-label="NDE report download actions">
+          <button type="button" onClick={exportVisibleTable}>Export Table</button>
+          <button
+            type="button"
+            onClick={() => {
+              const selectedVisible = filteredItems.filter((item) => selectedForBulkDownload.includes(item.id));
+              const readyRows = selectedVisible.filter((item) => isDownloadableReport(item));
+              readyRows.forEach((item) => triggerDownload(item.reportDownloadUrl as string, item.reportFileName as string));
+              if (selectedVisible.length > readyRows.length) {
+                setBulkMessage('Only report-ready rows will be included.');
+              } else {
+                setBulkMessage('');
+              }
+            }}
+            disabled={downloadableSelectedItems.length === 0}
+          >
+            Bulk Download Reports
+          </button>
+          {bulkMessage && <span className="muted">{bulkMessage}</span>}
+        </div>
         <p className="muted nde-frontend-note">Workflow actions are frontend-only demo behavior until backend persistence is connected.</p>
         {selectedItem && (
           <p className="muted nde-selection-summary">
@@ -219,7 +283,8 @@ export function NdeWorkspacePage({
         <table>
           <thead>
             <tr>
-              <th>Request #</th><th>Asset / Circuit / Equipment</th><th>Method</th><th>Status</th><th>Priority</th><th>Due</th><th>Results Received</th>
+              <th>Select</th><th>Request #</th><th>Asset / Circuit / Equipment</th><th>Method</th><th>Status</th><th>Priority</th><th>Due</th><th>Results Received</th>
+              <th>Report Status</th><th>Report #</th><th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -230,6 +295,9 @@ export function NdeWorkspacePage({
                 onClick={() => setSelectedId(item.id)}
                 aria-selected={selectedId === item.id}
               >
+                <td><input aria-label={`Select ${item.requestNumber}`} type="checkbox" checked={selectedForBulkDownload.includes(item.id)} onChange={(event) => {
+                  setSelectedForBulkDownload((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id));
+                }} onClick={(event) => event.stopPropagation()} /></td>
                 <td>{item.requestNumber}</td>
                 <td>{item.assetTag ?? item.circuitId ?? item.equipmentTag ?? '—'}</td>
                 <td>{item.method}</td>
@@ -237,10 +305,42 @@ export function NdeWorkspacePage({
                 <td>{item.priority}</td>
                 <td>{item.dueDate ?? '—'}</td>
                 <td>{item.resultReceivedDate ?? '—'}</td>
+                <td>{item.reportStatus}</td>
+                <td>{item.reportNumber ?? '—'}</td>
+                <td>
+                  <button
+                    type="button"
+                    title={isDownloadableReport(item) ? 'Download ready report' : 'Report template/download not connected yet.'}
+                    disabled={!isDownloadableReport(item)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (item.reportDownloadUrl && item.reportFileName) {
+                        triggerDownload(item.reportDownloadUrl, item.reportFileName);
+                      }
+                    }}
+                  >Download Report</button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+        <div className="nde-table-select-all">
+          <label>
+            <input
+              type="checkbox"
+              aria-label="Select all visible"
+              checked={visibleIds.length > 0 && visibleSelectedCount === visibleIds.length}
+              onChange={(event) => {
+                if (event.target.checked) {
+                  setSelectedForBulkDownload((current) => [...new Set([...current, ...visibleIds])]);
+                } else {
+                  setSelectedForBulkDownload((current) => current.filter((id) => !visibleIds.includes(id)));
+                }
+              }}
+            />
+            Select all visible
+          </label>
+        </div>
         {filteredItems.length === 0 && (
           <div className="nde-empty-state">
             <h3>No {title} NDE items yet</h3>

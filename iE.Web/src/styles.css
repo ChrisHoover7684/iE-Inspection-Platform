@@ -1049,3 +1049,21 @@ html, body, #root {
     margin-top: 12px;
     padding-top: 12px;
 }
+
+.nde-download-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.nde-table-select-all {
+    margin-top: 8px;
+}
+
+.nde-table-select-all label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}

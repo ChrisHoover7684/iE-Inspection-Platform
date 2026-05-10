@@ -99,6 +99,56 @@ describe('App routes', () => {
     expect(screen.queryByText('NDE-24-004')).not.toBeInTheDocument();
   });
 
+
+  it('shows enabled Download Report action for report-ready rows', () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-reports']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    const readyRow = screen.getByText('NDE-24-006').closest('tr');
+    expect(readyRow).not.toBeNull();
+    expect(within(readyRow as HTMLTableRowElement).getByRole('button', { name: 'Download Report' })).toBeEnabled();
+  });
+
+  it('shows disabled Download Report action for non-ready rows with connected-yet guidance', () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-requests']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    const nonReadyRow = screen.getByText('NDE-24-001').closest('tr');
+    expect(nonReadyRow).not.toBeNull();
+    const downloadButton = within(nonReadyRow as HTMLTableRowElement).getByRole('button', { name: 'Download Report' });
+    expect(downloadButton).toBeDisabled();
+    expect(downloadButton).toHaveAttribute('title', 'Report template/download not connected yet.');
+  });
+
+  it('enables bulk download when a report-ready row is selected', () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-reports']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    const bulkDownloadButton = screen.getByRole('button', { name: 'Bulk Download Reports' });
+    expect(bulkDownloadButton).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select NDE-24-006' }));
+    expect(bulkDownloadButton).toBeEnabled();
+  });
+
+  it('shows export table action in NDE workspace routes', () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-requests']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Export Table' })).toBeInTheDocument();
+  });
   it('loads API Inspection Reports page from /reports', async () => {
     render(
       <MemoryRouter initialEntries={['/reports']}>

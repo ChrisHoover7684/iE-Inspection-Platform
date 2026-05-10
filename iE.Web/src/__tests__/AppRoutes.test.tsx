@@ -16,16 +16,16 @@ vi.mock('../api', async () => {
     ndeApi: {
       ...actual.ndeApi,
       getLogItems: vi.fn().mockResolvedValue([
-        { id: 'nde-005', requestNumber: 'NDE-24-005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09', reportStatus: 'Results Received', reportNumber: 'RPT-24-005' },
-        { id: 'nde-006', requestNumber: 'NDE-24-006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Report Ready', reportNumber: 'RPT-24-006', reportFileName: 'NDE-24-006-report.pdf', reportDownloadUrl: '/demo-downloads/NDE-24-006-report.pdf' },
-        { id: 'nde-007', requestNumber: 'NDE-24-007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Downloaded', reportNumber: 'RPT-24-007', reportFileName: 'NDE-24-007-report.pdf', reportDownloadUrl: '/demo-downloads/NDE-24-007-report.pdf' },
-        { id: 'nde-001', requestNumber: 'NDE-24-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started' },
-        { id: 'nde-003', requestNumber: 'NDE-24-003', equipmentTag: 'E-4401', method: 'MT', status: 'Scheduled', priority: 'Normal', requestedBy: 'T. Nguyen', assignedTo: 'R. Hall', dueDate: '2026-05-13', reportStatus: 'Not Available' },
-        { id: 'nde-008', requestNumber: 'NDE-24-008', equipmentTag: 'PSV-91', method: 'UT Thickness', status: 'Cancelled', priority: 'Low', requestedBy: 'C. White', assignedTo: 'B. Young', dueDate: '2026-05-04', reportStatus: 'Not Started' },
-        { id: 'nde-009', requestNumber: 'NDE-24-009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01', reportStatus: 'Results Received', reportNumber: 'RPT-24-009' },
-        { id: 'nde-010', requestNumber: 'NDE-24-010', assetTag: 'P-300C', method: 'PAUT', status: 'Scheduled', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Report Ready', reportNumber: 'RPT-24-010', reportFileName: 'NDE-24-010-report.pdf', reportDownloadUrl: '/demo-downloads/NDE-24-010-report.pdf' }
+        { id: 'nde-005', requestNumber: 'NDE-26-005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09', reportStatus: 'Results Received', reportNumber: 'RPT-26-PMI-005' },
+        { id: 'nde-006', requestNumber: 'NDE-26-006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Report Ready', reportNumber: 'RPT-26-PAUT-006', reportFileName: 'RPT-26-PAUT-006.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-006.pdf' },
+        { id: 'nde-007', requestNumber: 'NDE-26-007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Downloaded', reportNumber: 'RPT-26-VT-007', reportFileName: 'RPT-26-VT-007.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-VT-007.pdf' },
+        { id: 'nde-001', requestNumber: 'NDE-26-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started' },
+        { id: 'nde-003', requestNumber: 'NDE-26-003', equipmentTag: 'E-4401', method: 'MT', status: 'Scheduled', priority: 'Normal', requestedBy: 'T. Nguyen', assignedTo: 'R. Hall', dueDate: '2026-05-13', reportStatus: 'Not Available' },
+        { id: 'nde-008', requestNumber: 'NDE-26-008', equipmentTag: 'PSV-91', method: 'UT Thickness', status: 'Cancelled', priority: 'Low', requestedBy: 'C. White', assignedTo: 'B. Young', dueDate: '2026-05-04', reportStatus: 'Not Started' },
+        { id: 'nde-009', requestNumber: 'NDE-26-009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01', reportStatus: 'Results Received', reportNumber: 'RPT-26-RT-009' },
+        { id: 'nde-010', requestNumber: 'NDE-26-010', assetTag: 'P-300C', method: 'PAUT', status: 'Scheduled', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Report Ready', reportNumber: 'RPT-26-PAUT-010', reportFileName: 'RPT-26-PAUT-010.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-010.pdf' }
       ]),
-      transitionLogItem: vi.fn().mockResolvedValue({ id: 'nde-001', requestNumber: 'NDE-24-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Requested', priority: 'Normal', reportStatus: 'Not Started' }),
+      transitionLogItem: vi.fn().mockResolvedValue({ id: 'nde-001', requestNumber: 'NDE-26-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Requested', priority: 'Normal', reportStatus: 'Not Started' }),
       getLogItemEvents: vi.fn().mockResolvedValue([
         { id: 'evt-1', ndeRequestId: 'nde-001', fromStatus: 'Draft', toStatus: 'Requested', actor: 'demo.user', timestampUtc: '2026-05-10T12:00:00Z', comment: 'ready for scheduling' }
       ])
@@ -98,7 +98,7 @@ describe('App routes', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('NDE-24-001')).toBeInTheDocument();
+    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
     expect(ndeApi.getLogItems).toHaveBeenCalledTimes(1);
   });
 
@@ -109,10 +109,10 @@ describe('App routes', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('NDE-24-005')).toBeInTheDocument();
-    expect(screen.getByText('NDE-24-006')).toBeInTheDocument();
-    expect(screen.getByText('NDE-24-007')).toBeInTheDocument();
-    expect(screen.queryByText('NDE-24-002')).not.toBeInTheDocument();
+    expect(await screen.findByText('NDE-26-005')).toBeInTheDocument();
+    expect(screen.getByText('NDE-26-006')).toBeInTheDocument();
+    expect(screen.getByText('NDE-26-007')).toBeInTheDocument();
+    expect(screen.queryByText('NDE-26-002')).not.toBeInTheDocument();
   });
 
   it('defaults schedule route status filter to Scheduled', () => {
@@ -123,9 +123,9 @@ describe('App routes', () => {
     );
 
     expect(screen.getByDisplayValue('Scheduled')).toBeInTheDocument();
-    expect(screen.getByText('NDE-24-003')).toBeInTheDocument();
-    expect(screen.getByText('NDE-24-010')).toBeInTheDocument();
-    expect(screen.queryByText('NDE-24-004')).not.toBeInTheDocument();
+    expect(screen.getByText('NDE-26-003')).toBeInTheDocument();
+    expect(screen.getByText('NDE-26-010')).toBeInTheDocument();
+    expect(screen.queryByText('NDE-26-004')).not.toBeInTheDocument();
   });
 
 
@@ -136,7 +136,7 @@ describe('App routes', () => {
       </MemoryRouter>,
     );
 
-    const readyRow = screen.getByText('NDE-24-006').closest('tr');
+    const readyRow = screen.getByText('NDE-26-006').closest('tr');
     expect(readyRow).not.toBeNull();
     expect(within(readyRow as HTMLTableRowElement).getByRole('button', { name: 'Download Report' })).toBeEnabled();
   });
@@ -148,7 +148,7 @@ describe('App routes', () => {
       </MemoryRouter>,
     );
 
-    const downloadedRow = screen.getByText('NDE-24-007').closest('tr');
+    const downloadedRow = screen.getByText('NDE-26-007').closest('tr');
     expect(downloadedRow).not.toBeNull();
     expect(within(downloadedRow as HTMLTableRowElement).getByRole('button', { name: 'Download Report' })).toBeEnabled();
   });
@@ -160,7 +160,7 @@ describe('App routes', () => {
       </MemoryRouter>,
     );
 
-    const nonReadyRow = screen.getByText('NDE-24-001').closest('tr');
+    const nonReadyRow = screen.getByText('NDE-26-001').closest('tr');
     expect(nonReadyRow).not.toBeNull();
     const downloadButton = within(nonReadyRow as HTMLTableRowElement).getByRole('button', { name: 'Download Report' });
     expect(downloadButton).toBeDisabled();
@@ -177,7 +177,7 @@ describe('App routes', () => {
     const bulkDownloadButton = screen.getByRole('button', { name: 'Bulk Download Reports' });
     expect(bulkDownloadButton).toBeDisabled();
 
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Select NDE-24-007' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select NDE-26-007' }));
     expect(bulkDownloadButton).toBeEnabled();
   });
 
@@ -208,10 +208,10 @@ describe('App routes', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('NDE-24-001')).toBeInTheDocument();
+    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('NDE-24-001'));
-    expect(screen.getByText('Selected: NDE-24-001 (Draft)')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('NDE-26-001'));
+    expect(screen.getByText('Selected: NDE-26-001 (Draft)')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Mark Requested' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Mark Scheduled' })).not.toBeInTheDocument();
@@ -231,8 +231,8 @@ describe('App routes', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('NDE-24-001')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('NDE-24-001'));
+    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('NDE-26-001'));
     fireEvent.click(screen.getByRole('button', { name: 'Mark Requested' }));
 
     expect(await screen.findByText('Unable to persist transition to API. Applied demo fallback update.')).toBeInTheDocument();
@@ -245,8 +245,8 @@ describe('App routes', () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByText('NDE-24-007'));
-    expect(screen.getByText('Selected: NDE-24-007 (Closed)')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('NDE-26-007'));
+    expect(screen.getByText('Selected: NDE-26-007 (Closed)')).toBeInTheDocument();
     expect(screen.getByText('No workflow actions available for this status.')).toBeInTheDocument();
   });
 
@@ -257,8 +257,8 @@ describe('App routes', () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByText('NDE-24-008'));
-    expect(screen.getByText('Selected: NDE-24-008 (Cancelled)')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('NDE-26-008'));
+    expect(screen.getByText('Selected: NDE-26-008 (Cancelled)')).toBeInTheDocument();
     expect(screen.getByText('No workflow actions available for this status.')).toBeInTheDocument();
   });
 });
@@ -271,8 +271,8 @@ it('selecting a row loads workflow history and renders transition details', asyn
     </MemoryRouter>,
   );
 
-  expect(await screen.findByText('NDE-24-001')).toBeInTheDocument();
-  fireEvent.click(screen.getByText('NDE-24-001'));
+  expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+  fireEvent.click(screen.getByText('NDE-26-001'));
 
   await waitFor(() => expect(ndeApi.getLogItemEvents).toHaveBeenCalledWith('nde-001'));
   expect(await screen.findByText('Draft → Requested')).toBeInTheDocument();

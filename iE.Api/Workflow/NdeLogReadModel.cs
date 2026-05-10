@@ -57,10 +57,10 @@ public sealed class DemoNdeLogReadModelService : INdeLogReadModelService
 {
     private readonly List<NdeLogItemReadModel> _items =
     [
-        new("nde-001", "NDE-24-001", "P-102A", null, null, "UT Thickness", NdeLogStatuses.Draft, "Normal", "J. Rivera", "L. Tran", "2026-05-20", null, NdeReportStatuses.NotStarted, null, null, null),
-        new("nde-002", "NDE-24-002", null, "CIR-4A-220", null, "RT", NdeLogStatuses.Requested, "High", "M. Patel", "S. Owens", "2026-05-17", null, NdeReportStatuses.InProgress, "RPT-24-002", null, null),
-        new("nde-006", "NDE-24-006", null, null, "TK-804", "PAUT", NdeLogStatuses.Reviewed, "Normal", "P. Singh", "N. Brooks", "2026-05-09", "2026-05-08", NdeReportStatuses.ReportReady, "RPT-24-006", "NDE-24-006-report.pdf", "/demo-downloads/NDE-24-006-report.pdf"),
-        new("nde-007", "NDE-24-007", "L-5507", null, null, "VT", NdeLogStatuses.Closed, "Low", "R. Scott", "H. Diaz", "2026-05-06", "2026-05-05", NdeReportStatuses.Downloaded, "RPT-24-007", "NDE-24-007-report.pdf", "/demo-downloads/NDE-24-007-report.pdf")
+        new("nde-001", "NDE-26-001", "P-102A", null, null, "UT Thickness", NdeLogStatuses.Draft, "Normal", "J. Rivera", "L. Tran", "2026-05-20", null, NdeReportStatuses.NotStarted, null, null, null),
+        new("nde-002", "NDE-26-002", null, "CIR-4A-220", null, "RT", NdeLogStatuses.Requested, "High", "M. Patel", "S. Owens", "2026-05-17", null, NdeReportStatuses.InProgress, "RPT-26-RT-002", null, null),
+        new("nde-006", "NDE-26-006", null, null, "TK-804", "PAUT", NdeLogStatuses.Reviewed, "Normal", "P. Singh", "N. Brooks", "2026-05-09", "2026-05-08", NdeReportStatuses.ReportReady, "RPT-26-PAUT-006", "RPT-26-PAUT-006.pdf", "/demo-downloads/RPT-26-PAUT-006.pdf"),
+        new("nde-007", "NDE-26-007", "L-5507", null, null, "VT", NdeLogStatuses.Closed, "Low", "R. Scott", "H. Diaz", "2026-05-06", "2026-05-05", NdeReportStatuses.Downloaded, "RPT-26-VT-007", "RPT-26-VT-007.pdf", "/demo-downloads/RPT-26-VT-007.pdf")
     ];
     private readonly List<NdeLogTransitionEventReadModel> _events = [];
 

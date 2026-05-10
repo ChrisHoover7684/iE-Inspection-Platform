@@ -19,6 +19,10 @@ public class NdeLogReadModelFoundationTests
         Assert.Contains(rows, r => !string.IsNullOrWhiteSpace(r.ReportNumber));
         Assert.Contains(rows, r => !string.IsNullOrWhiteSpace(r.ReportFileName));
         Assert.Contains(rows, r => !string.IsNullOrWhiteSpace(r.ReportDownloadUrl));
+        Assert.All(rows, r => Assert.StartsWith("NDE-26-", r.RequestNumber));
+        Assert.All(rows.Where(r => !string.IsNullOrWhiteSpace(r.ReportNumber)), r => Assert.StartsWith("RPT-26-", r.ReportNumber));
+        Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.ReportReady && r.ReportNumber == "RPT-26-PAUT-006");
+        Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Downloaded && r.ReportNumber == "RPT-26-VT-007");
     }
 
     [Fact]

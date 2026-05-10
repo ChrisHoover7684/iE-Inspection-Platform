@@ -95,3 +95,7 @@ export function getNavigationForRole(role: AppRole): NavigationGroup[] {
 }
 
 export const allNavigationRoutes = allItems.map((item) => item.route);
+
+export function getNavigationItemForRoute(route: string): NavigationItem | undefined {
+  return allItems.find((item) => item.route === route);
+}

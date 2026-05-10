@@ -53,6 +53,52 @@ describe('App routes', () => {
     expect(reportingApi.getInstances).not.toHaveBeenCalled();
   });
 
+
+
+
+  it.each([
+    ['/results-received', 'Results Received'],
+    ['/schedule', 'Schedule'],
+    ['/overdue', 'Overdue'],
+    ['/cancelled', 'Cancelled'],
+    ['/nde-reports', 'NDE Reports'],
+  ])('renders route header %s as %s', (route: string, expectedHeader: string) => {
+    render(
+      <MemoryRouter initialEntries={[route]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: expectedHeader })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 1, name: 'Coming soon' })).not.toBeInTheDocument();
+  });
+
+  it('scopes NDE reports route to report-centric statuses', () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-reports']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('NDE-24-005')).toBeInTheDocument();
+    expect(screen.getByText('NDE-24-006')).toBeInTheDocument();
+    expect(screen.getByText('NDE-24-007')).toBeInTheDocument();
+    expect(screen.queryByText('NDE-24-002')).not.toBeInTheDocument();
+  });
+
+  it('defaults schedule route status filter to Scheduled', () => {
+    render(
+      <MemoryRouter initialEntries={['/schedule']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByDisplayValue('Scheduled')).toBeInTheDocument();
+    expect(screen.getByText('NDE-24-003')).toBeInTheDocument();
+    expect(screen.getByText('NDE-24-010')).toBeInTheDocument();
+    expect(screen.queryByText('NDE-24-004')).not.toBeInTheDocument();
+  });
+
   it('loads API Inspection Reports page from /reports', async () => {
     render(
       <MemoryRouter initialEntries={['/reports']}>

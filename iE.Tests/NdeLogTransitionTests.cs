@@ -30,6 +30,14 @@ public class NdeLogTransitionTests
         Assert.IsType<BadRequestObjectResult>(result.Result);
     }
 
+    [Fact]
+    public void Transition_For_Unknown_Id_Returns_NotFound()
+    {
+        var controller = new NdeLogController(new DemoNdeLogReadModelService());
+        var result = controller.Transition("nde-999", new NdeLogTransitionCommand(NdeLogStatuses.Requested, null, "demo.user"));
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
         [Fact]
     public void Closed_Or_Cancelled_Cannot_Transition()
     {

@@ -18,6 +18,11 @@ public sealed class NdeLogController(INdeLogReadModelService ndeLogReadModelServ
         var result = ndeLogReadModelService.Transition(id, new NdeLogTransitionRequest(command.NextStatus, command.Comment, actor));
         if (!result.Success || result.Item is null)
         {
+            if (string.Equals(result.ReasonCode, "not_found", StringComparison.Ordinal))
+            {
+                return NotFound(new { reasonCode = result.ReasonCode });
+            }
+
             return BadRequest(new { reasonCode = result.ReasonCode });
         }
 

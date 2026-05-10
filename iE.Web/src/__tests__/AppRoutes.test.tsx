@@ -110,18 +110,64 @@ describe('App routes', () => {
     await waitFor(() => expect(reportingApi.getInstances).toHaveBeenCalledTimes(1));
   });
 
-  it('supports frontend-only row selection and workflow status transitions in NDE workspace', () => {
+  it('enforces valid frontend-only NDE workflow transitions and no-action statuses', () => {
     render(
       <MemoryRouter initialEntries={['/nde-requests']}>
         <App />
       </MemoryRouter>,
     );
 
+    expect(screen.getByText('Workflow actions are frontend-only demo behavior until backend persistence is connected.')).toBeInTheDocument();
+
     fireEvent.click(screen.getByText('NDE-24-001'));
     expect(screen.getByText('Selected: NDE-24-001 (Draft)')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mark Requested' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Mark Scheduled' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Requested' }));
+    expect(screen.getByText('Selected: NDE-24-001 (Requested)')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Mark Scheduled' }));
     expect(screen.getByText('Selected: NDE-24-001 (Scheduled)')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('All')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark In Progress' }));
+    expect(screen.getByText('Selected: NDE-24-001 (In Progress)')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Results Received' }));
+    expect(screen.getByText('Selected: NDE-24-001 (Results Received)')).toBeInTheDocument();
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const selectedRow = screen.getByText('NDE-24-001').closest('tr');
+    expect(selectedRow).not.toBeNull();
+    expect(within(selectedRow as HTMLTableRowElement).getByText(todayIso)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Reviewed' }));
+    expect(screen.getByText('Selected: NDE-24-001 (Reviewed)')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Closed' }));
+  });
+
+  it('shows no forward workflow actions for Closed rows', () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-reports']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByText('NDE-24-007'));
+    expect(screen.getByText('Selected: NDE-24-007 (Closed)')).toBeInTheDocument();
+    expect(screen.getByText('No workflow actions available for this status.')).toBeInTheDocument();
+  });
+
+  it('shows no forward workflow actions for Cancelled rows', () => {
+    render(
+      <MemoryRouter initialEntries={['/cancelled']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByText('NDE-24-008'));
+    expect(screen.getByText('Selected: NDE-24-008 (Cancelled)')).toBeInTheDocument();
+    expect(screen.getByText('No workflow actions available for this status.')).toBeInTheDocument();
   });
 });

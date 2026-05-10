@@ -61,6 +61,32 @@ const mockRows: NdeLogItem[] = [
   { id: 'nde-010', requestNumber: 'NDE-24-010', assetTag: 'P-300C', method: 'PAUT', status: 'Scheduled', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14' },
 ];
 
+type NdeTransition = { label: string; status: NdeLogStatus };
+
+function getAllowedNdeTransitions(status: NdeLogStatus): NdeTransition[] {
+  switch (status) {
+    case 'Draft':
+      return [{ label: 'Mark Requested', status: 'Requested' }, { label: 'Cancel', status: 'Cancelled' }];
+    case 'Requested':
+      return [{ label: 'Mark Scheduled', status: 'Scheduled' }, { label: 'Cancel', status: 'Cancelled' }];
+    case 'Scheduled':
+      return [{ label: 'Mark In Progress', status: 'In Progress' }, { label: 'Cancel', status: 'Cancelled' }];
+    case 'In Progress':
+      return [{ label: 'Mark Results Received', status: 'Results Received' }, { label: 'Cancel', status: 'Cancelled' }];
+    case 'Results Received':
+      return [{ label: 'Mark Reviewed', status: 'Reviewed' }, { label: 'Cancel', status: 'Cancelled' }];
+    case 'Reviewed':
+      return [{ label: 'Mark Closed', status: 'Closed' }];
+    case 'Overdue':
+      return [{ label: 'Mark Scheduled', status: 'Scheduled' }, { label: 'Cancel', status: 'Cancelled' }];
+    case 'Closed':
+    case 'Cancelled':
+      return [];
+    default:
+      return [];
+  }
+}
+
 export function NdeWorkspacePage({
   initialStatus = 'All',
   initialStatuses,
@@ -90,7 +116,18 @@ export function NdeWorkspacePage({
       return;
     }
 
-    setItems((current) => current.map((item) => (item.id === selectedId ? { ...item, status: nextStatus } : item)));
+    const todayIso = new Date().toISOString().slice(0, 10);
+    setItems((current) => current.map((item) => {
+      if (item.id !== selectedId) {
+        return item;
+      }
+
+      return {
+        ...item,
+        status: nextStatus,
+        resultReceivedDate: nextStatus === 'Results Received' ? (item.resultReceivedDate ?? todayIso) : item.resultReceivedDate,
+      };
+    }));
   };
 
   const filteredItems = useMemo(() => {
@@ -120,6 +157,11 @@ export function NdeWorkspacePage({
   const selectedItem = useMemo(
     () => filteredItems.find((item) => item.id === selectedId) ?? null,
     [filteredItems, selectedId],
+  );
+
+  const allowedTransitions = useMemo(
+    () => (selectedItem ? getAllowedNdeTransitions(selectedItem.status) : []),
+    [selectedItem],
   );
 
   const summary = {
@@ -163,19 +205,17 @@ export function NdeWorkspacePage({
       <div className="card">
         <div className="nde-actions" role="group" aria-label="NDE workflow actions">
           <strong>Workflow Actions:</strong>
-          <button type="button" onClick={() => applyStatusToSelection('Requested')} disabled={!selectedItem}>Mark Requested</button>
-          <button type="button" onClick={() => applyStatusToSelection('Scheduled')} disabled={!selectedItem}>Mark Scheduled</button>
-          <button type="button" onClick={() => applyStatusToSelection('In Progress')} disabled={!selectedItem}>Mark In Progress</button>
-          <button type="button" onClick={() => applyStatusToSelection('Results Received')} disabled={!selectedItem}>Mark Results Received</button>
-          <button type="button" onClick={() => applyStatusToSelection('Reviewed')} disabled={!selectedItem}>Mark Reviewed</button>
-          <button type="button" onClick={() => applyStatusToSelection('Closed')} disabled={!selectedItem}>Mark Closed</button>
-          <button type="button" onClick={() => applyStatusToSelection('Cancelled')} disabled={!selectedItem}>Mark Cancelled</button>
+          {allowedTransitions.map((transition) => (
+            <button key={transition.label} type="button" onClick={() => applyStatusToSelection(transition.status)}>{transition.label}</button>
+          ))}
         </div>
+        <p className="muted nde-frontend-note">Workflow actions are frontend-only demo behavior until backend persistence is connected.</p>
         {selectedItem && (
           <p className="muted nde-selection-summary">
             Selected: {selectedItem.requestNumber} ({selectedItem.status})
           </p>
         )}
+        {selectedItem && allowedTransitions.length === 0 && <p className="muted">No workflow actions available for this status.</p>}
         <table>
           <thead>
             <tr>

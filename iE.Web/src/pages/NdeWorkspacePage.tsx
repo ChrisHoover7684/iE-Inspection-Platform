@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export type NdeLogStatus =
   | 'Draft'
@@ -54,6 +54,10 @@ export function NdeWorkspacePage({
 }: NdeWorkspacePageProps) {
   const [statusFilter, setStatusFilter] = useState<NdeLogStatus | 'All'>(initialStatus);
   const [searchText, setSearchText] = useState('');
+
+  useEffect(() => {
+    setStatusFilter(initialStatus);
+  }, [initialStatus]);
 
   const filteredItems = useMemo(() => {
     return mockRows.filter((row) => {
@@ -139,7 +143,7 @@ export function NdeWorkspacePage({
         </table>
         {filteredItems.length === 0 && (
           <div className="nde-empty-state">
-            <h3>No NDE log items yet</h3>
+            <h3>No {title} NDE items yet</h3>
             <p className="muted">NDE workflow scaffolding is in place. Connect read-model/API data to populate this queue.</p>
           </div>
         )}

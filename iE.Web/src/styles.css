@@ -1067,3 +1067,20 @@ html, body, #root {
     align-items: center;
     gap: 6px;
 }
+
+.nde-transition-comment {
+    margin-bottom: 8px;
+}
+
+.nde-history-panel {
+    border: 1px solid var(--color-border-light);
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 10px;
+}
+
+.nde-history-event {
+    border-top: 1px solid #eee;
+    padding-top: 6px;
+    margin-top: 6px;
+}

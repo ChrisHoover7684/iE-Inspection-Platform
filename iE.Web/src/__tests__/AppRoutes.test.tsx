@@ -26,6 +26,9 @@ vi.mock('../api', async () => {
         { id: 'nde-010', requestNumber: 'NDE-24-010', assetTag: 'P-300C', method: 'PAUT', status: 'Scheduled', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Report Ready', reportNumber: 'RPT-24-010', reportFileName: 'NDE-24-010-report.pdf', reportDownloadUrl: '/demo-downloads/NDE-24-010-report.pdf' }
       ]),
       transitionLogItem: vi.fn().mockResolvedValue({ id: 'nde-001', requestNumber: 'NDE-24-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Requested', priority: 'Normal', reportStatus: 'Not Started' }),
+      getLogItemEvents: vi.fn().mockResolvedValue([
+        { id: 'evt-1', ndeRequestId: 'nde-001', fromStatus: 'Draft', toStatus: 'Requested', actor: 'demo.user', timestampUtc: '2026-05-10T12:00:00Z', comment: 'ready for scheduling' }
+      ])
     },
   };
 });
@@ -213,8 +216,9 @@ describe('App routes', () => {
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Mark Scheduled' })).not.toBeInTheDocument();
 
+    fireEvent.change(screen.getByPlaceholderText('Enter transition reason'), { target: { value: 'Progressing to request' } });
     fireEvent.click(screen.getByRole('button', { name: 'Mark Requested' }));
-    await waitFor(() => expect(ndeApi.transitionLogItem).toHaveBeenCalledWith('nde-001', 'Requested'));
+    await waitFor(() => expect(ndeApi.transitionLogItem).toHaveBeenCalledWith('nde-001', 'Requested', 'Progressing to request', 'demo.user'));
     await waitFor(() => expect(ndeApi.getLogItems).toHaveBeenCalledTimes(2));
   });
 
@@ -257,4 +261,20 @@ describe('App routes', () => {
     expect(screen.getByText('Selected: NDE-24-008 (Cancelled)')).toBeInTheDocument();
     expect(screen.getByText('No workflow actions available for this status.')).toBeInTheDocument();
   });
+});
+
+
+it('selecting a row loads workflow history and renders transition details', async () => {
+  render(
+    <MemoryRouter initialEntries={['/nde-requests']}>
+      <App />
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText('NDE-24-001')).toBeInTheDocument();
+  fireEvent.click(screen.getByText('NDE-24-001'));
+
+  await waitFor(() => expect(ndeApi.getLogItemEvents).toHaveBeenCalledWith('nde-001'));
+  expect(await screen.findByText('Draft → Requested')).toBeInTheDocument();
+  expect(screen.getByText('ready for scheduling')).toBeInTheDocument();
 });

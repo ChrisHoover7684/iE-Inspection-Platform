@@ -55,12 +55,20 @@ public interface INdeLogReadModelService
 
 public sealed class DemoNdeLogReadModelService : INdeLogReadModelService
 {
+    private const int DemoYear = 2026;
+
     private readonly List<NdeLogItemReadModel> _items =
     [
-        new("nde-001", "NDE-26-001", "P-102A", null, null, "UT Thickness", NdeLogStatuses.Draft, "Normal", "J. Rivera", "L. Tran", "2026-05-20", null, NdeReportStatuses.NotStarted, null, null, null),
-        new("nde-002", "NDE-26-002", null, "CIR-4A-220", null, "RT", NdeLogStatuses.Requested, "High", "M. Patel", "S. Owens", "2026-05-17", null, NdeReportStatuses.InProgress, "RPT-26-RT-002", null, null),
-        new("nde-006", "NDE-26-006", null, null, "TK-804", "PAUT", NdeLogStatuses.Reviewed, "Normal", "P. Singh", "N. Brooks", "2026-05-09", "2026-05-08", NdeReportStatuses.ReportReady, "RPT-26-PAUT-006", "RPT-26-PAUT-006.pdf", "/demo-downloads/RPT-26-PAUT-006.pdf"),
-        new("nde-007", "NDE-26-007", "L-5507", null, null, "VT", NdeLogStatuses.Closed, "Low", "R. Scott", "H. Diaz", "2026-05-06", "2026-05-05", NdeReportStatuses.Downloaded, "RPT-26-VT-007", "RPT-26-VT-007.pdf", "/demo-downloads/RPT-26-VT-007.pdf")
+        new("nde-001", NdeNumbering.FormatRequestNumber(DemoYear, 1), "P-102A", null, null, "UT Thickness", NdeLogStatuses.Draft, "Normal", "J. Rivera", "L. Tran", "2026-05-20", null, NdeReportStatuses.NotStarted, null, null, null),
+        new("nde-002", NdeNumbering.FormatRequestNumber(DemoYear, 2), null, "CIR-4A-220", null, "RT", NdeLogStatuses.Requested, "High", "M. Patel", "S. Owens", "2026-05-17", null, NdeReportStatuses.InProgress, NdeNumbering.FormatReportNumber(DemoYear, "RT", 2), null, null),
+        new("nde-003", NdeNumbering.FormatRequestNumber(DemoYear, 3), null, null, "E-4401", "MT", NdeLogStatuses.Scheduled, "Normal", "T. Nguyen", "R. Hall", "2026-05-13", null, NdeReportStatuses.NotAvailable, null, null, null),
+        new("nde-004", NdeNumbering.FormatRequestNumber(DemoYear, 4), "HX-22B", null, null, "PT", NdeLogStatuses.InProgress, "Critical", "A. Lopez", "D. Kim", "2026-05-12", null, NdeReportStatuses.InProgress, NdeNumbering.FormatReportNumber(DemoYear, "PT", 4), null, null),
+        new("nde-005", NdeNumbering.FormatRequestNumber(DemoYear, 5), null, "CIR-3C-118", null, "PMI", NdeLogStatuses.ResultsReceived, "High", "G. Martin", "V. Chen", "2026-05-10", "2026-05-09", NdeReportStatuses.ResultsReceived, NdeNumbering.FormatReportNumber(DemoYear, "PMI", 5), null, null),
+        new("nde-006", NdeNumbering.FormatRequestNumber(DemoYear, 6), null, null, "TK-804", "PAUT", NdeLogStatuses.Reviewed, "Normal", "P. Singh", "N. Brooks", "2026-05-09", "2026-05-08", NdeReportStatuses.ReportReady, NdeNumbering.FormatReportNumber(DemoYear, "PAUT", 6), "RPT-26-PAUT-006.pdf", "/demo-downloads/RPT-26-PAUT-006.pdf"),
+        new("nde-007", NdeNumbering.FormatRequestNumber(DemoYear, 7), "L-5507", null, null, "VT", NdeLogStatuses.Closed, "Low", "R. Scott", "H. Diaz", "2026-05-06", "2026-05-05", NdeReportStatuses.Downloaded, NdeNumbering.FormatReportNumber(DemoYear, "VT", 7), "RPT-26-VT-007.pdf", "/demo-downloads/RPT-26-VT-007.pdf"),
+        new("nde-008", NdeNumbering.FormatRequestNumber(DemoYear, 8), null, null, "PSV-91", "UT Thickness", NdeLogStatuses.Cancelled, "Low", "C. White", "B. Young", "2026-05-04", null, NdeReportStatuses.NotStarted, null, null, null),
+        new("nde-009", NdeNumbering.FormatRequestNumber(DemoYear, 9), null, "CIR-9D-032", null, "RT", NdeLogStatuses.Overdue, "Critical", "D. Reed", "M. Gray", "2026-05-01", null, NdeReportStatuses.ResultsReceived, NdeNumbering.FormatReportNumber(DemoYear, "RT", 9), null, null),
+        new("nde-010", NdeNumbering.FormatRequestNumber(DemoYear, 10), "P-300C", null, null, "PAUT", NdeLogStatuses.Scheduled, "High", "L. Ward", "K. Adams", "2026-05-14", null, NdeReportStatuses.ReportReady, NdeNumbering.FormatReportNumber(DemoYear, "PAUT", 10), "RPT-26-PAUT-010.pdf", "/demo-downloads/RPT-26-PAUT-010.pdf")
     ];
     private readonly List<NdeLogTransitionEventReadModel> _events = [];
 

@@ -25,6 +25,7 @@ vi.mock('../api', async () => {
         { id: 'nde-009', requestNumber: 'NDE-24-009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01', reportStatus: 'Results Received', reportNumber: 'RPT-24-009' },
         { id: 'nde-010', requestNumber: 'NDE-24-010', assetTag: 'P-300C', method: 'PAUT', status: 'Scheduled', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Report Ready', reportNumber: 'RPT-24-010', reportFileName: 'NDE-24-010-report.pdf', reportDownloadUrl: '/demo-downloads/NDE-24-010-report.pdf' }
       ]),
+      transitionLogItem: vi.fn().mockResolvedValue({ id: 'nde-001', requestNumber: 'NDE-24-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Requested', priority: 'Normal', reportStatus: 'Not Started' }),
     },
   };
 });
@@ -197,14 +198,14 @@ describe('App routes', () => {
     await waitFor(() => expect(reportingApi.getInstances).toHaveBeenCalledTimes(1));
   });
 
-  it('enforces valid frontend-only NDE workflow transitions and no-action statuses', () => {
+  it('selecting a row shows valid actions and transition calls ndeApi then refetches', async () => {
     render(
       <MemoryRouter initialEntries={['/nde-requests']}>
         <App />
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Workflow actions are frontend-only demo behavior until backend persistence is connected.')).toBeInTheDocument();
+    expect(await screen.findByText('NDE-24-001')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('NDE-24-001'));
     expect(screen.getByText('Selected: NDE-24-001 (Draft)')).toBeInTheDocument();
@@ -213,25 +214,24 @@ describe('App routes', () => {
     expect(screen.queryByRole('button', { name: 'Mark Scheduled' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Mark Requested' }));
-    expect(screen.getByText('Selected: NDE-24-001 (Requested)')).toBeInTheDocument();
+    await waitFor(() => expect(ndeApi.transitionLogItem).toHaveBeenCalledWith('nde-001', 'Requested'));
+    await waitFor(() => expect(ndeApi.getLogItems).toHaveBeenCalledTimes(2));
+  });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mark Scheduled' }));
-    expect(screen.getByText('Selected: NDE-24-001 (Scheduled)')).toBeInTheDocument();
+  it('invalid/error transition shows message', async () => {
+    vi.mocked(ndeApi.transitionLogItem).mockRejectedValueOnce(new Error('boom'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mark In Progress' }));
-    expect(screen.getByText('Selected: NDE-24-001 (In Progress)')).toBeInTheDocument();
+    render(
+      <MemoryRouter initialEntries={['/nde-requests']}>
+        <App />
+      </MemoryRouter>,
+    );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mark Results Received' }));
-    expect(screen.getByText('Selected: NDE-24-001 (Results Received)')).toBeInTheDocument();
-    const todayIso = new Date().toISOString().slice(0, 10);
-    const selectedRow = screen.getByText('NDE-24-001').closest('tr');
-    expect(selectedRow).not.toBeNull();
-    expect(within(selectedRow as HTMLTableRowElement).getByText(todayIso)).toBeInTheDocument();
+    expect(await screen.findByText('NDE-24-001')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('NDE-24-001'));
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Requested' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mark Reviewed' }));
-    expect(screen.getByText('Selected: NDE-24-001 (Reviewed)')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Mark Closed' }));
+    expect(await screen.findByText('Unable to persist transition to API. Applied demo fallback update.')).toBeInTheDocument();
   });
 
   it('shows no forward workflow actions for Closed rows', () => {

@@ -59,6 +59,37 @@ describe('engineering calculations foundation', () => {
     expectFoundationFields(result);
   });
 
+
+  it('corrosion tmin <= 0 does not project remaining life or next inspection', () => {
+    const result = calculateCorrosionRate({
+      initialThicknessInches: 1,
+      finalThicknessInches: 0.8,
+      exposureTimeYears: 2,
+      inspectionFactor: 0.5,
+      currentThicknessInches: 0.7,
+      tminInches: 0
+    });
+    expect(result.outputs.remainingLifeYears).toBeNull();
+    expect(result.outputs.nextInspectionYears).toBeNull();
+    expect(result.warnings.some((w) => w.code === 'TMIN_NON_POSITIVE')).toBe(true);
+    expectFoundationFields(result);
+  });
+
+  it('corrosion current thickness <= 0 does not project remaining life or next inspection', () => {
+    const result = calculateCorrosionRate({
+      initialThicknessInches: 1,
+      finalThicknessInches: 0.8,
+      exposureTimeYears: 2,
+      inspectionFactor: 0.5,
+      currentThicknessInches: 0,
+      tminInches: 0.5
+    });
+    expect(result.outputs.remainingLifeYears).toBeNull();
+    expect(result.outputs.nextInspectionYears).toBeNull();
+    expect(result.warnings.some((w) => w.code === 'CURRENT_THICKNESS_NON_POSITIVE')).toBe(true);
+    expectFoundationFields(result);
+  });
+
   it('corrosion initial <= final gives warning and no misleading positive corrosion rate', () => {
     const result = calculateCorrosionRate({
       initialThicknessInches: 0.8,
@@ -102,10 +133,39 @@ describe('engineering calculations foundation', () => {
     expectFoundationFields(result);
   });
 
+
+  it('pressure vessel non-positive required thickness is not acceptable', () => {
+    const result = calculateRequiredThicknessMargin({ requiredWithCorrosionAllowanceIn: 0, providedThicknessIn: 0.5 });
+    expect(result.warnings.some((w) => w.code === 'REQUIRED_THICKNESS_NON_POSITIVE')).toBe(true);
+    expect(result.outputs.isAcceptable).toBe(false);
+    expectFoundationFields(result);
+  });
+
+  it('pressure vessel non-positive provided thickness is not acceptable', () => {
+    const result = calculateRequiredThicknessMargin({ requiredWithCorrosionAllowanceIn: 0.4, providedThicknessIn: 0 });
+    expect(result.warnings.some((w) => w.code === 'PROVIDED_THICKNESS_NON_POSITIVE')).toBe(true);
+    expect(result.outputs.isAcceptable).toBe(false);
+    expectFoundationFields(result);
+  });
+
   it('calculates tank shell corrosion margin', () => {
     const result = calculateTankShellCorrosionMargin({ currentThicknessIn: 0.4, requiredThicknessIn: 0.3, corrosionAllowanceIn: 0.05 });
     expect(result.outputs.requiredWithCorrosionAllowanceIn).toBeCloseTo(0.35, 6);
     expect(result.outputs.remainingMarginIn).toBeCloseTo(0.05, 6);
+    expectFoundationFields(result);
+  });
+
+
+  it('tank shell invalid thickness inputs insert label requires review', () => {
+    const result = calculateTankShellCorrosionMargin({ currentThicknessIn: 0, requiredThicknessIn: 0.3, corrosionAllowanceIn: 0.05 });
+    expect(result.insertLabel.toLowerCase()).toContain('requires review');
+    expect(result.insertLabel.toLowerCase()).toContain('invalid thickness inputs');
+    expectFoundationFields(result);
+  });
+
+  it('pipe lookup invalid ID label indicates invalid dimensions', () => {
+    const result = calculatePipeDimensions({ nps: '4', schedule: 'XXS', outsideDiameter: 1, nominalThickness: 1 });
+    expect(result.insertLabel.toLowerCase()).toContain('invalid dimensions');
     expectFoundationFields(result);
   });
 

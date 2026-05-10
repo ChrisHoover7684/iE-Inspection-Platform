@@ -1,34 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-
-export type NdeLogStatus =
-  | 'Draft'
-  | 'Requested'
-  | 'Scheduled'
-  | 'In Progress'
-  | 'Results Received'
-  | 'Reviewed'
-  | 'Closed'
-  | 'Cancelled'
-  | 'Overdue';
-
-export type NdeLogItem = {
-  id: string;
-  requestNumber: string;
-  assetTag?: string;
-  circuitId?: string;
-  equipmentTag?: string;
-  method: string;
-  status: NdeLogStatus;
-  priority: 'Low' | 'Normal' | 'High' | 'Critical';
-  requestedBy?: string;
-  assignedTo?: string;
-  dueDate?: string;
-  resultReceivedDate?: string;
-  reportStatus: 'Not Started' | 'In Progress' | 'Results Received' | 'Report Ready' | 'Downloaded' | 'Not Available';
-  reportNumber?: string;
-  reportFileName?: string;
-  reportDownloadUrl?: string;
-};
+import { ndeApi } from '../api';
+import type { NdeLogItem, NdeLogStatus } from '../types';
 
 type NdeWorkspacePageProps = {
   initialStatus?: NdeLogStatus | 'All';
@@ -98,6 +70,8 @@ export function NdeWorkspacePage({
   description = 'Track NDE requests and reports without mixing API inspection report workflow data.',
 }: NdeWorkspacePageProps) {
   const [items, setItems] = useState<NdeLogItem[]>(mockRows);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<NdeLogStatus | 'All'>(initialStatus);
   const [searchText, setSearchText] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -107,6 +81,28 @@ export function NdeWorkspacePage({
   useEffect(() => {
     setStatusFilter(initialStatus);
   }, [initialStatus]);
+
+  useEffect(() => {
+    let active = true;
+    setIsLoading(true);
+    ndeApi.getLogItems()
+      .then((rows) => {
+        if (!active) return;
+        setItems(rows);
+        setLoadError(null);
+      })
+      .catch(() => {
+        if (!active) return;
+        setLoadError('Unable to load NDE log rows from API. Showing demo rows.');
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const baseItems = useMemo(() => {
     if (!initialStatuses || initialStatuses.length === 0) {
@@ -220,6 +216,8 @@ export function NdeWorkspacePage({
       <div className="card">
         <h2>{title}</h2>
         <p className="muted">{description}</p>
+        {isLoading && <p className="muted">Loading NDE log rows…</p>}
+        {loadError && <p className="muted">{loadError}</p>}
       </div>
 
       <div className="nde-summary-grid" aria-label="NDE queue summary">

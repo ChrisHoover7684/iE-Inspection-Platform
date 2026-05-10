@@ -1,3 +1,35 @@
+
+export type NdeLogStatus =
+  | 'Draft'
+  | 'Requested'
+  | 'Scheduled'
+  | 'In Progress'
+  | 'Results Received'
+  | 'Reviewed'
+  | 'Closed'
+  | 'Cancelled'
+  | 'Overdue';
+
+export type NdeReportStatus = 'Not Started' | 'In Progress' | 'Results Received' | 'Report Ready' | 'Downloaded' | 'Not Available';
+
+export type NdeLogItem = {
+  id: string;
+  requestNumber: string;
+  assetTag?: string;
+  circuitId?: string;
+  equipmentTag?: string;
+  method: string;
+  status: NdeLogStatus;
+  priority: 'Low' | 'Normal' | 'High' | 'Critical';
+  requestedBy?: string;
+  assignedTo?: string;
+  dueDate?: string;
+  resultReceivedDate?: string;
+  reportStatus: NdeReportStatus;
+  reportNumber?: string;
+  reportFileName?: string;
+  reportDownloadUrl?: string;
+};
 export type ReportTemplate = {
   id: string;
   name: string;

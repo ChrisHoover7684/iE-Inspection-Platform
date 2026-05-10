@@ -3,7 +3,7 @@ import { calculateCorrosionRate } from '../calculations/corrosionRate';
 import { calculatePipeDimensions } from '../calculations/pipeLookup';
 import { calculateRequiredThicknessMargin } from '../calculations/pressureVessel';
 import { calculateTankShellCorrosionMargin } from '../calculations/tankShell';
-import { calculateB31_3PipingWallThickness } from '../calculations/b31_3Piping';
+import { toB31_3EngineeringSnapshot } from '../calculations/b31_3Piping';
 
 describe('engineering calculations foundation', () => {
   const expectFoundationFields = (result: { calculationType: string; formulaVersion: string; displayName: string; calculatedAt: string; insertLabel: string; warnings: unknown[]; standardReferences: unknown[]; }) => {
@@ -177,40 +177,24 @@ describe('engineering calculations foundation', () => {
     expectFoundationFields(result);
   });
 
-  it('calculates b31.3 piping wall thickness snapshot', () => {
-    const result = calculateB31_3PipingWallThickness({
-      designPressurePsi: 285,
-      outsideDiameterIn: 8.625,
-      allowableStressPsi: 20000,
-      weldJointQualityFactor: 1,
-      coefficientY: 0.4,
-      mechanicalAllowanceIn: 0,
-      corrosionAllowanceIn: 0.125,
-      millToleranceFraction: 0.125,
-      providedThicknessIn: 0.322,
-      standardEdition: '2022'
+  it('maps b31.3 engine result into engineering snapshot', () => {
+    const result = toB31_3EngineeringSnapshot({
+      pressurePsi: 285, temperatureF: 100, outsideDiameterIn: 8.625, spec: 'A106', grade: 'B', productForm: 'Pipe', unsNo: '', classConditionTemper: '', materialCategory: 'Carbon Steel', jointType: 'Seamless', jointQualityKey: 'Seamless', wFactor: 1, yOverride: null, eOverride: null
+    }, {
+      success: true, message: 'ok', allowableStressPsi: 20000, eFactor: 1, yCoefficient: 0.4, wFactor: 1, requiredThicknessIn: 0.08
     });
-    expect(result.outputs.requiredNominalThicknessIn).not.toBeNull();
-    expect(result.outputs.thicknessMarginIn).toBeTypeOf('number');
+    expect(result.outputs.requiredThicknessIn).toBeCloseTo(0.08, 6);
     expect(result.warnings.some((w) => w.code === 'USER_INPUT_VALIDATION_REQUIRED')).toBe(true);
     expectFoundationFields(result);
   });
 
-  it('b31.3 invalid denominator creates error warning', () => {
-    const result = calculateB31_3PipingWallThickness({
-      designPressurePsi: 100,
-      outsideDiameterIn: 6,
-      allowableStressPsi: 0,
-      weldJointQualityFactor: 1,
-      coefficientY: 0,
-      mechanicalAllowanceIn: 0,
-      corrosionAllowanceIn: 0,
-      millToleranceFraction: 0.125,
-      providedThicknessIn: 0.25,
-      standardEdition: '2022'
+  it('b31.3 failed engine response creates error warning', () => {
+    const result = toB31_3EngineeringSnapshot({
+      pressurePsi: 100, temperatureF: 100, outsideDiameterIn: 6, spec: 'A999', grade: 'X', productForm: 'Pipe', unsNo: '', classConditionTemper: '', materialCategory: 'Unknown', jointType: 'Seamless', jointQualityKey: 'Seamless'
+    }, {
+      success: false, message: 'Allowable stress not found', allowableStressPsi: null, eFactor: null, yCoefficient: null, wFactor: null, requiredThicknessIn: null
     });
-    expect(result.outputs.pressureDesignThicknessIn).toBe(0);
-    expect(result.warnings.some((w) => w.code === 'INVALID_DENOMINATOR')).toBe(true);
+    expect(result.warnings.some((w) => w.code === 'B313_CALCULATION_FAILED')).toBe(true);
     expectFoundationFields(result);
   });
 });

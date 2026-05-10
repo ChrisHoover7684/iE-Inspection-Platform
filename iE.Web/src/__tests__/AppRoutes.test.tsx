@@ -16,7 +16,7 @@ vi.mock('../api', async () => {
   };
 });
 
-const nonPlaceholderRoutes = new Set(['/dashboard', '/calculators/corrosion-rate', '/reports']);
+const nonPlaceholderRoutes = new Set(['/dashboard', '/calculators/corrosion-rate', '/calculators/b31-3-piping', '/reports']);
 
 afterEach(() => {
   cleanup();

@@ -8,6 +8,8 @@ import type {
   CorrosionRateResult,
   PipeLookupInput,
   PipeLookupResult,
+  B313ThicknessInput,
+  B313ThicknessResult,
   LwnLookupInput,
   LwnLookupResult,
   CylindricalShellInput,
@@ -122,6 +124,14 @@ export const lwnLookupApi = {
     }, 'POST /api/mechanical/lwn/calculate'),
   getSizes: () => apiFetch<string[]>('/api/mechanical/lwn/sizes'),
   getSchedules: (size: string) => apiFetch<string[]>(`/api/mechanical/lwn/schedules/${encodeURIComponent(size)}`)
+};
+
+export const b313Api = {
+  calculateThickness: (input: B313ThicknessInput) =>
+    apiFetch<B313ThicknessResult>('/api/B313/thickness', {
+      method: 'POST',
+      body: JSON.stringify(input)
+    }, 'POST /api/B313/thickness')
 };
 
 

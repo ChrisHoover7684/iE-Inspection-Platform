@@ -161,7 +161,12 @@ export function NdeWorkspacePage({
 
   const visibleIds = useMemo(() => filteredItems.map((item) => item.id), [filteredItems]);
   const visibleSelectedCount = useMemo(() => selectedForBulkDownload.filter((id) => visibleIds.includes(id)).length, [selectedForBulkDownload, visibleIds]);
-  const readySelectedItems = useMemo(() => filteredItems.filter((item) => selectedForBulkDownload.includes(item.id) && item.reportStatus === 'Report Ready' && item.reportDownloadUrl && item.reportFileName), [filteredItems, selectedForBulkDownload]);
+  const isDownloadableReport = (item: NdeLogItem) =>
+    ['Report Ready', 'Downloaded'].includes(item.reportStatus)
+    && Boolean(item.reportDownloadUrl)
+    && Boolean(item.reportFileName);
+
+  const downloadableSelectedItems = useMemo(() => filteredItems.filter((item) => selectedForBulkDownload.includes(item.id) && isDownloadableReport(item)), [filteredItems, selectedForBulkDownload]);
 
   const triggerDownload = (url: string, filename: string) => {
     const link = document.createElement('a');
@@ -254,7 +259,7 @@ export function NdeWorkspacePage({
             type="button"
             onClick={() => {
               const selectedVisible = filteredItems.filter((item) => selectedForBulkDownload.includes(item.id));
-              const readyRows = selectedVisible.filter((item) => item.reportStatus === 'Report Ready' && item.reportDownloadUrl && item.reportFileName);
+              const readyRows = selectedVisible.filter((item) => isDownloadableReport(item));
               readyRows.forEach((item) => triggerDownload(item.reportDownloadUrl as string, item.reportFileName as string));
               if (selectedVisible.length > readyRows.length) {
                 setBulkMessage('Only report-ready rows will be included.');
@@ -262,7 +267,7 @@ export function NdeWorkspacePage({
                 setBulkMessage('');
               }
             }}
-            disabled={readySelectedItems.length === 0}
+            disabled={downloadableSelectedItems.length === 0}
           >
             Bulk Download Reports
           </button>
@@ -305,8 +310,8 @@ export function NdeWorkspacePage({
                 <td>
                   <button
                     type="button"
-                    title={item.reportStatus === 'Report Ready' && item.reportDownloadUrl && item.reportFileName ? 'Download ready report' : 'Report template/download not connected yet.'}
-                    disabled={!(item.reportStatus === 'Report Ready' && item.reportDownloadUrl && item.reportFileName)}
+                    title={isDownloadableReport(item) ? 'Download ready report' : 'Report template/download not connected yet.'}
+                    disabled={!isDownloadableReport(item)}
                     onClick={(event) => {
                       event.stopPropagation();
                       if (item.reportDownloadUrl && item.reportFileName) {

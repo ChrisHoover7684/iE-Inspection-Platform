@@ -112,6 +112,18 @@ describe('App routes', () => {
     expect(within(readyRow as HTMLTableRowElement).getByRole('button', { name: 'Download Report' })).toBeEnabled();
   });
 
+  it('shows enabled Download Report action for downloaded rows', () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-reports']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    const downloadedRow = screen.getByText('NDE-24-007').closest('tr');
+    expect(downloadedRow).not.toBeNull();
+    expect(within(downloadedRow as HTMLTableRowElement).getByRole('button', { name: 'Download Report' })).toBeEnabled();
+  });
+
   it('shows disabled Download Report action for non-ready rows with connected-yet guidance', () => {
     render(
       <MemoryRouter initialEntries={['/nde-requests']}>
@@ -126,7 +138,7 @@ describe('App routes', () => {
     expect(downloadButton).toHaveAttribute('title', 'Report template/download not connected yet.');
   });
 
-  it('enables bulk download when a report-ready row is selected', () => {
+  it('enables bulk download when a downloadable row is selected', () => {
     render(
       <MemoryRouter initialEntries={['/nde-reports']}>
         <App />
@@ -136,7 +148,7 @@ describe('App routes', () => {
     const bulkDownloadButton = screen.getByRole('button', { name: 'Bulk Download Reports' });
     expect(bulkDownloadButton).toBeDisabled();
 
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Select NDE-24-006' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select NDE-24-007' }));
     expect(bulkDownloadButton).toBeEnabled();
   });
 

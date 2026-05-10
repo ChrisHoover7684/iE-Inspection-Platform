@@ -101,6 +101,31 @@ th, td {
     vertical-align: top;
 }
 
+.nde-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.nde-selection-summary {
+    margin-top: 0;
+}
+
+.nde-frontend-note {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.nde-row-selected {
+    background: #e7f1ff;
+}
+
+.nde-row-selected td {
+    border-color: #b9d6ff;
+}
+
 .answer-row {
     border-top: 1px solid #eee;
     padding: 8px;

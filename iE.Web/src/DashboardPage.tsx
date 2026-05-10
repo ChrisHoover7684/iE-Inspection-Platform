@@ -37,6 +37,7 @@ export function DashboardPage() {
           links={[
             { to: '/calculators/corrosion-rate', label: 'Corrosion Rate Calculator' },
             { to: '/calculators/pipe-lookup', label: 'Pipe Lookup Calculator' },
+            { to: '/calculators/b31-3-piping', label: 'B31.3 Piping Calculator' },
             { to: '/engineering-tools/criteria-references', label: 'Criteria / References' },
           ]}
         />

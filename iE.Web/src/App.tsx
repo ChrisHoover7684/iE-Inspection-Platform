@@ -8,6 +8,7 @@ import { CorrosionRateCalculatorPage } from './CorrosionRateCalculatorPage';
 import { PipeLookupCalculatorPage } from './PipeLookupCalculatorPage';
 import { PressureVesselCalculatorPage } from './PressureVesselCalculatorPage';
 import { AppShell } from './components/AppShell';
+import { B31_3PipingCalculatorPage } from './B31_3PipingCalculatorPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 
 function ShellRoute({ children }: { children: React.ReactNode }) {
@@ -26,6 +27,7 @@ export default function App() {
       <Route path="/calculators/corrosion-rate" element={<ShellRoute><CorrosionRateCalculatorPage /></ShellRoute>} />
       <Route path="/calculators/pipe-lookup" element={<ShellRoute><PipeLookupCalculatorPage /></ShellRoute>} />
       <Route path="/calculators/pressure-vessels" element={<ShellRoute><PressureVesselCalculatorPage /></ShellRoute>} />
+      <Route path="/calculators/b31-3-piping" element={<ShellRoute><B31_3PipingCalculatorPage /></ShellRoute>} />
 
       <Route path="/nde-requests" element={placeholder('NDE Requests', 'Coming soon: NDE request queue and workflows.')} />
       <Route path="/reports" element={<ShellRoute><ApiInspectionReportsPage /></ShellRoute>} />

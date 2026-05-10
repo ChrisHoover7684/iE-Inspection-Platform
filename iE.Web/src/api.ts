@@ -32,7 +32,8 @@ import type {
   NozzleType,
   Ug45TableEntry,
   NdeLogItem,
-  NdeLogStatus
+  NdeLogStatus,
+  NdeLogTransitionEvent
 } from './types';
 
 const DEFAULT_API_BASE_URL = 'http://localhost:5229';
@@ -156,4 +157,6 @@ export const ndeApi = {
       method: 'POST',
       body: JSON.stringify({ nextStatus, comment, actor }),
     }, `POST /api/nde/log/${id}/transition`)
+  ,
+  getLogItemEvents: (id: string) => apiFetch<NdeLogTransitionEvent[]>(`/api/nde/log/${id}/events`, undefined, `GET /api/nde/log/${id}/events`)
 };

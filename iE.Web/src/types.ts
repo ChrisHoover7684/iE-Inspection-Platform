@@ -30,6 +30,22 @@ export type NdeLogItem = {
   reportFileName?: string;
   reportDownloadUrl?: string;
 };
+
+export type NdeLogTransitionEvent = {
+  id: string;
+  ndeRequestId: string;
+  fromStatus: NdeLogStatus;
+  toStatus: NdeLogStatus;
+  actor: string;
+  timestampUtc: string;
+  comment?: string;
+};
+
+export type NdeLogTransitionCommand = {
+  nextStatus: NdeLogStatus;
+  comment?: string;
+  actor?: string;
+};
 export type ReportTemplate = {
   id: string;
   name: string;

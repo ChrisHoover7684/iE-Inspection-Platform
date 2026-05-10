@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ndeApi } from '../api';
-import type { NdeLogItem, NdeLogStatus } from '../types';
+import type { NdeLogItem, NdeLogStatus, NdeLogTransitionEvent } from '../types';
 
 type NdeWorkspacePageProps = {
   initialStatus?: NdeLogStatus | 'All';
@@ -79,6 +79,10 @@ export function NdeWorkspacePage({
   const [bulkMessage, setBulkMessage] = useState<string>('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionError, setTransitionError] = useState<string | null>(null);
+  const [transitionComment, setTransitionComment] = useState('');
+  const [eventHistory, setEventHistory] = useState<NdeLogTransitionEvent[]>([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const [eventHistoryError, setEventHistoryError] = useState<string | null>(null);
 
   useEffect(() => {
     setStatusFilter(initialStatus);
@@ -105,6 +109,37 @@ export function NdeWorkspacePage({
       active = false;
     };
   }, []);
+
+
+  useEffect(() => {
+    if (!selectedId) {
+      setEventHistory([]);
+      setEventHistoryError(null);
+      return;
+    }
+
+    let active = true;
+    setIsLoadingEvents(true);
+    setEventHistoryError(null);
+
+    ndeApi.getLogItemEvents(selectedId)
+      .then((events) => {
+        if (!active) return;
+        setEventHistory(events);
+      })
+      .catch(() => {
+        if (!active) return;
+        setEventHistory([]);
+        setEventHistoryError('Unable to load workflow history from API.');
+      })
+      .finally(() => {
+        if (active) setIsLoadingEvents(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedId]);
 
   const baseItems = useMemo(() => {
     if (!initialStatuses || initialStatuses.length === 0) {
@@ -136,9 +171,12 @@ export function NdeWorkspacePage({
     setIsTransitioning(true);
     setTransitionError(null);
     try {
-      await ndeApi.transitionLogItem(selectedId, nextStatus);
+      await ndeApi.transitionLogItem(selectedId, nextStatus, transitionComment, 'demo.user');
       const rows = await ndeApi.getLogItems();
       setItems(rows);
+      const events = await ndeApi.getLogItemEvents(selectedId);
+      setEventHistory(events);
+      setTransitionComment('');
     } catch {
       setTransitionError('Unable to persist transition to API. Applied demo fallback update.');
       applyLocal();
@@ -146,6 +184,8 @@ export function NdeWorkspacePage({
       setIsTransitioning(false);
     }
   };
+
+  const formatTimestamp = (timestampUtc: string) => new Date(timestampUtc).toLocaleString();
 
   const filteredItems = useMemo(() => {
     return baseItems.filter((row) => {
@@ -266,6 +306,14 @@ export function NdeWorkspacePage({
             <button key={transition.label} type="button" disabled={isTransitioning} onClick={() => void applyStatusToSelection(transition.status)}>{transition.label}</button>
           ))}
         </div>
+        <label className="nde-transition-comment">
+          Comment / Reason
+          <input
+            value={transitionComment}
+            onChange={(event) => setTransitionComment(event.target.value)}
+            placeholder="Enter transition reason"
+          />
+        </label>
         <div className="nde-download-actions" role="group" aria-label="NDE report download actions">
           <button type="button" onClick={exportVisibleTable}>Export Table</button>
           <button
@@ -295,6 +343,19 @@ export function NdeWorkspacePage({
           </p>
         )}
         {selectedItem && allowedTransitions.length === 0 && <p className="muted">No workflow actions available for this status.</p>}
+        <div className="nde-history-panel">
+          <h3>Workflow History</h3>
+          {isLoadingEvents && <p className="muted">Loading workflow history…</p>}
+          {eventHistoryError && <p className="muted">{eventHistoryError}</p>}
+          {!isLoadingEvents && eventHistory.length === 0 && <p className="muted">No workflow history yet.</p>}
+          {eventHistory.map((event) => (
+            <article key={event.id} className="nde-history-event">
+              <p><strong>{event.fromStatus} → {event.toStatus}</strong></p>
+              <p className="muted">{event.actor} • {formatTimestamp(event.timestampUtc)}</p>
+              {event.comment && <p>{event.comment}</p>}
+            </article>
+          ))}
+        </div>
         <table>
           <thead>
             <tr>

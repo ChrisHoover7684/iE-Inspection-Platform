@@ -28,6 +28,17 @@ public sealed class NdeLogController(INdeLogReadModelService ndeLogReadModelServ
 
         return Ok(result.Item);
     }
+
+    [HttpGet("{id}/events")]
+    public ActionResult<IReadOnlyList<NdeLogTransitionEventReadModel>> GetEvents(string id)
+    {
+        if (!ndeLogReadModelService.Exists(id))
+        {
+            return NotFound();
+        }
+
+        return Ok(ndeLogReadModelService.GetEvents(id));
+    }
 }
 
 public sealed record NdeLogTransitionCommand(string NextStatus, string? Comment, string? Actor);

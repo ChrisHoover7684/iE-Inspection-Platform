@@ -50,6 +50,7 @@ public interface INdeLogReadModelService
     IReadOnlyList<NdeLogItemReadModel> GetLogItems();
     NdeLogTransitionResult Transition(string id, NdeLogTransitionRequest request);
     IReadOnlyList<NdeLogTransitionEventReadModel> GetEvents(string id);
+    bool Exists(string id);
 }
 
 public sealed class DemoNdeLogReadModelService : INdeLogReadModelService
@@ -65,6 +66,7 @@ public sealed class DemoNdeLogReadModelService : INdeLogReadModelService
 
     public IReadOnlyList<NdeLogItemReadModel> GetLogItems() => _items.ToList();
     public IReadOnlyList<NdeLogTransitionEventReadModel> GetEvents(string id) => _events.Where(x => x.NdeRequestId == id).OrderBy(x => x.TimestampUtc).ToList();
+    public bool Exists(string id) => _items.Any(x => x.Id == id);
 
     public NdeLogTransitionResult Transition(string id, NdeLogTransitionRequest request)
     {
@@ -93,4 +95,3 @@ public sealed class DemoNdeLogReadModelService : INdeLogReadModelService
         _ => []
     };
 }
-

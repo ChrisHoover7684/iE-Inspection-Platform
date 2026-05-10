@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../App';
@@ -108,5 +108,20 @@ describe('App routes', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'API Inspection Reports' })).toBeInTheDocument();
     await waitFor(() => expect(reportingApi.getInstances).toHaveBeenCalledTimes(1));
+  });
+
+  it('supports frontend-only row selection and workflow status transitions in NDE workspace', () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-requests']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByText('NDE-24-001'));
+    expect(screen.getByText('Selected: NDE-24-001 (Draft)')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Scheduled' }));
+    expect(screen.getByText('Selected: NDE-24-001 (Scheduled)')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('All')).toBeInTheDocument();
   });
 });

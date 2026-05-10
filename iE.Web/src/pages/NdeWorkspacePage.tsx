@@ -67,8 +67,10 @@ export function NdeWorkspacePage({
   title = 'NDE Requests',
   description = 'Track NDE requests and reports without mixing API inspection report workflow data.',
 }: NdeWorkspacePageProps) {
+  const [items, setItems] = useState<NdeLogItem[]>(mockRows);
   const [statusFilter, setStatusFilter] = useState<NdeLogStatus | 'All'>(initialStatus);
   const [searchText, setSearchText] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     setStatusFilter(initialStatus);
@@ -76,12 +78,20 @@ export function NdeWorkspacePage({
 
   const baseItems = useMemo(() => {
     if (!initialStatuses || initialStatuses.length === 0) {
-      return mockRows;
+      return items;
     }
 
     const statuses = new Set(initialStatuses);
-    return mockRows.filter((row) => statuses.has(row.status));
-  }, [initialStatuses]);
+    return items.filter((row) => statuses.has(row.status));
+  }, [initialStatuses, items]);
+
+  const applyStatusToSelection = (nextStatus: NdeLogStatus) => {
+    if (!selectedId) {
+      return;
+    }
+
+    setItems((current) => current.map((item) => (item.id === selectedId ? { ...item, status: nextStatus } : item)));
+  };
 
   const filteredItems = useMemo(() => {
     return baseItems.filter((row) => {
@@ -105,6 +115,12 @@ export function NdeWorkspacePage({
       return byStatus && bySearch;
     });
   }, [baseItems, searchText, statusFilter]);
+
+
+  const selectedItem = useMemo(
+    () => filteredItems.find((item) => item.id === selectedId) ?? null,
+    [filteredItems, selectedId],
+  );
 
   const summary = {
     total: baseItems.length,
@@ -145,6 +161,21 @@ export function NdeWorkspacePage({
       </div>
 
       <div className="card">
+        <div className="nde-actions" role="group" aria-label="NDE workflow actions">
+          <strong>Workflow Actions:</strong>
+          <button type="button" onClick={() => applyStatusToSelection('Requested')} disabled={!selectedItem}>Mark Requested</button>
+          <button type="button" onClick={() => applyStatusToSelection('Scheduled')} disabled={!selectedItem}>Mark Scheduled</button>
+          <button type="button" onClick={() => applyStatusToSelection('In Progress')} disabled={!selectedItem}>Mark In Progress</button>
+          <button type="button" onClick={() => applyStatusToSelection('Results Received')} disabled={!selectedItem}>Mark Results Received</button>
+          <button type="button" onClick={() => applyStatusToSelection('Reviewed')} disabled={!selectedItem}>Mark Reviewed</button>
+          <button type="button" onClick={() => applyStatusToSelection('Closed')} disabled={!selectedItem}>Mark Closed</button>
+          <button type="button" onClick={() => applyStatusToSelection('Cancelled')} disabled={!selectedItem}>Mark Cancelled</button>
+        </div>
+        {selectedItem && (
+          <p className="muted nde-selection-summary">
+            Selected: {selectedItem.requestNumber} ({selectedItem.status})
+          </p>
+        )}
         <table>
           <thead>
             <tr>
@@ -153,7 +184,12 @@ export function NdeWorkspacePage({
           </thead>
           <tbody>
             {filteredItems.map((item) => (
-              <tr key={item.id}>
+              <tr
+                key={item.id}
+                className={selectedId === item.id ? 'nde-row-selected' : undefined}
+                onClick={() => setSelectedId(item.id)}
+                aria-selected={selectedId === item.id}
+              >
                 <td>{item.requestNumber}</td>
                 <td>{item.assetTag ?? item.circuitId ?? item.equipmentTag ?? '—'}</td>
                 <td>{item.method}</td>

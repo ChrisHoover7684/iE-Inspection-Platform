@@ -3,6 +3,7 @@ import { calculateCorrosionRate } from '../calculations/corrosionRate';
 import { calculatePipeDimensions } from '../calculations/pipeLookup';
 import { calculateRequiredThicknessMargin } from '../calculations/pressureVessel';
 import { calculateTankShellCorrosionMargin } from '../calculations/tankShell';
+import { toB31_3EngineeringSnapshot } from '../calculations/b31_3Piping';
 
 describe('engineering calculations foundation', () => {
   const expectFoundationFields = (result: { calculationType: string; formulaVersion: string; displayName: string; calculatedAt: string; insertLabel: string; warnings: unknown[]; standardReferences: unknown[]; }) => {
@@ -173,6 +174,27 @@ describe('engineering calculations foundation', () => {
     const result = calculateTankShellCorrosionMargin({ currentThicknessIn: 0.2, requiredThicknessIn: 0.3, corrosionAllowanceIn: 0.05 });
     expect(result.outputs.remainingMarginIn).toBeLessThan(0);
     expect(result.warnings.some((w) => w.code === 'NEGATIVE_MARGIN')).toBe(true);
+    expectFoundationFields(result);
+  });
+
+  it('maps b31.3 engine result into engineering snapshot', () => {
+    const result = toB31_3EngineeringSnapshot({
+      pressurePsi: 285, temperatureF: 100, outsideDiameterIn: 8.625, spec: 'A106', grade: 'B', productForm: 'Pipe', unsNo: '', classConditionTemper: '', materialCategory: 'Carbon Steel', jointType: 'Seamless', jointQualityKey: 'Seamless', wFactor: 1, yOverride: null, eOverride: null
+    }, {
+      success: true, message: 'ok', allowableStressPsi: 20000, eFactor: 1, yCoefficient: 0.4, wFactor: 1, requiredThicknessIn: 0.08
+    });
+    expect(result.outputs.requiredThicknessIn).toBeCloseTo(0.08, 6);
+    expect(result.warnings.some((w) => w.code === 'USER_INPUT_VALIDATION_REQUIRED')).toBe(true);
+    expectFoundationFields(result);
+  });
+
+  it('b31.3 failed engine response creates error warning', () => {
+    const result = toB31_3EngineeringSnapshot({
+      pressurePsi: 100, temperatureF: 100, outsideDiameterIn: 6, spec: 'A999', grade: 'X', productForm: 'Pipe', unsNo: '', classConditionTemper: '', materialCategory: 'Unknown', jointType: 'Seamless', jointQualityKey: 'Seamless'
+    }, {
+      success: false, message: 'Allowable stress not found', allowableStressPsi: null, eFactor: null, yCoefficient: null, wFactor: null, requiredThicknessIn: null
+    });
+    expect(result.warnings.some((w) => w.code === 'B313_CALCULATION_FAILED')).toBe(true);
     expectFoundationFields(result);
   });
 });

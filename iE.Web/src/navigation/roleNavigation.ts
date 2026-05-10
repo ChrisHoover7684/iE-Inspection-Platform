@@ -47,6 +47,7 @@ const allItems: NavigationItem[] = [
   { key: 'assets', label: 'Assets', route: '/assets', group: 'assets' },
   { key: 'apiInspectionLog', label: 'API Inspection Log', route: '/api-inspection-log', group: 'reports' },
   { key: 'calculators', label: 'Calculators', route: '/calculators/corrosion-rate', group: 'engineering_tools', description: 'Future category landing for engineering calculators.' },
+  { key: 'b313Piping', label: 'B31.3 Piping Calculator', route: '/calculators/b31-3-piping', group: 'engineering_tools', description: 'Foundation ASME B31.3 piping wall-thickness snapshot tool.' },
   { key: 'criteriaReferences', label: 'Criteria / References', route: '/engineering-tools/criteria-references', group: 'engineering_tools', description: 'Future category for standards and reference criteria.' },
   { key: 'damageMechanisms', label: 'Damage Mechanisms', route: '/engineering-tools/damage-mechanisms', group: 'engineering_tools', description: 'Future category for mechanism lookups and guidance.' },
   { key: 'usersAccess', label: 'Users & Access', route: '/users-access', group: 'admin' },
@@ -73,9 +74,9 @@ const groupLabels: Record<NavigationGroupKey, string> = {
 const roleItemKeys: Record<AppRole, string[]> = {
   client: ['dashboard', 'ndeRequests', 'reports', 'downloads', 'assets', 'help'],
   owner: ['dashboard', 'approvalQueue', 'ndeRequests', 'ndeReports', 'apiInspectionLog', 'assets', 'reports', 'exports'],
-  inspector: ['dashboard', 'myReports', 'apiInspectionLog', 'ndeRequests', 'assets', 'returnedReports', 'calculators', 'criteriaReferences', 'damageMechanisms'],
+  inspector: ['dashboard', 'myReports', 'apiInspectionLog', 'ndeRequests', 'assets', 'returnedReports', 'calculators', 'b313Piping', 'criteriaReferences', 'damageMechanisms'],
   nde_coordinator: ['dashboard', 'ndeRequests', 'schedule', 'resultsReceived', 'overdue', 'cancelled', 'assets'],
-  admin: ['dashboard', 'usersAccess', 'facilities', 'assets', 'customNdeTypes', 'reports', 'ndeRequests', 'auditLog', 'settings', 'calculators', 'criteriaReferences', 'damageMechanisms'],
+  admin: ['dashboard', 'usersAccess', 'facilities', 'assets', 'customNdeTypes', 'reports', 'ndeRequests', 'auditLog', 'settings', 'calculators', 'b313Piping', 'criteriaReferences', 'damageMechanisms'],
   viewer: ['dashboard', 'reports', 'assets', 'downloads'],
   internal_system_owner: ['dashboard', 'systemReadiness', 'stressTestSetup', 'tenants', 'auditLog', 'settings'],
 };

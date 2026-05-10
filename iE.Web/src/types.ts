@@ -173,6 +173,33 @@ export type PipeLookupResult = {
   display: string;
 };
 
+export type B313ThicknessInput = {
+  pressurePsi: number;
+  temperatureF: number;
+  outsideDiameterIn: number;
+  spec: string;
+  grade: string;
+  productForm: string;
+  unsNo: string;
+  classConditionTemper: string;
+  materialCategory: string;
+  jointType: string;
+  jointQualityKey: string;
+  wFactor?: number;
+  yOverride?: number | null;
+  eOverride?: number | null;
+};
+
+export type B313ThicknessResult = {
+  success: boolean;
+  message: string;
+  allowableStressPsi: number | null;
+  eFactor: number | null;
+  yCoefficient: number | null;
+  wFactor: number | null;
+  requiredThicknessIn: number | null;
+};
+
 export type LwnLookupInput = {
   size: string;
   schedule: string;

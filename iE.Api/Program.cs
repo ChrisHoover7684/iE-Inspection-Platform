@@ -90,7 +90,7 @@ builder.Services.AddScoped<IReportLogService, ReportLogService>();
 builder.Services.AddScoped<INdeRequestService, NdeRequestService>();
 builder.Services.AddScoped<INdeRequestTypeService, NdeRequestTypeService>();
 builder.Services.AddScoped<IWorkflowReadModelService, WorkflowReadModelService>();
-builder.Services.AddScoped<INdeLogReadModelService, DemoNdeLogReadModelService>();
+builder.Services.AddSingleton<INdeLogReadModelService, DemoNdeLogReadModelService>();
 
 if (authenticationEnabled)
 {

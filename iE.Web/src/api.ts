@@ -31,7 +31,8 @@ import type {
   HeadType,
   NozzleType,
   Ug45TableEntry,
-  NdeLogItem
+  NdeLogItem,
+  NdeLogStatus
 } from './types';
 
 const DEFAULT_API_BASE_URL = 'http://localhost:5229';
@@ -149,5 +150,10 @@ export const pressureVesselApi = {
 
 
 export const ndeApi = {
-  getLogItems: () => apiFetch<NdeLogItem[]>('/api/nde/log', undefined, 'GET /api/nde/log')
+  getLogItems: () => apiFetch<NdeLogItem[]>('/api/nde/log', undefined, 'GET /api/nde/log'),
+  transitionLogItem: (id: string, nextStatus: NdeLogStatus, comment?: string, actor = 'demo.user') =>
+    apiFetch<NdeLogItem>(`/api/nde/log/${id}/transition`, {
+      method: 'POST',
+      body: JSON.stringify({ nextStatus, comment, actor }),
+    }, `POST /api/nde/log/${id}/transition`)
 };

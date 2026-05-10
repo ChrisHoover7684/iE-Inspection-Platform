@@ -77,6 +77,8 @@ export function NdeWorkspacePage({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedForBulkDownload, setSelectedForBulkDownload] = useState<string[]>([]);
   const [bulkMessage, setBulkMessage] = useState<string>('');
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [transitionError, setTransitionError] = useState<string | null>(null);
 
   useEffect(() => {
     setStatusFilter(initialStatus);
@@ -113,13 +115,13 @@ export function NdeWorkspacePage({
     return items.filter((row) => statuses.has(row.status));
   }, [initialStatuses, items]);
 
-  const applyStatusToSelection = (nextStatus: NdeLogStatus) => {
+  const applyStatusToSelection = async (nextStatus: NdeLogStatus) => {
     if (!selectedId) {
       return;
     }
 
     const todayIso = new Date().toISOString().slice(0, 10);
-    setItems((current) => current.map((item) => {
+    const applyLocal = () => setItems((current) => current.map((item) => {
       if (item.id !== selectedId) {
         return item;
       }
@@ -130,6 +132,19 @@ export function NdeWorkspacePage({
         resultReceivedDate: nextStatus === 'Results Received' ? (item.resultReceivedDate ?? todayIso) : item.resultReceivedDate,
       };
     }));
+
+    setIsTransitioning(true);
+    setTransitionError(null);
+    try {
+      await ndeApi.transitionLogItem(selectedId, nextStatus);
+      const rows = await ndeApi.getLogItems();
+      setItems(rows);
+    } catch {
+      setTransitionError('Unable to persist transition to API. Applied demo fallback update.');
+      applyLocal();
+    } finally {
+      setIsTransitioning(false);
+    }
   };
 
   const filteredItems = useMemo(() => {
@@ -248,7 +263,7 @@ export function NdeWorkspacePage({
         <div className="nde-actions" role="group" aria-label="NDE workflow actions">
           <strong>Workflow Actions:</strong>
           {allowedTransitions.map((transition) => (
-            <button key={transition.label} type="button" onClick={() => applyStatusToSelection(transition.status)}>{transition.label}</button>
+            <button key={transition.label} type="button" disabled={isTransitioning} onClick={() => void applyStatusToSelection(transition.status)}>{transition.label}</button>
           ))}
         </div>
         <div className="nde-download-actions" role="group" aria-label="NDE report download actions">
@@ -271,7 +286,9 @@ export function NdeWorkspacePage({
           </button>
           {bulkMessage && <span className="muted">{bulkMessage}</span>}
         </div>
-        <p className="muted nde-frontend-note">Workflow actions are frontend-only demo behavior until backend persistence is connected.</p>
+        {isTransitioning && <p className="muted">Applying transition…</p>}
+        {transitionError && <p className="muted">{transitionError}</p>}
+        <p className="muted nde-frontend-note">Workflow actions persist via NDE API when available, with demo fallback behavior on failures.</p>
         {selectedItem && (
           <p className="muted nde-selection-summary">
             Selected: {selectedItem.requestNumber} ({selectedItem.status})

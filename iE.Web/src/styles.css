@@ -995,3 +995,32 @@ html, body, #root {
         grid-template-columns: 1fr;
     }
 }
+
+.nde-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.nde-summary-grid h3 {
+    margin-top: 0;
+    margin-bottom: 4px;
+}
+
+.nde-summary-grid p {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.nde-filters {
+    display: grid;
+    grid-template-columns: minmax(260px, 2fr) minmax(200px, 1fr);
+    gap: 12px;
+}
+
+.nde-empty-state {
+    border-top: 1px solid var(--color-border-light);
+    margin-top: 12px;
+    padding-top: 12px;
+}

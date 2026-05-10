@@ -1084,3 +1084,53 @@ html, body, #root {
     padding-top: 6px;
     margin-top: 6px;
 }
+
+.nde-workspace-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+    gap: 12px;
+}
+
+.nde-table-panel {
+    min-width: 0;
+}
+
+.nde-detail-panel {
+    border: 1px solid var(--color-border-light);
+    border-radius: 6px;
+    padding: 10px;
+    background: #fbfdff;
+    align-self: start;
+}
+
+.nde-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.nde-detail-header h3 {
+    margin: 0;
+}
+
+.nde-detail-grid {
+    display: grid;
+    grid-template-columns: minmax(120px, auto) 1fr;
+    gap: 6px 10px;
+}
+
+.nde-detail-grid dt,
+.nde-detail-grid dd {
+    margin: 0;
+}
+
+.nde-detail-grid dt {
+    font-weight: 600;
+}
+
+@media (max-width: 980px) {
+    .nde-workspace-layout {
+        grid-template-columns: 1fr;
+    }
+}

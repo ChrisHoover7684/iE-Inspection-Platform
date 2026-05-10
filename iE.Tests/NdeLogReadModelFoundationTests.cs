@@ -38,6 +38,15 @@ public class NdeLogReadModelFoundationTests
         Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.ReportReady);
         Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Downloaded);
         Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.NotAvailable);
+        Assert.All(rows.Where(r => r.Status is NdeLogStatuses.Draft or NdeLogStatuses.Requested or NdeLogStatuses.Scheduled or NdeLogStatuses.InProgress or NdeLogStatuses.Cancelled),
+            r => Assert.DoesNotContain(r.ReportStatus, [NdeReportStatuses.ReportReady, NdeReportStatuses.Downloaded]));
+        Assert.All(rows.Where(r => r.ReportStatus is NdeReportStatuses.ReportReady or NdeReportStatuses.Downloaded), r =>
+        {
+            Assert.Contains(r.Status, [NdeLogStatuses.Reviewed, NdeLogStatuses.Closed]);
+            Assert.False(string.IsNullOrWhiteSpace(r.ReportNumber));
+            Assert.False(string.IsNullOrWhiteSpace(r.ReportFileName));
+            Assert.False(string.IsNullOrWhiteSpace(r.ReportDownloadUrl));
+        });
         Assert.All(rows.Where(r => r.ReportStatus is NdeReportStatuses.ReportReady or NdeReportStatuses.Downloaded), r =>
         {
             Assert.False(string.IsNullOrWhiteSpace(r.ReportNumber));
@@ -50,7 +59,10 @@ public class NdeLogReadModelFoundationTests
             Assert.Contains($"-26-{methodCode}-", r.ReportNumber!, StringComparison.Ordinal);
         });
         Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.ReportReady && r.ReportNumber == "RPT-26-PAUT-006");
+        Assert.Contains(rows, r => r.RequestNumber == "NDE-26-010" && r.Status == NdeLogStatuses.Reviewed && r.ReportStatus == NdeReportStatuses.ReportReady);
         Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Downloaded && r.ReportNumber == "RPT-26-VT-007");
+        Assert.DoesNotContain(rows, r => r.Status == NdeLogStatuses.Scheduled && r.ReportStatus is NdeReportStatuses.ReportReady or NdeReportStatuses.Downloaded);
+        Assert.Contains(rows, r => r.Status == NdeLogStatuses.Scheduled);
     }
 
     [Fact]

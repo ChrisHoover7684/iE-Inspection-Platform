@@ -68,7 +68,7 @@ public sealed class DemoNdeLogReadModelService : INdeLogReadModelService
         new("nde-007", NdeNumbering.FormatRequestNumber(DemoYear, 7), "L-5507", null, null, "VT", NdeLogStatuses.Closed, "Low", "R. Scott", "H. Diaz", "2026-05-06", "2026-05-05", NdeReportStatuses.Downloaded, NdeNumbering.FormatReportNumber(DemoYear, "VT", 7), "RPT-26-VT-007.pdf", "/demo-downloads/RPT-26-VT-007.pdf"),
         new("nde-008", NdeNumbering.FormatRequestNumber(DemoYear, 8), null, null, "PSV-91", "UT Thickness", NdeLogStatuses.Cancelled, "Low", "C. White", "B. Young", "2026-05-04", null, NdeReportStatuses.NotStarted, null, null, null),
         new("nde-009", NdeNumbering.FormatRequestNumber(DemoYear, 9), null, "CIR-9D-032", null, "RT", NdeLogStatuses.Overdue, "Critical", "D. Reed", "M. Gray", "2026-05-01", null, NdeReportStatuses.ResultsReceived, NdeNumbering.FormatReportNumber(DemoYear, "RT", 9), null, null),
-        new("nde-010", NdeNumbering.FormatRequestNumber(DemoYear, 10), "P-300C", null, null, "PAUT", NdeLogStatuses.Scheduled, "High", "L. Ward", "K. Adams", "2026-05-14", null, NdeReportStatuses.ReportReady, NdeNumbering.FormatReportNumber(DemoYear, "PAUT", 10), "RPT-26-PAUT-010.pdf", "/demo-downloads/RPT-26-PAUT-010.pdf")
+        new("nde-010", NdeNumbering.FormatRequestNumber(DemoYear, 10), "P-300C", null, null, "PAUT", NdeLogStatuses.Reviewed, "High", "L. Ward", "K. Adams", "2026-05-14", null, NdeReportStatuses.ReportReady, NdeNumbering.FormatReportNumber(DemoYear, "PAUT", 10), "RPT-26-PAUT-010.pdf", "/demo-downloads/RPT-26-PAUT-010.pdf")
     ];
     private readonly List<NdeLogTransitionEventReadModel> _events = [];
 

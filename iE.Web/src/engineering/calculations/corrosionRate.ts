@@ -44,7 +44,11 @@ export function calculateCorrosionRate(inputs: CorrosionRateInputs): Engineering
     warnings.push({ code: 'CURRENT_AT_OR_BELOW_TMIN', message: 'Current thickness is at or below Tmin. Remaining life cannot be projected.', severity: 'error' });
   }
 
-  const remainingLifeYears = corrosionRateInchesPerYear > 0 && inputs.currentThicknessInches > inputs.tminInches
+  const canProjectRemainingLife = corrosionRateInchesPerYear > 0
+    && inputs.currentThicknessInches > 0
+    && inputs.tminInches > 0
+    && inputs.currentThicknessInches > inputs.tminInches;
+  const remainingLifeYears = canProjectRemainingLife
     ? (inputs.currentThicknessInches - inputs.tminInches) / corrosionRateInchesPerYear
     : null;
   const normalizedRemainingLifeYears = remainingLifeYears !== null ? Math.max(remainingLifeYears, 0) : null;

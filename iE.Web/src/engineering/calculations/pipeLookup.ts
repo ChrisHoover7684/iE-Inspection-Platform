@@ -11,6 +11,8 @@ export function calculatePipeDimensions(inputs: PipeLookupInputs): EngineeringCa
   if (inputs.nominalThickness <= 0) warnings.push({ code: 'NOMINAL_THICKNESS_NON_POSITIVE', message: 'Nominal thickness must be greater than zero.', severity: 'error' });
   if (insideDiameter <= 0) warnings.push({ code: 'INSIDE_DIAMETER_NON_POSITIVE', message: 'Computed inside diameter is non-positive and not physically valid.', severity: 'error' });
 
+  const hasInvalidDimensions = insideDiameter <= 0;
+
   return {
     id: `pipe-lookup-${calculatedAt}`,
     calculationType: 'pipe-lookup',
@@ -25,6 +27,8 @@ export function calculatePipeDimensions(inputs: PipeLookupInputs): EngineeringCa
     },
     warnings,
     calculatedAt,
-    insertLabel: `${inputs.nps}" Sch ${inputs.schedule} pipe dimensions (ID ${insideDiameter.toFixed(4)} in)`
+    insertLabel: hasInvalidDimensions
+      ? `${inputs.nps}" Sch ${inputs.schedule} pipe dimensions (invalid dimensions; ID ${insideDiameter.toFixed(4)} in)`
+      : `${inputs.nps}" Sch ${inputs.schedule} pipe dimensions (ID ${insideDiameter.toFixed(4)} in)`
   };
 }

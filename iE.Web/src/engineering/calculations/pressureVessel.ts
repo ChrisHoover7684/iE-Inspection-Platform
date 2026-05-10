@@ -17,7 +17,10 @@ export function calculateRequiredThicknessMargin(inputs: PressureVesselMarginInp
     formulaVersion: 'asme-viii-div1-foundation-v1',
     standardReferences: [{ standard: 'ASME Section VIII Div 1', note: 'Foundation margin helper only; not a full code compliance check.' }],
     inputs,
-    outputs: { marginIn, isAcceptable: marginIn >= 0 },
+    outputs: {
+      marginIn,
+      isAcceptable: inputs.requiredWithCorrosionAllowanceIn > 0 && inputs.providedThicknessIn > 0 && marginIn >= 0
+    },
     warnings,
     calculatedAt,
     insertLabel: `Pressure vessel margin helper result (${marginIn.toFixed(4)} in margin)`

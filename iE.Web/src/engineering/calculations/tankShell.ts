@@ -11,6 +11,8 @@ export function calculateTankShellCorrosionMargin(inputs: TankShellCorrosionInpu
   if (inputs.currentThicknessIn <= 0) warnings.push({ code: 'CURRENT_THICKNESS_NON_POSITIVE', message: 'Current thickness input should be greater than zero.', severity: 'error' });
   if (inputs.requiredThicknessIn <= 0) warnings.push({ code: 'REQUIRED_THICKNESS_NON_POSITIVE', message: 'Required thickness input should be greater than zero.', severity: 'warning' });
   if (remainingMarginIn < 0) warnings.push({ code: 'NEGATIVE_MARGIN', message: 'Current thickness is below required thickness plus corrosion allowance.', severity: 'error' });
+  const hasInvalidThicknessInputs = inputs.requiredThicknessIn <= 0 || inputs.currentThicknessIn <= 0;
+
   return {
     id: `tank-shell-corrosion-margin-${calculatedAt}`,
     calculationType: 'tank-shell-corrosion-margin',
@@ -24,6 +26,8 @@ export function calculateTankShellCorrosionMargin(inputs: TankShellCorrosionInpu
     },
     warnings,
     calculatedAt,
-    insertLabel: `Tank shell margin helper result (${remainingMarginIn.toFixed(4)} in margin)`
+    insertLabel: hasInvalidThicknessInputs
+      ? `Tank shell margin helper result requires review (invalid thickness inputs; ${remainingMarginIn.toFixed(4)} in margin)`
+      : `Tank shell margin helper result (${remainingMarginIn.toFixed(4)} in margin)`
   };
 }

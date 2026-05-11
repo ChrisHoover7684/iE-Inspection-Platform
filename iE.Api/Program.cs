@@ -91,6 +91,7 @@ builder.Services.AddScoped<INdeRequestService, NdeRequestService>();
 builder.Services.AddScoped<INdeRequestTypeService, NdeRequestTypeService>();
 builder.Services.AddScoped<IWorkflowReadModelService, WorkflowReadModelService>();
 builder.Services.AddSingleton<INdeLogReadModelService, DemoNdeLogReadModelService>();
+builder.Services.AddSingleton<INdeReportDraftService, DemoNdeReportDraftService>();
 
 if (authenticationEnabled)
 {

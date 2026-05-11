@@ -222,7 +222,6 @@ export function NdeWorkspacePage({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [activeReportRequestId, setActiveReportRequestId] = useState<string | null>(null);
-  const [reportDrafts, setReportDrafts] = useState<Record<string, NdeReportDraft>>({});
   const [reportMessage, setReportMessage] = useState<string>('');
   const [demoCreateMessage, setDemoCreateMessage] = useState<string>('');
   const requiredFieldsMessage = 'Project, Owning Group, Due Date, NDE Method, Unit, Asset, and Access Method are required.';
@@ -319,10 +318,10 @@ const todayIso = new Date().toISOString().slice(0, 10);
     return filteredByStatuses.filter((row) => {
       const hasReportStatus = row.reportStatus === 'In Progress' || row.reportStatus === 'Complete';
       const hasReportNumber = Boolean(row.reportNumber);
-      const hasDraft = Boolean(reportDrafts[row.id]);
+      const hasDraft = row.reportStatus === 'In Progress' || row.reportStatus === 'Complete';
       return hasReportStatus || hasReportNumber || hasDraft;
     });
-  }, [initialStatuses, items, reportDrafts, summaryMode]);
+  }, [initialStatuses, items, summaryMode]);
 
   const applyStatusToSelection = async (nextStatus: NdeLogStatus) => {
     if (!selectedId) {
@@ -598,10 +597,15 @@ const todayIso = new Date().toISOString().slice(0, 10);
     URL.revokeObjectURL(url);
   };
 
-  const openReportWorkspace = (item: NdeLogItem) => {
+  const openReportWorkspace = async (item: NdeLogItem) => {
     const reportNumber = item.reportNumber ?? formatReportNumber(item.requestNumber, item.method) ?? `RPT-${getCurrentYearSuffix()}-${item.method}-${item.requestNumber}`;
     const examinedArea = item.location || item.weldId || item.assetTag || item.circuitId || item.equipmentTag || '';
-    const existing = reportDrafts[item.id];
+    let existing: NdeReportDraft | undefined;
+    try {
+      existing = await ndeApi.getNdeReportDraft(item.id);
+    } catch {
+      setReportMessage('Unable to load saved API draft. Showing prefilled workspace values.');
+    }
     const baseDraft: NdeReportDraft = existing ?? {
       id: `draft-${item.id}`,
       ndeRequestId: item.id,
@@ -617,27 +621,37 @@ const todayIso = new Date().toISOString().slice(0, 10);
     setReportForm(baseDraft);
     setActiveReportRequestId(item.id);
     setIsReportModalOpen(true);
-    setReportMessage('');
+    setReportMessage((current) => current || '');
   };
 
-  const saveReportDraft = () => {
+  const saveReportDraft = async () => {
     if (!activeReportRequestId) return;
     const draft = { ...reportForm, ndeRequestId: activeReportRequestId, status: 'Draft' } as NdeReportDraft;
-    setReportDrafts((current) => ({ ...current, [activeReportRequestId]: draft }));
-    setItems((current) => current.map((item) => item.id === activeReportRequestId ? { ...item, reportStatus: item.reportStatus === 'Complete' ? 'Complete' : 'In Progress', reportNumber: draft.reportNumber || item.reportNumber } : item));
-    setReportMessage('Report draft saved locally until backend report persistence is connected.');
+    try {
+      const saved = await ndeApi.saveNdeReportDraft(activeReportRequestId, draft);
+      setReportForm(saved);
+      setItems((current) => current.map((item) => item.id === activeReportRequestId ? { ...item, reportStatus: item.reportStatus === 'Complete' ? 'Complete' : 'In Progress', reportNumber: saved.reportNumber || item.reportNumber } : item));
+      setReportMessage('Report draft saved.');
+    } catch {
+      setReportMessage('Unable to save draft to API. Demo mode fallback is currently unavailable.');
+    }
   };
 
-  const generateReport = () => {
+  const generateReport = async () => {
     if (!activeReportRequestId) return;
     if (!reportForm.inspector || !reportForm.examinationDate || !reportForm.procedure || !reportForm.testResult) {
       setReportMessage('Inspector / Technician, Examination Date, Procedure / Technique, and Test Result are required to generate.');
       return;
     }
-    const completeDraft = { ...reportForm, ndeRequestId: activeReportRequestId, status: 'Complete', generatedAtUtc: new Date().toISOString(), reportFileName: `${reportForm.reportNumber}.pdf`, reportDownloadUrl: undefined } as NdeReportDraft;
-    setReportDrafts((current) => ({ ...current, [activeReportRequestId]: completeDraft }));
-    setItems((current) => current.map((item) => item.id === activeReportRequestId ? { ...item, reportStatus: 'Complete', reportNumber: completeDraft.reportNumber, reportFileName: completeDraft.reportFileName } : item));
-    setReportMessage('Report generated as demo draft. Use Print / Save as PDF for first-version output.');
+    const completeDraft = { ...reportForm, ndeRequestId: activeReportRequestId, status: 'Complete' } as NdeReportDraft;
+    try {
+      const completed = await ndeApi.completeNdeReportDraft(activeReportRequestId, completeDraft);
+      setReportForm(completed);
+      setItems((current) => current.map((item) => item.id === activeReportRequestId ? { ...item, reportStatus: 'Complete', reportNumber: completed.reportNumber, reportFileName: completed.reportFileName, reportDownloadUrl: completed.reportDownloadUrl } : item));
+      setReportMessage('Report generated as demo draft. Use Print / Save as PDF for first-version output.');
+    } catch {
+      setReportMessage('Unable to complete draft through API.');
+    }
   };
 
 
@@ -671,7 +685,7 @@ const todayIso = new Date().toISOString().slice(0, 10);
 
   const reportSummary = {
     totalReports: baseItems.length,
-    draftInProgress: baseItems.filter((item) => item.reportStatus === 'In Progress' || Boolean(reportDrafts[item.id])).length,
+    draftInProgress: baseItems.filter((item) => item.reportStatus === 'In Progress').length,
     complete: baseItems.filter((item) => item.reportStatus === 'Complete').length,
     downloadable: baseItems.filter((item) => isDownloadableReport(item)).length,
   };

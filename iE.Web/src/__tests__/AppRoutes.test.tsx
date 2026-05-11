@@ -5,6 +5,8 @@ import App from '../App';
 import { allNavigationRoutes } from '../navigation/roleNavigation';
 import { ndeApi, reportingApi } from '../api';
 
+const draftStore: Record<string, any> = {};
+
 vi.mock('../api', async () => {
   const actual = await vi.importActual<typeof import('../api')>('../api');
   return {
@@ -32,7 +34,11 @@ vi.mock('../api', async () => {
       transitionLogItem: vi.fn().mockResolvedValue({ id: 'nde-001', requestNumber: 'NDE-26-0001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Requested', priority: 'Normal', reportStatus: 'Not Started' }),
       getLogItemEvents: vi.fn().mockResolvedValue([
         { id: 'evt-1', ndeRequestId: 'nde-001', fromStatus: 'Draft', toStatus: 'Requested', actor: 'demo.user', timestampUtc: '2026-05-10T12:00:00Z', comment: 'ready for scheduling' }
-      ])
+      ]),
+      getNdeReportDraft: vi.fn().mockImplementation(async (id: string) => { if (!draftStore[id]) { throw new Error('404'); } return draftStore[id]; }),
+      getNdeReportDrafts: vi.fn().mockImplementation(async () => Object.values(draftStore)),
+      saveNdeReportDraft: vi.fn().mockImplementation(async (id: string, draft: any) => { draftStore[id] = { ...draft, id: draft.id ?? `draft-${id}`, status: 'Draft' }; return draftStore[id]; }),
+      completeNdeReportDraft: vi.fn().mockImplementation(async (id: string, draft: any) => { draftStore[id] = { ...draft, id: draft.id ?? `draft-${id}`, status: 'Complete', generatedAtUtc: '2026-05-11T12:00:00Z', reportFileName: `${draft.reportNumber}.pdf`, reportDownloadUrl: undefined }; return draftStore[id]; })
     },
   };
 });
@@ -811,7 +817,7 @@ it('opens report workspace and supports draft/save/preview actions', async () =>
   expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
   const row = screen.getByText('NDE-26-0001').closest('tr') as HTMLTableRowElement;
   fireEvent.click(within(row).getByRole('button', { name: /fill report for NDE-26-0001/i }));
-  const modal = screen.getByRole('dialog', { name: 'NDE Report Workspace' });
+  const modal = await screen.findByRole('dialog', { name: 'NDE Report Workspace' });
   expect(within(modal).getByText('Generic NDE Report Draft')).toBeInTheDocument();
   expect(within(modal).getByLabelText('Surface Condition / Access Notes')).toBeInTheDocument();
   expect(within(modal).getByLabelText('Indications Found')).toBeInTheDocument();
@@ -821,7 +827,7 @@ it('opens report workspace and supports draft/save/preview actions', async () =>
   fireEvent.change(within(modal).getByLabelText('Procedure / Technique *'), { target: { value: 'PT-001' } });
   fireEvent.change(within(modal).getByLabelText('Test Result *'), { target: { value: 'Passed' } });
   fireEvent.click(within(modal).getByRole('button', { name: 'Save Draft' }));
-  expect(await screen.findByText(/saved locally until backend report persistence is connected/i)).toBeInTheDocument();
+  expect(await screen.findByText(/Report draft saved\./i)).toBeInTheDocument();
   fireEvent.click(within(modal).getByRole('button', { name: 'Mark Complete & Generate' }));
   expect(await screen.findByText(/Report generated as demo draft/i)).toBeInTheDocument();
   expect(within(modal).getByText(/NDE Report Preview/)).toBeInTheDocument();
@@ -832,5 +838,5 @@ it('opens report workspace from view/edit icon action', async () => {
   expect(await screen.findByText('NDE-26-0004')).toBeInTheDocument();
   const row = screen.getByText('NDE-26-0004').closest('tr') as HTMLTableRowElement;
   fireEvent.click(within(row).getByRole('button', { name: /view or edit report RPT-26-PT-0004/i }));
-  expect(screen.getByRole('dialog', { name: 'NDE Report Workspace' })).toBeInTheDocument();
+  expect(await screen.findByRole('dialog', { name: 'NDE Report Workspace' })).toBeInTheDocument();
 });

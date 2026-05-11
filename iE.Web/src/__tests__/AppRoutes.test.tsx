@@ -651,3 +651,31 @@ it('shows Facility and Unit # columns, resolves facility from unit, and keeps as
     fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: '01' } });
     expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
 });
+
+describe('NDE workflow report synchronization', () => {
+  it('marking Results Received sets report status to in progress and preserves generated report number', async () => {
+    vi.mocked(ndeApi.transitionLogItem).mockRejectedValue(new Error('fallback'));
+    render(<MemoryRouter initialEntries={['/nde-requests']}><App /></MemoryRouter>);
+    expect(await screen.findByText('NDE-26-003')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('NDE-26-003'));
+    fireEvent.click(screen.getByRole('button', { name: 'Mark In Progress' }));
+    await waitFor(() => expect(screen.getByText('RPT-26-MT-003')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Mark Results Received' })).not.toBeDisabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Results Received' }));
+    expect(await screen.findByText('Selected: NDE-26-003 (Results Received)')).toBeInTheDocument();
+    expect(screen.getAllByText('In Progress').length).toBeGreaterThan(0);
+  });
+
+  it('cancel without reason is blocked, with reason calls transition', async () => {
+    render(<MemoryRouter initialEntries={['/nde-requests']}><App /></MemoryRouter>);
+    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('NDE-26-001'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(await screen.findByText('Cancellation reason is required.')).toBeInTheDocument();
+    expect(ndeApi.transitionLogItem).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByPlaceholderText('Enter transition reason'), { target: { value: 'duplicate request' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(ndeApi.transitionLogItem).toHaveBeenCalledWith('nde-001', 'Cancelled', 'duplicate request', 'demo.user'));
+  });
+});

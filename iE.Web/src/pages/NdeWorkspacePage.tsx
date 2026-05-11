@@ -25,7 +25,6 @@ const statusOptions: Array<NdeLogStatus | 'All'> = [
 ];
 
 const requestNumberPattern = /^NDE-(\d{2})-(\d{3})$/;
-const requestStatusWithoutReport = new Set(['Not Started', 'Not Available']);
 const methodAbbreviations: Record<string, string> = {
   PT: 'PT',
   MT: 'MT',
@@ -64,6 +63,40 @@ function formatReportNumber(requestNumber: string, method: string) {
   return `RPT-${match[1]}-${methodCode}-${match[2]}`;
 }
 
+
+function getReportStatusForWorkflowStatus(status: NdeLogStatus, currentStatus?: NdeLogItem['reportStatus'], hasReportNumber = false): NdeLogItem['reportStatus'] {
+  switch (status) {
+    case 'Draft':
+    case 'Requested':
+      return 'Not Started';
+    case 'Scheduled':
+      return currentStatus === 'Not Started' ? 'Not Started' : 'Not Available';
+    case 'In Progress':
+    case 'Results Received':
+    case 'Overdue':
+      return 'In Progress';
+    case 'Reviewed':
+    case 'Closed':
+      return 'Complete';
+    case 'Cancelled':
+      return hasReportNumber ? (currentStatus ?? 'Not Started') : 'Not Started';
+    default:
+      return currentStatus ?? 'Not Started';
+  }
+}
+
+function shouldHaveReportNumberForStatus(status: NdeLogStatus) {
+  return ['In Progress', 'Results Received', 'Reviewed', 'Closed'].includes(status);
+}
+
+function syncWorkflowFields(item: NdeLogItem, nextStatus: NdeLogStatus, todayIso: string) {
+  const reportNumber = item.reportNumber ?? (shouldHaveReportNumberForStatus(nextStatus) ? formatReportNumber(item.requestNumber, item.method) : undefined);
+  const reportStatus = getReportStatusForWorkflowStatus(nextStatus, item.reportStatus, Boolean(reportNumber));
+  const resultReceivedDate = ['Results Received', 'Reviewed', 'Closed'].includes(nextStatus) ? (item.resultReceivedDate ?? todayIso) : item.resultReceivedDate;
+  const reportFileName = reportStatus === 'Complete' && reportNumber ? (item.reportFileName ?? `${reportNumber}.pdf`) : item.reportFileName;
+  const reportDownloadUrl = reportStatus === 'Complete' && reportNumber ? (item.reportDownloadUrl ?? `/demo-downloads/${reportFileName}`) : item.reportDownloadUrl;
+  return { ...item, status: nextStatus, reportNumber, reportStatus, resultReceivedDate, reportFileName, reportDownloadUrl };
+}
 // Frontend-only demo/read-model data for NDE workspace usability.
 // Replace with backend read-model data when the NDE workflow API is connected.
 const mockRows: NdeLogItem[] = [
@@ -182,7 +215,14 @@ export function NdeWorkspacePage({
     ndeApi.getLogItems()
       .then((rows) => {
         if (!active) return;
-        setItems(rows);
+        const requiresReason = nextStatus === 'Cancelled';
+    if (requiresReason && !transitionComment.trim()) {
+      setTransitionError('Cancellation reason is required.');
+      return;
+    }
+
+    const todayIso = new Date().toISOString().slice(0, 10);
+        setItems(rows.map((row) => syncWorkflowFields(row, row.status, todayIso)));
         setLoadError(null);
       })
       .catch(() => {
@@ -243,17 +283,19 @@ export function NdeWorkspacePage({
       return;
     }
 
+    const requiresReason = nextStatus === 'Cancelled';
+    if (requiresReason && !transitionComment.trim()) {
+      setTransitionError('Cancellation reason is required.');
+      return;
+    }
+
     const todayIso = new Date().toISOString().slice(0, 10);
     const applyLocal = () => setItems((current) => current.map((item) => {
       if (item.id !== selectedId) {
         return item;
       }
 
-      return {
-        ...item,
-        status: nextStatus,
-        resultReceivedDate: nextStatus === 'Results Received' ? (item.resultReceivedDate ?? todayIso) : item.resultReceivedDate,
-      };
+      return syncWorkflowFields(item, nextStatus, todayIso);
     }));
 
     setIsTransitioning(true);
@@ -261,7 +303,7 @@ export function NdeWorkspacePage({
     try {
       await ndeApi.transitionLogItem(selectedId, nextStatus, transitionComment, 'demo.user');
       const rows = await ndeApi.getLogItems();
-      setItems(rows);
+      setItems(rows.map((row) => syncWorkflowFields(row, row.status, todayIso)));
       const events = await ndeApi.getLogItemEvents(selectedId);
       setEventHistory(events);
       setTransitionComment('');
@@ -395,8 +437,7 @@ export function NdeWorkspacePage({
 
     setItems((current) => current.map((item) => {
       if (item.id !== selectedId) return item;
-      const shouldGenerateReportNumber = !item.reportNumber && !requestStatusWithoutReport.has(item.reportStatus);
-      const reportNumber = shouldGenerateReportNumber ? formatReportNumber(item.requestNumber, editForm.method) : item.reportNumber;
+      const reportNumber = item.reportNumber;
       return {
         ...item,
         method: editForm.method,

@@ -12,6 +12,7 @@ export type NdeLogStatus =
 
 export type NdeReportStatus = 'Not Started' | 'Not Available' | 'In Progress' | 'Complete';
 export type NdeReportResult = 'Acceptable' | 'Rejectable' | 'Monitor' | 'Inconclusive';
+export type NdeReportTestResult = 'Passed' | 'Failed' | 'Info Only';
 export type NdeReportDraft = {
   id: string;
   ndeRequestId: string;
@@ -27,6 +28,7 @@ export type NdeReportDraft = {
   examinedArea?: string;
   indicationsFound: boolean;
   result?: NdeReportResult;
+  testResult?: NdeReportTestResult;
   findings?: string;
   recommendations?: string;
   notes?: string;

@@ -8,7 +8,7 @@ const stagedWeldStageOptions: Array<Extract<NdeStage, 'Prep' | 'Root' | 'Final' 
 const formatReportStatus = (reportStatus: NdeLogItem['reportStatus']) =>
   reportStatus === 'Complete' ? 'Reviewed / Complete' : reportStatus;
 import { ndeApi } from '../api';
-import type { NdeLogItem, NdeLogStatus, NdeLogTransitionEvent, NdeReportDraft, NdeReportResult } from '../types';
+import type { NdeLogItem, NdeLogStatus, NdeLogTransitionEvent, NdeReportDraft, NdeReportTestResult } from '../types';
 import { accessMethodOptions, getAssetsForUnit, getProjectOptions, getUnitOptions, ndeMethodOptions, owningGroupOptions, parseUnitNumber } from '../ndeRequestReferenceData';
 import { getFacilities } from '../organizationReferenceData';
 
@@ -595,8 +595,8 @@ const todayIso = new Date().toISOString().slice(0, 10);
 
   const generateReport = () => {
     if (!activeReportRequestId) return;
-    if (!reportForm.inspector || !reportForm.examinationDate || !reportForm.procedure || !reportForm.result) {
-      setReportMessage('Inspector / Technician, Examination Date, Procedure / Technique, and Result are required to generate.');
+    if (!reportForm.inspector || !reportForm.examinationDate || !reportForm.procedure || !reportForm.testResult) {
+      setReportMessage('Inspector / Technician, Examination Date, Procedure / Technique, and Test Result are required to generate.');
       return;
     }
     const completeDraft = { ...reportForm, ndeRequestId: activeReportRequestId, status: 'Complete', generatedAtUtc: new Date().toISOString(), reportFileName: `${reportForm.reportNumber}.pdf`, reportDownloadUrl: undefined } as NdeReportDraft;
@@ -741,14 +741,14 @@ const todayIso = new Date().toISOString().slice(0, 10);
               <label>Surface Condition / Access Notes<input value={reportForm.surfaceCondition ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, surfaceCondition: e.target.value }))} /></label>
               <label>Area / Weld / Component Examined<input value={reportForm.examinedArea ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, examinedArea: e.target.value }))} /></label>
               <label>Indications Found<select value={reportForm.indicationsFound ? 'Yes' : 'No'} onChange={(e) => setReportForm((c) => ({ ...c, indicationsFound: e.target.value === 'Yes' }))}><option>No</option><option>Yes</option></select></label>
-              <label>Result *<select value={reportForm.result ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, result: e.target.value as NdeReportResult }))}><option value="">Select result</option><option>Acceptable</option><option>Rejectable</option><option>Monitor</option><option>Inconclusive</option></select></label>
+              <label>Test Result *<select value={reportForm.testResult ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, testResult: e.target.value as NdeReportTestResult }))}><option value="">Select test result</option><option>Passed</option><option>Failed</option><option>Info Only</option></select></label>
               <label>Attachments placeholder<input disabled value="File upload coming soon" /></label>
             </div>
             <label>Findings / Indications narrative<textarea value={reportForm.findings ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, findings: e.target.value }))} /></label>
             <label>Recommendations / Disposition<textarea value={reportForm.recommendations ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, recommendations: e.target.value }))} /></label>
             <label>Report Notes<textarea value={reportForm.notes ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, notes: e.target.value }))} /></label>
             {relatedItems.length > 1 && <div className="nde-history-panel"><h4>Related Requests</h4><ul>{relatedItems.filter((item) => item.id !== activeReportRequestId).map((item) => <li key={item.id}>{item.requestNumber} — {(item.ndeStage ?? 'Standard')} ({formatReportStatus(item.reportStatus)})</li>)}</ul></div>}
-            <div className="nde-history-panel"><h4>NDE Report Preview</h4><p><strong>NDE Report</strong> — {reportForm.requestNumber} / {reportForm.reportNumber}</p><p>Asset: {getAssetDisplay(items.find((i) => i.id === activeReportRequestId) as NdeLogItem)} | Unit: {(items.find((i) => i.id === activeReportRequestId)?.unit) ?? '—'} | Stage: {(items.find((i) => i.id === activeReportRequestId)?.ndeStage) ?? '—'}</p><p>Method: {reportForm.method} | Inspector: {reportForm.inspector ?? '—'} | Date: {reportForm.examinationDate ?? '—'}</p><p>Procedure: {reportForm.procedure ?? '—'} | Criteria: {reportForm.acceptanceCriteria ?? '—'}</p><p>Result: {reportForm.result ?? '—'} | Indications Found: {reportForm.indicationsFound ? 'Yes' : 'No'}</p><p>Findings: {reportForm.findings ?? '—'}</p><p>Recommendations: {reportForm.recommendations ?? '—'}</p></div>
+            <div className="nde-history-panel"><h4>NDE Report Preview</h4><p><strong>NDE Report</strong> — {reportForm.requestNumber} / {reportForm.reportNumber}</p><p>Asset: {getAssetDisplay(items.find((i) => i.id === activeReportRequestId) as NdeLogItem)} | Unit: {(items.find((i) => i.id === activeReportRequestId)?.unit) ?? '—'} | Stage: {(items.find((i) => i.id === activeReportRequestId)?.ndeStage) ?? '—'}</p><p>Method: {reportForm.method} | Inspector: {reportForm.inspector ?? '—'} | Date: {reportForm.examinationDate ?? '—'}</p><p>Procedure: {reportForm.procedure ?? '—'} | Criteria: {reportForm.acceptanceCriteria ?? '—'}</p><p>Test Result: {reportForm.testResult ?? '—'} | Indications Found: {reportForm.indicationsFound ? 'Yes' : 'No'}</p><p>Findings: {reportForm.findings ?? '—'}</p><p>Recommendations: {reportForm.recommendations ?? '—'}</p></div>
             {reportMessage && <p className="muted">{reportMessage}</p>}
             <div className="row">
               <button type="button" onClick={saveReportDraft}>Save Draft</button>

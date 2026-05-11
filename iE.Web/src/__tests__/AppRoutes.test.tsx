@@ -758,7 +758,7 @@ it('opens report workspace and supports draft/save/preview actions', async () =>
   fireEvent.change(within(modal).getByLabelText('Inspector / Technician *'), { target: { value: 'Inspector A' } });
   fireEvent.change(within(modal).getByLabelText('Examination Date *'), { target: { value: '2026-05-11' } });
   fireEvent.change(within(modal).getByLabelText('Procedure / Technique *'), { target: { value: 'PT-001' } });
-  fireEvent.change(within(modal).getByLabelText('Result *'), { target: { value: 'Acceptable' } });
+  fireEvent.change(within(modal).getByLabelText('Test Result *'), { target: { value: 'Passed' } });
   fireEvent.click(within(modal).getByRole('button', { name: 'Save Draft' }));
   expect(await screen.findByText(/saved locally until backend report persistence is connected/i)).toBeInTheDocument();
   fireEvent.click(within(modal).getByRole('button', { name: 'Mark Complete & Generate' }));

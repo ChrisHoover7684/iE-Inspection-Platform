@@ -225,6 +225,8 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     expect(within(modal).getByLabelText('Owning Group *')).toBeInTheDocument();
     expect(within(modal).getByLabelText('NDE Method *')).toBeInTheDocument();
     expect(within(modal).getByLabelText('Access Method *')).toBeInTheDocument();
+    expect(within(modal).queryByLabelText('Facility *')).not.toBeInTheDocument();
+    expect(within(modal).getByLabelText('Unit *')).toBeEnabled();
     expect(within(modal).getByLabelText('Reference')).toBeInTheDocument();
     expect(within(modal).getByLabelText('Inspection Details')).toBeInTheDocument();
 
@@ -236,8 +238,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     fireEvent.change(within(modal).getByLabelText('Project *'), { target: { value: 'Unit 73 Maintenance' } });
     fireEvent.change(within(modal).getByLabelText('Owning Group *'), { target: { value: 'Operations' } });
     fireEvent.change(within(modal).getByLabelText('Code Criteria'), { target: { value: 'NBIC' } });
-    fireEvent.change(within(modal).getByLabelText('Facility *'), { target: { value: 'fac-demo-main' } });
-    fireEvent.change(within(modal).getByLabelText('Unit *'), { target: { value: '02-VAC' } });
+        fireEvent.change(within(modal).getByLabelText('Unit *'), { target: { value: '02-VAC' } });
     fireEvent.change(within(modal).getByLabelText('Reference'), { target: { value: 'REF-EDIT-900' } });
     fireEvent.change(within(modal).getByLabelText('NDE Method *'), { target: { value: 'RT' } });
     fireEvent.change(within(modal).getByLabelText('Due Date *'), { target: { value: '2026-05-21' } });
@@ -291,14 +292,15 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     expect(within(modal).queryByLabelText('Report #')).not.toBeInTheDocument();
     expect(within(modal).getByLabelText('Requester')).toHaveValue('Operator (placeholder)');
     expect(within(modal).getByLabelText('Access Method *')).toBeInTheDocument();
+    expect(within(modal).queryByLabelText('Facility *')).not.toBeInTheDocument();
+    expect(within(modal).getByLabelText('Unit *')).toBeEnabled();
     expect(within(modal).getByText('Project options are demo reference data. Admin-managed project setup will be connected later.')).toBeInTheDocument();
 
     fireEvent.change(within(modal).getByLabelText('Project *'), { target: { value: 'Demo Turnaround 2026' } });
     fireEvent.change(within(modal).getByLabelText('Owning Group *'), { target: { value: 'Inspection' } });
     fireEvent.change(within(modal).getByLabelText('Due Date *'), { target: { value: '2026-05-22' } });
     fireEvent.change(within(modal).getByLabelText('NDE Method *'), { target: { value: 'UT Thickness' } });
-    fireEvent.change(within(modal).getByLabelText('Facility *'), { target: { value: 'fac-demo-main' } });
-    fireEvent.change(within(modal).getByLabelText('Unit *'), { target: { value: '01-CRUDE' } });
+        fireEvent.change(within(modal).getByLabelText('Unit *'), { target: { value: '01-CRUDE' } });
     expect(within(modal).queryByText('Robinson TA 2026')).not.toBeInTheDocument();
     fireEvent.change(within(modal).getByLabelText('Asset *'), { target: { value: 'P-102A' } });
     fireEvent.change(within(modal).getByLabelText('Access Method *'), { target: { value: 'Rope Access' } });
@@ -342,8 +344,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     fireEvent.change(screen.getByLabelText('Owning Group *'), { target: { value: 'Inspection' } });
     fireEvent.change(screen.getByLabelText('Due Date *'), { target: { value: '2026-05-22' } });
     fireEvent.change(screen.getByLabelText('NDE Method *'), { target: { value: 'UT Thickness' } });
-    fireEvent.change(screen.getByLabelText('Facility *'), { target: { value: 'fac-demo-main' } });
-    fireEvent.change(screen.getByLabelText('Unit *'), { target: { value: '01-CRUDE' } });
+        fireEvent.change(screen.getByLabelText('Unit *'), { target: { value: '01-CRUDE' } });
     fireEvent.change(screen.getByLabelText('Asset *'), { target: { value: 'P-102A' } });
     fireEvent.change(screen.getByLabelText('Access Method *'), { target: { value: 'Ladder' } });
     fireEvent.change(screen.getByLabelText('Request Status'), { target: { value: 'Requested' } });
@@ -368,7 +369,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     const rowsBefore = screen.getAllByRole('row').length;
     fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
     fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
-    expect(screen.getByText('Project, Owning Group, Due Date, NDE Method, Facility, Unit, Asset, and Access Method are required.')).toBeInTheDocument();
+    expect(screen.getByText('Project, Owning Group, Due Date, NDE Method, Unit, Asset, and Access Method are required.')).toBeInTheDocument();
     expect(screen.getByRole('dialog', { name: 'New NDE Request' })).toBeInTheDocument();
     expect(screen.getAllByRole('row').length).toBe(rowsBefore);
 
@@ -378,7 +379,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     const editModal = screen.getByRole('dialog', { name: 'Edit NDE Request' });
     fireEvent.change(within(editModal).getByLabelText('Asset *'), { target: { value: '' } });
     fireEvent.click(within(editModal).getByRole('button', { name: 'Save' }));
-    expect(within(editModal).getByText('Project, Owning Group, Due Date, NDE Method, Facility, Unit, Asset, and Access Method are required.')).toBeInTheDocument();
+    expect(within(editModal).getByText('Project, Owning Group, Due Date, NDE Method, Unit, Asset, and Access Method are required.')).toBeInTheDocument();
   });
 
 
@@ -485,8 +486,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
     const modal = screen.getByRole('dialog', { name: 'New NDE Request' });
-    fireEvent.change(within(modal).getByLabelText('Facility *'), { target: { value: 'fac-demo-main' } });
-    fireEvent.change(within(modal).getByLabelText('Unit *'), { target: { value: '08-SULFUR' } });
+        fireEvent.change(within(modal).getByLabelText('Unit *'), { target: { value: '08-SULFUR' } });
     expect(within(modal).getByLabelText('Unit *')).toHaveValue('08-SULFUR');
 
     cleanup();
@@ -494,8 +494,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
     const modalTwo = screen.getByRole('dialog', { name: 'New NDE Request' });
-    fireEvent.change(within(modalTwo).getByLabelText('Facility *'), { target: { value: 'fac-demo-main' } });
-    fireEvent.change(within(modalTwo).getByLabelText('Unit *'), { target: { value: '01-CRUDE' } });
+        fireEvent.change(within(modalTwo).getByLabelText('Unit *'), { target: { value: '01-CRUDE' } });
     fireEvent.change(within(modalTwo).getByLabelText('Asset *'), { target: { value: 'P-999A' } });
     expect(within(modalTwo).getByLabelText('Asset *')).toHaveValue('P-999A');
   });
@@ -590,8 +589,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     fireEvent.change(within(modal).getByLabelText('Owning Group *'), { target: { value: 'Inspection' } });
     fireEvent.change(within(modal).getByLabelText('Due Date *'), { target: { value: '2026-05-22' } });
     fireEvent.change(within(modal).getByLabelText('NDE Method *'), { target: { value: 'UT Thickness' } });
-    fireEvent.change(within(modal).getByLabelText('Facility *'), { target: { value: 'fac-demo-main' } });
-    fireEvent.change(within(modal).getByLabelText('Unit *'), { target: { value: '01-CRUDE' } });
+        fireEvent.change(within(modal).getByLabelText('Unit *'), { target: { value: '01-CRUDE' } });
     fireEvent.change(within(modal).getByLabelText('Asset *'), { target: { value: 'P-102A' } });
     fireEvent.change(within(modal).getByLabelText('Access Method *'), { target: { value: 'Ladder' } });
     fireEvent.change(within(modal).getByLabelText('Weld ID'), { target: { value: 'W-PS-100' } });
@@ -682,7 +680,7 @@ it('selecting a row loads workflow history and renders transition details', asyn
   expect(screen.getByText('ready for scheduling')).toBeInTheDocument();
 });
 
-it('shows Facility and Unit # columns, resolves facility from unit, and keeps asset column clean', async () => {
+it('hides Facility in NDE table and details while keeping unit and asset columns', async () => {
     render(
       <MemoryRouter initialEntries={['/nde-requests']}>
         <App />
@@ -690,22 +688,22 @@ it('shows Facility and Unit # columns, resolves facility from unit, and keeps as
     );
 
     expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Facility' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Facility' })).not.toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Unit #' })).toBeInTheDocument();
 
     const row = screen.getAllByText('NDE-26-0001')[0].closest('tr') as HTMLTableRowElement;
-    expect(within(row).getByText('Demo Facility')).toBeInTheDocument();
+    expect(within(row).queryByText('Demo Facility')).not.toBeInTheDocument();
     expect(within(row).getByText('01')).toBeInTheDocument();
     expect(within(row).queryByText(/Unit:/)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByText('NDE-26-0001'));
     const details = screen.getByLabelText('NDE request details');
     const detailText = details.textContent ?? '';
-    expect(detailText.indexOf('Facility')).toBeLessThan(detailText.indexOf('Unit'));
+    expect(detailText).not.toContain('Facility');
     expect(detailText.indexOf('Unit')).toBeLessThan(detailText.indexOf('Asset / Circuit / Equipment'));
 
     fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: 'Demo Facility' } });
-    expect(screen.getAllByText('NDE-26-0001').length).toBeGreaterThan(0);
+    expect(screen.queryByText('NDE-26-0001')).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: '01' } });
     expect(screen.getAllByText('NDE-26-0001').length).toBeGreaterThan(0);

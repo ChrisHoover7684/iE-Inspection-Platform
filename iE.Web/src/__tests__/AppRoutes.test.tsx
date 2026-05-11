@@ -207,6 +207,7 @@ describe('App routes', () => {
 
     const modal = screen.getByRole('dialog', { name: 'Edit NDE Request' });
     expect(within(modal).getByDisplayValue('NDE-26-001')).toHaveAttribute('readonly');
+    expect(within(modal).getAllByDisplayValue('—').length).toBeGreaterThan(0);
     expect(within(modal).getByLabelText('Project *')).toBeInTheDocument();
     expect(within(modal).getByLabelText('Owning Group *')).toBeInTheDocument();
     expect(within(modal).getByLabelText('NDE Method *')).toBeInTheDocument();
@@ -241,6 +242,7 @@ describe('App routes', () => {
 
     const updatedRow = screen.getAllByText('NDE-26-001')[0].closest('tr') as HTMLTableRowElement;
     expect(within(updatedRow).getByText('RT')).toBeInTheDocument();
+    expect(within(updatedRow).getByText('—')).toBeInTheDocument();
 
     fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: 'REF-EDIT-900' } });
     expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
@@ -271,6 +273,8 @@ describe('App routes', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
     const modal = screen.getByRole('dialog', { name: 'New NDE Request' });
+    expect(within(modal).queryByLabelText('Request #')).not.toBeInTheDocument();
+    expect(within(modal).queryByLabelText('Report #')).not.toBeInTheDocument();
     expect(within(modal).getByLabelText('Requester')).toHaveValue('Operator (placeholder)');
     expect(within(modal).getByLabelText('Access Method *')).toBeInTheDocument();
     expect(within(modal).getByText('Project options are demo reference data. Admin-managed project setup will be connected later.')).toBeInTheDocument();
@@ -289,6 +293,7 @@ describe('App routes', () => {
     fireEvent.click((await screen.findAllByText('NDE-26-011'))[0]);
     expect(screen.getAllByText('Rope Access').length).toBeGreaterThan(0);
     expect(screen.getByText('REF-ROPE-77')).toBeInTheDocument();
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
   });
 
   it('opens new NDE request modal with dropdown fields and searchable inspection details', async () => {

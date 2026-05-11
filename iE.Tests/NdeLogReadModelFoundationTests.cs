@@ -71,6 +71,12 @@ public class NdeLogReadModelFoundationTests
         Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Complete && r.ReportNumber == "RPT-26-VT-007");
         Assert.DoesNotContain(rows, r => r.Status == NdeLogStatuses.Scheduled && r.ReportStatus == NdeReportStatuses.Complete);
         Assert.Contains(rows, r => r.Status == NdeLogStatuses.Scheduled);
+        var weldScopeRequest = Assert.Single(rows.Where(r => r.Id == "nde-004"));
+        Assert.NotNull(weldScopeRequest.ScopeItems);
+        Assert.Equal(3, weldScopeRequest.ScopeItems!.Count);
+        Assert.Contains(weldScopeRequest.ScopeItems, s => s.DisplayName == "PT Prep" && s.Method == "PT" && s.Stage == "Prep");
+        Assert.Contains(weldScopeRequest.ScopeItems, s => s.DisplayName == "PT Root" && s.Method == "PT" && s.Stage == "Root");
+        Assert.Contains(weldScopeRequest.ScopeItems, s => s.DisplayName == "PT Final" && s.Method == "PT" && s.Stage == "Final");
     }
 
     [Fact]

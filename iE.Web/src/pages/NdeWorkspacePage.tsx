@@ -28,7 +28,24 @@ const mockRows: NdeLogItem[] = [
   { id: 'nde-001', requestNumber: 'NDE-26-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started' },
   { id: 'nde-002', requestNumber: 'NDE-26-002', circuitId: 'CIR-4A-220', method: 'RT', status: 'Requested', priority: 'High', requestedBy: 'M. Patel', assignedTo: 'S. Owens', dueDate: '2026-05-17', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-002' },
   { id: 'nde-003', requestNumber: 'NDE-26-003', equipmentTag: 'E-4401', method: 'MT', status: 'Scheduled', priority: 'Normal', requestedBy: 'T. Nguyen', assignedTo: 'R. Hall', dueDate: '2026-05-13', reportStatus: 'Not Available' },
-  { id: 'nde-004', requestNumber: 'NDE-26-004', assetTag: 'HX-22B', method: 'PT', status: 'In Progress', priority: 'Critical', requestedBy: 'A. Lopez', assignedTo: 'D. Kim', dueDate: '2026-05-12', reportStatus: 'In Progress', reportNumber: 'RPT-26-PT-004' },
+  {
+    id: 'nde-004',
+    requestNumber: 'NDE-26-004',
+    assetTag: 'HX-22B',
+    method: 'PT',
+    status: 'In Progress',
+    priority: 'Critical',
+    requestedBy: 'A. Lopez',
+    assignedTo: 'D. Kim',
+    dueDate: '2026-05-12',
+    reportStatus: 'In Progress',
+    reportNumber: 'RPT-26-PT-004',
+    scopeItems: [
+      { id: 'scope-004-pt-prep', method: 'PT', stage: 'Prep', displayName: 'PT Prep', weldId: 'W-22B-01', location: 'Nozzle N2 Root', notes: 'Surface prep and cleaning' },
+      { id: 'scope-004-pt-root', method: 'PT', stage: 'Root', displayName: 'PT Root', weldId: 'W-22B-01', location: 'Nozzle N2 Root', notes: 'Root pass examination' },
+      { id: 'scope-004-pt-final', method: 'PT', stage: 'Final', displayName: 'PT Final', weldId: 'W-22B-01', location: 'Nozzle N2 Cap', notes: 'Final cap examination' },
+    ],
+  },
   { id: 'nde-005', requestNumber: 'NDE-26-005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09', reportStatus: 'In Progress', reportNumber: 'RPT-26-PMI-005' },
   { id: 'nde-006', requestNumber: 'NDE-26-006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-006', reportFileName: 'RPT-26-PAUT-006.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-006.pdf' },
   { id: 'nde-007', requestNumber: 'NDE-26-007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Complete', reportNumber: 'RPT-26-VT-007', reportFileName: 'RPT-26-VT-007.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-VT-007.pdf' },
@@ -414,6 +431,21 @@ export function NdeWorkspacePage({
                 <dt>Due Date</dt><dd>{selectedItem.dueDate ?? '—'}</dd>
                 <dt>Results Received Date</dt><dd>{selectedItem.resultReceivedDate ?? '—'}</dd>
               </dl>
+              {!!selectedItem.scopeItems?.length && (
+                <div className="nde-scope-items-panel">
+                  <h3>Request Scope Items</h3>
+                  <ul>
+                    {selectedItem.scopeItems.map((scopeItem) => (
+                      <li key={scopeItem.id}>
+                        <strong>{scopeItem.displayName}</strong>
+                        <span className="muted"> ({scopeItem.method} / {scopeItem.stage})</span>
+                        {scopeItem.weldId && <span> • Weld {scopeItem.weldId}</span>}
+                        {scopeItem.location && <span> • {scopeItem.location}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {isDownloadableReport(selectedItem) && selectedItem.reportDownloadUrl && selectedItem.reportFileName && (
                 <button type="button" onClick={() => triggerDownload(selectedItem.reportDownloadUrl as string, selectedItem.reportFileName as string)}>Download Report</button>
               )}

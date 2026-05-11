@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ndeApi } from '../api';
 import type { NdeLogItem, NdeLogStatus, NdeLogTransitionEvent } from '../types';
-import { accessMethodOptions, getProjectOptions, ndeMethodOptions, owningGroupOptions } from '../ndeRequestReferenceData';
+import { accessMethodOptions, getAssetsForUnit, getProjectOptions, getUnitOptions, ndeMethodOptions, owningGroupOptions } from '../ndeRequestReferenceData';
 
 type NdeWorkspacePageProps = {
   initialStatus?: NdeLogStatus | 'All';
@@ -26,7 +26,7 @@ const statusOptions: Array<NdeLogStatus | 'All'> = [
 // Frontend-only demo/read-model data for NDE workspace usability.
 // Replace with backend read-model data when the NDE workflow API is connected.
 const mockRows: NdeLogItem[] = [
-  { id: 'nde-001', requestNumber: 'NDE-26-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started', accessType: 'Ground', project: 'Demo Turnaround 2026', owningGroup: 'Inspection', code: 'API 570', unit: 'Unit 73' },
+  { id: 'nde-001', requestNumber: 'NDE-26-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started', accessType: 'Ground', project: 'Demo Turnaround 2026', owningGroup: 'Inspection', code: 'API 570', unit: '01-CRUDE' },
   { id: 'nde-002', requestNumber: 'NDE-26-002', circuitId: 'CIR-4A-220', method: 'RT', status: 'Requested', priority: 'High', requestedBy: 'M. Patel', assignedTo: 'S. Owens', dueDate: '2026-05-17', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-002' },
   { id: 'nde-003', requestNumber: 'NDE-26-003', equipmentTag: 'E-4401', method: 'MT', status: 'Scheduled', priority: 'Normal', requestedBy: 'T. Nguyen', assignedTo: 'R. Hall', dueDate: '2026-05-13', reportStatus: 'Not Available' },
   {
@@ -34,7 +34,7 @@ const mockRows: NdeLogItem[] = [
     project: 'Unit 73 Maintenance',
     owningGroup: 'Mechanical Integrity',
     code: 'NBIC',
-    unit: 'Unit 73',
+    unit: '01-CRUDE',
     requestNumber: 'NDE-26-004',
     assetTag: 'HX-22B',
     method: 'PT',
@@ -46,7 +46,7 @@ const mockRows: NdeLogItem[] = [
     reportStatus: 'In Progress',
     reportNumber: 'RPT-26-PT-004',
     accessType: 'Rope Access',
-    inspectionDetails: 'Nozzle N2 root and cap PT verification before hydrotest.',
+    inspectionDetails: 'Nozzle N11 Weld 213 root and final cap PT verification before hydrotest.',
     scopeItems: [
       { id: 'scope-004-pt-prep', method: 'PT', stage: 'Prep', displayName: 'PT Prep', weldId: 'W-22B-01', location: 'Nozzle N2 Root', notes: 'Surface prep and cleaning' },
       { id: 'scope-004-pt-root', method: 'PT', stage: 'Root', displayName: 'PT Root', weldId: 'W-22B-01', location: 'Nozzle N2 Root', notes: 'Root pass examination' },
@@ -58,7 +58,7 @@ const mockRows: NdeLogItem[] = [
   { id: 'nde-007', requestNumber: 'NDE-26-007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Complete', reportNumber: 'RPT-26-VT-007', reportFileName: 'RPT-26-VT-007.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-VT-007.pdf' },
   { id: 'nde-008', requestNumber: 'NDE-26-008', equipmentTag: 'PSV-91', method: 'UT Thickness', status: 'Cancelled', priority: 'Low', requestedBy: 'C. White', assignedTo: 'B. Young', dueDate: '2026-05-04', reportStatus: 'Not Started' },
   { id: 'nde-009', requestNumber: 'NDE-26-009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-009' },
-  { id: 'nde-010', requestNumber: 'NDE-26-010', assetTag: 'P-300C', method: 'PAUT', status: 'Reviewed', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-010', reportFileName: 'RPT-26-PAUT-010.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-010.pdf', project: 'Corrosion Study 2026', owningGroup: 'Operations', code: 'API 510', unit: 'Crude West' },
+  { id: 'nde-010', requestNumber: 'NDE-26-010', assetTag: 'P-300C', method: 'PAUT', status: 'Reviewed', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-010', reportFileName: 'RPT-26-PAUT-010.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-010.pdf', project: 'Corrosion Study 2026', owningGroup: 'Operations', code: 'API 510', unit: '02-VAC' },
 ];
 
 type NdeTransition = { label: string; status: NdeLogStatus };
@@ -111,6 +111,7 @@ export function NdeWorkspacePage({
   const [demoCreateMessage, setDemoCreateMessage] = useState<string>('');
   const requiredFieldsMessage = 'Project, Owning Group, Due Date, NDE Method, Unit, Asset, and Access Method are required.';
   const [managedProjectOptions, setManagedProjectOptions] = useState(() => getProjectOptions());
+  const [managedUnitOptions, setManagedUnitOptions] = useState(() => getUnitOptions());
   const [createValidationMessage, setCreateValidationMessage] = useState<string | null>(null);
   const [editValidationMessage, setEditValidationMessage] = useState<string | null>(null);
   const currentUserDisplayName = 'Operator (placeholder)';
@@ -130,6 +131,7 @@ export function NdeWorkspacePage({
 
   useEffect(() => {
     setManagedProjectOptions(getProjectOptions());
+    setManagedUnitOptions(getUnitOptions());
   }, [isCreateModalOpen]);
 
   useEffect(() => {
@@ -444,8 +446,8 @@ export function NdeWorkspacePage({
               <label>Due Date *<input required type="date" value={createForm.dueDate} onChange={(event) => setCreateForm((current) => ({ ...current, dueDate: event.target.value }))} /></label>
               <label>NDE Method *<select required value={createForm.taskType} onChange={(event) => setCreateForm((current) => ({ ...current, taskType: event.target.value }))}><option value="">Select an NDE Method...</option>{ndeMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               <label>Code Criteria<input value={createForm.code} onChange={(event) => setCreateForm((current) => ({ ...current, code: event.target.value }))} /></label>
-              <label>Unit *<input required value={createForm.unit} onChange={(event) => setCreateForm((current) => ({ ...current, unit: event.target.value }))} /></label>
-              <label>Asset *<input required value={createForm.asset} onChange={(event) => setCreateForm((current) => ({ ...current, asset: event.target.value }))} /></label>
+              <label>Unit *<select required value={createForm.unit} onChange={(event) => setCreateForm((current) => ({ ...current, unit: event.target.value, asset: '' }))}><option value="">Select a Unit...</option>{managedUnitOptions.filter((option) => option.isActive).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
+              <label>Asset *<select required disabled={!createForm.unit} value={createForm.asset} onChange={(event) => setCreateForm((current) => ({ ...current, asset: event.target.value }))}><option value="">{createForm.unit ? 'Select an Asset...' : 'Select a Unit first...'}</option>{getAssetsForUnit(createForm.unit).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
               <label>Request Status<select value={createForm.requestStatus} onChange={(event) => setCreateForm((current) => ({ ...current, requestStatus: event.target.value as NdeLogStatus }))}><option>Draft</option><option>Requested</option></select></label>
               <label>Access Method *<select required value={createForm.accessType} onChange={(event) => setCreateForm((current) => ({ ...current, accessType: event.target.value }))}><option value="">Select an Access Method...</option>{accessMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               
@@ -482,8 +484,8 @@ export function NdeWorkspacePage({
               <label>Due Date *<input required type="date" value={editForm.dueDate} onChange={(event) => setEditForm((current) => ({ ...current, dueDate: event.target.value }))} /></label>
               <label>NDE Method *<select required value={editForm.method} onChange={(event) => setEditForm((current) => ({ ...current, method: event.target.value }))}><option value="">Select an NDE Method...</option>{ndeMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               <label>Code Criteria<input value={editForm.code} onChange={(event) => setEditForm((current) => ({ ...current, code: event.target.value }))} /></label>
-              <label>Unit *<input required value={editForm.unit} onChange={(event) => setEditForm((current) => ({ ...current, unit: event.target.value }))} /></label>
-              <label>Asset *<input required value={editForm.asset} onChange={(event) => setEditForm((current) => ({ ...current, asset: event.target.value }))} /></label>
+              <label>Unit *<select required value={editForm.unit} onChange={(event) => setEditForm((current) => ({ ...current, unit: event.target.value, asset: '' }))}><option value="">Select a Unit...</option>{managedUnitOptions.filter((option) => option.isActive).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
+              <label>Asset *<select required disabled={!editForm.unit} value={editForm.asset} onChange={(event) => setEditForm((current) => ({ ...current, asset: event.target.value }))}><option value="">{editForm.unit ? 'Select an Asset...' : 'Select a Unit first...'}</option>{getAssetsForUnit(editForm.unit).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
               <label>Access Method *<select required value={editForm.accessType} onChange={(event) => setEditForm((current) => ({ ...current, accessType: event.target.value }))}><option value="">Select an Access Method...</option>{accessMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               <label>Reference<input value={editForm.reference} onChange={(event) => setEditForm((current) => ({ ...current, reference: event.target.value }))} /></label>
             </div>

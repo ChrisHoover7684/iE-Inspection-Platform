@@ -38,11 +38,21 @@ public class NdeLogReadModelFoundationTests
         Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.ReportReady);
         Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Downloaded);
         Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.NotAvailable);
-        Assert.All(rows.Where(r => r.Status is NdeLogStatuses.Draft or NdeLogStatuses.Requested or NdeLogStatuses.Scheduled or NdeLogStatuses.InProgress or NdeLogStatuses.Cancelled),
-            r => Assert.DoesNotContain(r.ReportStatus, [NdeReportStatuses.ReportReady, NdeReportStatuses.Downloaded]));
+        Assert.All(
+            rows.Where(r =>
+                r.Status is NdeLogStatuses.Draft
+                    or NdeLogStatuses.Requested
+                    or NdeLogStatuses.Scheduled
+                    or NdeLogStatuses.InProgress
+                    or NdeLogStatuses.Cancelled),
+            r => Assert.False(
+                r.ReportStatus is NdeReportStatuses.ReportReady or NdeReportStatuses.Downloaded,
+                $"{r.RequestNumber} should not be downloadable while status is {r.Status}."));
         Assert.All(rows.Where(r => r.ReportStatus is NdeReportStatuses.ReportReady or NdeReportStatuses.Downloaded), r =>
         {
-            Assert.Contains(r.Status, [NdeLogStatuses.Reviewed, NdeLogStatuses.Closed]);
+            Assert.True(
+                r.Status is NdeLogStatuses.Reviewed or NdeLogStatuses.Closed,
+                $"{r.RequestNumber} has downloadable report status but request status is {r.Status}.");
             Assert.False(string.IsNullOrWhiteSpace(r.ReportNumber));
             Assert.False(string.IsNullOrWhiteSpace(r.ReportFileName));
             Assert.False(string.IsNullOrWhiteSpace(r.ReportDownloadUrl));

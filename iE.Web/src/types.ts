@@ -36,6 +36,8 @@ export type NdeLogItem = {
   code?: string;
   codeCriteria?: string;
   unit?: string;
+  facilityId?: string;
+  facilityName?: string;
   inspectionDetails?: string;
   scopeItems?: NdeRequestScopeItem[];
 };
@@ -109,6 +111,7 @@ export type InspectionReport = {
   reportNumber?: string;
   equipmentTag?: string;
   unit?: string;
+  facilityName?: string;
   systemId?: string;
   circuitId?: string;
   service?: string;

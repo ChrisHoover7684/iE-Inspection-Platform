@@ -416,13 +416,16 @@ const todayIso = new Date().toISOString().slice(0, 10);
     });
 
     const createdItems = createForm.createSeparateStagedWeldRequests
-      ? stagedSelections.map((stage, index) => ({
-        ...createBase(nextSequence + index),
-        id: `nde-${String(nextSequence + index).padStart(4, '0')}`,
-        ndeStage: stage,
-        relatedRequestGroupId: `group-${Date.now()}-${nextSequence}`,
-        relatedRequestGroupLabel: createForm.weldId || createForm.location || 'Staged weld requests',
-      }))
+      ? (() => {
+        const relatedRequestGroupId = `group-${Date.now()}-${nextSequence}`;
+        return stagedSelections.map((stage, index) => ({
+          ...createBase(nextSequence + index),
+          id: `nde-${String(nextSequence + index).padStart(4, '0')}`,
+          ndeStage: stage,
+          relatedRequestGroupId,
+          relatedRequestGroupLabel: createForm.weldId || createForm.location || 'Staged weld requests',
+        }));
+      })()
       : [{ ...createBase(nextSequence), id: `nde-${String(nextSequence).padStart(4, '0')}` }];
 
     setItems((current) => [...createdItems, ...current]);

@@ -45,8 +45,8 @@ public sealed record NdeLogItemReadModel(
     string? Unit = null,
     string? InspectionDetails = null,
     string? NdeStage = null,
-    string? WeldId,
-    string? Location,
+    string? WeldId = null,
+    string? Location = null,
     string? RelatedRequestGroupId = null,
     string? RelatedRequestGroupLabel = null);
 

@@ -363,10 +363,12 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     );
 
     expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
+    const rowsBefore = screen.getAllByRole('row').length;
     fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
     fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
     expect(screen.getByText('Project, Owning Group, Due Date, NDE Method, Facility, Unit, Asset, and Access Method are required.')).toBeInTheDocument();
-    expect(screen.getAllByText('NDE-26-0011').length).toBeGreaterThan(0);
+    expect(screen.getByRole('dialog', { name: 'New NDE Request' })).toBeInTheDocument();
+    expect(screen.getAllByRole('row').length).toBe(rowsBefore);
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     fireEvent.click(screen.getByText('NDE-26-0001'));

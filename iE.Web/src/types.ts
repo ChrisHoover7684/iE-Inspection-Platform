@@ -10,7 +10,7 @@ export type NdeLogStatus =
   | 'Cancelled'
   | 'Overdue';
 
-export type NdeReportStatus = 'Not Started' | 'In Progress' | 'Results Received' | 'Report Ready' | 'Downloaded' | 'Not Available';
+export type NdeReportStatus = 'Not Started' | 'Not Available' | 'In Progress' | 'Complete';
 
 export type NdeLogItem = {
   id: string;

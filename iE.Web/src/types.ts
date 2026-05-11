@@ -11,6 +11,30 @@ export type NdeLogStatus =
   | 'Overdue';
 
 export type NdeReportStatus = 'Not Started' | 'Not Available' | 'In Progress' | 'Complete';
+export type NdeReportResult = 'Acceptable' | 'Rejectable' | 'Monitor' | 'Inconclusive';
+export type NdeReportDraft = {
+  id: string;
+  ndeRequestId: string;
+  requestNumber: string;
+  reportNumber: string;
+  method: string;
+  stage?: NdeLogItem['ndeStage'];
+  inspector?: string;
+  examinationDate?: string;
+  procedure?: string;
+  acceptanceCriteria?: string;
+  surfaceCondition?: string;
+  examinedArea?: string;
+  indicationsFound: boolean;
+  result?: NdeReportResult;
+  findings?: string;
+  recommendations?: string;
+  notes?: string;
+  status: 'Draft' | 'Complete';
+  generatedAtUtc?: string;
+  reportFileName?: string;
+  reportDownloadUrl?: string;
+};
 
 export type NdeLogItem = {
   id: string;

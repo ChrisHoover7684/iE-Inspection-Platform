@@ -747,4 +747,22 @@ it('renders facilities admin route', () => {
 
   expect(screen.getByRole('heading', { level: 2, name: 'Facilities' })).toBeInTheDocument();
   expect(screen.getByText(/Active Facilities:/)).toBeInTheDocument();
+
+  it('opens report workspace and supports draft/save/preview actions', async () => {
+    render(<MemoryRouter initialEntries={['/nde-requests']}><App /></MemoryRouter>);
+    expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
+    const row = screen.getByText('NDE-26-0001').closest('tr') as HTMLTableRowElement;
+    fireEvent.click(within(row).getByRole('button', { name: 'Fill Report' }));
+    const modal = screen.getByRole('dialog', { name: 'NDE Report Workspace' });
+    expect(within(modal).getByText('Generic NDE Report Draft')).toBeInTheDocument();
+    fireEvent.change(within(modal).getByLabelText('Inspector / Technician *'), { target: { value: 'Inspector A' } });
+    fireEvent.change(within(modal).getByLabelText('Examination Date *'), { target: { value: '2026-05-11' } });
+    fireEvent.change(within(modal).getByLabelText('Procedure / Technique *'), { target: { value: 'PT-001' } });
+    fireEvent.change(within(modal).getByLabelText('Result *'), { target: { value: 'Acceptable' } });
+    fireEvent.click(within(modal).getByRole('button', { name: 'Save Draft' }));
+    expect(await screen.findByText(/saved locally until backend report persistence is connected/i)).toBeInTheDocument();
+    fireEvent.click(within(modal).getByRole('button', { name: 'Mark Complete & Generate' }));
+    expect(await screen.findByText(/Report generated as demo draft/i)).toBeInTheDocument();
+    expect(within(modal).getByText(/NDE Report Preview/)).toBeInTheDocument();
+  });
 });

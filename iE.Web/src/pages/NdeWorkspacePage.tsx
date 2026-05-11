@@ -24,7 +24,7 @@ const statusOptions: Array<NdeLogStatus | 'All'> = [
   'Overdue',
 ];
 
-const requestNumberPattern = /^NDE-(\d{2})-(\d{4})$/;
+const requestNumberPattern = /^NDE-(\d{2})-(\d{3,})$/;
 const methodAbbreviations: Record<string, string> = {
   PT: 'PT',
   MT: 'MT',

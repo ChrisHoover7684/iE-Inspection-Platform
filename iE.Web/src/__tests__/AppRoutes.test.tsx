@@ -303,7 +303,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     fireEvent.change(within(modal).getByLabelText('Reference'), { target: { value: 'REF-ROPE-77' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
 
-    fireEvent.click((await screen.findAllByText('NDE-26-011'))[0]);
+    fireEvent.click((await screen.findAllByText('NDE-26-0011'))[0]);
     expect(screen.getAllByText('Rope Access').length).toBeGreaterThan(0);
     expect(screen.getByText('REF-ROPE-77')).toBeInTheDocument();
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
@@ -363,7 +363,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
     fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
     expect(screen.getByText('Project, Owning Group, Due Date, NDE Method, Facility, Unit, Asset, and Access Method are required.')).toBeInTheDocument();
-    expect(screen.queryByText('NDE-26-011')).not.toBeInTheDocument();
+    expect(screen.queryByText('NDE-26-0011')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     fireEvent.click(screen.getByText('NDE-26-0001'));

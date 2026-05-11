@@ -420,15 +420,56 @@ describe('App routes', () => {
     expect(screen.queryByText('NDE-26-002')).not.toBeInTheDocument();
   });
 
-  it('renders units/assets reference page with scoped regions', () => {
+  it('renders units/assets reference page with unit and asset table layout', () => {
     render(<MemoryRouter initialEntries={['/reference-data-units-assets']}><App /></MemoryRouter>);
     expect(screen.getByRole('heading', { level: 2, name: 'Reference Data / Units & Assets' })).toBeInTheDocument();
     expect(screen.getByText('Demo Facility')).toBeInTheDocument();
     const unitsRegion = screen.getByRole('region', { name: 'Unit reference data' });
     const assetsRegion = screen.getByRole('region', { name: 'Asset reference data' });
-    expect(within(unitsRegion).getByText('01-CRUDE')).toBeInTheDocument();
-    expect(within(unitsRegion).getByText('02-VAC')).toBeInTheDocument();
-    expect(within(assetsRegion).getByDisplayValue('P-102A')).toBeInTheDocument();
+    expect(within(unitsRegion).getByText('Unit #')).toBeInTheDocument();
+    expect(within(unitsRegion).getByText('Unit Name')).toBeInTheDocument();
+    expect(within(unitsRegion).getByText('01')).toBeInTheDocument();
+    expect(within(unitsRegion).getByText('CRUDE')).toBeInTheDocument();
+    expect(within(unitsRegion).getByText('02')).toBeInTheDocument();
+    expect(within(unitsRegion).getByText('VAC')).toBeInTheDocument();
+    expect(within(assetsRegion).getByText('Assets — 01-CRUDE')).toBeInTheDocument();
+    expect(within(assetsRegion).getByText('Asset Tag')).toBeInTheDocument();
+    expect(within(assetsRegion).getByText('P-102A')).toBeInTheDocument();
+    expect(within(assetsRegion).getByText('CIR-3C-118')).toBeInTheDocument();
+    expect(within(assetsRegion).getByRole('button', { name: 'Import Assets from Excel' })).toBeDisabled();
+    expect(within(assetsRegion).getByText('Excel asset import will be connected later.')).toBeInTheDocument();
+  });
+
+  it('adds new unit and asset and exposes combined values in NDE form dropdowns', async () => {
+    render(<MemoryRouter initialEntries={['/reference-data-units-assets']}><App /></MemoryRouter>);
+
+    fireEvent.change(screen.getByLabelText('Unit #'), { target: { value: '08' } });
+    fireEvent.change(screen.getByLabelText('Unit Name'), { target: { value: 'Sulfur' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add Unit' }));
+
+    expect(screen.getByText('08')).toBeInTheDocument();
+    expect(screen.getByText('SULFUR')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('New Asset Tag'), { target: { value: 'p-999a' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add Asset' }));
+    expect(screen.getByText('P-999A')).toBeInTheDocument();
+
+    cleanup();
+    render(<MemoryRouter initialEntries={['/nde-requests']}><App /></MemoryRouter>);
+    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
+    const modal = screen.getByRole('dialog', { name: 'New NDE Request' });
+    fireEvent.change(within(modal).getByLabelText('Unit *'), { target: { value: '08-SULFUR' } });
+    expect(within(modal).getByLabelText('Unit *')).toHaveValue('08-SULFUR');
+
+    cleanup();
+    render(<MemoryRouter initialEntries={['/nde-requests']}><App /></MemoryRouter>);
+    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
+    const modalTwo = screen.getByRole('dialog', { name: 'New NDE Request' });
+    fireEvent.change(within(modalTwo).getByLabelText('Unit *'), { target: { value: '01-CRUDE' } });
+    fireEvent.change(within(modalTwo).getByLabelText('Asset *'), { target: { value: 'P-999A' } });
+    expect(within(modalTwo).getByLabelText('Asset *')).toHaveValue('P-999A');
   });
 
   it('loads API Inspection Reports page from /reports', async () => {

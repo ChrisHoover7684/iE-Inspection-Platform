@@ -36,6 +36,23 @@ export const defaultUnits: UnitReferenceOption[] = [
   { id: '07-tank-farm', name: '07-TANK FARM', isActive: true, assets: [{ id: 'tk-804', name: 'TK-804', isActive: true }, { id: 'tk-805', name: 'TK-805', isActive: true }] },
 ];
 
+
+export function parseUnitNumber(unitValue: string): string {
+  const value = unitValue.trim();
+  const separator = value.indexOf('-');
+  return separator >= 0 ? value.slice(0, separator).trim() : value;
+}
+
+export function parseUnitName(unitValue: string): string {
+  const value = unitValue.trim();
+  const separator = value.indexOf('-');
+  return separator >= 0 ? value.slice(separator + 1).trim() : value;
+}
+
+export function formatUnitValue(unitNumber: string, unitName: string): string {
+  return `${unitNumber.trim()}-${unitName.trim().toUpperCase()}`;
+}
+
 const projectStorageKey = 'ie.nde.referenceData.projects';
 const unitsAssetsStorageKey = 'ie.nde.referenceData.unitsAssets';
 

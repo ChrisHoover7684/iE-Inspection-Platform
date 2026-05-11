@@ -1183,3 +1183,45 @@ html, body, #root {
         grid-template-columns: 1fr;
     }
 }
+
+.reference-data-layout {
+    overflow-x: hidden;
+}
+
+.reference-data-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.reference-table {
+    table-layout: fixed;
+}
+
+.reference-table th,
+.reference-table td {
+    word-break: break-word;
+}
+
+.reference-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: end;
+    margin-bottom: 8px;
+}
+
+.reference-actions label {
+    min-width: 140px;
+    flex: 1;
+}
+
+.selected-reference-row {
+    background: #e7f1ff;
+}
+
+@media (max-width: 900px) {
+    .reference-data-grid {
+        grid-template-columns: 1fr;
+    }
+}

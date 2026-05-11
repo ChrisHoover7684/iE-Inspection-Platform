@@ -26,11 +26,15 @@ const statusOptions: Array<NdeLogStatus | 'All'> = [
 // Frontend-only demo/read-model data for NDE workspace usability.
 // Replace with backend read-model data when the NDE workflow API is connected.
 const mockRows: NdeLogItem[] = [
-  { id: 'nde-001', requestNumber: 'NDE-26-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started', accessType: 'Ground' },
+  { id: 'nde-001', requestNumber: 'NDE-26-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started', accessType: 'Ground', project: 'Demo Turnaround 2026', owningGroup: 'Inspection', code: 'API 570', unit: 'Unit 73' },
   { id: 'nde-002', requestNumber: 'NDE-26-002', circuitId: 'CIR-4A-220', method: 'RT', status: 'Requested', priority: 'High', requestedBy: 'M. Patel', assignedTo: 'S. Owens', dueDate: '2026-05-17', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-002' },
   { id: 'nde-003', requestNumber: 'NDE-26-003', equipmentTag: 'E-4401', method: 'MT', status: 'Scheduled', priority: 'Normal', requestedBy: 'T. Nguyen', assignedTo: 'R. Hall', dueDate: '2026-05-13', reportStatus: 'Not Available' },
   {
     id: 'nde-004',
+    project: 'Unit 73 Maintenance',
+    owningGroup: 'Mechanical Integrity',
+    code: 'NBIC',
+    unit: 'Unit 73',
     requestNumber: 'NDE-26-004',
     assetTag: 'HX-22B',
     method: 'PT',
@@ -54,7 +58,7 @@ const mockRows: NdeLogItem[] = [
   { id: 'nde-007', requestNumber: 'NDE-26-007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Complete', reportNumber: 'RPT-26-VT-007', reportFileName: 'RPT-26-VT-007.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-VT-007.pdf' },
   { id: 'nde-008', requestNumber: 'NDE-26-008', equipmentTag: 'PSV-91', method: 'UT Thickness', status: 'Cancelled', priority: 'Low', requestedBy: 'C. White', assignedTo: 'B. Young', dueDate: '2026-05-04', reportStatus: 'Not Started' },
   { id: 'nde-009', requestNumber: 'NDE-26-009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-009' },
-  { id: 'nde-010', requestNumber: 'NDE-26-010', assetTag: 'P-300C', method: 'PAUT', status: 'Reviewed', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-010', reportFileName: 'RPT-26-PAUT-010.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-010.pdf' },
+  { id: 'nde-010', requestNumber: 'NDE-26-010', assetTag: 'P-300C', method: 'PAUT', status: 'Reviewed', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-010', reportFileName: 'RPT-26-PAUT-010.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-010.pdf', project: 'Corrosion Study 2026', owningGroup: 'Operations', code: 'API 510', unit: 'Crude West' },
 ];
 
 type NdeTransition = { label: string; status: NdeLogStatus };
@@ -241,6 +245,10 @@ export function NdeWorkspacePage({
           row.method,
           row.accessType,
           row.reference,
+          row.project,
+          row.owningGroup,
+          row.code,
+          row.unit,
           row.scopeItems?.map((scopeItem) => `${scopeItem.displayName} ${scopeItem.stage} ${scopeItem.weldId ?? ''}`).join(' '),
           row.inspectionDetails,
           row.requestedBy,
@@ -270,6 +278,10 @@ export function NdeWorkspacePage({
       accessType: createForm.accessType || undefined,
       reference: createForm.reference || undefined,
       inspectionDetails: createForm.inspectionDetails || undefined,
+      project: createForm.project || undefined,
+      owningGroup: createForm.owningGroup || undefined,
+      code: createForm.code || undefined,
+      unit: createForm.unit || undefined,
     };
 
     setItems((current) => [createdItem, ...current]);
@@ -281,13 +293,13 @@ export function NdeWorkspacePage({
   const openEditModal = () => {
     if (!selectedItem) return;
     setEditForm({
-      project: '',
-      owningGroup: '',
+      project: selectedItem.project ?? '',
+      owningGroup: selectedItem.owningGroup ?? '',
       priority: selectedItem.priority,
       dueDate: selectedItem.dueDate ?? '',
       method: selectedItem.method ?? '',
-      code: '',
-      unit: '',
+      code: selectedItem.code ?? '',
+      unit: selectedItem.unit ?? '',
       asset: selectedItem.assetTag ?? selectedItem.circuitId ?? selectedItem.equipmentTag ?? '',
       accessType: selectedItem.accessType ?? '',
       reference: selectedItem.reference ?? '',
@@ -311,6 +323,10 @@ export function NdeWorkspacePage({
         accessType: editForm.accessType || undefined,
         reference: editForm.reference || undefined,
         inspectionDetails: editForm.inspectionDetails || undefined,
+        project: editForm.project || undefined,
+        owningGroup: editForm.owningGroup || undefined,
+        code: editForm.code || undefined,
+        unit: editForm.unit || undefined,
       };
     }));
     setIsEditModalOpen(false);
@@ -340,10 +356,14 @@ export function NdeWorkspacePage({
   };
 
   const exportVisibleTable = () => {
-    const headers = ['Request #', 'Asset / Circuit / Equipment', 'Method', 'Access Method', 'Reference', 'Inspection Details', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
+    const headers = ['Request #', 'Asset / Circuit / Equipment', 'Project', 'Owning Group', 'Code', 'Unit', 'Method', 'Access Method', 'Reference', 'Inspection Details', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
     const rows = filteredItems.map((item) => [
       item.requestNumber,
       item.assetTag ?? item.circuitId ?? item.equipmentTag ?? '—',
+      item.project ?? '—',
+      item.owningGroup ?? '—',
+      item.code ?? '—',
+      item.unit ?? '—',
       item.method,
       item.accessType ?? '—',
       item.reference ?? '—',
@@ -467,7 +487,7 @@ export function NdeWorkspacePage({
           <input
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
-            placeholder="Search request #, asset, method, access method, reference, inspection details, or assignee"
+            placeholder="Search request #, asset, method, project, owning group, code, unit, access method, reference, inspection details, or assignee"
           />
         </label>
         <label>
@@ -521,7 +541,7 @@ export function NdeWorkspacePage({
                   setSelectedForBulkDownload((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id));
                 }} onClick={(event) => event.stopPropagation()} /></td>
                 <td>{item.requestNumber}</td>
-                <td>{item.assetTag ?? item.circuitId ?? item.equipmentTag ?? '—'}</td>
+                <td><div>{item.assetTag ?? item.circuitId ?? item.equipmentTag ?? '—'}</div>{item.unit && <div className="muted nde-unit-summary">Unit: {item.unit}</div>}</td>
                 <td>
                   <div>{item.method}</div>
                   {formatScopeSummary(item) && <div className="muted nde-scope-summary">{formatScopeSummary(item)}</div>}
@@ -586,6 +606,10 @@ export function NdeWorkspacePage({
                 <dt>Report #</dt><dd>{selectedItem.reportNumber ?? '—'}</dd>
                 <dt>Asset / Circuit / Equipment</dt><dd>{selectedItem.assetTag ?? selectedItem.circuitId ?? selectedItem.equipmentTag ?? '—'}</dd>
                 <dt>Method</dt><dd>{selectedItem.method}</dd>
+                <dt>Project</dt><dd>{selectedItem.project ?? '—'}</dd>
+                <dt>Owning Group</dt><dd>{selectedItem.owningGroup ?? '—'}</dd>
+                <dt>Code</dt><dd>{selectedItem.code ?? '—'}</dd>
+                <dt>Unit</dt><dd>{selectedItem.unit ?? '—'}</dd>
                 <dt>Access Method</dt><dd>{selectedItem.accessType ?? '—'}</dd>
                 <dt>Reference</dt><dd>{selectedItem.reference ?? '—'}</dd>
                 <dt>Status</dt><dd>{selectedItem.status}</dd>

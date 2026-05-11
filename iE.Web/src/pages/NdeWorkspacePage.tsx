@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ndeApi } from '../api';
 import type { NdeLogItem, NdeLogStatus, NdeLogTransitionEvent } from '../types';
 import { accessMethodOptions, getAssetsForUnit, getProjectOptions, getUnitOptions, ndeMethodOptions, owningGroupOptions } from '../ndeRequestReferenceData';
+import { getFacilities } from '../organizationReferenceData';
 
 type NdeWorkspacePageProps = {
   initialStatus?: NdeLogStatus | 'All';
@@ -152,6 +153,7 @@ export function NdeWorkspacePage({
   const requiredFieldsMessage = 'Project, Owning Group, Due Date, NDE Method, Unit, Asset, and Access Method are required.';
   const [managedProjectOptions, setManagedProjectOptions] = useState(() => getProjectOptions());
   const [managedUnitOptions, setManagedUnitOptions] = useState(() => getUnitOptions());
+  const facilities = useMemo(() => getFacilities(), []);
   const [createValidationMessage, setCreateValidationMessage] = useState<string | null>(null);
   const [editValidationMessage, setEditValidationMessage] = useState<string | null>(null);
   const currentUserDisplayName = 'Operator (placeholder)';
@@ -679,6 +681,7 @@ export function NdeWorkspacePage({
                 <dt>Owning Group</dt><dd>{selectedItem.owningGroup ?? '—'}</dd>
                 <dt>Code Criteria</dt><dd>{selectedItem.codeCriteria ?? selectedItem.code ?? '—'}</dd>
                 <dt>Unit</dt><dd>{selectedItem.unit ?? '—'}</dd>
+                <dt>Facility</dt><dd>{(() => { const unitOption = selectedItem.unit ? managedUnitOptions.find((unit) => unit.name === selectedItem.unit) : undefined; const facility = unitOption ? facilities.find((item) => item.id === unitOption.facilityId) : undefined; return facility?.name ?? '—'; })()}</dd>
                 <dt>Access Method</dt><dd>{selectedItem.accessType ?? '—'}</dd>
                 <dt>Reference</dt><dd>{selectedItem.reference ?? '—'}</dd>
                 <dt>Status</dt><dd>{selectedItem.status}</dd>

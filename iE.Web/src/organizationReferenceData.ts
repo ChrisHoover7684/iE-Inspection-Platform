@@ -31,6 +31,7 @@ export type FacilityAuthorityRole =
 export type FacilityAccessAssignment = {
   userId: string;
   facilityId: string;
+  unitName?: string;
   role: FacilityAuthorityRole;
   isActive: boolean;
 };
@@ -58,7 +59,7 @@ export const defaultFacilityAccessAssignments: FacilityAccessAssignment[] = [
   { userId: 'user-1', facilityId: 'fac-demo-main', role: 'Facility Admin', isActive: true },
   { userId: 'user-1', facilityId: 'fac-west-terminal', role: 'Inspection Manager', isActive: true },
   { userId: 'user-2', facilityId: 'fac-demo-main', role: 'NDE Coordinator', isActive: true },
-  { userId: 'user-2', facilityId: 'fac-west-terminal', role: 'Inspector', isActive: true },
+  { userId: 'user-2', facilityId: 'fac-west-terminal', unitName: '02-VAC', role: 'Inspector', isActive: true },
   { userId: 'user-3', facilityId: 'fac-north-plant', role: 'NDE Requester', isActive: true },
   { userId: 'user-4', facilityId: 'fac-demo-main', role: 'Viewer', isActive: false },
 ];

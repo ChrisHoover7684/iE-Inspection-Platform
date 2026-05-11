@@ -12,6 +12,7 @@ export type AssetReferenceOption = {
 
 export type UnitReferenceOption = {
   id: string;
+  facilityId: string;
   name: string;
   isActive: boolean;
   assets: AssetReferenceOption[];
@@ -27,13 +28,13 @@ export const defaultProjectOptions: ProjectOption[] = [
 ];
 
 export const defaultUnits: UnitReferenceOption[] = [
-  { id: '01-crude', name: '01-CRUDE', isActive: true, assets: [{ id: 'p-102a', name: 'P-102A', isActive: true }, { id: 'cir-3c-118', name: 'CIR-3C-118', isActive: true }, { id: 'e-1101', name: 'E-1101', isActive: true }, { id: 'v-101', name: 'V-101', isActive: true }] },
-  { id: '02-vac', name: '02-VAC', isActive: true, assets: [{ id: 'p-300c', name: 'P-300C', isActive: true }, { id: 'cir-4a-220', name: 'CIR-4A-220', isActive: true }, { id: 'e-4401', name: 'E-4401', isActive: true }, { id: 'hx-22b', name: 'HX-22B', isActive: true }, { id: 'cir-9d-032', name: 'CIR-9D-032', isActive: true }] },
-  { id: '03-fcc', name: '03-FCC', isActive: true, assets: [{ id: 'l-5507', name: 'L-5507', isActive: true }, { id: 'e-3301', name: 'E-3301', isActive: true }, { id: 'v-301', name: 'V-301', isActive: true }] },
-  { id: '04-hydrotreating', name: '04-HYDROTREATING', isActive: true, assets: [] },
-  { id: '05-reformer', name: '05-REFORMER', isActive: true, assets: [] },
-  { id: '06-utilities', name: '06-UTILITIES', isActive: true, assets: [{ id: 'psv-91', name: 'PSV-91', isActive: true }, { id: 'p-601a', name: 'P-601A', isActive: true }] },
-  { id: '07-tank-farm', name: '07-TANK FARM', isActive: true, assets: [{ id: 'tk-804', name: 'TK-804', isActive: true }, { id: 'tk-805', name: 'TK-805', isActive: true }] },
+  { id: '01-crude', facilityId: 'fac-demo-main', name: '01-CRUDE', isActive: true, assets: [{ id: 'p-102a', name: 'P-102A', isActive: true }, { id: 'cir-3c-118', name: 'CIR-3C-118', isActive: true }, { id: 'e-1101', name: 'E-1101', isActive: true }, { id: 'v-101', name: 'V-101', isActive: true }] },
+  { id: '02-vac', facilityId: 'fac-demo-main', name: '02-VAC', isActive: true, assets: [{ id: 'p-300c', name: 'P-300C', isActive: true }, { id: 'cir-4a-220', name: 'CIR-4A-220', isActive: true }, { id: 'e-4401', name: 'E-4401', isActive: true }, { id: 'hx-22b', name: 'HX-22B', isActive: true }, { id: 'cir-9d-032', name: 'CIR-9D-032', isActive: true }] },
+  { id: '03-fcc', facilityId: 'fac-demo-main', name: '03-FCC', isActive: true, assets: [{ id: 'l-5507', name: 'L-5507', isActive: true }, { id: 'e-3301', name: 'E-3301', isActive: true }, { id: 'v-301', name: 'V-301', isActive: true }] },
+  { id: '04-hydrotreating', facilityId: 'fac-demo-main', name: '04-HYDROTREATING', isActive: true, assets: [] },
+  { id: '05-reformer', facilityId: 'fac-demo-main', name: '05-REFORMER', isActive: true, assets: [] },
+  { id: '06-utilities', facilityId: 'fac-demo-main', name: '06-UTILITIES', isActive: true, assets: [{ id: 'psv-91', name: 'PSV-91', isActive: true }, { id: 'p-601a', name: 'P-601A', isActive: true }] },
+  { id: '07-tank-farm', facilityId: 'fac-demo-main', name: '07-TANK FARM', isActive: true, assets: [{ id: 'tk-804', name: 'TK-804', isActive: true }, { id: 'tk-805', name: 'TK-805', isActive: true }] },
 ];
 
 
@@ -67,10 +68,10 @@ export function getProjectOptions(): ProjectOption[] { try { const saved = hasSt
 export function saveProjectOptions(projectOptions: ProjectOption[]): void { try { if (hasStorage()) window.localStorage.setItem(projectStorageKey, JSON.stringify(projectOptions)); } catch {} }
 export function resetProjectOptions(): ProjectOption[] { saveProjectOptions(defaultProjectOptions); return defaultProjectOptions; }
 
-export function getUnitOptions(): UnitReferenceOption[] { try { if (!hasStorage()) return defaultUnits; const saved = window.localStorage.getItem(unitsAssetsStorageKey); return saved ? JSON.parse(saved) as UnitReferenceOption[] : defaultUnits; } catch { return defaultUnits; } }
+export function getUnitOptions(facilityId?: string): UnitReferenceOption[] { try { if (!hasStorage()) return facilityId ? defaultUnits.filter((u) => u.facilityId === facilityId) : defaultUnits; const saved = window.localStorage.getItem(unitsAssetsStorageKey); const units = saved ? JSON.parse(saved) as UnitReferenceOption[] : defaultUnits; return facilityId ? units.filter((u) => u.facilityId === facilityId) : units; } catch { return facilityId ? defaultUnits.filter((u) => u.facilityId === facilityId) : defaultUnits; } }
 export function saveUnitOptions(unitOptions: UnitReferenceOption[]): void { try { if (hasStorage()) window.localStorage.setItem(unitsAssetsStorageKey, JSON.stringify(unitOptions)); } catch {} }
 export function resetUnitOptions(): UnitReferenceOption[] { saveUnitOptions(defaultUnits); return defaultUnits; }
-export function getAssetsForUnit(unitName: string): AssetReferenceOption[] { const unit = getUnitOptions().find((u) => u.name === unitName); return unit?.assets.filter((a) => a.isActive) ?? []; }
+export function getAssetsForUnit(unitName: string, facilityId?: string): AssetReferenceOption[] { const unit = getUnitOptions(facilityId).find((u) => u.name === unitName); return unit?.assets.filter((a) => a.isActive) ?? []; }
 export function saveAssetsForUnit(unitName: string, assets: AssetReferenceOption[]): void { const next = getUnitOptions().map((u) => u.name === unitName ? { ...u, assets } : u); saveUnitOptions(next); }
 export function resetUnitsAndAssets(): UnitReferenceOption[] { return resetUnitOptions(); }
 

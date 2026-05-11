@@ -13,6 +13,7 @@ import { PlaceholderPage } from './pages/PlaceholderPage';
 import { NdeWorkspacePage } from './pages/NdeWorkspacePage';
 import { ReferenceDataProjectsPage } from './pages/ReferenceDataProjectsPage';
 import { ReferenceDataUnitsAssetsPage } from './pages/ReferenceDataUnitsAssetsPage';
+import { UsersAccessFoundationPage } from './pages/UsersAccessFoundationPage';
 
 function ShellRoute({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>;
@@ -47,7 +48,7 @@ export default function App() {
       <Route path="/results-received" element={<ShellRoute><NdeWorkspacePage title="Results Received" initialStatus="Results Received" description="Triage received NDE results before review and closure." /></ShellRoute>} />
       <Route path="/overdue" element={<ShellRoute><NdeWorkspacePage title="Overdue" initialStatus="Overdue" description="Focus on overdue NDE requests and reports requiring immediate attention." /></ShellRoute>} />
       <Route path="/cancelled" element={<ShellRoute><NdeWorkspacePage title="Cancelled" initialStatus="Cancelled" description="View cancelled NDE requests and reports for audit visibility." /></ShellRoute>} />
-      <Route path="/users-access" element={placeholder('Users & Access', 'Coming soon: user and access administration.')} />
+      <Route path="/users-access" element={<ShellRoute><UsersAccessFoundationPage /></ShellRoute>} />
       <Route path="/facilities" element={placeholder('Facilities', 'Coming soon: facility administration and scopes.')} />
       <Route path="/custom-nde-types" element={placeholder('Custom NDE Types', 'Coming soon: tenant-specific NDE type configuration.')} />
       <Route path="/reference-data-projects" element={<ShellRoute><ReferenceDataProjectsPage /></ShellRoute>} />

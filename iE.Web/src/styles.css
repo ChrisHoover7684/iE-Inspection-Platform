@@ -1249,3 +1249,59 @@ html, body, #root {
 .nde-facility-cell {
     white-space: nowrap;
 }
+
+.nde-action-buttons {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+}
+
+.icon-action-button {
+    width: 2rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.375rem;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #1e293b;
+    cursor: pointer;
+    position: relative;
+}
+
+.icon-action-button:hover:not(:disabled),
+.icon-action-button:focus-visible:not(:disabled) {
+    background: #f8fafc;
+    border-color: #64748b;
+}
+
+.icon-action-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.icon-action-button svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.icon-action-button[data-tooltip]:hover::after,
+.icon-action-button[data-tooltip]:focus-visible::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    transform: translateX(-50%);
+    background: #0f172a;
+    color: #fff;
+    border-radius: 4px;
+    padding: 0.3rem 0.45rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    max-width: 260px;
+    width: max-content;
+    z-index: 10;
+    white-space: normal;
+    text-align: center;
+}

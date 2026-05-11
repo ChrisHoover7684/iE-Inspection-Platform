@@ -145,6 +145,21 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
   });
 
 
+  it('renders icon action buttons with accessible names', () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-requests']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    const row = screen.getByText('NDE-26-0001').closest('tr');
+    expect(row).not.toBeNull();
+    expect(within(row as HTMLTableRowElement).getByRole('button', { name: /fill report for NDE-26-0001/i })).toBeInTheDocument();
+    expect(within(row as HTMLTableRowElement).getByRole('button', {
+      name: /download unavailable until a completed downloadable report exists/i,
+    })).toBeInTheDocument();
+  });
+
   it('shows enabled Download Report action for report-ready rows', () => {
     render(
       <MemoryRouter initialEntries={['/nde-reports']}>
@@ -154,7 +169,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
 
     const readyRow = screen.getByText('NDE-26-0006').closest('tr');
     expect(readyRow).not.toBeNull();
-    expect(within(readyRow as HTMLTableRowElement).getByRole('button', { name: 'Download Report' })).toBeEnabled();
+    expect(within(readyRow as HTMLTableRowElement).getByRole('button', { name: /download completed report RPT-26-PAUT-0006/i })).toBeEnabled();
   });
 
   it('shows enabled Download Report action for downloaded rows', () => {
@@ -166,7 +181,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
 
     const downloadedRow = screen.getByText('NDE-26-0007').closest('tr');
     expect(downloadedRow).not.toBeNull();
-    expect(within(downloadedRow as HTMLTableRowElement).getByRole('button', { name: 'Download Report' })).toBeEnabled();
+    expect(within(downloadedRow as HTMLTableRowElement).getByRole('button', { name: /download completed report RPT-26-VT-0007/i })).toBeEnabled();
   });
 
   it('shows disabled Download Report action for non-ready rows with connected-yet guidance', () => {
@@ -178,9 +193,11 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
 
     const nonReadyRow = screen.getByText('NDE-26-0001').closest('tr');
     expect(nonReadyRow).not.toBeNull();
-    const downloadButton = within(nonReadyRow as HTMLTableRowElement).getByRole('button', { name: 'Download Report' });
+    const downloadButton = within(nonReadyRow as HTMLTableRowElement).getByRole('button', {
+      name: /download unavailable until a completed downloadable report exists/i,
+    });
     expect(downloadButton).toBeDisabled();
-    expect(downloadButton).toHaveAttribute('title', 'Report template/download not connected yet.');
+    expect(downloadButton).toHaveAttribute('title', 'Download unavailable until a completed downloadable report exists. Use Print / Save as PDF for demo-generated reports.');
   });
 
   it('enables bulk download when a downloadable row is selected', () => {
@@ -749,7 +766,7 @@ it('opens report workspace and supports draft/save/preview actions', async () =>
   render(<MemoryRouter initialEntries={['/nde-requests']}><App /></MemoryRouter>);
   expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
   const row = screen.getByText('NDE-26-0001').closest('tr') as HTMLTableRowElement;
-  fireEvent.click(within(row).getByRole('button', { name: 'Fill Report' }));
+  fireEvent.click(within(row).getByRole('button', { name: /fill report for NDE-26-0001/i }));
   const modal = screen.getByRole('dialog', { name: 'NDE Report Workspace' });
   expect(within(modal).getByText('Generic NDE Report Draft')).toBeInTheDocument();
   expect(within(modal).getByLabelText('Surface Condition / Access Notes')).toBeInTheDocument();
@@ -764,4 +781,12 @@ it('opens report workspace and supports draft/save/preview actions', async () =>
   fireEvent.click(within(modal).getByRole('button', { name: 'Mark Complete & Generate' }));
   expect(await screen.findByText(/Report generated as demo draft/i)).toBeInTheDocument();
   expect(within(modal).getByText(/NDE Report Preview/)).toBeInTheDocument();
+});
+
+it('opens report workspace from view/edit icon action', async () => {
+  render(<MemoryRouter initialEntries={['/nde-requests']}><App /></MemoryRouter>);
+  expect(await screen.findByText('NDE-26-0004')).toBeInTheDocument();
+  const row = screen.getByText('NDE-26-0004').closest('tr') as HTMLTableRowElement;
+  fireEvent.click(within(row).getByRole('button', { name: /view or edit report RPT-26-PT-0004/i }));
+  expect(screen.getByRole('dialog', { name: 'NDE Report Workspace' })).toBeInTheDocument();
 });

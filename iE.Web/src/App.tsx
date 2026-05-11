@@ -40,7 +40,10 @@ export default function App() {
       <Route path="/assets" element={placeholder('Assets', 'Coming soon: asset register and activity screens.')} />
       <Route path="/help" element={placeholder('Help', 'Coming soon: support resources and guidance.')} />
       <Route path="/approval-queue" element={placeholder('Approval Queue', 'Coming soon: owner approval queue and decision workflow.')} />
-      <Route path="/nde-reports" element={<ShellRoute><NdeWorkspacePage title="NDE Reports" initialStatuses={['Results Received', 'Reviewed', 'Closed']} description="Review NDE report readiness and closure workflow separate from API inspection reports." /></ShellRoute>} />
+      <Route
+        path="/nde-reports"
+        element={<ShellRoute><NdeWorkspacePage title="NDE Reports" description="Fill out, review, generate, print, and download NDE reports." showCreateRequestButton={false} summaryMode="reports" /></ShellRoute>}
+      />
       <Route path="/exports" element={placeholder('Exports', 'Coming soon: report export jobs and history.')} />
       <Route path="/api-inspection-log" element={placeholder('API Inspection Log', 'Coming soon: API inspection report log and history.')} />
       <Route path="/my-reports" element={placeholder('My Reports', 'Coming soon: personalized report queue and actions.')} />

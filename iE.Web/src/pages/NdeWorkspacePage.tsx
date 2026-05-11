@@ -17,6 +17,8 @@ type NdeWorkspacePageProps = {
   initialStatuses?: NdeLogStatus[];
   title?: string;
   description?: string;
+  showCreateRequestButton?: boolean;
+  summaryMode?: 'requests' | 'reports';
 };
 
 const statusOptions: Array<NdeLogStatus | 'All'> = [
@@ -199,6 +201,8 @@ export function NdeWorkspacePage({
   initialStatuses,
   title = 'NDE Requests',
   description = 'Track NDE requests and reports without mixing API inspection report workflow data.',
+  showCreateRequestButton = true,
+  summaryMode = 'requests',
 }: NdeWorkspacePageProps) {
   const [items, setItems] = useState<NdeLogItem[]>(mockRows);
   const [isLoading, setIsLoading] = useState(true);
@@ -304,13 +308,21 @@ const todayIso = new Date().toISOString().slice(0, 10);
   }, [selectedId]);
 
   const baseItems = useMemo(() => {
-    if (!initialStatuses || initialStatuses.length === 0) {
-      return items;
+    const filteredByStatuses = (!initialStatuses || initialStatuses.length === 0)
+      ? items
+      : items.filter((row) => new Set(initialStatuses).has(row.status));
+
+    if (summaryMode !== 'reports') {
+      return filteredByStatuses;
     }
 
-    const statuses = new Set(initialStatuses);
-    return items.filter((row) => statuses.has(row.status));
-  }, [initialStatuses, items]);
+    return filteredByStatuses.filter((row) => {
+      const hasReportStatus = row.reportStatus === 'In Progress' || row.reportStatus === 'Complete';
+      const hasReportNumber = Boolean(row.reportNumber);
+      const hasDraft = Boolean(reportDrafts[row.id]);
+      return hasReportStatus || hasReportNumber || hasDraft;
+    });
+  }, [initialStatuses, items, reportDrafts, summaryMode]);
 
   const applyStatusToSelection = async (nextStatus: NdeLogStatus) => {
     if (!selectedId) {
@@ -650,11 +662,18 @@ const todayIso = new Date().toISOString().slice(0, 10);
     [selectedItem],
   );
 
-  const summary = {
+  const requestSummary = {
     total: baseItems.length,
     open: baseItems.filter((item) => !['Closed', 'Cancelled'].includes(item.status)).length,
     resultsReceived: baseItems.filter((item) => item.status === 'Results Received').length,
     overdue: baseItems.filter((item) => item.status === 'Overdue').length,
+  };
+
+  const reportSummary = {
+    totalReports: baseItems.length,
+    draftInProgress: baseItems.filter((item) => item.reportStatus === 'In Progress' || Boolean(reportDrafts[item.id])).length,
+    complete: baseItems.filter((item) => item.reportStatus === 'Complete').length,
+    downloadable: baseItems.filter((item) => isDownloadableReport(item)).length,
   };
 
   return (
@@ -662,7 +681,7 @@ const todayIso = new Date().toISOString().slice(0, 10);
       <div className="card">
         <h2>{title}</h2>
         <p className="muted">{description}</p>
-        <button type="button" onClick={() => setIsCreateModalOpen(true)}>+ New NDE Request</button>
+        {showCreateRequestButton && <button type="button" onClick={() => setIsCreateModalOpen(true)}>+ New NDE Request</button>}
         {isLoading && <p className="muted">Loading NDE log rows…</p>}
         {loadError && <p className="muted">{loadError}</p>}
         {demoCreateMessage && <p className="muted">{demoCreateMessage}</p>}
@@ -784,10 +803,21 @@ const todayIso = new Date().toISOString().slice(0, 10);
       )}
 
       <div className="nde-summary-grid" aria-label="NDE queue summary">
-        <article className="card"><h3>Total</h3><p>{summary.total}</p></article>
-        <article className="card"><h3>Open</h3><p>{summary.open}</p></article>
-        <article className="card"><h3>Results Received</h3><p>{summary.resultsReceived}</p></article>
-        <article className="card"><h3>Overdue</h3><p>{summary.overdue}</p></article>
+        {summaryMode === 'reports' ? (
+          <>
+            <article className="card"><h3>Total Reports</h3><p>{reportSummary.totalReports}</p></article>
+            <article className="card"><h3>Draft / In Progress</h3><p>{reportSummary.draftInProgress}</p></article>
+            <article className="card"><h3>Complete</h3><p>{reportSummary.complete}</p></article>
+            <article className="card"><h3>Downloadable</h3><p>{reportSummary.downloadable}</p></article>
+          </>
+        ) : (
+          <>
+            <article className="card"><h3>Total</h3><p>{requestSummary.total}</p></article>
+            <article className="card"><h3>Open</h3><p>{requestSummary.open}</p></article>
+            <article className="card"><h3>Results Received</h3><p>{requestSummary.resultsReceived}</p></article>
+            <article className="card"><h3>Overdue</h3><p>{requestSummary.overdue}</p></article>
+          </>
+        )}
       </div>
 
       <div className="card nde-filters">

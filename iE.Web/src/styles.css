@@ -1102,6 +1102,19 @@ html, body, #root {
     margin-bottom: 8px;
 }
 
+
+.nde-facility-cell {
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nde-unit-number-cell {
+    width: 64px;
+    white-space: nowrap;
+}
+
 .nde-table-select-all {
     margin-top: 8px;
 }

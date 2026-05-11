@@ -118,17 +118,46 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     expect(ndeApi.getLogItems).toHaveBeenCalledTimes(1);
   });
 
-  it('scopes NDE reports route to report-centric statuses', async () => {
+  it('shows + New NDE Request on requests route only', async () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-requests']}>
+        <App />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '+ New NDE Request' })).toBeInTheDocument();
+  });
+
+  it('hides + New NDE Request on reports route and uses report-focused summary cards', async () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-reports']}>
+        <App />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText('NDE-26-0005')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '+ New NDE Request' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Total Reports' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Draft / In Progress' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Complete' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Downloadable' })).toBeInTheDocument();
+  });
+
+  it('scopes NDE reports route to report-centric rows', async () => {
     render(
       <MemoryRouter initialEntries={['/nde-reports']}>
         <App />
       </MemoryRouter>,
     );
 
+    expect(screen.getByText('NDE-26-0002')).toBeInTheDocument();
+    expect(screen.getByText('NDE-26-0004')).toBeInTheDocument();
     expect(await screen.findByText('NDE-26-0005')).toBeInTheDocument();
     expect(screen.getByText('NDE-26-0006')).toBeInTheDocument();
     expect(screen.getByText('NDE-26-0007')).toBeInTheDocument();
-    expect(screen.queryByText('NDE-26-0002')).not.toBeInTheDocument();
+    expect(screen.getByText('NDE-26-0009')).toBeInTheDocument();
+    expect(screen.getByText('NDE-26-0010')).toBeInTheDocument();
+    expect(screen.queryByText('NDE-26-0001')).not.toBeInTheDocument();
+    expect(screen.queryByText('NDE-26-0011')).not.toBeInTheDocument();
   });
 
   it('defaults schedule route status filter to Scheduled', () => {
@@ -198,6 +227,21 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     });
     expect(downloadButton).toBeDisabled();
     expect(downloadButton).toHaveAttribute('title', 'Download unavailable until a completed downloadable report exists. Use Print / Save as PDF for demo-generated reports.');
+  });
+
+  it('keeps non-downloadable report rows disabled for download', async () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-reports']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    const nonDownloadableRow = (await screen.findByText('NDE-26-0002')).closest('tr');
+    expect(nonDownloadableRow).not.toBeNull();
+    const downloadButton = within(nonDownloadableRow as HTMLTableRowElement).getByRole('button', {
+      name: /download unavailable until a completed downloadable report exists/i,
+    });
+    expect(downloadButton).toBeDisabled();
   });
 
   it('enables bulk download when a downloadable row is selected', () => {

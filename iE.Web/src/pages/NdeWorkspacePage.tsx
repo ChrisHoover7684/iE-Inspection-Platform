@@ -21,11 +21,12 @@ const statusOptions: Array<NdeLogStatus | 'All'> = [
   'Cancelled',
   'Overdue',
 ];
+const accessTypeOptions = ['All', 'Ground', 'Scaffold', 'Rope Access', 'Aerial Lift', 'Ladder', 'Platform', 'Confined Space'] as const;
 
 // Frontend-only demo/read-model data for NDE workspace usability.
 // Replace with backend read-model data when the NDE workflow API is connected.
 const mockRows: NdeLogItem[] = [
-  { id: 'nde-001', requestNumber: 'NDE-26-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started' },
+  { id: 'nde-001', requestNumber: 'NDE-26-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started', accessType: 'Ground' },
   { id: 'nde-002', requestNumber: 'NDE-26-002', circuitId: 'CIR-4A-220', method: 'RT', status: 'Requested', priority: 'High', requestedBy: 'M. Patel', assignedTo: 'S. Owens', dueDate: '2026-05-17', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-002' },
   { id: 'nde-003', requestNumber: 'NDE-26-003', equipmentTag: 'E-4401', method: 'MT', status: 'Scheduled', priority: 'Normal', requestedBy: 'T. Nguyen', assignedTo: 'R. Hall', dueDate: '2026-05-13', reportStatus: 'Not Available' },
   {
@@ -40,6 +41,7 @@ const mockRows: NdeLogItem[] = [
     dueDate: '2026-05-12',
     reportStatus: 'In Progress',
     reportNumber: 'RPT-26-PT-004',
+    accessType: 'Rope Access',
     inspectionDetails: 'Nozzle N2 root and cap PT verification before hydrotest.',
     scopeItems: [
       { id: 'scope-004-pt-prep', method: 'PT', stage: 'Prep', displayName: 'PT Prep', weldId: 'W-22B-01', location: 'Nozzle N2 Root', notes: 'Surface prep and cleaning' },
@@ -48,7 +50,7 @@ const mockRows: NdeLogItem[] = [
     ],
   },
   { id: 'nde-005', requestNumber: 'NDE-26-005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09', reportStatus: 'In Progress', reportNumber: 'RPT-26-PMI-005' },
-  { id: 'nde-006', requestNumber: 'NDE-26-006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-006', reportFileName: 'RPT-26-PAUT-006.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-006.pdf' },
+  { id: 'nde-006', requestNumber: 'NDE-26-006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-006', reportFileName: 'RPT-26-PAUT-006.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-006.pdf', accessType: 'Ladder' },
   { id: 'nde-007', requestNumber: 'NDE-26-007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Complete', reportNumber: 'RPT-26-VT-007', reportFileName: 'RPT-26-VT-007.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-VT-007.pdf' },
   { id: 'nde-008', requestNumber: 'NDE-26-008', equipmentTag: 'PSV-91', method: 'UT Thickness', status: 'Cancelled', priority: 'Low', requestedBy: 'C. White', assignedTo: 'B. Young', dueDate: '2026-05-04', reportStatus: 'Not Started' },
   { id: 'nde-009', requestNumber: 'NDE-26-009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-009' },
@@ -106,6 +108,7 @@ export function NdeWorkspacePage({
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<NdeLogStatus | 'All'>(initialStatus);
+  const [accessTypeFilter, setAccessTypeFilter] = useState<(typeof accessTypeOptions)[number]>('All');
   const [searchText, setSearchText] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedForBulkDownload, setSelectedForBulkDownload] = useState<string[]>([]);
@@ -243,6 +246,7 @@ export function NdeWorkspacePage({
           row.circuitId,
           row.equipmentTag,
           row.method,
+          row.accessType,
           row.scopeItems?.map((scopeItem) => `${scopeItem.displayName} ${scopeItem.stage} ${scopeItem.weldId ?? ''}`).join(' '),
           row.inspectionDetails,
           row.requestedBy,
@@ -253,9 +257,10 @@ export function NdeWorkspacePage({
           .toLowerCase()
           .includes(searchText.toLowerCase());
 
-      return byStatus && bySearch;
+      const byAccessType = accessTypeFilter === 'All' || row.accessType === accessTypeFilter;
+      return byStatus && byAccessType && bySearch;
     });
-  }, [baseItems, searchText, statusFilter]);
+  }, [accessTypeFilter, baseItems, searchText, statusFilter]);
 
   const createRequestFromForm = () => {
     const nextSequence = items.length + 1;
@@ -282,6 +287,7 @@ export function NdeWorkspacePage({
       requestedBy: createForm.requester,
       dueDate: createForm.dueDate,
       reportStatus: 'Not Started',
+      accessType: createForm.accessType || undefined,
       inspectionDetails: createForm.inspectionDetails || undefined,
       scopeItems,
     };
@@ -315,11 +321,12 @@ export function NdeWorkspacePage({
   };
 
   const exportVisibleTable = () => {
-    const headers = ['Request #', 'Asset / Circuit / Equipment', 'Method', 'Inspection Details', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
+    const headers = ['Request #', 'Asset / Circuit / Equipment', 'Method', 'Access Type', 'Inspection Details', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
     const rows = filteredItems.map((item) => [
       item.requestNumber,
       item.assetTag ?? item.circuitId ?? item.equipmentTag ?? '—',
       item.method,
+      item.accessType ?? '—',
       item.inspectionDetails ?? '—',
       item.status,
       item.priority,
@@ -426,6 +433,12 @@ export function NdeWorkspacePage({
             {statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
           </select>
         </label>
+        <label>
+          Access Type
+          <select value={accessTypeFilter} onChange={(event) => setAccessTypeFilter(event.target.value as (typeof accessTypeOptions)[number])}>
+            {accessTypeOptions.map((accessType) => <option key={accessType} value={accessType}>{accessType}</option>)}
+          </select>
+        </label>
       </div>
 
       <div className="card">
@@ -455,7 +468,7 @@ export function NdeWorkspacePage({
         <table>
           <thead>
             <tr>
-              <th>Select</th><th>Request #</th><th>Asset / Circuit / Equipment</th><th>Method</th><th>Status</th><th>Priority</th><th>Due</th>
+              <th>Select</th><th>Request #</th><th>Asset / Circuit / Equipment</th><th>Method</th><th>Access Type</th><th>Status</th><th>Priority</th><th>Due</th>
               <th>Report Status</th><th>Report #</th><th>Actions</th>
             </tr>
           </thead>
@@ -476,6 +489,7 @@ export function NdeWorkspacePage({
                   <div>{item.method}</div>
                   {formatScopeSummary(item) && <div className="muted nde-scope-summary">{formatScopeSummary(item)}</div>}
                 </td>
+                <td>{item.accessType ?? '—'}</td>
                 <td>{item.status}</td>
                 <td>{item.priority}</td>
                 <td>{item.dueDate ?? '—'}</td>
@@ -534,6 +548,7 @@ export function NdeWorkspacePage({
                 <dt>Report #</dt><dd>{selectedItem.reportNumber ?? '—'}</dd>
                 <dt>Asset / Circuit / Equipment</dt><dd>{selectedItem.assetTag ?? selectedItem.circuitId ?? selectedItem.equipmentTag ?? '—'}</dd>
                 <dt>Method</dt><dd>{selectedItem.method}</dd>
+                <dt>Access Type</dt><dd>{selectedItem.accessType ?? '—'}</dd>
                 <dt>Status</dt><dd>{selectedItem.status}</dd>
                 <dt>Inspection Details</dt><dd>{selectedItem.inspectionDetails ?? '—'}</dd>
                 <dt>Report Status</dt><dd>{formatReportStatus(selectedItem.reportStatus)}</dd>

@@ -17,7 +17,7 @@ vi.mock('../api', async () => {
       ...actual.ndeApi,
       getLogItems: vi.fn().mockResolvedValue([
         { id: 'nde-005', requestNumber: 'NDE-26-005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09', reportStatus: 'In Progress', reportNumber: 'RPT-26-PMI-005' },
-        { id: 'nde-006', requestNumber: 'NDE-26-006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-006', reportFileName: 'RPT-26-PAUT-006.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-006.pdf' },
+        { id: 'nde-006', requestNumber: 'NDE-26-006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-006', reportFileName: 'RPT-26-PAUT-006.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-006.pdf', accessType: 'Ladder' },
         { id: 'nde-007', requestNumber: 'NDE-26-007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Complete', reportNumber: 'RPT-26-VT-007', reportFileName: 'RPT-26-VT-007.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-VT-007.pdf' },
         { id: 'nde-001', requestNumber: 'NDE-26-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started' },
         { id: 'nde-002', requestNumber: 'NDE-26-002', circuitId: 'CIR-4A-220', method: 'RT', status: 'Requested', priority: 'High', requestedBy: 'M. Patel', assignedTo: 'S. Owens', dueDate: '2026-05-17', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-002' },
@@ -191,6 +191,26 @@ describe('App routes', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Export Table' })).toBeInTheDocument();
+  });
+
+  it('supports access type in create form, filters, and details', async () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-requests']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
+    const modal = screen.getByRole('dialog', { name: 'New NDE Request' });
+    fireEvent.change(within(modal).getByLabelText('Requester'), { target: { value: 'QA Inspector' } });
+    fireEvent.change(within(modal).getByLabelText('Asset'), { target: { value: 'V-1001' } });
+    fireEvent.change(within(modal).getByLabelText('Access Type'), { target: { value: 'Rope Access' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
+
+    fireEvent.change(screen.getByLabelText('Access Type'), { target: { value: 'Rope Access' } });
+    fireEvent.click(screen.getAllByText('NDE-26-011')[0]);
+    expect(screen.getAllByText('Rope Access').length).toBeGreaterThan(0);
   });
 
   it('opens new NDE request modal and creates PT scope item request with searchable scope text', async () => {

@@ -36,6 +36,13 @@ public class NdeLogReadModelFoundationTests
         Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.InProgress);
         Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Complete);
         Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.NotAvailable);
+        Assert.Contains(rows, r => r.AccessType == "Ground");
+        Assert.Contains(rows, r => r.AccessType == "Scaffold");
+        Assert.Contains(rows, r => r.AccessType == "Rope Access");
+        Assert.Contains(rows, r => r.AccessType == "Aerial Lift");
+        Assert.Contains(rows, r => r.AccessType == "Ladder");
+        Assert.Contains(rows, r => r.AccessType == "Platform");
+        Assert.Contains(rows, r => r.AccessType == "Confined Space");
         Assert.All(
             rows.Where(r =>
                 r.Status is NdeLogStatuses.Draft

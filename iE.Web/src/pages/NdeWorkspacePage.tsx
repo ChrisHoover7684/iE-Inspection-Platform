@@ -4,8 +4,11 @@ type NdeStage = NonNullable<NdeLogItem['ndeStage']>;
 
 const ndeStageOptions: NdeStage[] = ['Prep', 'Root', 'Final', 'Pre-Stress', 'Post-Stress', 'Material Verification', 'Other'];
 const stagedWeldStageOptions: Array<Extract<NdeStage, 'Prep' | 'Root' | 'Final' | 'Pre-Stress' | 'Post-Stress'>> = ['Prep', 'Root', 'Final', 'Pre-Stress', 'Post-Stress'];
+
+const formatReportStatus = (reportStatus: NdeLogItem['reportStatus']) =>
+  reportStatus === 'Complete' ? 'Reviewed / Complete' : reportStatus;
 import { ndeApi } from '../api';
-import type { NdeLogItem, NdeLogStatus, NdeLogTransitionEvent } from '../types';
+import type { NdeLogItem, NdeLogStatus, NdeLogTransitionEvent, NdeReportDraft, NdeReportResult } from '../types';
 import { accessMethodOptions, getAssetsForUnit, getProjectOptions, getUnitOptions, ndeMethodOptions, owningGroupOptions, parseUnitNumber } from '../ndeRequestReferenceData';
 import { getFacilities } from '../organizationReferenceData';
 
@@ -190,6 +193,10 @@ export function NdeWorkspacePage({
   const [eventHistoryError, setEventHistoryError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [activeReportRequestId, setActiveReportRequestId] = useState<string | null>(null);
+  const [reportDrafts, setReportDrafts] = useState<Record<string, NdeReportDraft>>({});
+  const [reportMessage, setReportMessage] = useState<string>('');
   const [demoCreateMessage, setDemoCreateMessage] = useState<string>('');
   const requiredFieldsMessage = 'Project, Owning Group, Due Date, NDE Method, Unit, Asset, and Access Method are required.';
   const stagedSelectionMessage = 'Select at least one NDE stage for staged weld requests.';
@@ -208,6 +215,7 @@ export function NdeWorkspacePage({
     project: '', owningGroup: '', priority: 'Normal' as NdeLogItem['priority'], dueDate: '', method: '',
     code: '', facilityId: '', unit: '', asset: '', accessType: '', reference: '', inspectionDetails: '', ndeStage: '', weldId: '', location: '',
   });
+  const [reportForm, setReportForm] = useState<Partial<NdeReportDraft>>({});
 
   useEffect(() => {
     setStatusFilter(initialStatus);
@@ -555,6 +563,48 @@ const todayIso = new Date().toISOString().slice(0, 10);
     URL.revokeObjectURL(url);
   };
 
+  const openReportWorkspace = (item: NdeLogItem) => {
+    const reportNumber = item.reportNumber ?? formatReportNumber(item.requestNumber, item.method) ?? `RPT-${getCurrentYearSuffix()}-${item.method}-${item.requestNumber}`;
+    const examinedArea = item.location || item.weldId || item.assetTag || item.circuitId || item.equipmentTag || '';
+    const existing = reportDrafts[item.id];
+    const baseDraft: NdeReportDraft = existing ?? {
+      id: `draft-${item.id}`,
+      ndeRequestId: item.id,
+      requestNumber: item.requestNumber,
+      reportNumber,
+      method: item.method,
+      stage: item.ndeStage,
+      acceptanceCriteria: item.codeCriteria ?? item.code ?? '',
+      examinedArea,
+      indicationsFound: false,
+      status: 'Draft',
+    };
+    setReportForm(baseDraft);
+    setActiveReportRequestId(item.id);
+    setIsReportModalOpen(true);
+    setReportMessage('');
+  };
+
+  const saveReportDraft = () => {
+    if (!activeReportRequestId) return;
+    const draft = { ...reportForm, ndeRequestId: activeReportRequestId, status: 'Draft' } as NdeReportDraft;
+    setReportDrafts((current) => ({ ...current, [activeReportRequestId]: draft }));
+    setItems((current) => current.map((item) => item.id === activeReportRequestId ? { ...item, reportStatus: item.reportStatus === 'Complete' ? 'Complete' : 'In Progress', reportNumber: draft.reportNumber || item.reportNumber } : item));
+    setReportMessage('Report draft saved locally until backend report persistence is connected.');
+  };
+
+  const generateReport = () => {
+    if (!activeReportRequestId) return;
+    if (!reportForm.inspector || !reportForm.examinationDate || !reportForm.procedure || !reportForm.result) {
+      setReportMessage('Inspector / Technician, Examination Date, Procedure / Technique, and Result are required to generate.');
+      return;
+    }
+    const completeDraft = { ...reportForm, ndeRequestId: activeReportRequestId, status: 'Complete', generatedAtUtc: new Date().toISOString(), reportFileName: `${reportForm.reportNumber}.pdf`, reportDownloadUrl: undefined } as NdeReportDraft;
+    setReportDrafts((current) => ({ ...current, [activeReportRequestId]: completeDraft }));
+    setItems((current) => current.map((item) => item.id === activeReportRequestId ? { ...item, reportStatus: 'Complete', reportNumber: completeDraft.reportNumber, reportFileName: completeDraft.reportFileName } : item));
+    setReportMessage('Report generated as demo draft. Use Print / Save as PDF for first-version output.');
+  };
+
 
   const selectedItem = useMemo(
     () => filteredItems.find((item) => item.id === selectedId) ?? null,
@@ -565,6 +615,12 @@ const todayIso = new Date().toISOString().slice(0, 10);
     if (!selectedItem?.relatedRequestGroupId) return [] as NdeLogItem[];
     return items.filter((item) => item.relatedRequestGroupId === selectedItem.relatedRequestGroupId && item.id !== selectedItem.id);
   }, [items, selectedItem]);
+  const relatedItems = useMemo(() => {
+    if (!activeReportRequestId) return [] as NdeLogItem[];
+    const activeItem = items.find((item) => item.id === activeReportRequestId);
+    if (!activeItem?.relatedRequestGroupId) return [] as NdeLogItem[];
+    return items.filter((item) => item.relatedRequestGroupId === activeItem.relatedRequestGroupId);
+  }, [activeReportRequestId, items]);
 
   const allowedTransitions = useMemo(
     () => (selectedItem ? getAllowedNdeTransitions(selectedItem.status) : []),
@@ -605,7 +661,7 @@ const todayIso = new Date().toISOString().slice(0, 10);
               <label>Weld ID<input value={createForm.weldId} onChange={(event) => setCreateForm((current) => ({ ...current, weldId: event.target.value }))} /></label>
               <label>Location<input value={createForm.location} onChange={(event) => setCreateForm((current) => ({ ...current, location: event.target.value }))} /></label>
               <label>Create separate staged weld requests<input type='checkbox' checked={createForm.createSeparateStagedWeldRequests} onChange={(event) => setCreateForm((current) => ({ ...current, createSeparateStagedWeldRequests: event.target.checked }))} /></label>
-              {createForm.createSeparateStagedWeldRequests && <label>Stages to create<select multiple value={createForm.stagedStages} onChange={(event) => setCreateForm((current) => ({ ...current, stagedStages: Array.from(event.target.selectedOptions, (option) => option.value as typeof stagedWeldStageOptions[number]) }))}>{stagedWeldStageOptions.map((stage) => <option key={stage} value={stage}>{stage}</option>)}</select></label>}
+              {createForm.createSeparateStagedWeldRequests && <fieldset className='nde-stage-chip-group'><legend>Stages to create</legend><div className='nde-stage-chip-grid'>{stagedWeldStageOptions.map((stage) => <label key={stage} className='nde-stage-chip'><input type='checkbox' aria-label={stage} checked={createForm.stagedStages.includes(stage)} onChange={(event) => setCreateForm((current) => ({ ...current, stagedStages: event.target.checked ? [...current.stagedStages, stage] : current.stagedStages.filter((option) => option !== stage) }))} />{stage}</label>)}</div></fieldset>}
               <label>Code Criteria<input value={createForm.code} onChange={(event) => setCreateForm((current) => ({ ...current, code: event.target.value }))} /></label>
               <label>Unit *<select required value={createForm.unit} onChange={(event) => { const selectedUnit = managedUnitOptions.find((option) => option.name === event.target.value); setCreateForm((current) => ({ ...current, unit: event.target.value, asset: '', facilityId: selectedUnit?.facilityId ?? current.facilityId })); }}><option value="">Select a Unit...</option>{managedUnitOptions.filter((option) => option.isActive).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
               <label>Asset *<select required disabled={!createForm.unit} value={createForm.asset} onChange={(event) => setCreateForm((current) => ({ ...current, asset: event.target.value }))}><option value="">{createForm.unit ? 'Select an Asset...' : 'Select a Unit first...'}</option>{getAssetsForUnit(createForm.unit, createForm.facilityId || managedUnitOptions.find((option) => option.name === createForm.unit)?.facilityId).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
@@ -657,6 +713,48 @@ const todayIso = new Date().toISOString().slice(0, 10);
             <div className="row">
               <button type="button" onClick={saveEditForm}>Save</button>
               <button type="button" onClick={() => setIsEditModalOpen(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isReportModalOpen && activeReportRequestId && (
+        <div className="nde-modal-backdrop" role="dialog" aria-modal="true" aria-label="NDE Report Workspace">
+          <div className="card nde-modal-card">
+            <h3>Generic NDE Report Draft</h3>
+            <p className="muted">Demo NDE Report Form until final customer templates are configured.</p>
+            <div className="nde-modal-grid">
+              <label>Request #<input readOnly value={reportForm.requestNumber ?? ''} /></label>
+              <label>Report #<input readOnly value={reportForm.reportNumber ?? ''} /></label>
+              <label>Asset<input readOnly value={getAssetDisplay(items.find((i) => i.id === activeReportRequestId) as NdeLogItem)} /></label>
+              <label>Unit<input readOnly value={(items.find((i) => i.id === activeReportRequestId)?.unit) ?? '—'} /></label>
+              <label>Stage<input readOnly value={(items.find((i) => i.id === activeReportRequestId)?.ndeStage) ?? '—'} /></label>
+              <label>Weld ID<input readOnly value={(items.find((i) => i.id === activeReportRequestId)?.weldId) ?? '—'} /></label>
+              <label>Location<input readOnly value={(items.find((i) => i.id === activeReportRequestId)?.location) ?? '—'} /></label>
+              <label>Due Date<input readOnly value={(items.find((i) => i.id === activeReportRequestId)?.dueDate) ?? '—'} /></label>
+              <label>Requested By<input readOnly value={(items.find((i) => i.id === activeReportRequestId)?.requestedBy) ?? '—'} /></label>
+              <label>Assigned To<input readOnly value={(items.find((i) => i.id === activeReportRequestId)?.assignedTo) ?? '—'} /></label>
+              <label>NDE Method<input value={reportForm.method ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, method: e.target.value }))} /></label>
+              <label>Inspector / Technician *<input value={reportForm.inspector ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, inspector: e.target.value }))} /></label>
+              <label>Examination Date *<input type="date" value={reportForm.examinationDate ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, examinationDate: e.target.value }))} /></label>
+              <label>Procedure / Technique *<input value={reportForm.procedure ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, procedure: e.target.value }))} /></label>
+              <label>Acceptance Criteria / Code<input value={reportForm.acceptanceCriteria ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, acceptanceCriteria: e.target.value }))} /></label>
+              <label>Surface Condition / Access Notes<input value={reportForm.surfaceCondition ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, surfaceCondition: e.target.value }))} /></label>
+              <label>Area / Weld / Component Examined<input value={reportForm.examinedArea ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, examinedArea: e.target.value }))} /></label>
+              <label>Indications Found<select value={reportForm.indicationsFound ? 'Yes' : 'No'} onChange={(e) => setReportForm((c) => ({ ...c, indicationsFound: e.target.value === 'Yes' }))}><option>No</option><option>Yes</option></select></label>
+              <label>Result *<select value={reportForm.result ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, result: e.target.value as NdeReportResult }))}><option value="">Select result</option><option>Acceptable</option><option>Rejectable</option><option>Monitor</option><option>Inconclusive</option></select></label>
+              <label>Attachments placeholder<input disabled value="File upload coming soon" /></label>
+            </div>
+            <label>Findings / Indications narrative<textarea value={reportForm.findings ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, findings: e.target.value }))} /></label>
+            <label>Recommendations / Disposition<textarea value={reportForm.recommendations ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, recommendations: e.target.value }))} /></label>
+            <label>Report Notes<textarea value={reportForm.notes ?? ''} onChange={(e) => setReportForm((c) => ({ ...c, notes: e.target.value }))} /></label>
+            {relatedItems.length > 1 && <div className="nde-history-panel"><h4>Related Requests</h4><ul>{relatedItems.filter((item) => item.id !== activeReportRequestId).map((item) => <li key={item.id}>{item.requestNumber} — {(item.ndeStage ?? 'Standard')} ({formatReportStatus(item.reportStatus)})</li>)}</ul></div>}
+            <div className="nde-history-panel"><h4>NDE Report Preview</h4><p><strong>NDE Report</strong> — {reportForm.requestNumber} / {reportForm.reportNumber}</p><p>Asset: {getAssetDisplay(items.find((i) => i.id === activeReportRequestId) as NdeLogItem)} | Unit: {(items.find((i) => i.id === activeReportRequestId)?.unit) ?? '—'} | Stage: {(items.find((i) => i.id === activeReportRequestId)?.ndeStage) ?? '—'}</p><p>Method: {reportForm.method} | Inspector: {reportForm.inspector ?? '—'} | Date: {reportForm.examinationDate ?? '—'}</p><p>Procedure: {reportForm.procedure ?? '—'} | Criteria: {reportForm.acceptanceCriteria ?? '—'}</p><p>Result: {reportForm.result ?? '—'} | Indications Found: {reportForm.indicationsFound ? 'Yes' : 'No'}</p><p>Findings: {reportForm.findings ?? '—'}</p><p>Recommendations: {reportForm.recommendations ?? '—'}</p></div>
+            {reportMessage && <p className="muted">{reportMessage}</p>}
+            <div className="row">
+              <button type="button" onClick={saveReportDraft}>Save Draft</button>
+              <button type="button" onClick={generateReport}>Mark Complete &amp; Generate</button>
+              <button type="button" onClick={() => window.print()}>Print / Save as PDF</button>
+              <button type="button" onClick={() => setIsReportModalOpen(false)}>Close</button>
             </div>
           </div>
         </div>
@@ -740,6 +838,9 @@ const todayIso = new Date().toISOString().slice(0, 10);
                 <td>{formatReportStatus(item.reportStatus)}</td>
                 <td className="nde-report-number-cell">{item.reportNumber ?? '—'}</td>
                 <td className="nowrap">
+                  <button type="button" onClick={(event) => { event.stopPropagation(); openReportWorkspace(item); }}>
+                    {item.reportStatus === 'Not Started' ? 'Fill Report' : 'View / Edit Report'}
+                  </button>
                   <button
                     type="button"
                     title={isDownloadableReport(item) ? 'Download ready report' : 'Report template/download not connected yet.'}
@@ -867,5 +968,3 @@ const todayIso = new Date().toISOString().slice(0, 10);
     </section>
   );
 }
-  const formatReportStatus = (reportStatus: NdeLogItem['reportStatus']) =>
-    reportStatus === 'Complete' ? 'Reviewed / Complete' : reportStatus;

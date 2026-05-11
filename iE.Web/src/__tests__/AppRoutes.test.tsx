@@ -335,8 +335,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     expect(screen.getByLabelText('Unit *')).toBeInTheDocument();
     expect(screen.getByLabelText('Asset *')).toBeInTheDocument();
     expect(screen.getByLabelText('Inspection Details')).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Pre-Stress' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Post-Stress' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Create separate staged weld requests')).toBeInTheDocument();
 
     expect(screen.queryByLabelText('Billing #1')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('PT Root')).not.toBeInTheDocument();
@@ -595,12 +594,9 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     fireEvent.change(within(modal).getByLabelText('Weld ID'), { target: { value: 'W-PS-100' } });
 
     fireEvent.click(within(modal).getByLabelText('Create separate staged weld requests'));
-    const stageSelector = within(modal).getByLabelText('Stages to create') as HTMLSelectElement;
-    expect(within(modal).queryByText('Stages')).not.toBeInTheDocument();
-    for (const option of Array.from(stageSelector.options)) {
-      option.selected = option.value === 'Pre-Stress' || option.value === 'Post-Stress';
-    }
-    fireEvent.change(stageSelector);
+    const stageGroup = within(modal).getByRole('group', { name: 'Stages to create' });
+    fireEvent.click(within(stageGroup).getByLabelText('Pre-Stress'));
+    fireEvent.click(within(stageGroup).getByLabelText('Post-Stress'));
 
     fireEvent.click(within(modal).getByRole('button', { name: 'Create Request' }));
 
@@ -747,4 +743,25 @@ it('renders facilities admin route', () => {
 
   expect(screen.getByRole('heading', { level: 2, name: 'Facilities' })).toBeInTheDocument();
   expect(screen.getByText(/Active Facilities:/)).toBeInTheDocument();
+});
+
+it('opens report workspace and supports draft/save/preview actions', async () => {
+  render(<MemoryRouter initialEntries={['/nde-requests']}><App /></MemoryRouter>);
+  expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
+  const row = screen.getByText('NDE-26-0001').closest('tr') as HTMLTableRowElement;
+  fireEvent.click(within(row).getByRole('button', { name: 'Fill Report' }));
+  const modal = screen.getByRole('dialog', { name: 'NDE Report Workspace' });
+  expect(within(modal).getByText('Generic NDE Report Draft')).toBeInTheDocument();
+  expect(within(modal).getByLabelText('Surface Condition / Access Notes')).toBeInTheDocument();
+  expect(within(modal).getByLabelText('Indications Found')).toBeInTheDocument();
+  expect(within(modal).getByLabelText('Report Notes')).toBeInTheDocument();
+  fireEvent.change(within(modal).getByLabelText('Inspector / Technician *'), { target: { value: 'Inspector A' } });
+  fireEvent.change(within(modal).getByLabelText('Examination Date *'), { target: { value: '2026-05-11' } });
+  fireEvent.change(within(modal).getByLabelText('Procedure / Technique *'), { target: { value: 'PT-001' } });
+  fireEvent.change(within(modal).getByLabelText('Result *'), { target: { value: 'Acceptable' } });
+  fireEvent.click(within(modal).getByRole('button', { name: 'Save Draft' }));
+  expect(await screen.findByText(/saved locally until backend report persistence is connected/i)).toBeInTheDocument();
+  fireEvent.click(within(modal).getByRole('button', { name: 'Mark Complete & Generate' }));
+  expect(await screen.findByText(/Report generated as demo draft/i)).toBeInTheDocument();
+  expect(within(modal).getByText(/NDE Report Preview/)).toBeInTheDocument();
 });

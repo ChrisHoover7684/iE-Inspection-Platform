@@ -281,6 +281,8 @@ label {
 .nde-scope-options {
     margin-top: 10px;
 }
+.nde-stage-chip-grid { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.35rem; }
+.nde-stage-chip { border:1px solid #cbd5e1; border-radius:999px; padding:.2rem .55rem; background:#f8fafc; display:flex; align-items:center; gap:.3rem; }
 
 .dashboard-topbar {
     display: grid;

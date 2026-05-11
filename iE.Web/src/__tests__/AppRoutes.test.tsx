@@ -193,7 +193,7 @@ describe('App routes', () => {
     expect(screen.getByRole('button', { name: 'Export Table' })).toBeInTheDocument();
   });
 
-  it('supports access type in create form, filters, and details', async () => {
+  it('supports access method/reference in create form, filters, details, and search', async () => {
     render(
       <MemoryRouter initialEntries={['/nde-requests']}>
         <App />
@@ -203,17 +203,21 @@ describe('App routes', () => {
     expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
     const modal = screen.getByRole('dialog', { name: 'New NDE Request' });
-    fireEvent.change(within(modal).getByLabelText('Requester'), { target: { value: 'QA Inspector' } });
+    expect(within(modal).getByLabelText('Requester')).toHaveValue('Operator (placeholder)');
     fireEvent.change(within(modal).getByLabelText('Asset'), { target: { value: 'V-1001' } });
-    fireEvent.change(within(modal).getByLabelText('Access Type'), { target: { value: 'Rope Access' } });
+    fireEvent.change(within(modal).getByLabelText('Access Method'), { target: { value: 'Rope Access' } });
+    fireEvent.change(within(modal).getByLabelText('Reference'), { target: { value: 'REF-ROPE-77' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
 
-    fireEvent.change(screen.getByLabelText('Access Type'), { target: { value: 'Rope Access' } });
+    fireEvent.change(screen.getByLabelText('Access Method'), { target: { value: 'Rope Access' } });
     fireEvent.click(screen.getAllByText('NDE-26-011')[0]);
     expect(screen.getAllByText('Rope Access').length).toBeGreaterThan(0);
+    expect(screen.getByText('REF-ROPE-77')).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, access method, reference, inspection details, or assignee'), { target: { value: 'REF-ROPE-77' } });
+    expect(screen.getAllByText('NDE-26-011').length).toBeGreaterThan(0);
   });
 
-  it('opens new NDE request modal and creates PT scope item request with searchable scope text', async () => {
+  it('opens new NDE request modal with dropdown fields and searchable inspection details', async () => {
     render(
       <MemoryRouter initialEntries={['/nde-requests']}>
         <App />
@@ -229,23 +233,22 @@ describe('App routes', () => {
     expect(screen.getByLabelText('Requester')).toBeInTheDocument();
     expect(screen.getByLabelText('Priority')).toBeInTheDocument();
     expect(screen.getByLabelText('Due Date')).toBeInTheDocument();
-    expect(screen.getByLabelText('Task Type / NDE Method')).toBeInTheDocument();
+    expect(screen.getByLabelText('NDE Method')).toBeInTheDocument();
     expect(screen.getByLabelText('Code')).toBeInTheDocument();
     expect(screen.getByLabelText('Unit')).toBeInTheDocument();
     expect(screen.getByLabelText('Asset')).toBeInTheDocument();
     expect(screen.getByLabelText('Inspection Details')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('Requester'), { target: { value: 'QA Inspector' } });
+    expect(screen.queryByLabelText('Billing #1')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('PT Root')).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Asset'), { target: { value: 'V-1001' } });
     fireEvent.change(screen.getByLabelText('Request Status'), { target: { value: 'Requested' } });
-    fireEvent.click(screen.getByLabelText('PT Root'));
-    fireEvent.change(screen.getByLabelText('Weld ID'), { target: { value: 'W-ROOT-77' } });
     fireEvent.change(screen.getByLabelText('Inspection Details'), { target: { value: 'Created request detail unique token ZX-441' } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
     expect(await screen.findByText('Request creation is demo-only (in-memory) until backend persistence is connected.')).toBeInTheDocument();
     expect(screen.getByText('Created request detail unique token ZX-441')).toBeInTheDocument();
-    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, inspection details, or assignee'), { target: { value: 'zx-441' } });
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, access method, reference, inspection details, or assignee'), { target: { value: 'zx-441' } });
     expect(screen.queryByText('NDE-26-004')).not.toBeInTheDocument();
     expect(screen.queryByText('No NDE Requests NDE items yet')).not.toBeInTheDocument();
   });

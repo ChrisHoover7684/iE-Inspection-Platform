@@ -207,24 +207,27 @@ describe('App routes', () => {
 
     const modal = screen.getByRole('dialog', { name: 'Edit NDE Request' });
     expect(within(modal).getByDisplayValue('NDE-26-001')).toHaveAttribute('readonly');
-    expect(within(modal).getByLabelText('Project')).toBeInTheDocument();
-    expect(within(modal).getByLabelText('Owning Group')).toBeInTheDocument();
-    expect(within(modal).getByLabelText('NDE Method')).toBeInTheDocument();
-    expect(within(modal).getByLabelText('Access Method')).toBeInTheDocument();
+    expect(within(modal).getByLabelText('Project *')).toBeInTheDocument();
+    expect(within(modal).getByLabelText('Owning Group *')).toBeInTheDocument();
+    expect(within(modal).getByLabelText('NDE Method *')).toBeInTheDocument();
+    expect(within(modal).getByLabelText('Access Method *')).toBeInTheDocument();
     expect(within(modal).getByLabelText('Reference')).toBeInTheDocument();
     expect(within(modal).getByLabelText('Inspection Details')).toBeInTheDocument();
 
-    expect(within(modal).getByLabelText('Project')).toHaveValue('Demo Turnaround 2026');
-    expect(within(modal).getByLabelText('Owning Group')).toHaveValue('Inspection');
-    expect(within(modal).getByLabelText('Code')).toHaveValue('API 570');
-    expect(within(modal).getByLabelText('Unit')).toHaveValue('Unit 73');
+    expect(within(modal).getByLabelText('Project *')).toHaveValue('Demo Turnaround 2026');
+    expect(within(modal).getByLabelText('Owning Group *')).toHaveValue('Inspection');
+    expect(within(modal).getByLabelText('Code Criteria')).toHaveValue('API 570');
+    expect(within(modal).getByLabelText('Unit *')).toHaveValue('Unit 73');
 
-    fireEvent.change(within(modal).getByLabelText('Project'), { target: { value: 'Unit 73 Maintenance' } });
-    fireEvent.change(within(modal).getByLabelText('Owning Group'), { target: { value: 'Operations' } });
-    fireEvent.change(within(modal).getByLabelText('Code'), { target: { value: 'NBIC' } });
-    fireEvent.change(within(modal).getByLabelText('Unit'), { target: { value: 'Unit 77' } });
+    fireEvent.change(within(modal).getByLabelText('Project *'), { target: { value: 'Unit 73 Maintenance' } });
+    fireEvent.change(within(modal).getByLabelText('Owning Group *'), { target: { value: 'Operations' } });
+    fireEvent.change(within(modal).getByLabelText('Code Criteria'), { target: { value: 'NBIC' } });
+    fireEvent.change(within(modal).getByLabelText('Unit *'), { target: { value: 'Unit 77' } });
     fireEvent.change(within(modal).getByLabelText('Reference'), { target: { value: 'REF-EDIT-900' } });
-    fireEvent.change(within(modal).getByLabelText('NDE Method'), { target: { value: 'RT' } });
+    fireEvent.change(within(modal).getByLabelText('NDE Method *'), { target: { value: 'RT' } });
+    fireEvent.change(within(modal).getByLabelText('Due Date *'), { target: { value: '2026-05-21' } });
+    fireEvent.change(within(modal).getByLabelText('Asset *'), { target: { value: 'P-102A' } });
+    fireEvent.change(within(modal).getByLabelText('Access Method *'), { target: { value: 'Ladder' } });
     fireEvent.change(within(modal).getByLabelText('Inspection Details'), { target: { value: 'Edited in-page demo details' } });
     fireEvent.click(within(modal).getByRole('button', { name: 'Save' }));
 
@@ -239,16 +242,16 @@ describe('App routes', () => {
     const updatedRow = screen.getAllByText('NDE-26-001')[0].closest('tr') as HTMLTableRowElement;
     expect(within(updatedRow).getByText('RT')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code, unit, access method, reference, inspection details, or assignee'), { target: { value: 'REF-EDIT-900' } });
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: 'REF-EDIT-900' } });
     expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
 
-    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code, unit, access method, reference, inspection details, or assignee'), { target: { value: 'Unit 73 Maintenance' } });
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: 'Unit 73 Maintenance' } });
     expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
 
-    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code, unit, access method, reference, inspection details, or assignee'), { target: { value: 'Operations' } });
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: 'Operations' } });
     expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
 
-    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code, unit, access method, reference, inspection details, or assignee'), { target: { value: 'NBIC' } });
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: 'NBIC' } });
     expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
   });
 
@@ -263,19 +266,23 @@ describe('App routes', () => {
     expect(screen.queryByDisplayValue('All')).toBeInTheDocument();
     expect(screen.queryByLabelText('Access Method')).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code, unit, access method, reference, inspection details, or assignee'), { target: { value: 'Rope Access' } });
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: 'Rope Access' } });
     expect(screen.getByText('NDE-26-004')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
     const modal = screen.getByRole('dialog', { name: 'New NDE Request' });
     expect(within(modal).getByLabelText('Requester')).toHaveValue('Operator (placeholder)');
-    expect(within(modal).getByLabelText('Access Method')).toBeInTheDocument();
+    expect(within(modal).getByLabelText('Access Method *')).toBeInTheDocument();
     expect(within(modal).getByText('Project options are demo reference data. Admin-managed project setup will be connected later.')).toBeInTheDocument();
 
-    fireEvent.change(within(modal).getByLabelText('Project'), { target: { value: 'Demo Turnaround 2026' } });
+    fireEvent.change(within(modal).getByLabelText('Project *'), { target: { value: 'Demo Turnaround 2026' } });
+    fireEvent.change(within(modal).getByLabelText('Owning Group *'), { target: { value: 'Inspection' } });
+    fireEvent.change(within(modal).getByLabelText('Due Date *'), { target: { value: '2026-05-22' } });
+    fireEvent.change(within(modal).getByLabelText('NDE Method *'), { target: { value: 'UT Thickness' } });
+    fireEvent.change(within(modal).getByLabelText('Unit *'), { target: { value: 'Unit 73' } });
     expect(within(modal).queryByText('Robinson TA 2026')).not.toBeInTheDocument();
-    fireEvent.change(within(modal).getByLabelText('Asset'), { target: { value: 'V-1001' } });
-    fireEvent.change(within(modal).getByLabelText('Access Method'), { target: { value: 'Rope Access' } });
+    fireEvent.change(within(modal).getByLabelText('Asset *'), { target: { value: 'V-1001' } });
+    fireEvent.change(within(modal).getByLabelText('Access Method *'), { target: { value: 'Rope Access' } });
     fireEvent.change(within(modal).getByLabelText('Reference'), { target: { value: 'REF-ROPE-77' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
 
@@ -295,29 +302,57 @@ describe('App routes', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
     expect(screen.getByRole('dialog', { name: 'New NDE Request' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Project')).toBeInTheDocument();
-    expect(screen.getByLabelText('Owning Group')).toBeInTheDocument();
+    expect(screen.getByLabelText('Project *')).toBeInTheDocument();
+    expect(screen.getByLabelText('Owning Group *')).toBeInTheDocument();
     expect(screen.getByLabelText('Requester')).toBeInTheDocument();
     expect(screen.getByLabelText('Priority')).toBeInTheDocument();
-    expect(screen.getByLabelText('Due Date')).toBeInTheDocument();
-    expect(screen.getByLabelText('NDE Method')).toBeInTheDocument();
-    expect(screen.getByLabelText('Code')).toBeInTheDocument();
-    expect(screen.getByLabelText('Unit')).toBeInTheDocument();
-    expect(screen.getByLabelText('Asset')).toBeInTheDocument();
+    expect(screen.getByLabelText('Due Date *')).toBeInTheDocument();
+    expect(screen.getByLabelText('NDE Method *')).toBeInTheDocument();
+    expect(screen.getByLabelText('Code Criteria')).toBeInTheDocument();
+    expect(screen.getByLabelText('Unit *')).toBeInTheDocument();
+    expect(screen.getByLabelText('Asset *')).toBeInTheDocument();
     expect(screen.getByLabelText('Inspection Details')).toBeInTheDocument();
 
     expect(screen.queryByLabelText('Billing #1')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('PT Root')).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Asset'), { target: { value: 'V-1001' } });
+    fireEvent.change(screen.getByLabelText('Project *'), { target: { value: 'Demo Turnaround 2026' } });
+    fireEvent.change(screen.getByLabelText('Owning Group *'), { target: { value: 'Inspection' } });
+    fireEvent.change(screen.getByLabelText('Due Date *'), { target: { value: '2026-05-22' } });
+    fireEvent.change(screen.getByLabelText('NDE Method *'), { target: { value: 'UT Thickness' } });
+    fireEvent.change(screen.getByLabelText('Unit *'), { target: { value: 'Unit 73' } });
+    fireEvent.change(screen.getByLabelText('Asset *'), { target: { value: 'V-1001' } });
+    fireEvent.change(screen.getByLabelText('Access Method *'), { target: { value: 'Ladder' } });
     fireEvent.change(screen.getByLabelText('Request Status'), { target: { value: 'Requested' } });
     fireEvent.change(screen.getByLabelText('Inspection Details'), { target: { value: 'Created request detail unique token ZX-441' } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
     expect(await screen.findByText('Request creation is demo-only (in-memory) until backend persistence is connected.')).toBeInTheDocument();
     expect(screen.getByText('Created request detail unique token ZX-441')).toBeInTheDocument();
-    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code, unit, access method, reference, inspection details, or assignee'), { target: { value: 'zx-441' } });
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: 'zx-441' } });
     expect(screen.queryByText('NDE-26-004')).not.toBeInTheDocument();
     expect(screen.queryByText('No NDE Requests NDE items yet')).not.toBeInTheDocument();
+  });
+
+  it('blocks create and save when required fields are missing and shows validation message', async () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-requests']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
+    expect(screen.getByText('Project, Owning Group, Due Date, NDE Method, Unit, Asset, and Access Method are required.')).toBeInTheDocument();
+    expect(screen.queryByText('NDE-26-011')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByText('NDE-26-001'));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Request' }));
+    const editModal = screen.getByRole('dialog', { name: 'Edit NDE Request' });
+    fireEvent.change(within(editModal).getByLabelText('Asset *'), { target: { value: '' } });
+    fireEvent.click(within(editModal).getByRole('button', { name: 'Save' }));
+    expect(within(editModal).getByText('Project, Owning Group, Due Date, NDE Method, Unit, Asset, and Access Method are required.')).toBeInTheDocument();
   });
 
 
@@ -356,7 +391,7 @@ describe('App routes', () => {
       </MemoryRouter>,
     );
     fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
-    const projectSelect = screen.getByLabelText('Project');
+    const projectSelect = screen.getByLabelText('Project *');
     expect(within(projectSelect).queryByRole('option', { name: 'Demo Reliability Sprint' })).not.toBeInTheDocument();
 
     cleanup();

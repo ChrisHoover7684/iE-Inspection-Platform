@@ -109,7 +109,10 @@ export function NdeWorkspacePage({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [demoCreateMessage, setDemoCreateMessage] = useState<string>('');
+  const requiredFieldsMessage = 'Project, Owning Group, Due Date, NDE Method, Unit, Asset, and Access Method are required.';
   const [managedProjectOptions, setManagedProjectOptions] = useState(() => getProjectOptions());
+  const [createValidationMessage, setCreateValidationMessage] = useState<string | null>(null);
+  const [editValidationMessage, setEditValidationMessage] = useState<string | null>(null);
   const currentUserDisplayName = 'Operator (placeholder)';
   const [createForm, setCreateForm] = useState({
     project: '', owningGroup: '', requester: currentUserDisplayName, priority: 'Normal' as NdeLogItem['priority'], dueDate: '',
@@ -264,6 +267,12 @@ export function NdeWorkspacePage({
   }, [baseItems, searchText, statusFilter]);
 
   const createRequestFromForm = () => {
+    const hasMissingRequiredFields = !createForm.project || !createForm.owningGroup || !createForm.dueDate || !createForm.taskType || !createForm.unit || !createForm.asset || !createForm.accessType;
+    if (hasMissingRequiredFields) {
+      setCreateValidationMessage(requiredFieldsMessage);
+      return;
+    }
+
     const nextSequence = items.length + 1;
     const createdItem: NdeLogItem = {
       id: `nde-${String(nextSequence).padStart(3, '0')}`,
@@ -281,12 +290,14 @@ export function NdeWorkspacePage({
       project: createForm.project || undefined,
       owningGroup: createForm.owningGroup || undefined,
       code: createForm.code || undefined,
+      codeCriteria: createForm.code || undefined,
       unit: createForm.unit || undefined,
     };
 
     setItems((current) => [createdItem, ...current]);
     setSelectedId(createdItem.id);
     setIsCreateModalOpen(false);
+    setCreateValidationMessage(null);
     setDemoCreateMessage('Request creation is demo-only (in-memory) until backend persistence is connected.');
   };
 
@@ -305,11 +316,18 @@ export function NdeWorkspacePage({
       reference: selectedItem.reference ?? '',
       inspectionDetails: selectedItem.inspectionDetails ?? '',
     });
+    setEditValidationMessage(null);
     setIsEditModalOpen(true);
   };
 
   const saveEditForm = () => {
     if (!selectedId) return;
+    const hasMissingRequiredFields = !editForm.project || !editForm.owningGroup || !editForm.dueDate || !editForm.method || !editForm.unit || !editForm.asset || !editForm.accessType;
+    if (hasMissingRequiredFields) {
+      setEditValidationMessage(requiredFieldsMessage);
+      return;
+    }
+
     setItems((current) => current.map((item) => {
       if (item.id !== selectedId) return item;
       return {
@@ -326,10 +344,12 @@ export function NdeWorkspacePage({
         project: editForm.project || undefined,
         owningGroup: editForm.owningGroup || undefined,
         code: editForm.code || undefined,
+        codeCriteria: editForm.code || undefined,
         unit: editForm.unit || undefined,
       };
     }));
     setIsEditModalOpen(false);
+    setEditValidationMessage(null);
     setDemoCreateMessage('Request edits are demo-only until backend persistence is connected.');
   };
 
@@ -356,13 +376,13 @@ export function NdeWorkspacePage({
   };
 
   const exportVisibleTable = () => {
-    const headers = ['Request #', 'Asset / Circuit / Equipment', 'Project', 'Owning Group', 'Code', 'Unit', 'Method', 'Access Method', 'Reference', 'Inspection Details', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
+    const headers = ['Request #', 'Asset / Circuit / Equipment', 'Project', 'Owning Group', 'Code Criteria', 'Unit', 'Method', 'Access Method', 'Reference', 'Inspection Details', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
     const rows = filteredItems.map((item) => [
       item.requestNumber,
       item.assetTag ?? item.circuitId ?? item.equipmentTag ?? '—',
       item.project ?? '—',
       item.owningGroup ?? '—',
-      item.code ?? '—',
+      item.codeCriteria ?? item.code ?? '—',
       item.unit ?? '—',
       item.method,
       item.accessType ?? '—',
@@ -415,18 +435,19 @@ export function NdeWorkspacePage({
         <div className="nde-modal-backdrop" role="dialog" aria-modal="true" aria-label="New NDE Request">
           <div className="card nde-modal-card">
             <h3>New NDE Request</h3>
+            {createValidationMessage && <p className="error">{createValidationMessage}</p>}
             <div className="nde-modal-grid">
-              <label>Project<select value={createForm.project} onChange={(event) => setCreateForm((current) => ({ ...current, project: event.target.value }))}><option value="">Select a Project...</option>{managedProjectOptions.filter((option) => option.isActive).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
-              <label>Owning Group<select value={createForm.owningGroup} onChange={(event) => setCreateForm((current) => ({ ...current, owningGroup: event.target.value }))}><option value="">Select an Owning Group...</option>{owningGroupOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              <label>Project *<select required value={createForm.project} onChange={(event) => setCreateForm((current) => ({ ...current, project: event.target.value }))}><option value="">Select a Project...</option>{managedProjectOptions.filter((option) => option.isActive).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
+              <label>Owning Group *<select required value={createForm.owningGroup} onChange={(event) => setCreateForm((current) => ({ ...current, owningGroup: event.target.value }))}><option value="">Select an Owning Group...</option>{owningGroupOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               <label>Requester<input value={createForm.requester} readOnly /></label>
               <label>Priority<select value={createForm.priority} onChange={(event) => setCreateForm((current) => ({ ...current, priority: event.target.value as NdeLogItem['priority'] }))}><option>Low</option><option>Normal</option><option>High</option><option>Critical</option></select></label>
-              <label>Due Date<input type="date" value={createForm.dueDate} onChange={(event) => setCreateForm((current) => ({ ...current, dueDate: event.target.value }))} /></label>
-              <label>NDE Method<select value={createForm.taskType} onChange={(event) => setCreateForm((current) => ({ ...current, taskType: event.target.value }))}><option value="">Select an NDE Method...</option>{ndeMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
-              <label>Code<input value={createForm.code} onChange={(event) => setCreateForm((current) => ({ ...current, code: event.target.value }))} /></label>
-              <label>Unit<input value={createForm.unit} onChange={(event) => setCreateForm((current) => ({ ...current, unit: event.target.value }))} /></label>
-              <label>Asset<input value={createForm.asset} onChange={(event) => setCreateForm((current) => ({ ...current, asset: event.target.value }))} /></label>
+              <label>Due Date *<input required type="date" value={createForm.dueDate} onChange={(event) => setCreateForm((current) => ({ ...current, dueDate: event.target.value }))} /></label>
+              <label>NDE Method *<select required value={createForm.taskType} onChange={(event) => setCreateForm((current) => ({ ...current, taskType: event.target.value }))}><option value="">Select an NDE Method...</option>{ndeMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              <label>Code Criteria<input value={createForm.code} onChange={(event) => setCreateForm((current) => ({ ...current, code: event.target.value }))} /></label>
+              <label>Unit *<input required value={createForm.unit} onChange={(event) => setCreateForm((current) => ({ ...current, unit: event.target.value }))} /></label>
+              <label>Asset *<input required value={createForm.asset} onChange={(event) => setCreateForm((current) => ({ ...current, asset: event.target.value }))} /></label>
               <label>Request Status<select value={createForm.requestStatus} onChange={(event) => setCreateForm((current) => ({ ...current, requestStatus: event.target.value as NdeLogStatus }))}><option>Draft</option><option>Requested</option></select></label>
-              <label>Access Method<select value={createForm.accessType} onChange={(event) => setCreateForm((current) => ({ ...current, accessType: event.target.value }))}><option value="">Select an Access Method...</option>{accessMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              <label>Access Method *<select required value={createForm.accessType} onChange={(event) => setCreateForm((current) => ({ ...current, accessType: event.target.value }))}><option value="">Select an Access Method...</option>{accessMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               
               
               
@@ -448,21 +469,22 @@ export function NdeWorkspacePage({
           <div className="card nde-modal-card">
             <h3>Edit Request</h3>
             <p className="muted nde-selection-summary">Request #: {selectedItem.requestNumber}</p>
+            {editValidationMessage && <p className="error">{editValidationMessage}</p>}
             <div className="nde-modal-grid">
-              <label>Project<select value={editForm.project} onChange={(event) => setEditForm((current) => ({ ...current, project: event.target.value }))}><option value="">Select a Project...</option>{managedProjectOptions.filter((option) => option.isActive).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
-              <label>Owning Group<select value={editForm.owningGroup} onChange={(event) => setEditForm((current) => ({ ...current, owningGroup: event.target.value }))}><option value="">Select an Owning Group...</option>{owningGroupOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              <label>Project *<select required value={editForm.project} onChange={(event) => setEditForm((current) => ({ ...current, project: event.target.value }))}><option value="">Select a Project...</option>{managedProjectOptions.filter((option) => option.isActive).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
+              <label>Owning Group *<select required value={editForm.owningGroup} onChange={(event) => setEditForm((current) => ({ ...current, owningGroup: event.target.value }))}><option value="">Select an Owning Group...</option>{owningGroupOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               <label>Request #<input value={selectedItem.requestNumber} readOnly /></label>
               <label>Report #<input value={selectedItem.reportNumber ?? '—'} readOnly /></label>
               <label>Report Status<input value={formatReportStatus(selectedItem.reportStatus)} readOnly /></label>
               <label>Results Received Date<input value={selectedItem.resultReceivedDate ?? '—'} readOnly /></label>
               <label>Requester<input value={selectedItem.requestedBy ?? '—'} readOnly /></label>
               <label>Priority<select value={editForm.priority} onChange={(event) => setEditForm((current) => ({ ...current, priority: event.target.value as NdeLogItem['priority'] }))}><option>Low</option><option>Normal</option><option>High</option><option>Critical</option></select></label>
-              <label>Due Date<input type="date" value={editForm.dueDate} onChange={(event) => setEditForm((current) => ({ ...current, dueDate: event.target.value }))} /></label>
-              <label>NDE Method<select value={editForm.method} onChange={(event) => setEditForm((current) => ({ ...current, method: event.target.value }))}><option value="">Select an NDE Method...</option>{ndeMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
-              <label>Code<input value={editForm.code} onChange={(event) => setEditForm((current) => ({ ...current, code: event.target.value }))} /></label>
-              <label>Unit<input value={editForm.unit} onChange={(event) => setEditForm((current) => ({ ...current, unit: event.target.value }))} /></label>
-              <label>Asset<input value={editForm.asset} onChange={(event) => setEditForm((current) => ({ ...current, asset: event.target.value }))} /></label>
-              <label>Access Method<select value={editForm.accessType} onChange={(event) => setEditForm((current) => ({ ...current, accessType: event.target.value }))}><option value="">Select an Access Method...</option>{accessMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              <label>Due Date *<input required type="date" value={editForm.dueDate} onChange={(event) => setEditForm((current) => ({ ...current, dueDate: event.target.value }))} /></label>
+              <label>NDE Method *<select required value={editForm.method} onChange={(event) => setEditForm((current) => ({ ...current, method: event.target.value }))}><option value="">Select an NDE Method...</option>{ndeMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              <label>Code Criteria<input value={editForm.code} onChange={(event) => setEditForm((current) => ({ ...current, code: event.target.value }))} /></label>
+              <label>Unit *<input required value={editForm.unit} onChange={(event) => setEditForm((current) => ({ ...current, unit: event.target.value }))} /></label>
+              <label>Asset *<input required value={editForm.asset} onChange={(event) => setEditForm((current) => ({ ...current, asset: event.target.value }))} /></label>
+              <label>Access Method *<select required value={editForm.accessType} onChange={(event) => setEditForm((current) => ({ ...current, accessType: event.target.value }))}><option value="">Select an Access Method...</option>{accessMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               <label>Reference<input value={editForm.reference} onChange={(event) => setEditForm((current) => ({ ...current, reference: event.target.value }))} /></label>
             </div>
             <label>Inspection Details<textarea value={editForm.inspectionDetails} onChange={(event) => setEditForm((current) => ({ ...current, inspectionDetails: event.target.value }))} /></label>
@@ -487,7 +509,7 @@ export function NdeWorkspacePage({
           <input
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
-            placeholder="Search request #, asset, method, project, owning group, code, unit, access method, reference, inspection details, or assignee"
+            placeholder="Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee"
           />
         </label>
         <label>
@@ -608,7 +630,7 @@ export function NdeWorkspacePage({
                 <dt>Method</dt><dd>{selectedItem.method}</dd>
                 <dt>Project</dt><dd>{selectedItem.project ?? '—'}</dd>
                 <dt>Owning Group</dt><dd>{selectedItem.owningGroup ?? '—'}</dd>
-                <dt>Code</dt><dd>{selectedItem.code ?? '—'}</dd>
+                <dt>Code Criteria</dt><dd>{selectedItem.codeCriteria ?? selectedItem.code ?? '—'}</dd>
                 <dt>Unit</dt><dd>{selectedItem.unit ?? '—'}</dd>
                 <dt>Access Method</dt><dd>{selectedItem.accessType ?? '—'}</dd>
                 <dt>Reference</dt><dd>{selectedItem.reference ?? '—'}</dd>

@@ -34,6 +34,7 @@ export type NdeLogItem = {
   project?: string;
   owningGroup?: string;
   code?: string;
+  codeCriteria?: string;
   unit?: string;
   inspectionDetails?: string;
   scopeItems?: NdeRequestScopeItem[];

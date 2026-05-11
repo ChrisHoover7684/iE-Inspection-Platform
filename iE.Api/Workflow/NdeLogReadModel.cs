@@ -38,7 +38,7 @@ public sealed record NdeLogItemReadModel(
     string? ReportNumber,
     string? ReportFileName,
     string? ReportDownloadUrl,
-    string? InspectionDetails,
+    string? InspectionDetails = null,
     IReadOnlyList<NdeRequestScopeItemReadModel>? ScopeItems = null);
 
 public sealed record NdeRequestScopeItemReadModel(

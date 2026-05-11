@@ -39,17 +39,11 @@ export type NdeLogItem = {
   facilityId?: string;
   facilityName?: string;
   inspectionDetails?: string;
-  scopeItems?: NdeRequestScopeItem[];
-};
-
-export type NdeRequestScopeItem = {
-  id: string;
-  method: string;
-  stage: string;
-  displayName: string;
+  ndeStage?: 'Prep' | 'Root' | 'Final' | 'Material Verification' | 'Other';
   weldId?: string;
   location?: string;
-  notes?: string;
+  relatedRequestGroupId?: string;
+  relatedRequestGroupLabel?: string;
 };
 
 export type NdeLogTransitionEvent = {

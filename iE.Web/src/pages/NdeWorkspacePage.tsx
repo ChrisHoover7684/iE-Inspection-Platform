@@ -191,7 +191,7 @@ export function NdeWorkspacePage({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [demoCreateMessage, setDemoCreateMessage] = useState<string>('');
-  const requiredFieldsMessage = 'Project, Owning Group, Due Date, NDE Method, Facility, Unit, Asset, and Access Method are required.';
+  const requiredFieldsMessage = 'Project, Owning Group, Due Date, NDE Method, Unit, Asset, and Access Method are required.';
   const stagedSelectionMessage = 'Select at least one NDE stage for staged weld requests.';
   const [managedProjectOptions, setManagedProjectOptions] = useState(() => getProjectOptions());
   const [managedUnitOptions, setManagedUnitOptions] = useState(() => getUnitOptions());
@@ -346,7 +346,6 @@ const todayIso = new Date().toISOString().slice(0, 10);
           row.assetTag,
           row.circuitId,
           row.equipmentTag,
-          resolveFacilityName(row),
           row.method,
           row.accessType,
           row.reference,
@@ -373,7 +372,7 @@ const todayIso = new Date().toISOString().slice(0, 10);
   }, [baseItems, searchText, statusFilter]);
 
   const createRequestFromForm = () => {
-    const hasMissingRequiredFields = !createForm.project || !createForm.owningGroup || !createForm.dueDate || !createForm.taskType || !createForm.facilityId || !createForm.unit || !createForm.asset || !createForm.accessType;
+    const hasMissingRequiredFields = !createForm.project || !createForm.owningGroup || !createForm.dueDate || !createForm.taskType || !createForm.unit || !createForm.asset || !createForm.accessType;
     if (hasMissingRequiredFields) {
       setCreateValidationMessage(requiredFieldsMessage);
       return;
@@ -392,6 +391,7 @@ const todayIso = new Date().toISOString().slice(0, 10);
     }
 
     const nextSequence = getNextRequestSequence(items);
+    const resolvedFacilityId = createForm.facilityId || managedUnitOptions.find((unit) => unit.name === createForm.unit)?.facilityId || 'fac-demo-main';
     const createBase = (sequence: number): NdeLogItem => ({
       id: `nde-${String(nextSequence).padStart(4, '0')}`,
       requestNumber: formatRequestNumber(sequence),
@@ -410,8 +410,8 @@ const todayIso = new Date().toISOString().slice(0, 10);
       code: createForm.code || undefined,
       codeCriteria: createForm.code || undefined,
       unit: createForm.unit || undefined,
-      facilityId: createForm.facilityId || undefined,
-      facilityName: facilities.find((facility) => facility.id === createForm.facilityId)?.name,
+      facilityId: resolvedFacilityId || undefined,
+      facilityName: facilities.find((facility) => facility.id === resolvedFacilityId)?.name,
       ndeStage: createForm.ndeStage ? createForm.ndeStage as NdeLogItem['ndeStage'] : undefined,
       weldId: createForm.weldId || undefined,
       location: createForm.location || undefined,
@@ -462,7 +462,7 @@ const todayIso = new Date().toISOString().slice(0, 10);
 
   const saveEditForm = () => {
     if (!selectedId) return;
-    const hasMissingRequiredFields = !editForm.project || !editForm.owningGroup || !editForm.dueDate || !editForm.method || !editForm.facilityId || !editForm.unit || !editForm.asset || !editForm.accessType;
+    const hasMissingRequiredFields = !editForm.project || !editForm.owningGroup || !editForm.dueDate || !editForm.method || !editForm.unit || !editForm.asset || !editForm.accessType;
     if (hasMissingRequiredFields) {
       setEditValidationMessage(requiredFieldsMessage);
       return;
@@ -471,6 +471,7 @@ const todayIso = new Date().toISOString().slice(0, 10);
     setItems((current) => current.map((item) => {
       if (item.id !== selectedId) return item;
       const reportNumber = item.reportNumber;
+      const resolvedFacilityId = editForm.facilityId || managedUnitOptions.find((unit) => unit.name === editForm.unit)?.facilityId || item.facilityId;
       return {
         ...item,
         method: editForm.method,
@@ -487,8 +488,8 @@ const todayIso = new Date().toISOString().slice(0, 10);
         code: editForm.code || undefined,
         codeCriteria: editForm.code || undefined,
         unit: editForm.unit || undefined,
-        facilityId: editForm.facilityId || undefined,
-        facilityName: facilities.find((facility) => facility.id === editForm.facilityId)?.name,
+        facilityId: resolvedFacilityId || undefined,
+        facilityName: facilities.find((facility) => facility.id === resolvedFacilityId)?.name,
         ndeStage: editForm.ndeStage ? editForm.ndeStage as NdeLogItem['ndeStage'] : undefined,
         weldId: editForm.weldId || undefined,
         location: editForm.location || undefined,
@@ -523,10 +524,9 @@ const todayIso = new Date().toISOString().slice(0, 10);
   };
 
   const exportVisibleTable = () => {
-    const headers = ['Request #', 'Facility', 'Unit #', 'Asset / Circuit / Equipment', 'Project', 'Owning Group', 'Code Criteria', 'Unit', 'Method', 'NDE Stage', 'Weld ID', 'Location', 'Related Request Group', 'Access Method', 'Reference', 'Inspection Details', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
+    const headers = ['Request #', 'Unit #', 'Asset / Circuit / Equipment', 'Project', 'Owning Group', 'Code Criteria', 'Unit', 'Method', 'NDE Stage', 'Weld ID', 'Location', 'Related Request Group', 'Access Method', 'Reference', 'Inspection Details', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
     const rows = filteredItems.map((item) => [
       item.requestNumber,
-      resolveFacilityName(item),
       getUnitNumberDisplay(item),
       getAssetDisplay(item),
       item.project ?? '—',
@@ -607,9 +607,8 @@ const todayIso = new Date().toISOString().slice(0, 10);
               <label>Create separate staged weld requests<input type='checkbox' checked={createForm.createSeparateStagedWeldRequests} onChange={(event) => setCreateForm((current) => ({ ...current, createSeparateStagedWeldRequests: event.target.checked }))} /></label>
               {createForm.createSeparateStagedWeldRequests && <label>Stages to create<select multiple value={createForm.stagedStages} onChange={(event) => setCreateForm((current) => ({ ...current, stagedStages: Array.from(event.target.selectedOptions, (option) => option.value as typeof stagedWeldStageOptions[number]) }))}>{stagedWeldStageOptions.map((stage) => <option key={stage} value={stage}>{stage}</option>)}</select></label>}
               <label>Code Criteria<input value={createForm.code} onChange={(event) => setCreateForm((current) => ({ ...current, code: event.target.value }))} /></label>
-              <label>Facility *<select required value={createForm.facilityId} onChange={(event) => setCreateForm((current) => ({ ...current, facilityId: event.target.value, unit: '', asset: '' }))}><option value="">Select a Facility...</option>{facilities.filter((facility) => facility.isActive).map((facility) => <option key={facility.id} value={facility.id}>{facility.name}</option>)}</select></label>
-              <label>Unit *<select required disabled={!createForm.facilityId} value={createForm.unit} onChange={(event) => setCreateForm((current) => ({ ...current, unit: event.target.value, asset: '' }))}><option value="">{createForm.facilityId ? 'Select a Unit...' : 'Select a Facility first...'}</option>{managedUnitOptions.filter((option) => option.isActive && option.facilityId === createForm.facilityId).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
-              <label>Asset *<select required disabled={!createForm.unit} value={createForm.asset} onChange={(event) => setCreateForm((current) => ({ ...current, asset: event.target.value }))}><option value="">{createForm.unit ? 'Select an Asset...' : 'Select a Unit first...'}</option>{getAssetsForUnit(createForm.unit, createForm.facilityId).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
+              <label>Unit *<select required value={createForm.unit} onChange={(event) => { const selectedUnit = managedUnitOptions.find((option) => option.name === event.target.value); setCreateForm((current) => ({ ...current, unit: event.target.value, asset: '', facilityId: selectedUnit?.facilityId ?? current.facilityId })); }}><option value="">Select a Unit...</option>{managedUnitOptions.filter((option) => option.isActive).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
+              <label>Asset *<select required disabled={!createForm.unit} value={createForm.asset} onChange={(event) => setCreateForm((current) => ({ ...current, asset: event.target.value }))}><option value="">{createForm.unit ? 'Select an Asset...' : 'Select a Unit first...'}</option>{getAssetsForUnit(createForm.unit, createForm.facilityId || managedUnitOptions.find((option) => option.name === createForm.unit)?.facilityId).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
               <label>Request Status<select value={createForm.requestStatus} onChange={(event) => setCreateForm((current) => ({ ...current, requestStatus: event.target.value as NdeLogStatus }))}><option>Draft</option><option>Requested</option></select></label>
               <label>Access Method *<select required value={createForm.accessType} onChange={(event) => setCreateForm((current) => ({ ...current, accessType: event.target.value }))}><option value="">Select an Access Method...</option>{accessMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               
@@ -649,9 +648,8 @@ const todayIso = new Date().toISOString().slice(0, 10);
               <label>Weld ID<input value={editForm.weldId} onChange={(event) => setEditForm((current) => ({ ...current, weldId: event.target.value }))} /></label>
               <label>Location<input value={editForm.location} onChange={(event) => setEditForm((current) => ({ ...current, location: event.target.value }))} /></label>
               <label>Code Criteria<input value={editForm.code} onChange={(event) => setEditForm((current) => ({ ...current, code: event.target.value }))} /></label>
-              <label>Facility *<select required value={editForm.facilityId} onChange={(event) => setEditForm((current) => ({ ...current, facilityId: event.target.value, unit: '', asset: '' }))}><option value="">Select a Facility...</option>{facilities.filter((facility) => facility.isActive).map((facility) => <option key={facility.id} value={facility.id}>{facility.name}</option>)}</select></label>
-              <label>Unit *<select required disabled={!editForm.facilityId} value={editForm.unit} onChange={(event) => setEditForm((current) => ({ ...current, unit: event.target.value, asset: '' }))}><option value="">{editForm.facilityId ? 'Select a Unit...' : 'Select a Facility first...'}</option>{managedUnitOptions.filter((option) => option.isActive && option.facilityId === editForm.facilityId).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
-              <label>Asset *<select required disabled={!editForm.unit} value={editForm.asset} onChange={(event) => setEditForm((current) => ({ ...current, asset: event.target.value }))}><option value="">{editForm.unit ? 'Select an Asset...' : 'Select a Unit first...'}</option>{getAssetsForUnit(editForm.unit, editForm.facilityId).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
+              <label>Unit *<select required value={editForm.unit} onChange={(event) => { const selectedUnit = managedUnitOptions.find((option) => option.name === event.target.value); setEditForm((current) => ({ ...current, unit: event.target.value, asset: '', facilityId: selectedUnit?.facilityId ?? current.facilityId })); }}><option value="">Select a Unit...</option>{managedUnitOptions.filter((option) => option.isActive).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
+              <label>Asset *<select required disabled={!editForm.unit} value={editForm.asset} onChange={(event) => setEditForm((current) => ({ ...current, asset: event.target.value }))}><option value="">{editForm.unit ? 'Select an Asset...' : 'Select a Unit first...'}</option>{getAssetsForUnit(editForm.unit, editForm.facilityId || managedUnitOptions.find((option) => option.name === editForm.unit)?.facilityId).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
               <label>Access Method *<select required value={editForm.accessType} onChange={(event) => setEditForm((current) => ({ ...current, accessType: event.target.value }))}><option value="">Select an Access Method...</option>{accessMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               <label>Reference<input value={editForm.reference} onChange={(event) => setEditForm((current) => ({ ...current, reference: event.target.value }))} /></label>
             </div>
@@ -715,7 +713,7 @@ const todayIso = new Date().toISOString().slice(0, 10);
         <table className="nde-table">
           <thead>
             <tr>
-              <th>Select</th><th>Request #</th><th>Facility</th><th>Unit #</th><th>Asset / Circuit / Equipment</th><th>Method</th><th>Stage</th><th>Access Method</th><th>Status</th><th>Priority</th><th>Due</th>
+              <th>Select</th><th>Request #</th><th>Unit #</th><th>Asset / Circuit / Equipment</th><th>Method</th><th>Stage</th><th>Access Method</th><th>Status</th><th>Priority</th><th>Due</th>
               <th>Report Status</th><th>Report #</th><th>Actions</th>
             </tr>
           </thead>
@@ -731,7 +729,6 @@ const todayIso = new Date().toISOString().slice(0, 10);
                   setSelectedForBulkDownload((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id));
                 }} onClick={(event) => event.stopPropagation()} /></td>
                 <td className="nde-request-number-cell">{item.requestNumber}</td>
-                <td className="nde-facility-cell nowrap">{resolveFacilityName(item)}</td>
                 <td className="nde-unit-number-cell">{getUnitNumberDisplay(item)}</td>
                 <td>{getAssetDisplay(item)}</td>
                 <td>{item.method}</td>
@@ -792,7 +789,6 @@ const todayIso = new Date().toISOString().slice(0, 10);
               <p className="muted nde-selection-summary">Selected: {selectedItem.requestNumber} ({selectedItem.status})</p>
               <button type="button" onClick={openEditModal}>Edit Request</button>
               <dl className="nde-detail-grid">
-                <dt>Facility</dt><dd>{resolveFacilityName(selectedItem)}</dd>
                 <dt>Unit</dt><dd>{selectedItem.unit ?? '—'}</dd>
                 <dt>Asset / Circuit / Equipment</dt><dd>{getAssetDisplay(selectedItem)}</dd>
                 <dt>Request #</dt><dd>{selectedItem.requestNumber}</dd>

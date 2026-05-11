@@ -194,6 +194,42 @@ describe('App routes', () => {
     expect(screen.getByRole('button', { name: 'Export Table' })).toBeInTheDocument();
   });
 
+  it('opens in-page Edit Request modal and saves updated request fields into details, table, and search', async () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-requests']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('NDE-26-001'));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Request' }));
+
+    const modal = screen.getByRole('dialog', { name: 'Edit NDE Request' });
+    expect(within(modal).getByDisplayValue('NDE-26-001')).toHaveAttribute('readonly');
+    expect(within(modal).getByLabelText('Project')).toBeInTheDocument();
+    expect(within(modal).getByLabelText('Owning Group')).toBeInTheDocument();
+    expect(within(modal).getByLabelText('NDE Method')).toBeInTheDocument();
+    expect(within(modal).getByLabelText('Access Method')).toBeInTheDocument();
+    expect(within(modal).getByLabelText('Reference')).toBeInTheDocument();
+    expect(within(modal).getByLabelText('Inspection Details')).toBeInTheDocument();
+
+    fireEvent.change(within(modal).getByLabelText('Reference'), { target: { value: 'REF-EDIT-900' } });
+    fireEvent.change(within(modal).getByLabelText('NDE Method'), { target: { value: 'RT' } });
+    fireEvent.change(within(modal).getByLabelText('Inspection Details'), { target: { value: 'Edited in-page demo details' } });
+    fireEvent.click(within(modal).getByRole('button', { name: 'Save' }));
+
+    expect(screen.getByText('Request edits are demo-only until backend persistence is connected.')).toBeInTheDocument();
+    expect(screen.getByText('REF-EDIT-900')).toBeInTheDocument();
+    expect(screen.getByText('Edited in-page demo details')).toBeInTheDocument();
+
+    const updatedRow = screen.getAllByText('NDE-26-001')[0].closest('tr') as HTMLTableRowElement;
+    expect(within(updatedRow).getByText('RT')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, access method, reference, inspection details, or assignee'), { target: { value: 'REF-EDIT-900' } });
+    expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
+  });
+
   it('supports access method/reference in create form, details, and search without filter dropdown', async () => {
     render(
       <MemoryRouter initialEntries={['/nde-requests']}>

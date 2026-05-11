@@ -103,6 +103,7 @@ export function NdeWorkspacePage({
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const [eventHistoryError, setEventHistoryError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [demoCreateMessage, setDemoCreateMessage] = useState<string>('');
   const [managedProjectOptions, setManagedProjectOptions] = useState(() => getProjectOptions());
   const currentUserDisplayName = 'Operator (placeholder)';
@@ -110,6 +111,10 @@ export function NdeWorkspacePage({
     project: '', owningGroup: '', requester: currentUserDisplayName, priority: 'Normal' as NdeLogItem['priority'], dueDate: '',
     taskType: '', code: '', unit: '', asset: '', inspectionDetails: '', requestStatus: 'Draft' as NdeLogStatus,
     accessType: '', reference: '',
+  });
+  const [editForm, setEditForm] = useState({
+    project: '', owningGroup: '', priority: 'Normal' as NdeLogItem['priority'], dueDate: '', method: '',
+    code: '', unit: '', asset: '', accessType: '', reference: '', inspectionDetails: '',
   });
 
   useEffect(() => {
@@ -273,6 +278,45 @@ export function NdeWorkspacePage({
     setDemoCreateMessage('Request creation is demo-only (in-memory) until backend persistence is connected.');
   };
 
+  const openEditModal = () => {
+    if (!selectedItem) return;
+    setEditForm({
+      project: '',
+      owningGroup: '',
+      priority: selectedItem.priority,
+      dueDate: selectedItem.dueDate ?? '',
+      method: selectedItem.method ?? '',
+      code: '',
+      unit: '',
+      asset: selectedItem.assetTag ?? selectedItem.circuitId ?? selectedItem.equipmentTag ?? '',
+      accessType: selectedItem.accessType ?? '',
+      reference: selectedItem.reference ?? '',
+      inspectionDetails: selectedItem.inspectionDetails ?? '',
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const saveEditForm = () => {
+    if (!selectedId) return;
+    setItems((current) => current.map((item) => {
+      if (item.id !== selectedId) return item;
+      return {
+        ...item,
+        method: editForm.method,
+        priority: editForm.priority,
+        dueDate: editForm.dueDate || undefined,
+        assetTag: editForm.asset || undefined,
+        circuitId: undefined,
+        equipmentTag: undefined,
+        accessType: editForm.accessType || undefined,
+        reference: editForm.reference || undefined,
+        inspectionDetails: editForm.inspectionDetails || undefined,
+      };
+    }));
+    setIsEditModalOpen(false);
+    setDemoCreateMessage('Request edits are demo-only until backend persistence is connected.');
+  };
+
   const visibleIds = useMemo(() => filteredItems.map((item) => item.id), [filteredItems]);
   const visibleSelectedCount = useMemo(() => selectedForBulkDownload.filter((id) => visibleIds.includes(id)).length, [selectedForBulkDownload, visibleIds]);
   const isReportWorkflowCompleteEnough = (item: NdeLogItem) =>
@@ -375,6 +419,36 @@ export function NdeWorkspacePage({
             <div className="row">
               <button type="button" onClick={createRequestFromForm}>Create Request</button>
               <button type="button" onClick={() => setIsCreateModalOpen(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isEditModalOpen && selectedItem && (
+        <div className="nde-modal-backdrop" role="dialog" aria-modal="true" aria-label="Edit NDE Request">
+          <div className="card nde-modal-card">
+            <h3>Edit Request</h3>
+            <p className="muted nde-selection-summary">Request #: {selectedItem.requestNumber}</p>
+            <div className="nde-modal-grid">
+              <label>Project<select value={editForm.project} onChange={(event) => setEditForm((current) => ({ ...current, project: event.target.value }))}><option value="">Select a Project...</option>{managedProjectOptions.filter((option) => option.isActive).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
+              <label>Owning Group<select value={editForm.owningGroup} onChange={(event) => setEditForm((current) => ({ ...current, owningGroup: event.target.value }))}><option value="">Select an Owning Group...</option>{owningGroupOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              <label>Request #<input value={selectedItem.requestNumber} readOnly /></label>
+              <label>Report #<input value={selectedItem.reportNumber ?? '—'} readOnly /></label>
+              <label>Report Status<input value={formatReportStatus(selectedItem.reportStatus)} readOnly /></label>
+              <label>Results Received Date<input value={selectedItem.resultReceivedDate ?? '—'} readOnly /></label>
+              <label>Requester<input value={selectedItem.requestedBy ?? '—'} readOnly /></label>
+              <label>Priority<select value={editForm.priority} onChange={(event) => setEditForm((current) => ({ ...current, priority: event.target.value as NdeLogItem['priority'] }))}><option>Low</option><option>Normal</option><option>High</option><option>Critical</option></select></label>
+              <label>Due Date<input type="date" value={editForm.dueDate} onChange={(event) => setEditForm((current) => ({ ...current, dueDate: event.target.value }))} /></label>
+              <label>NDE Method<select value={editForm.method} onChange={(event) => setEditForm((current) => ({ ...current, method: event.target.value }))}><option value="">Select an NDE Method...</option>{ndeMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              <label>Code<input value={editForm.code} onChange={(event) => setEditForm((current) => ({ ...current, code: event.target.value }))} /></label>
+              <label>Unit<input value={editForm.unit} onChange={(event) => setEditForm((current) => ({ ...current, unit: event.target.value }))} /></label>
+              <label>Asset<input value={editForm.asset} onChange={(event) => setEditForm((current) => ({ ...current, asset: event.target.value }))} /></label>
+              <label>Access Method<select value={editForm.accessType} onChange={(event) => setEditForm((current) => ({ ...current, accessType: event.target.value }))}><option value="">Select an Access Method...</option>{accessMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              <label>Reference<input value={editForm.reference} onChange={(event) => setEditForm((current) => ({ ...current, reference: event.target.value }))} /></label>
+            </div>
+            <label>Inspection Details<textarea value={editForm.inspectionDetails} onChange={(event) => setEditForm((current) => ({ ...current, inspectionDetails: event.target.value }))} /></label>
+            <div className="row">
+              <button type="button" onClick={saveEditForm}>Save</button>
+              <button type="button" onClick={() => setIsEditModalOpen(false)}>Cancel</button>
             </div>
           </div>
         </div>
@@ -506,7 +580,7 @@ export function NdeWorkspacePage({
                 <button type="button" onClick={() => setSelectedId(null)}>Close details</button>
               </div>
               <p className="muted nde-selection-summary">Selected: {selectedItem.requestNumber} ({selectedItem.status})</p>
-              <button type="button" onClick={() => setDemoCreateMessage('Request edit/open is demo-only until request persistence is connected.')}>Open request for edit</button>
+              <button type="button" onClick={openEditModal}>Edit Request</button>
               <dl className="nde-detail-grid">
                 <dt>Request #</dt><dd>{selectedItem.requestNumber}</dd>
                 <dt>Report #</dt><dd>{selectedItem.reportNumber ?? '—'}</dd>

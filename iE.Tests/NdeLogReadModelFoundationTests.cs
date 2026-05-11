@@ -77,6 +77,7 @@ public class NdeLogReadModelFoundationTests
         Assert.Contains(weldScopeRequest.ScopeItems, s => s.DisplayName == "PT Prep" && s.Method == "PT" && s.Stage == "Prep");
         Assert.Contains(weldScopeRequest.ScopeItems, s => s.DisplayName == "PT Root" && s.Method == "PT" && s.Stage == "Root");
         Assert.Contains(weldScopeRequest.ScopeItems, s => s.DisplayName == "PT Final" && s.Method == "PT" && s.Stage == "Final");
+        Assert.Equal("Nozzle N2 root and cap PT verification before hydrotest.", weldScopeRequest.InspectionDetails);
     }
 
     [Fact]

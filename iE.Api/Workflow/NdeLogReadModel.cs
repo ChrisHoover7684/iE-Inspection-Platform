@@ -38,6 +38,7 @@ public sealed record NdeLogItemReadModel(
     string? ReportNumber,
     string? ReportFileName,
     string? ReportDownloadUrl,
+    string? InspectionDetails,
     IReadOnlyList<NdeRequestScopeItemReadModel>? ScopeItems = null);
 
 public sealed record NdeRequestScopeItemReadModel(
@@ -70,7 +71,7 @@ public sealed class DemoNdeLogReadModelService : INdeLogReadModelService
         new("nde-001", NdeNumbering.FormatRequestNumber(DemoYear, 1), "P-102A", null, null, "UT Thickness", NdeLogStatuses.Draft, "Normal", "J. Rivera", "L. Tran", "2026-05-20", null, NdeReportStatuses.NotStarted, null, null, null),
         new("nde-002", NdeNumbering.FormatRequestNumber(DemoYear, 2), null, "CIR-4A-220", null, "RT", NdeLogStatuses.Requested, "High", "M. Patel", "S. Owens", "2026-05-17", null, NdeReportStatuses.InProgress, NdeNumbering.FormatReportNumber(DemoYear, "RT", 2), null, null),
         new("nde-003", NdeNumbering.FormatRequestNumber(DemoYear, 3), null, null, "E-4401", "MT", NdeLogStatuses.Scheduled, "Normal", "T. Nguyen", "R. Hall", "2026-05-13", null, NdeReportStatuses.NotAvailable, null, null, null),
-        new("nde-004", NdeNumbering.FormatRequestNumber(DemoYear, 4), "HX-22B", null, null, "PT", NdeLogStatuses.InProgress, "Critical", "A. Lopez", "D. Kim", "2026-05-12", null, NdeReportStatuses.InProgress, NdeNumbering.FormatReportNumber(DemoYear, "PT", 4), null, null,
+        new("nde-004", NdeNumbering.FormatRequestNumber(DemoYear, 4), "HX-22B", null, null, "PT", NdeLogStatuses.InProgress, "Critical", "A. Lopez", "D. Kim", "2026-05-12", null, NdeReportStatuses.InProgress, NdeNumbering.FormatReportNumber(DemoYear, "PT", 4), null, null, "Nozzle N2 root and cap PT verification before hydrotest.",
         [
             new("scope-004-pt-prep", "PT", "Prep", "PT Prep", "W-22B-01", "Nozzle N2 Root", "Surface prep and cleaning"),
             new("scope-004-pt-root", "PT", "Root", "PT Root", "W-22B-01", "Nozzle N2 Root", "Root pass examination"),

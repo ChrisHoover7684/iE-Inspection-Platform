@@ -40,6 +40,7 @@ const mockRows: NdeLogItem[] = [
     dueDate: '2026-05-12',
     reportStatus: 'In Progress',
     reportNumber: 'RPT-26-PT-004',
+    inspectionDetails: 'Nozzle N2 root and cap PT verification before hydrotest.',
     scopeItems: [
       { id: 'scope-004-pt-prep', method: 'PT', stage: 'Prep', displayName: 'PT Prep', weldId: 'W-22B-01', location: 'Nozzle N2 Root', notes: 'Surface prep and cleaning' },
       { id: 'scope-004-pt-root', method: 'PT', stage: 'Root', displayName: 'PT Root', weldId: 'W-22B-01', location: 'Nozzle N2 Root', notes: 'Root pass examination' },
@@ -243,6 +244,7 @@ export function NdeWorkspacePage({
           row.equipmentTag,
           row.method,
           row.scopeItems?.map((scopeItem) => `${scopeItem.displayName} ${scopeItem.stage} ${scopeItem.weldId ?? ''}`).join(' '),
+          row.inspectionDetails,
           row.requestedBy,
           row.assignedTo,
         ]
@@ -280,6 +282,7 @@ export function NdeWorkspacePage({
       requestedBy: createForm.requester,
       dueDate: createForm.dueDate,
       reportStatus: 'Not Started',
+      inspectionDetails: createForm.inspectionDetails || undefined,
       scopeItems,
     };
 
@@ -312,11 +315,12 @@ export function NdeWorkspacePage({
   };
 
   const exportVisibleTable = () => {
-    const headers = ['Request #', 'Asset / Circuit / Equipment', 'Method', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
+    const headers = ['Request #', 'Asset / Circuit / Equipment', 'Method', 'Inspection Details', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
     const rows = filteredItems.map((item) => [
       item.requestNumber,
       item.assetTag ?? item.circuitId ?? item.equipmentTag ?? '—',
       item.method,
+      item.inspectionDetails ?? '—',
       item.status,
       item.priority,
       item.dueDate ?? '—',
@@ -413,7 +417,7 @@ export function NdeWorkspacePage({
           <input
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
-            placeholder="Search request #, asset, method, or assignee"
+            placeholder="Search request #, asset, method, inspection details, or assignee"
           />
         </label>
         <label>
@@ -531,6 +535,7 @@ export function NdeWorkspacePage({
                 <dt>Asset / Circuit / Equipment</dt><dd>{selectedItem.assetTag ?? selectedItem.circuitId ?? selectedItem.equipmentTag ?? '—'}</dd>
                 <dt>Method</dt><dd>{selectedItem.method}</dd>
                 <dt>Status</dt><dd>{selectedItem.status}</dd>
+                <dt>Inspection Details</dt><dd>{selectedItem.inspectionDetails ?? '—'}</dd>
                 <dt>Report Status</dt><dd>{formatReportStatus(selectedItem.reportStatus)}</dd>
                 <dt>Priority</dt><dd>{selectedItem.priority}</dd>
                 <dt>Requested By</dt><dd>{selectedItem.requestedBy ?? '—'}</dd>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ndeApi } from '../api';
 import type { NdeLogItem, NdeLogStatus, NdeLogTransitionEvent } from '../types';
+import { accessMethodOptions, ndeMethodOptions, owningGroupOptions, projectOptions } from '../ndeRequestReferenceData';
 
 type NdeWorkspacePageProps = {
   initialStatus?: NdeLogStatus | 'All';
@@ -21,11 +22,6 @@ const statusOptions: Array<NdeLogStatus | 'All'> = [
   'Cancelled',
   'Overdue',
 ];
-const accessMethodOptions = ['All', 'Ground', 'Scaffold', 'Rope Access', 'Aerial Lift', 'Ladder', 'Platform', 'Confined Space', 'Other'] as const;
-const createAccessMethodOptions = ['Ground', 'Platform', 'Ladder', 'Scaffold', 'Aerial Lift', 'Rope Access', 'Confined Space', 'Other'] as const;
-const projectOptions = ['Robinson TA 2026', 'MPC Robinson 2026 TA', 'Unit 73 Maintenance', 'Piping Reliability Program', 'Tank Inspection Program', 'Other'] as const;
-const owningGroupOptions = ['Inspection', 'Maintenance', 'Operations', 'Construction', 'Turnaround', 'Reliability', 'Engineering', 'Other'] as const;
-const ndeMethodOptions = ['PT', 'MT', 'RT', 'UT Thickness', 'PAUT', 'PMI', 'VT', 'ET', 'MFL', 'LRUT', 'Other'] as const;
 
 // Frontend-only demo/read-model data for NDE workspace usability.
 // Replace with backend read-model data when the NDE workflow API is connected.
@@ -96,7 +92,6 @@ export function NdeWorkspacePage({
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<NdeLogStatus | 'All'>(initialStatus);
-  const [accessTypeFilter, setAccessTypeFilter] = useState<(typeof accessMethodOptions)[number]>('All');
   const [searchText, setSearchText] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedForBulkDownload, setSelectedForBulkDownload] = useState<string[]>([]);
@@ -246,10 +241,9 @@ export function NdeWorkspacePage({
           .toLowerCase()
           .includes(searchText.toLowerCase());
 
-      const byAccessType = accessTypeFilter === 'All' || row.accessType === accessTypeFilter;
-      return byStatus && byAccessType && bySearch;
+      return byStatus && bySearch;
     });
-  }, [accessTypeFilter, baseItems, searchText, statusFilter]);
+  }, [baseItems, searchText, statusFilter]);
 
   const createRequestFromForm = () => {
     const nextSequence = items.length + 1;
@@ -363,7 +357,7 @@ export function NdeWorkspacePage({
               <label>Unit<input value={createForm.unit} onChange={(event) => setCreateForm((current) => ({ ...current, unit: event.target.value }))} /></label>
               <label>Asset<input value={createForm.asset} onChange={(event) => setCreateForm((current) => ({ ...current, asset: event.target.value }))} /></label>
               <label>Request Status<select value={createForm.requestStatus} onChange={(event) => setCreateForm((current) => ({ ...current, requestStatus: event.target.value as NdeLogStatus }))}><option>Draft</option><option>Requested</option></select></label>
-              <label>Access Method<select value={createForm.accessType} onChange={(event) => setCreateForm((current) => ({ ...current, accessType: event.target.value }))}><option value="">Select an Access Method...</option>{createAccessMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              <label>Access Method<select value={createForm.accessType} onChange={(event) => setCreateForm((current) => ({ ...current, accessType: event.target.value }))}><option value="">Select an Access Method...</option>{accessMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               
               
               
@@ -372,6 +366,7 @@ export function NdeWorkspacePage({
               <label>Attachments placeholder<input disabled value="File upload coming soon" /></label>
             </div>
             <label>Inspection Details<textarea value={createForm.inspectionDetails} onChange={(event) => setCreateForm((current) => ({ ...current, inspectionDetails: event.target.value }))} /></label>
+            <p className="muted nde-reference-note">Project options are demo reference data. Admin-managed project setup will be connected later.</p>
             <div className="row">
               <button type="button" onClick={createRequestFromForm}>Create Request</button>
               <button type="button" onClick={() => setIsCreateModalOpen(false)}>Cancel</button>
@@ -400,12 +395,6 @@ export function NdeWorkspacePage({
           Status
           <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as NdeLogStatus | 'All')}>
             {statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
-          </select>
-        </label>
-        <label>
-          Access Method
-          <select value={accessTypeFilter} onChange={(event) => setAccessTypeFilter(event.target.value as (typeof accessMethodOptions)[number])}>
-            {accessMethodOptions.map((accessType) => <option key={accessType} value={accessType}>{accessType}</option>)}
           </select>
         </label>
       </div>
@@ -512,6 +501,7 @@ export function NdeWorkspacePage({
                 <button type="button" onClick={() => setSelectedId(null)}>Close details</button>
               </div>
               <p className="muted nde-selection-summary">Selected: {selectedItem.requestNumber} ({selectedItem.status})</p>
+              <button type="button" onClick={() => setDemoCreateMessage('Request edit/open is demo-only until request persistence is connected.')}>Open request for edit</button>
               <dl className="nde-detail-grid">
                 <dt>Request #</dt><dd>{selectedItem.requestNumber}</dd>
                 <dt>Report #</dt><dd>{selectedItem.reportNumber ?? '—'}</dd>

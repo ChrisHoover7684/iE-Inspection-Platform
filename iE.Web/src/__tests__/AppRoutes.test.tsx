@@ -35,7 +35,7 @@ vi.mock('../api', async () => {
   };
 });
 
-const nonPlaceholderRoutes = new Set(['/dashboard', '/calculators/corrosion-rate', '/calculators/b31-3-piping', '/reports', '/nde-requests', '/nde-reports', '/schedule', '/results-received', '/overdue', '/cancelled', '/reference-data-projects', '/reference-data-units-assets']);
+const nonPlaceholderRoutes = new Set(['/dashboard', '/calculators/corrosion-rate', '/calculators/b31-3-piping', '/reports', '/nde-requests', '/nde-reports', '/schedule', '/results-received', '/overdue', '/cancelled', '/reference-data-projects', '/reference-data-units-assets', '/users-access']);
 
 afterEach(() => {
   cleanup();
@@ -94,7 +94,18 @@ describe('App routes', () => {
   });
 
 
-  it('loads NDE rows from ndeApi without real backend calls', async () => {
+  
+  it('renders users access foundation route', () => {
+    render(
+      <MemoryRouter initialEntries={['/users-access']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Users & Access Foundation' })).toBeInTheDocument();
+    expect(screen.getByText(/Seats used:/)).toBeInTheDocument();
+  });
+it('loads NDE rows from ndeApi without real backend calls', async () => {
     render(
       <MemoryRouter initialEntries={['/nde-requests']}>
         <App />

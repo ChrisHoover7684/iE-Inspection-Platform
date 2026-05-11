@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { getFacilities } from '../organizationReferenceData';
 import {
   defaultUnits,
   formatUnitValue,
@@ -13,6 +14,8 @@ import {
 const makeId = (name: string) => name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 export function ReferenceDataUnitsAssetsPage() {
+  const facilities = getFacilities().filter((f) => f.isActive);
+  const [selectedFacilityId, setSelectedFacilityId] = useState(facilities[0]?.id ?? '');
   const [units, setUnits] = useState<UnitReferenceOption[]>(() => getUnitOptions());
   const [selectedUnitId, setSelectedUnitId] = useState('');
   const [newUnitNumber, setNewUnitNumber] = useState('');
@@ -22,8 +25,9 @@ export function ReferenceDataUnitsAssetsPage() {
   const [editUnitNumber, setEditUnitNumber] = useState('');
   const [editUnitName, setEditUnitName] = useState('');
 
-  const selectedUnit = units.find((u) => u.id === selectedUnitId) ?? units[0];
-  const sortedUnits = useMemo(() => [...units].sort((a, b) => a.name.localeCompare(b.name)), [units]);
+  const scopedUnits = useMemo(() => units.filter((u) => u.facilityId === selectedFacilityId), [units, selectedFacilityId]);
+  const selectedUnit = scopedUnits.find((u) => u.id === selectedUnitId) ?? scopedUnits[0];
+  const sortedUnits = useMemo(() => [...scopedUnits].sort((a, b) => a.name.localeCompare(b.name)), [scopedUnits]);
   const update = (next: UnitReferenceOption[]) => { setUnits(next); saveUnitOptions(next); };
 
   const addUnit = () => {
@@ -32,7 +36,7 @@ export function ReferenceDataUnitsAssetsPage() {
     if (!unitNumber || !unitName) return;
     if (units.some((u) => parseUnitNumber(u.name) === unitNumber)) return;
     const value = formatUnitValue(unitNumber, unitName);
-    update([...units, { id: makeId(value), name: value, isActive: true, assets: [] }]);
+    update([...units, { id: makeId(`${selectedFacilityId}-${value}`), facilityId: selectedFacilityId, name: value, isActive: true, assets: [] }]);
     setNewUnitNumber('');
     setNewUnitName('');
   };
@@ -47,7 +51,9 @@ export function ReferenceDataUnitsAssetsPage() {
     setEditUnitId('');
   };
 
-  return <section className="nde-workspace reference-data-layout"><div className="card"><h2>Reference Data / Units & Assets</h2><p className="muted">Unit and asset options are demo reference data. Admin-managed setup will be connected later.</p><p>Facility: <strong>Demo Facility</strong></p></div>
+  const selectedFacility = facilities.find((f) => f.id === selectedFacilityId);
+
+  return <section className="nde-workspace reference-data-layout"><div className="card"><h2>Reference Data / Units & Assets</h2><p className="muted">Unit and asset options are demo reference data. Admin-managed setup will be connected later.</p><label>Facility<select aria-label="Facility" value={selectedFacilityId} onChange={(e) => { setSelectedFacilityId(e.target.value); setSelectedUnitId(''); }}>{facilities.map((f) => <option key={f.id} value={f.id}>{f.name} ({f.code})</option>)}</select></label><p>Facility: <strong>{selectedFacility?.name ?? '—'}</strong></p></div>
     <div className="card"><div className="reference-actions"><label>Unit #<input aria-label="Unit #" value={newUnitNumber} onChange={(e) => setNewUnitNumber(e.target.value)} /></label><label>Unit Name<input aria-label="Unit Name" value={newUnitName} onChange={(e) => setNewUnitName(e.target.value)} /></label><button onClick={addUnit}>Add Unit</button><button onClick={() => update(resetUnitsAndAssets())}>Reset to Demo Defaults</button></div></div>
     <div className="reference-data-grid">
       <div className="card" role="region" aria-label="Unit reference data"><h3>Units</h3><table className="reference-table"><thead><tr><th>Unit #</th><th>Unit Name</th><th>Status</th><th>Actions</th></tr></thead><tbody>{sortedUnits.map((u) => <tr key={u.id} className={selectedUnit?.id === u.id ? 'selected-reference-row' : ''}><td>{parseUnitNumber(u.name)}</td><td>{parseUnitName(u.name)}</td><td>{u.isActive ? 'Active' : 'Inactive'}</td><td><div className="reference-actions"><button onClick={() => setSelectedUnitId(u.id)}>Select</button><button onClick={() => { setEditUnitId(u.id); setEditUnitNumber(parseUnitNumber(u.name)); setEditUnitName(parseUnitName(u.name)); }}>Edit</button><button onClick={() => update(units.map((x) => x.id === u.id ? { ...x, isActive: !x.isActive } : x))}>{u.isActive ? 'Deactivate' : 'Reactivate'}</button></div></td></tr>)}</tbody></table>

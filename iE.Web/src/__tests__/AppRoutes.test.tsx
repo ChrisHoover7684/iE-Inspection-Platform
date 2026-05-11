@@ -191,6 +191,39 @@ describe('App routes', () => {
 
     expect(screen.getByRole('button', { name: 'Export Table' })).toBeInTheDocument();
   });
+
+  it('opens new NDE request modal and creates PT scope item request with searchable scope text', async () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-requests']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
+    expect(screen.getByRole('dialog', { name: 'New NDE Request' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Project')).toBeInTheDocument();
+    expect(screen.getByLabelText('Owning Group')).toBeInTheDocument();
+    expect(screen.getByLabelText('Requester')).toBeInTheDocument();
+    expect(screen.getByLabelText('Priority')).toBeInTheDocument();
+    expect(screen.getByLabelText('Due Date')).toBeInTheDocument();
+    expect(screen.getByLabelText('Task Type / NDE Method')).toBeInTheDocument();
+    expect(screen.getByLabelText('Code')).toBeInTheDocument();
+    expect(screen.getByLabelText('Unit')).toBeInTheDocument();
+    expect(screen.getByLabelText('Asset')).toBeInTheDocument();
+    expect(screen.getByLabelText('Inspection Details')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Requester'), { target: { value: 'QA Inspector' } });
+    fireEvent.change(screen.getByLabelText('Asset'), { target: { value: 'V-1001' } });
+    fireEvent.change(screen.getByLabelText('Request Status'), { target: { value: 'Requested' } });
+    fireEvent.click(screen.getByLabelText('PT Root'));
+    fireEvent.change(screen.getByLabelText('Weld ID'), { target: { value: 'W-ROOT-77' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
+    expect(await screen.findByText('Request creation is demo-only (in-memory) until backend persistence is connected.')).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, or assignee'), { target: { value: 'PT Root' } });
+    expect(screen.getByText('PT Root')).toBeInTheDocument();
+  });
+
   it('loads API Inspection Reports page from /reports', async () => {
     render(
       <MemoryRouter initialEntries={['/reports']}>

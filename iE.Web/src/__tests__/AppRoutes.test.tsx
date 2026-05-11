@@ -231,7 +231,7 @@ describe('App routes', () => {
     fireEvent.change(within(modal).getByLabelText('Inspection Details'), { target: { value: 'Edited in-page demo details' } });
     fireEvent.click(within(modal).getByRole('button', { name: 'Save' }));
 
-    expect(screen.getByText('Request edits are demo-only until backend persistence is connected.')).toBeInTheDocument();
+    expect(await screen.findByText('Request edits are demo-only until backend persistence is connected.')).toBeInTheDocument();
     expect(screen.getByText('REF-EDIT-900')).toBeInTheDocument();
     expect(screen.getByText('Edited in-page demo details')).toBeInTheDocument();
     expect(screen.getByText('Unit 73 Maintenance')).toBeInTheDocument();
@@ -281,12 +281,12 @@ describe('App routes', () => {
     fireEvent.change(within(modal).getByLabelText('NDE Method *'), { target: { value: 'UT Thickness' } });
     fireEvent.change(within(modal).getByLabelText('Unit *'), { target: { value: '01-CRUDE' } });
     expect(within(modal).queryByText('Robinson TA 2026')).not.toBeInTheDocument();
-    fireEvent.change(within(modal).getByLabelText('Asset *'), { target: { value: 'HX-22B' } });
+    fireEvent.change(within(modal).getByLabelText('Asset *'), { target: { value: 'P-102A' } });
     fireEvent.change(within(modal).getByLabelText('Access Method *'), { target: { value: 'Rope Access' } });
     fireEvent.change(within(modal).getByLabelText('Reference'), { target: { value: 'REF-ROPE-77' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
 
-    fireEvent.click(screen.getAllByText('NDE-26-011')[0]);
+    fireEvent.click((await screen.findAllByText('NDE-26-011'))[0]);
     expect(screen.getAllByText('Rope Access').length).toBeGreaterThan(0);
     expect(screen.getByText('REF-ROPE-77')).toBeInTheDocument();
   });

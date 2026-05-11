@@ -15,7 +15,7 @@ public class NdeLogReadModelFoundationTests
         var rows = Assert.IsAssignableFrom<IReadOnlyList<NdeLogItemReadModel>>(ok.Value);
 
         Assert.True(rows.Count >= 10);
-        Assert.Contains(rows, r => r.ReportStatus is NdeReportStatuses.ReportReady or NdeReportStatuses.Downloaded);
+        Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Complete);
         Assert.Contains(rows, r => !string.IsNullOrWhiteSpace(r.ReportNumber));
         Assert.Contains(rows, r => !string.IsNullOrWhiteSpace(r.ReportFileName));
         Assert.Contains(rows, r => !string.IsNullOrWhiteSpace(r.ReportDownloadUrl));
@@ -34,11 +34,28 @@ public class NdeLogReadModelFoundationTests
         Assert.Contains(rows, r => r.Status == NdeLogStatuses.Overdue);
         Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.NotStarted);
         Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.InProgress);
-        Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.ResultsReceived);
-        Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.ReportReady);
-        Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Downloaded);
+        Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Complete);
         Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.NotAvailable);
-        Assert.All(rows.Where(r => r.ReportStatus is NdeReportStatuses.ReportReady or NdeReportStatuses.Downloaded), r =>
+        Assert.All(
+            rows.Where(r =>
+                r.Status is NdeLogStatuses.Draft
+                    or NdeLogStatuses.Requested
+                    or NdeLogStatuses.Scheduled
+                    or NdeLogStatuses.InProgress
+                    or NdeLogStatuses.Cancelled),
+            r => Assert.False(
+                r.ReportStatus == NdeReportStatuses.Complete,
+                $"{r.RequestNumber} should not be downloadable while status is {r.Status}."));
+        Assert.All(rows.Where(r => r.ReportStatus == NdeReportStatuses.Complete), r =>
+        {
+            Assert.True(
+                r.Status is NdeLogStatuses.Reviewed or NdeLogStatuses.Closed,
+                $"{r.RequestNumber} has downloadable report status but request status is {r.Status}.");
+            Assert.False(string.IsNullOrWhiteSpace(r.ReportNumber));
+            Assert.False(string.IsNullOrWhiteSpace(r.ReportFileName));
+            Assert.False(string.IsNullOrWhiteSpace(r.ReportDownloadUrl));
+        });
+        Assert.All(rows.Where(r => r.ReportStatus == NdeReportStatuses.Complete), r =>
         {
             Assert.False(string.IsNullOrWhiteSpace(r.ReportNumber));
             Assert.Equal($"{r.ReportNumber}.pdf", r.ReportFileName);
@@ -49,8 +66,11 @@ public class NdeLogReadModelFoundationTests
             var methodCode = NdeNumbering.GetMethodAbbreviation(r.Method);
             Assert.Contains($"-26-{methodCode}-", r.ReportNumber!, StringComparison.Ordinal);
         });
-        Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.ReportReady && r.ReportNumber == "RPT-26-PAUT-006");
-        Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Downloaded && r.ReportNumber == "RPT-26-VT-007");
+        Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Complete && r.ReportNumber == "RPT-26-PAUT-006");
+        Assert.Contains(rows, r => r.RequestNumber == "NDE-26-010" && r.Status == NdeLogStatuses.Reviewed && r.ReportStatus == NdeReportStatuses.Complete);
+        Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Complete && r.ReportNumber == "RPT-26-VT-007");
+        Assert.DoesNotContain(rows, r => r.Status == NdeLogStatuses.Scheduled && r.ReportStatus == NdeReportStatuses.Complete);
+        Assert.Contains(rows, r => r.Status == NdeLogStatuses.Scheduled);
     }
 
     [Fact]

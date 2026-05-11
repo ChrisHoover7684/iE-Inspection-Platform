@@ -29,12 +29,12 @@ const mockRows: NdeLogItem[] = [
   { id: 'nde-002', requestNumber: 'NDE-26-002', circuitId: 'CIR-4A-220', method: 'RT', status: 'Requested', priority: 'High', requestedBy: 'M. Patel', assignedTo: 'S. Owens', dueDate: '2026-05-17', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-002' },
   { id: 'nde-003', requestNumber: 'NDE-26-003', equipmentTag: 'E-4401', method: 'MT', status: 'Scheduled', priority: 'Normal', requestedBy: 'T. Nguyen', assignedTo: 'R. Hall', dueDate: '2026-05-13', reportStatus: 'Not Available' },
   { id: 'nde-004', requestNumber: 'NDE-26-004', assetTag: 'HX-22B', method: 'PT', status: 'In Progress', priority: 'Critical', requestedBy: 'A. Lopez', assignedTo: 'D. Kim', dueDate: '2026-05-12', reportStatus: 'In Progress', reportNumber: 'RPT-26-PT-004' },
-  { id: 'nde-005', requestNumber: 'NDE-26-005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09', reportStatus: 'Results Received', reportNumber: 'RPT-26-PMI-005' },
-  { id: 'nde-006', requestNumber: 'NDE-26-006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Report Ready', reportNumber: 'RPT-26-PAUT-006', reportFileName: 'RPT-26-PAUT-006.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-006.pdf' },
-  { id: 'nde-007', requestNumber: 'NDE-26-007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Downloaded', reportNumber: 'RPT-26-VT-007', reportFileName: 'RPT-26-VT-007.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-VT-007.pdf' },
+  { id: 'nde-005', requestNumber: 'NDE-26-005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09', reportStatus: 'In Progress', reportNumber: 'RPT-26-PMI-005' },
+  { id: 'nde-006', requestNumber: 'NDE-26-006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-006', reportFileName: 'RPT-26-PAUT-006.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-006.pdf' },
+  { id: 'nde-007', requestNumber: 'NDE-26-007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Complete', reportNumber: 'RPT-26-VT-007', reportFileName: 'RPT-26-VT-007.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-VT-007.pdf' },
   { id: 'nde-008', requestNumber: 'NDE-26-008', equipmentTag: 'PSV-91', method: 'UT Thickness', status: 'Cancelled', priority: 'Low', requestedBy: 'C. White', assignedTo: 'B. Young', dueDate: '2026-05-04', reportStatus: 'Not Started' },
-  { id: 'nde-009', requestNumber: 'NDE-26-009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01', reportStatus: 'Results Received', reportNumber: 'RPT-26-RT-009' },
-  { id: 'nde-010', requestNumber: 'NDE-26-010', assetTag: 'P-300C', method: 'PAUT', status: 'Scheduled', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Report Ready', reportNumber: 'RPT-26-PAUT-010', reportFileName: 'RPT-26-PAUT-010.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-010.pdf' },
+  { id: 'nde-009', requestNumber: 'NDE-26-009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-009' },
+  { id: 'nde-010', requestNumber: 'NDE-26-010', assetTag: 'P-300C', method: 'PAUT', status: 'Reviewed', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-010', reportFileName: 'RPT-26-PAUT-010.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-010.pdf' },
 ];
 
 type NdeTransition = { label: string; status: NdeLogStatus };
@@ -212,8 +212,12 @@ export function NdeWorkspacePage({
 
   const visibleIds = useMemo(() => filteredItems.map((item) => item.id), [filteredItems]);
   const visibleSelectedCount = useMemo(() => selectedForBulkDownload.filter((id) => visibleIds.includes(id)).length, [selectedForBulkDownload, visibleIds]);
+  const isReportWorkflowCompleteEnough = (item: NdeLogItem) =>
+    item.status === 'Reviewed' || item.status === 'Closed';
+
   const isDownloadableReport = (item: NdeLogItem) =>
-    ['Report Ready', 'Downloaded'].includes(item.reportStatus)
+    isReportWorkflowCompleteEnough(item)
+    && item.reportStatus === 'Complete'
     && Boolean(item.reportDownloadUrl)
     && Boolean(item.reportFileName);
 
@@ -300,20 +304,6 @@ export function NdeWorkspacePage({
       </div>
 
       <div className="card">
-        <div className="nde-actions" role="group" aria-label="NDE workflow actions">
-          <strong>Workflow Actions:</strong>
-          {allowedTransitions.map((transition) => (
-            <button key={transition.label} type="button" disabled={isTransitioning} onClick={() => void applyStatusToSelection(transition.status)}>{transition.label}</button>
-          ))}
-        </div>
-        <label className="nde-transition-comment">
-          Comment / Reason
-          <input
-            value={transitionComment}
-            onChange={(event) => setTransitionComment(event.target.value)}
-            placeholder="Enter transition reason"
-          />
-        </label>
         <div className="nde-download-actions" role="group" aria-label="NDE report download actions">
           <button type="button" onClick={exportVisibleTable}>Export Table</button>
           <button
@@ -334,32 +324,13 @@ export function NdeWorkspacePage({
           </button>
           {bulkMessage && <span className="muted">{bulkMessage}</span>}
         </div>
-        {isTransitioning && <p className="muted">Applying transition…</p>}
-        {transitionError && <p className="muted">{transitionError}</p>}
         <p className="muted nde-frontend-note">Workflow actions persist via NDE API when available, with demo fallback behavior on failures.</p>
-        {selectedItem && (
-          <p className="muted nde-selection-summary">
-            Selected: {selectedItem.requestNumber} ({selectedItem.status})
-          </p>
-        )}
-        {selectedItem && allowedTransitions.length === 0 && <p className="muted">No workflow actions available for this status.</p>}
-        <div className="nde-history-panel">
-          <h3>Workflow History</h3>
-          {isLoadingEvents && <p className="muted">Loading workflow history…</p>}
-          {eventHistoryError && <p className="muted">{eventHistoryError}</p>}
-          {!isLoadingEvents && eventHistory.length === 0 && <p className="muted">No workflow history yet.</p>}
-          {eventHistory.map((event) => (
-            <article key={event.id} className="nde-history-event">
-              <p><strong>{event.fromStatus} → {event.toStatus}</strong></p>
-              <p className="muted">{event.actor} • {formatTimestamp(event.timestampUtc)}</p>
-              {event.comment && <p>{event.comment}</p>}
-            </article>
-          ))}
-        </div>
+        <div className="nde-workspace-layout">
+          <div className="nde-table-panel">
         <table>
           <thead>
             <tr>
-              <th>Select</th><th>Request #</th><th>Asset / Circuit / Equipment</th><th>Method</th><th>Status</th><th>Priority</th><th>Due</th><th>Results Received</th>
+              <th>Select</th><th>Request #</th><th>Asset / Circuit / Equipment</th><th>Method</th><th>Status</th><th>Priority</th><th>Due</th>
               <th>Report Status</th><th>Report #</th><th>Actions</th>
             </tr>
           </thead>
@@ -380,8 +351,7 @@ export function NdeWorkspacePage({
                 <td>{item.status}</td>
                 <td>{item.priority}</td>
                 <td>{item.dueDate ?? '—'}</td>
-                <td>{item.resultReceivedDate ?? '—'}</td>
-                <td>{item.reportStatus}</td>
+                <td>{formatReportStatus(item.reportStatus)}</td>
                 <td>{item.reportNumber ?? '—'}</td>
                 <td>
                   <button
@@ -423,7 +393,64 @@ export function NdeWorkspacePage({
             <p className="muted">NDE workflow scaffolding is in place. Connect read-model/API data to populate this queue.</p>
           </div>
         )}
+          </div>
+          {selectedItem && (
+            <aside className="nde-detail-panel" aria-label="NDE request details">
+              <div className="nde-detail-header">
+                <h3>Request Details</h3>
+                <button type="button" onClick={() => setSelectedId(null)}>Close details</button>
+              </div>
+              <p className="muted nde-selection-summary">Selected: {selectedItem.requestNumber} ({selectedItem.status})</p>
+              <dl className="nde-detail-grid">
+                <dt>Request #</dt><dd>{selectedItem.requestNumber}</dd>
+                <dt>Report #</dt><dd>{selectedItem.reportNumber ?? '—'}</dd>
+                <dt>Asset / Circuit / Equipment</dt><dd>{selectedItem.assetTag ?? selectedItem.circuitId ?? selectedItem.equipmentTag ?? '—'}</dd>
+                <dt>Method</dt><dd>{selectedItem.method}</dd>
+                <dt>Status</dt><dd>{selectedItem.status}</dd>
+                <dt>Report Status</dt><dd>{formatReportStatus(selectedItem.reportStatus)}</dd>
+                <dt>Priority</dt><dd>{selectedItem.priority}</dd>
+                <dt>Requested By</dt><dd>{selectedItem.requestedBy ?? '—'}</dd>
+                <dt>Assigned To</dt><dd>{selectedItem.assignedTo ?? '—'}</dd>
+                <dt>Due Date</dt><dd>{selectedItem.dueDate ?? '—'}</dd>
+                <dt>Results Received Date</dt><dd>{selectedItem.resultReceivedDate ?? '—'}</dd>
+              </dl>
+              {isDownloadableReport(selectedItem) && selectedItem.reportDownloadUrl && selectedItem.reportFileName && (
+                <button type="button" onClick={() => triggerDownload(selectedItem.reportDownloadUrl as string, selectedItem.reportFileName as string)}>Download Report</button>
+              )}
+              <div className="nde-history-panel">
+                <h3>Workflow Actions</h3>
+                <div className="nde-actions" role="group" aria-label="NDE workflow actions">
+                  {allowedTransitions.map((transition) => (
+                    <button key={transition.label} type="button" disabled={isTransitioning} onClick={() => void applyStatusToSelection(transition.status)}>{transition.label}</button>
+                  ))}
+                </div>
+                <label className="nde-transition-comment">
+                  Comment / Reason
+                  <input value={transitionComment} onChange={(event) => setTransitionComment(event.target.value)} placeholder="Enter transition reason" />
+                </label>
+                {isTransitioning && <p className="muted">Applying transition…</p>}
+                {transitionError && <p className="muted">{transitionError}</p>}
+                {allowedTransitions.length === 0 && <p className="muted">No workflow actions available for this status.</p>}
+              </div>
+              <div className="nde-history-panel">
+                <h3>Workflow History</h3>
+                {isLoadingEvents && <p className="muted">Loading workflow history…</p>}
+                {eventHistoryError && <p className="muted">{eventHistoryError}</p>}
+                {!isLoadingEvents && eventHistory.length === 0 && <p className="muted">No workflow history yet.</p>}
+                {eventHistory.map((event) => (
+                  <article key={event.id} className="nde-history-event">
+                    <p><strong>{event.fromStatus} → {event.toStatus}</strong></p>
+                    <p className="muted">{event.actor} • {formatTimestamp(event.timestampUtc)}</p>
+                    {event.comment && <p>{event.comment}</p>}
+                  </article>
+                ))}
+              </div>
+            </aside>
+          )}
+        </div>
       </div>
     </section>
   );
 }
+  const formatReportStatus = (reportStatus: NdeLogItem['reportStatus']) =>
+    reportStatus === 'Complete' ? 'Reviewed / Complete' : reportStatus;

@@ -107,6 +107,42 @@ export function saveFacilities(facilities: FacilityReferenceOption[]): void { wr
 export function saveOrganizationUsers(users: OrganizationUser[]): void { writeToStorage(usersStorageKey, users); }
 export function saveFacilityAccessAssignments(assignments: FacilityAccessAssignment[]): void { writeToStorage(accessStorageKey, assignments); }
 
+
+
+const makeFacilityId = (code: string) => `fac-${code.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+
+export function resetFacilities(): FacilityReferenceOption[] {
+  saveFacilities(defaultFacilities);
+  return defaultFacilities;
+}
+
+export function getActiveFacilities(): FacilityReferenceOption[] {
+  return getFacilities().filter((facility) => facility.isActive);
+}
+
+export function addFacility(input: { code: string; name: string }): FacilityReferenceOption {
+  const code = input.code.trim().toUpperCase();
+  const name = input.name.trim();
+  const nextFacility: FacilityReferenceOption = { id: makeFacilityId(code), code, name, isActive: true };
+  const facilities = getFacilities();
+  saveFacilities([...facilities, nextFacility]);
+  return nextFacility;
+}
+
+export function updateFacility(facilityId: string, updates: { code: string; name: string }): FacilityReferenceOption[] {
+  const code = updates.code.trim().toUpperCase();
+  const name = updates.name.trim();
+  const next = getFacilities().map((facility) => facility.id === facilityId ? { ...facility, code, name } : facility);
+  saveFacilities(next);
+  return next;
+}
+
+export function setFacilityActiveStatus(facilityId: string, isActive: boolean): FacilityReferenceOption[] {
+  const next = getFacilities().map((facility) => facility.id === facilityId ? { ...facility, isActive } : facility);
+  saveFacilities(next);
+  return next;
+}
+
 export function getUsedSeatCount(): number {
   return getOrganizationUsers().filter((user) => user.seatStatus === 'Active' || user.seatStatus === 'Invited').length;
 }

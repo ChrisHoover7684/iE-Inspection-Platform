@@ -35,7 +35,7 @@ vi.mock('../api', async () => {
   };
 });
 
-const nonPlaceholderRoutes = new Set(['/dashboard', '/calculators/corrosion-rate', '/calculators/b31-3-piping', '/reports', '/nde-requests', '/nde-reports', '/schedule', '/results-received', '/overdue', '/cancelled', '/reference-data-projects', '/reference-data-units-assets', '/users-access']);
+const nonPlaceholderRoutes = new Set(['/dashboard', '/calculators/corrosion-rate', '/calculators/b31-3-piping', '/reports', '/nde-requests', '/nde-reports', '/schedule', '/results-received', '/overdue', '/cancelled', '/reference-data-projects', '/reference-data-units-assets', '/users-access', '/facilities']);
 
 afterEach(() => {
   cleanup();
@@ -678,4 +678,16 @@ describe('NDE workflow report synchronization', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     await waitFor(() => expect(ndeApi.transitionLogItem).toHaveBeenCalledWith('nde-001', 'Cancelled', 'duplicate request', 'demo.user'));
   });
+});
+
+
+it('renders facilities admin route', () => {
+  render(
+    <MemoryRouter initialEntries={['/facilities']}>
+      <App />
+    </MemoryRouter>,
+  );
+
+  expect(screen.getByRole('heading', { level: 2, name: 'Facilities' })).toBeInTheDocument();
+  expect(screen.getByText(/Active Facilities:/)).toBeInTheDocument();
 });

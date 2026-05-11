@@ -1238,3 +1238,12 @@ html, body, #root {
         grid-template-columns: 1fr;
     }
 }
+
+.nde-table .nowrap,
+.nde-request-number-cell,
+.nde-report-number-cell,
+.nde-date-cell,
+.nde-unit-number-cell,
+.nde-facility-cell {
+    white-space: nowrap;
+}

@@ -213,7 +213,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     );
 
     expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('NDE-26-001'));
+    fireEvent.click(screen.getAllByText('NDE-26-001')[0]);
     fireEvent.click(screen.getByRole('button', { name: 'Edit Request' }));
 
     const modal = screen.getByRole('dialog', { name: 'Edit NDE Request' });
@@ -621,4 +621,33 @@ it('selecting a row loads workflow history and renders transition details', asyn
   await waitFor(() => expect(ndeApi.getLogItemEvents).toHaveBeenCalledWith('nde-001'));
   expect(await screen.findByText('Draft → Requested')).toBeInTheDocument();
   expect(screen.getByText('ready for scheduling')).toBeInTheDocument();
+});
+
+it('shows Facility and Unit # columns, resolves facility from unit, and keeps asset column clean', async () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-requests']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Facility' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Unit #' })).toBeInTheDocument();
+
+    const row = screen.getAllByText('NDE-26-001')[0].closest('tr') as HTMLTableRowElement;
+    expect(within(row).getByText('Demo Facility')).toBeInTheDocument();
+    expect(within(row).getByText('01')).toBeInTheDocument();
+    expect(within(row).queryByText(/Unit:/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('NDE-26-001'));
+    const details = screen.getByLabelText('NDE request details');
+    const detailText = details.textContent ?? '';
+    expect(detailText.indexOf('Facility')).toBeLessThan(detailText.indexOf('Unit'));
+    expect(detailText.indexOf('Unit')).toBeLessThan(detailText.indexOf('Asset / Circuit / Equipment'));
+
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: 'Demo Facility' } });
+    expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
+
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: '01' } });
+    expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
 });

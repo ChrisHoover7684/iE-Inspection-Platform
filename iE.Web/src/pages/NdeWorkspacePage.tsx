@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ndeApi } from '../api';
 import type { NdeLogItem, NdeLogStatus, NdeLogTransitionEvent } from '../types';
-import { accessMethodOptions, getAssetsForUnit, getProjectOptions, getUnitOptions, ndeMethodOptions, owningGroupOptions } from '../ndeRequestReferenceData';
+import { accessMethodOptions, getAssetsForUnit, getProjectOptions, getUnitOptions, ndeMethodOptions, owningGroupOptions, parseUnitNumber } from '../ndeRequestReferenceData';
 import { getFacilities } from '../organizationReferenceData';
 
 type NdeWorkspacePageProps = {
@@ -274,6 +274,21 @@ export function NdeWorkspacePage({
   };
 
   const formatTimestamp = (timestampUtc: string) => new Date(timestampUtc).toLocaleString();
+
+  const getAssetDisplay = (item: NdeLogItem) =>
+    item.assetTag ?? item.circuitId ?? item.equipmentTag ?? '—';
+
+  const getUnitNumberDisplay = (item: NdeLogItem) =>
+    item.unit ? parseUnitNumber(item.unit) : '—';
+
+  const resolveFacilityName = (item: NdeLogItem) => {
+    if (item.facilityName) return item.facilityName;
+    const directFacility = item.facilityId ? facilities.find((facility) => facility.id === item.facilityId) : undefined;
+    if (directFacility) return directFacility.name;
+    const unitFacilityId = item.unit ? managedUnitOptions.find((unit) => unit.name === item.unit)?.facilityId : undefined;
+    return facilities.find((facility) => facility.id === unitFacilityId)?.name ?? '—';
+  };
+
   const formatScopeSummary = (item: NdeLogItem) =>
     item.scopeItems?.length
       ? item.scopeItems.map((scopeItem) => scopeItem.displayName).join(', ')
@@ -290,6 +305,7 @@ export function NdeWorkspacePage({
           row.assetTag,
           row.circuitId,
           row.equipmentTag,
+          resolveFacilityName(row),
           row.method,
           row.accessType,
           row.reference,
@@ -430,10 +446,12 @@ export function NdeWorkspacePage({
   };
 
   const exportVisibleTable = () => {
-    const headers = ['Request #', 'Asset / Circuit / Equipment', 'Project', 'Owning Group', 'Code Criteria', 'Unit', 'Method', 'Access Method', 'Reference', 'Inspection Details', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
+    const headers = ['Request #', 'Facility', 'Unit #', 'Asset / Circuit / Equipment', 'Project', 'Owning Group', 'Code Criteria', 'Unit', 'Method', 'Access Method', 'Reference', 'Inspection Details', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
     const rows = filteredItems.map((item) => [
       item.requestNumber,
-      item.assetTag ?? item.circuitId ?? item.equipmentTag ?? '—',
+      resolveFacilityName(item),
+      getUnitNumberDisplay(item),
+      getAssetDisplay(item),
       item.project ?? '—',
       item.owningGroup ?? '—',
       item.codeCriteria ?? item.code ?? '—',
@@ -603,7 +621,7 @@ export function NdeWorkspacePage({
         <table>
           <thead>
             <tr>
-              <th>Select</th><th>Request #</th><th>Asset / Circuit / Equipment</th><th>Method</th><th>Access Method</th><th>Status</th><th>Priority</th><th>Due</th>
+              <th>Select</th><th>Request #</th><th>Facility</th><th>Unit #</th><th>Asset / Circuit / Equipment</th><th>Method</th><th>Access Method</th><th>Status</th><th>Priority</th><th>Due</th>
               <th>Report Status</th><th>Report #</th><th>Actions</th>
             </tr>
           </thead>
@@ -619,7 +637,9 @@ export function NdeWorkspacePage({
                   setSelectedForBulkDownload((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id));
                 }} onClick={(event) => event.stopPropagation()} /></td>
                 <td>{item.requestNumber}</td>
-                <td><div>{item.assetTag ?? item.circuitId ?? item.equipmentTag ?? '—'}</div>{item.unit && <div className="muted nde-unit-summary">Unit: {item.unit}</div>}</td>
+                <td className="nde-facility-cell">{resolveFacilityName(item)}</td>
+                <td className="nde-unit-number-cell">{getUnitNumberDisplay(item)}</td>
+                <td>{getAssetDisplay(item)}</td>
                 <td>
                   <div>{item.method}</div>
                   {formatScopeSummary(item) && <div className="muted nde-scope-summary">{formatScopeSummary(item)}</div>}
@@ -680,15 +700,15 @@ export function NdeWorkspacePage({
               <p className="muted nde-selection-summary">Selected: {selectedItem.requestNumber} ({selectedItem.status})</p>
               <button type="button" onClick={openEditModal}>Edit Request</button>
               <dl className="nde-detail-grid">
+                <dt>Facility</dt><dd>{resolveFacilityName(selectedItem)}</dd>
+                <dt>Unit</dt><dd>{selectedItem.unit ?? '—'}</dd>
+                <dt>Asset / Circuit / Equipment</dt><dd>{getAssetDisplay(selectedItem)}</dd>
                 <dt>Request #</dt><dd>{selectedItem.requestNumber}</dd>
                 <dt>Report #</dt><dd>{selectedItem.reportNumber ?? '—'}</dd>
-                <dt>Asset / Circuit / Equipment</dt><dd>{selectedItem.assetTag ?? selectedItem.circuitId ?? selectedItem.equipmentTag ?? '—'}</dd>
                 <dt>Method</dt><dd>{selectedItem.method}</dd>
                 <dt>Project</dt><dd>{selectedItem.project ?? '—'}</dd>
                 <dt>Owning Group</dt><dd>{selectedItem.owningGroup ?? '—'}</dd>
                 <dt>Code Criteria</dt><dd>{selectedItem.codeCriteria ?? selectedItem.code ?? '—'}</dd>
-                <dt>Unit</dt><dd>{selectedItem.unit ?? '—'}</dd>
-                <dt>Facility</dt><dd>{selectedItem.facilityName ?? facilities.find((facility) => facility.id === selectedItem.facilityId)?.name ?? '—'}</dd>
                 <dt>Access Method</dt><dd>{selectedItem.accessType ?? '—'}</dd>
                 <dt>Reference</dt><dd>{selectedItem.reference ?? '—'}</dd>
                 <dt>Status</dt><dd>{selectedItem.status}</dd>

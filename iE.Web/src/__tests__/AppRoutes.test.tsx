@@ -16,18 +16,18 @@ vi.mock('../api', async () => {
     ndeApi: {
       ...actual.ndeApi,
       getLogItems: vi.fn().mockResolvedValue([
-        { id: 'nde-005', requestNumber: 'NDE-26-005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09', reportStatus: 'In Progress', reportNumber: 'RPT-26-PMI-005' },
-        { id: 'nde-006', requestNumber: 'NDE-26-006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-006', reportFileName: 'RPT-26-PAUT-006.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-006.pdf', accessType: 'Ladder' },
-        { id: 'nde-007', requestNumber: 'NDE-26-007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Complete', reportNumber: 'RPT-26-VT-007', reportFileName: 'RPT-26-VT-007.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-VT-007.pdf' },
-        { id: 'nde-001', requestNumber: 'NDE-26-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started', project: 'Demo Turnaround 2026', owningGroup: 'Inspection', code: 'API 570', unit: '01-CRUDE' },
-        { id: 'nde-002', requestNumber: 'NDE-26-002', circuitId: 'CIR-4A-220', method: 'RT', status: 'Requested', priority: 'High', requestedBy: 'M. Patel', assignedTo: 'S. Owens', dueDate: '2026-05-17', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-002' },
-        { id: 'nde-004', requestNumber: 'NDE-26-004', assetTag: 'HX-22B', method: 'PT', status: 'In Progress', priority: 'Critical', requestedBy: 'A. Lopez', assignedTo: 'D. Kim', dueDate: '2026-05-12', reportStatus: 'In Progress', reportNumber: 'RPT-26-PT-004', accessType: 'Rope Access', inspectionDetails: 'Nozzle N11 Weld 213 root and final cap PT verification before hydrotest.', scopeItems: [{ id: 'scope-004-pt-prep', method: 'PT', stage: 'Prep', displayName: 'PT Prep', weldId: 'W-22B-01', location: 'Nozzle N2 Root' }, { id: 'scope-004-pt-root', method: 'PT', stage: 'Root', displayName: 'PT Root', weldId: 'W-22B-01', location: 'Nozzle N2 Root' }, { id: 'scope-004-pt-final', method: 'PT', stage: 'Final', displayName: 'PT Final', weldId: 'W-22B-01', location: 'Nozzle N2 Cap' }] },
-        { id: 'nde-003', requestNumber: 'NDE-26-003', equipmentTag: 'E-4401', method: 'MT', status: 'Scheduled', priority: 'Normal', requestedBy: 'T. Nguyen', assignedTo: 'R. Hall', dueDate: '2026-05-13', reportStatus: 'Not Available' },
-        { id: 'nde-008', requestNumber: 'NDE-26-008', equipmentTag: 'PSV-91', method: 'UT Thickness', status: 'Cancelled', priority: 'Low', requestedBy: 'C. White', assignedTo: 'B. Young', dueDate: '2026-05-04', reportStatus: 'Not Started' },
-        { id: 'nde-009', requestNumber: 'NDE-26-009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-009' },
-        { id: 'nde-010', requestNumber: 'NDE-26-010', assetTag: 'P-300C', method: 'PAUT', status: 'Reviewed', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-010', reportFileName: 'RPT-26-PAUT-010.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-010.pdf' }
+        { id: 'nde-005', requestNumber: 'NDE-26-0005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09', reportStatus: 'In Progress', reportNumber: 'RPT-26-PMI-0005' },
+        { id: 'nde-006', requestNumber: 'NDE-26-0006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-0006', reportFileName: 'RPT-26-PAUT-0006.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-0006.pdf', accessType: 'Ladder' },
+        { id: 'nde-007', requestNumber: 'NDE-26-0007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Complete', reportNumber: 'RPT-26-VT-0007', reportFileName: 'RPT-26-VT-0007.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-VT-0007.pdf' },
+        { id: 'nde-001', requestNumber: 'NDE-26-0001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started', project: 'Demo Turnaround 2026', owningGroup: 'Inspection', code: 'API 570', unit: '01-CRUDE' },
+        { id: 'nde-002', requestNumber: 'NDE-26-0002', circuitId: 'CIR-4A-220', method: 'RT', status: 'Requested', priority: 'High', requestedBy: 'M. Patel', assignedTo: 'S. Owens', dueDate: '2026-05-17', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-0002' },
+        { id: 'nde-004', requestNumber: 'NDE-26-0004', assetTag: 'HX-22B', method: 'PT', status: 'In Progress', priority: 'Critical', requestedBy: 'A. Lopez', assignedTo: 'D. Kim', dueDate: '2026-05-12', reportStatus: 'In Progress', reportNumber: 'RPT-26-PT-0004', accessType: 'Rope Access', inspectionDetails: 'Nozzle N11 Weld 213 root and final cap PT verification before hydrotest.', scopeItems: [{ id: 'scope-004-pt-prep', method: 'PT', stage: 'Prep', displayName: 'PT Prep', weldId: 'W-22B-01', location: 'Nozzle N2 Root' }, { id: 'scope-004-pt-root', method: 'PT', stage: 'Root', displayName: 'PT Root', weldId: 'W-22B-01', location: 'Nozzle N2 Root' }, { id: 'scope-004-pt-final', method: 'PT', stage: 'Final', displayName: 'PT Final', weldId: 'W-22B-01', location: 'Nozzle N2 Cap' }] },
+        { id: 'nde-003', requestNumber: 'NDE-26-0003', equipmentTag: 'E-4401', method: 'MT', status: 'Scheduled', priority: 'Normal', requestedBy: 'T. Nguyen', assignedTo: 'R. Hall', dueDate: '2026-05-13', reportStatus: 'Not Available' },
+        { id: 'nde-008', requestNumber: 'NDE-26-0008', equipmentTag: 'PSV-91', method: 'UT Thickness', status: 'Cancelled', priority: 'Low', requestedBy: 'C. White', assignedTo: 'B. Young', dueDate: '2026-05-04', reportStatus: 'Not Started' },
+        { id: 'nde-009', requestNumber: 'NDE-26-0009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-0009' },
+        { id: 'nde-010', requestNumber: 'NDE-26-0010', assetTag: 'P-300C', method: 'PAUT', status: 'Reviewed', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-0010', reportFileName: 'RPT-26-PAUT-0010.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-0010.pdf' }
       ]),
-      transitionLogItem: vi.fn().mockResolvedValue({ id: 'nde-001', requestNumber: 'NDE-26-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Requested', priority: 'Normal', reportStatus: 'Not Started' }),
+      transitionLogItem: vi.fn().mockResolvedValue({ id: 'nde-001', requestNumber: 'NDE-26-0001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Requested', priority: 'Normal', reportStatus: 'Not Started' }),
       getLogItemEvents: vi.fn().mockResolvedValue([
         { id: 'evt-1', ndeRequestId: 'nde-001', fromStatus: 'Draft', toStatus: 'Requested', actor: 'demo.user', timestampUtc: '2026-05-10T12:00:00Z', comment: 'ready for scheduling' }
       ])
@@ -112,7 +112,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+    expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
     expect(ndeApi.getLogItems).toHaveBeenCalledTimes(1);
   });
 
@@ -123,10 +123,10 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('NDE-26-005')).toBeInTheDocument();
-    expect(screen.getByText('NDE-26-006')).toBeInTheDocument();
-    expect(screen.getByText('NDE-26-007')).toBeInTheDocument();
-    expect(screen.queryByText('NDE-26-002')).not.toBeInTheDocument();
+    expect(await screen.findByText('NDE-26-0005')).toBeInTheDocument();
+    expect(screen.getByText('NDE-26-0006')).toBeInTheDocument();
+    expect(screen.getByText('NDE-26-0007')).toBeInTheDocument();
+    expect(screen.queryByText('NDE-26-0002')).not.toBeInTheDocument();
   });
 
   it('defaults schedule route status filter to Scheduled', () => {
@@ -137,9 +137,9 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     );
 
     expect(screen.getByDisplayValue('Scheduled')).toBeInTheDocument();
-    expect(screen.getByText('NDE-26-003')).toBeInTheDocument();
-    expect(screen.queryByText('NDE-26-010')).not.toBeInTheDocument();
-    expect(screen.queryByText('NDE-26-004')).not.toBeInTheDocument();
+    expect(screen.getByText('NDE-26-0003')).toBeInTheDocument();
+    expect(screen.queryByText('NDE-26-0010')).not.toBeInTheDocument();
+    expect(screen.queryByText('NDE-26-0004')).not.toBeInTheDocument();
   });
 
 
@@ -150,7 +150,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
       </MemoryRouter>,
     );
 
-    const readyRow = screen.getByText('NDE-26-006').closest('tr');
+    const readyRow = screen.getByText('NDE-26-0006').closest('tr');
     expect(readyRow).not.toBeNull();
     expect(within(readyRow as HTMLTableRowElement).getByRole('button', { name: 'Download Report' })).toBeEnabled();
   });
@@ -162,7 +162,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
       </MemoryRouter>,
     );
 
-    const downloadedRow = screen.getByText('NDE-26-007').closest('tr');
+    const downloadedRow = screen.getByText('NDE-26-0007').closest('tr');
     expect(downloadedRow).not.toBeNull();
     expect(within(downloadedRow as HTMLTableRowElement).getByRole('button', { name: 'Download Report' })).toBeEnabled();
   });
@@ -174,7 +174,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
       </MemoryRouter>,
     );
 
-    const nonReadyRow = screen.getByText('NDE-26-001').closest('tr');
+    const nonReadyRow = screen.getByText('NDE-26-0001').closest('tr');
     expect(nonReadyRow).not.toBeNull();
     const downloadButton = within(nonReadyRow as HTMLTableRowElement).getByRole('button', { name: 'Download Report' });
     expect(downloadButton).toBeDisabled();
@@ -191,7 +191,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     const bulkDownloadButton = screen.getByRole('button', { name: 'Bulk Download Reports' });
     expect(bulkDownloadButton).toBeDisabled();
 
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Select NDE-26-007' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select NDE-26-0007' }));
     expect(bulkDownloadButton).toBeEnabled();
   });
 
@@ -212,12 +212,12 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
-    fireEvent.click(screen.getAllByText('NDE-26-001')[0]);
+    expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
+    fireEvent.click(screen.getAllByText('NDE-26-0001')[0]);
     fireEvent.click(screen.getByRole('button', { name: 'Edit Request' }));
 
     const modal = screen.getByRole('dialog', { name: 'Edit NDE Request' });
-    expect(within(modal).getByDisplayValue('NDE-26-001')).toHaveAttribute('readonly');
+    expect(within(modal).getByDisplayValue('NDE-26-0001')).toHaveAttribute('readonly');
     expect(within(modal).getAllByDisplayValue('—').length).toBeGreaterThan(0);
     expect(within(modal).getByLabelText('Project *')).toBeInTheDocument();
     expect(within(modal).getByLabelText('Owning Group *')).toBeInTheDocument();
@@ -252,21 +252,21 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     expect(screen.getByText('NBIC')).toBeInTheDocument();
     expect(screen.getByText('02-VAC')).toBeInTheDocument();
 
-    const updatedRow = screen.getAllByText('NDE-26-001')[0].closest('tr') as HTMLTableRowElement;
+    const updatedRow = screen.getAllByText('NDE-26-0001')[0].closest('tr') as HTMLTableRowElement;
     expect(within(updatedRow).getByText('RT')).toBeInTheDocument();
     expect(within(updatedRow).getByText('—')).toBeInTheDocument();
 
     fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: 'REF-EDIT-900' } });
-    expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NDE-26-0001').length).toBeGreaterThan(0);
 
     fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: 'Unit 73 Maintenance' } });
-    expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NDE-26-0001').length).toBeGreaterThan(0);
 
     fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: 'Operations' } });
-    expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NDE-26-0001').length).toBeGreaterThan(0);
 
     fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: 'NBIC' } });
-    expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NDE-26-0001').length).toBeGreaterThan(0);
   });
 
   it('supports access method/reference in create form, details, and search without filter dropdown', async () => {
@@ -276,12 +276,12 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+    expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
     expect(screen.queryByDisplayValue('All')).toBeInTheDocument();
     expect(screen.queryByLabelText('Access Method')).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: 'Rope Access' } });
-    expect(screen.getByText('NDE-26-004')).toBeInTheDocument();
+    expect(screen.getByText('NDE-26-0004')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
     const modal = screen.getByRole('dialog', { name: 'New NDE Request' });
@@ -303,7 +303,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     fireEvent.change(within(modal).getByLabelText('Reference'), { target: { value: 'REF-ROPE-77' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
 
-    fireEvent.click((await screen.findAllByText('NDE-26-011'))[0]);
+    fireEvent.click((await screen.findAllByText('NDE-26-0011'))[0]);
     expect(screen.getAllByText('Rope Access').length).toBeGreaterThan(0);
     expect(screen.getByText('REF-ROPE-77')).toBeInTheDocument();
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
@@ -316,7 +316,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+    expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
     expect(screen.getByRole('dialog', { name: 'New NDE Request' })).toBeInTheDocument();
@@ -348,7 +348,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     expect(await screen.findByText('Request creation is demo-only (in-memory) until backend persistence is connected.')).toBeInTheDocument();
     expect(screen.getByText('Created request detail unique token ZX-441')).toBeInTheDocument();
     fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: 'zx-441' } });
-    expect(screen.queryByText('NDE-26-004')).not.toBeInTheDocument();
+    expect(screen.queryByText('NDE-26-0004')).not.toBeInTheDocument();
     expect(screen.queryByText('No NDE Requests NDE items yet')).not.toBeInTheDocument();
   });
 
@@ -359,14 +359,14 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+    expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
     fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
     expect(screen.getByText('Project, Owning Group, Due Date, NDE Method, Facility, Unit, Asset, and Access Method are required.')).toBeInTheDocument();
-    expect(screen.queryByText('NDE-26-011')).not.toBeInTheDocument();
+    expect(screen.queryByText('NDE-26-0011')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    fireEvent.click(screen.getByText('NDE-26-001'));
+    fireEvent.click(screen.getByText('NDE-26-0001'));
     fireEvent.click(screen.getByRole('button', { name: 'Edit Request' }));
     const editModal = screen.getByRole('dialog', { name: 'Edit NDE Request' });
     fireEvent.change(within(editModal).getByLabelText('Asset *'), { target: { value: '' } });
@@ -427,16 +427,16 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
 
   it('searches inspection details tokens N11 and Weld 213 case-insensitively', async () => {
     render(<MemoryRouter initialEntries={['/nde-requests']}><App /></MemoryRouter>);
-    expect(await screen.findByText('NDE-26-004')).toBeInTheDocument();
+    expect(await screen.findByText('NDE-26-0004')).toBeInTheDocument();
     const search = screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee');
 
     fireEvent.change(search, { target: { value: 'N11' } });
-    await waitFor(() => expect(screen.getByText('NDE-26-004')).toBeInTheDocument());
-    expect(screen.queryByText('NDE-26-001')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('NDE-26-0004')).toBeInTheDocument());
+    expect(screen.queryByText('NDE-26-0001')).not.toBeInTheDocument();
 
     fireEvent.change(search, { target: { value: 'weld 213' } });
-    await waitFor(() => expect(screen.getByText('NDE-26-004')).toBeInTheDocument());
-    expect(screen.queryByText('NDE-26-002')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('NDE-26-0004')).toBeInTheDocument());
+    expect(screen.queryByText('NDE-26-0002')).not.toBeInTheDocument();
   });
 
   it('renders units/assets reference page with unit and asset table layout', () => {
@@ -475,7 +475,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
 
     cleanup();
     render(<MemoryRouter initialEntries={['/nde-requests']}><App /></MemoryRouter>);
-    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+    expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
     const modal = screen.getByRole('dialog', { name: 'New NDE Request' });
     fireEvent.change(within(modal).getByLabelText('Facility *'), { target: { value: 'fac-demo-main' } });
@@ -484,7 +484,7 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
 
     cleanup();
     render(<MemoryRouter initialEntries={['/nde-requests']}><App /></MemoryRouter>);
-    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+    expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
     const modalTwo = screen.getByRole('dialog', { name: 'New NDE Request' });
     fireEvent.change(within(modalTwo).getByLabelText('Facility *'), { target: { value: 'fac-demo-main' } });
@@ -511,10 +511,10 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+    expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('NDE-26-001'));
-    expect(screen.getByText('Selected: NDE-26-001 (Draft)')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('NDE-26-0001'));
+    expect(screen.getByText('Selected: NDE-26-0001 (Draft)')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Close details' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Mark Requested' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
@@ -535,8 +535,8 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('NDE-26-001'));
+    expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('NDE-26-0001'));
     fireEvent.click(screen.getByRole('button', { name: 'Mark Requested' }));
 
     expect(await screen.findByText('Unable to persist transition to API. Applied demo fallback update.')).toBeInTheDocument();
@@ -549,8 +549,8 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByText('NDE-26-007'));
-    expect(screen.getByText('Selected: NDE-26-007 (Closed)')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('NDE-26-0007'));
+    expect(screen.getByText('Selected: NDE-26-0007 (Closed)')).toBeInTheDocument();
     expect(screen.getByText('No workflow actions available for this status.')).toBeInTheDocument();
   });
 
@@ -561,9 +561,9 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByText('NDE-26-006'));
+    fireEvent.click(screen.getByText('NDE-26-0006'));
     const detailsPanel = screen.getByLabelText('NDE request details');
-    expect(within(detailsPanel).getByText('RPT-26-PAUT-006')).toBeInTheDocument();
+    expect(within(detailsPanel).getByText('RPT-26-PAUT-0006')).toBeInTheDocument();
   });
 
   it('shows weld examination stages as request scope items in details', async () => {
@@ -573,8 +573,8 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('NDE-26-004')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('NDE-26-004'));
+    expect(await screen.findByText('NDE-26-0004')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('NDE-26-0004'));
     expect(screen.getByRole('heading', { name: 'Request Scope Items' })).toBeInTheDocument();
     expect(screen.getByText('PT Prep')).toBeInTheDocument();
     expect(screen.getByText('PT Root')).toBeInTheDocument();
@@ -588,10 +588,10 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByText('NDE-26-001'));
-    expect(screen.getByText('Selected: NDE-26-001 (Draft)')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('NDE-26-0001'));
+    expect(screen.getByText('Selected: NDE-26-0001 (Draft)')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Close details' }));
-    expect(screen.queryByText('Selected: NDE-26-001 (Draft)')).not.toBeInTheDocument();
+    expect(screen.queryByText('Selected: NDE-26-0001 (Draft)')).not.toBeInTheDocument();
   });
 
   it('shows no forward workflow actions for Cancelled rows', () => {
@@ -601,8 +601,8 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByText('NDE-26-008'));
-    expect(screen.getByText('Selected: NDE-26-008 (Cancelled)')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('NDE-26-0008'));
+    expect(screen.getByText('Selected: NDE-26-0008 (Cancelled)')).toBeInTheDocument();
     expect(screen.getByText('No workflow actions available for this status.')).toBeInTheDocument();
   });
 });
@@ -615,8 +615,8 @@ it('selecting a row loads workflow history and renders transition details', asyn
     </MemoryRouter>,
   );
 
-  expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
-  fireEvent.click(screen.getByText('NDE-26-001'));
+  expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
+  fireEvent.click(screen.getByText('NDE-26-0001'));
 
   await waitFor(() => expect(ndeApi.getLogItemEvents).toHaveBeenCalledWith('nde-001'));
   expect(await screen.findByText('Draft → Requested')).toBeInTheDocument();
@@ -630,24 +630,52 @@ it('shows Facility and Unit # columns, resolves facility from unit, and keeps as
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('NDE-26-001')).toBeInTheDocument();
+    expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Facility' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Unit #' })).toBeInTheDocument();
 
-    const row = screen.getAllByText('NDE-26-001')[0].closest('tr') as HTMLTableRowElement;
+    const row = screen.getAllByText('NDE-26-0001')[0].closest('tr') as HTMLTableRowElement;
     expect(within(row).getByText('Demo Facility')).toBeInTheDocument();
     expect(within(row).getByText('01')).toBeInTheDocument();
     expect(within(row).queryByText(/Unit:/)).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('NDE-26-001'));
+    fireEvent.click(screen.getByText('NDE-26-0001'));
     const details = screen.getByLabelText('NDE request details');
     const detailText = details.textContent ?? '';
     expect(detailText.indexOf('Facility')).toBeLessThan(detailText.indexOf('Unit'));
     expect(detailText.indexOf('Unit')).toBeLessThan(detailText.indexOf('Asset / Circuit / Equipment'));
 
     fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: 'Demo Facility' } });
-    expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NDE-26-0001').length).toBeGreaterThan(0);
 
     fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee'), { target: { value: '01' } });
-    expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NDE-26-0001').length).toBeGreaterThan(0);
+});
+
+describe('NDE workflow report synchronization', () => {
+  it('marking Results Received sets report status to in progress and preserves generated report number', async () => {
+    vi.mocked(ndeApi.transitionLogItem).mockRejectedValue(new Error('fallback'));
+    render(<MemoryRouter initialEntries={['/nde-requests']}><App /></MemoryRouter>);
+    expect(await screen.findByText('NDE-26-0003')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('NDE-26-0003'));
+    fireEvent.click(screen.getByRole('button', { name: 'Mark In Progress' }));
+    await waitFor(() => expect(screen.getAllByText('RPT-26-MT-0003').length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Mark Results Received' })).not.toBeDisabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Results Received' }));
+    expect(await screen.findByText('Selected: NDE-26-0003 (Results Received)')).toBeInTheDocument();
+    expect(screen.getAllByText('In Progress').length).toBeGreaterThan(0);
+  });
+
+  it('cancel without reason is blocked, with reason calls transition', async () => {
+    render(<MemoryRouter initialEntries={['/nde-requests']}><App /></MemoryRouter>);
+    expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('NDE-26-0001'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(await screen.findByText('Cancellation reason is required.')).toBeInTheDocument();
+    expect(ndeApi.transitionLogItem).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByPlaceholderText('Enter transition reason'), { target: { value: 'duplicate request' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(ndeApi.transitionLogItem).toHaveBeenCalledWith('nde-001', 'Cancelled', 'duplicate request', 'demo.user'));
+  });
 });

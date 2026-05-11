@@ -39,7 +39,7 @@ export type NdeLogItem = {
   facilityId?: string;
   facilityName?: string;
   inspectionDetails?: string;
-  ndeStage?: 'Prep' | 'Root' | 'Final' | 'Material Verification' | 'Other';
+  ndeStage?: 'Prep' | 'Root' | 'Final' | 'Pre-Stress' | 'Post-Stress' | 'Material Verification' | 'Other';
   weldId?: string;
   location?: string;
   relatedRequestGroupId?: string;

@@ -333,6 +333,8 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     expect(screen.getByLabelText('Unit *')).toBeInTheDocument();
     expect(screen.getByLabelText('Asset *')).toBeInTheDocument();
     expect(screen.getByLabelText('Inspection Details')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Pre-Stress' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Post-Stress' })).toBeInTheDocument();
 
     expect(screen.queryByLabelText('Billing #1')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('PT Root')).not.toBeInTheDocument();
@@ -571,6 +573,53 @@ it('loads NDE rows from ndeApi without real backend calls', async () => {
     expect(within(detailsPanel).getByText('RPT-26-PAUT-0006')).toBeInTheDocument();
   });
 
+
+
+  it('creates separate staged weld requests with pre/post-stress stages and shared related group', async () => {
+    render(
+      <MemoryRouter initialEntries={['/nde-requests']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('NDE-26-0001')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
+    const modal = screen.getByRole('dialog', { name: 'New NDE Request' });
+
+    fireEvent.change(within(modal).getByLabelText('Project *'), { target: { value: 'Demo Turnaround 2026' } });
+    fireEvent.change(within(modal).getByLabelText('Owning Group *'), { target: { value: 'Inspection' } });
+    fireEvent.change(within(modal).getByLabelText('Due Date *'), { target: { value: '2026-05-22' } });
+    fireEvent.change(within(modal).getByLabelText('NDE Method *'), { target: { value: 'UT Thickness' } });
+    fireEvent.change(within(modal).getByLabelText('Facility *'), { target: { value: 'fac-demo-main' } });
+    fireEvent.change(within(modal).getByLabelText('Unit *'), { target: { value: '01-CRUDE' } });
+    fireEvent.change(within(modal).getByLabelText('Asset *'), { target: { value: 'P-102A' } });
+    fireEvent.change(within(modal).getByLabelText('Access Method *'), { target: { value: 'Ladder' } });
+    fireEvent.change(within(modal).getByLabelText('Weld ID'), { target: { value: 'W-PS-100' } });
+
+    fireEvent.click(within(modal).getByLabelText('Create separate staged weld requests'));
+    const stageSelector = within(modal).getByLabelText('Stages to create') as HTMLSelectElement;
+    expect(within(modal).queryByText('Stages')).not.toBeInTheDocument();
+    for (const option of Array.from(stageSelector.options)) {
+      option.selected = option.value === 'Pre-Stress' || option.value === 'Post-Stress';
+    }
+    fireEvent.change(stageSelector);
+
+    fireEvent.click(within(modal).getByRole('button', { name: 'Create Request' }));
+
+    expect(await screen.findAllByText('Pre-Stress')).not.toHaveLength(0);
+    expect(screen.getAllByText('Post-Stress').length).toBeGreaterThan(0);
+
+    const preRow = screen.getAllByText('Pre-Stress')[0].closest('tr') as HTMLTableRowElement;
+    const postRow = screen.getAllByText('Post-Stress')[0].closest('tr') as HTMLTableRowElement;
+
+    fireEvent.click(within(preRow).getByText(/NDE-26-/));
+    const details = screen.getByLabelText('NDE request details');
+    const relatedRows = within(details).getAllByRole('row');
+    const relatedGroupCellValues = relatedRows.slice(1).map((row) => within(row).getAllByRole('cell')[3].textContent);
+    expect(relatedGroupCellValues.every((value) => value && value !== '—')).toBe(true);
+
+    expect(within(postRow).getByText('Post-Stress')).toBeInTheDocument();
+  });
   it('shows staged weld requests as separate rows with related requests in details', async () => {
     render(
       <MemoryRouter initialEntries={['/nde-requests']}>

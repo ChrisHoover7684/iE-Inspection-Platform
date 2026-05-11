@@ -1,4 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+
+type NdeStage = NonNullable<NdeLogItem['ndeStage']>;
+
+const ndeStageOptions: NdeStage[] = ['Prep', 'Root', 'Final', 'Pre-Stress', 'Post-Stress', 'Material Verification', 'Other'];
+const stagedWeldStageOptions: Array<Extract<NdeStage, 'Prep' | 'Root' | 'Final' | 'Pre-Stress' | 'Post-Stress'>> = ['Prep', 'Root', 'Final', 'Pre-Stress', 'Post-Stress'];
 import { ndeApi } from '../api';
 import type { NdeLogItem, NdeLogStatus, NdeLogTransitionEvent } from '../types';
 import { accessMethodOptions, getAssetsForUnit, getProjectOptions, getUnitOptions, ndeMethodOptions, owningGroupOptions, parseUnitNumber } from '../ndeRequestReferenceData';
@@ -197,7 +202,7 @@ export function NdeWorkspacePage({
   const [createForm, setCreateForm] = useState({
     project: '', owningGroup: '', requester: currentUserDisplayName, priority: 'Normal' as NdeLogItem['priority'], dueDate: '',
     taskType: '', code: '', facilityId: '', unit: '', asset: '', inspectionDetails: '', requestStatus: 'Draft' as NdeLogStatus,
-    accessType: '', reference: '', ndeStage: '', weldId: '', location: '', createSeparateStagedWeldRequests: false, stagedPrep: false, stagedRoot: false, stagedFinal: false,
+    accessType: '', reference: '', ndeStage: '', weldId: '', location: '', createSeparateStagedWeldRequests: false, stagedStages: [] as typeof stagedWeldStageOptions,
   });
   const [editForm, setEditForm] = useState({
     project: '', owningGroup: '', priority: 'Normal' as NdeLogItem['priority'], dueDate: '', method: '',
@@ -350,6 +355,7 @@ const todayIso = new Date().toISOString().slice(0, 10);
           row.code,
           row.unit,
           row.ndeStage,
+          row.ndeStage?.replace('-', ' '),
           row.weldId,
           row.location,
           row.relatedRequestGroupLabel,
@@ -378,11 +384,7 @@ const todayIso = new Date().toISOString().slice(0, 10);
       return;
     }
 
-    const stagedSelections = [
-      createForm.stagedPrep ? 'Prep' : null,
-      createForm.stagedRoot ? 'Root' : null,
-      createForm.stagedFinal ? 'Final' : null,
-    ].filter(Boolean) as Array<'Prep' | 'Root' | 'Final'>;
+    const stagedSelections = createForm.stagedStages;
 
     if (createForm.createSeparateStagedWeldRequests && stagedSelections.length === 0) {
       setCreateValidationMessage(stagedSelectionMessage);
@@ -599,11 +601,11 @@ const todayIso = new Date().toISOString().slice(0, 10);
               <label>Priority<select value={createForm.priority} onChange={(event) => setCreateForm((current) => ({ ...current, priority: event.target.value as NdeLogItem['priority'] }))}><option>Low</option><option>Normal</option><option>High</option><option>Critical</option></select></label>
               <label>Due Date *<input required type="date" value={createForm.dueDate} onChange={(event) => setCreateForm((current) => ({ ...current, dueDate: event.target.value }))} /></label>
               <label>NDE Method *<select required value={createForm.taskType} onChange={(event) => setCreateForm((current) => ({ ...current, taskType: event.target.value }))}><option value="">Select an NDE Method...</option>{ndeMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
-              <label>NDE Stage<select value={createForm.ndeStage} onChange={(event) => setCreateForm((current) => ({ ...current, ndeStage: event.target.value }))}><option value=''>None / Standard</option><option>Prep</option><option>Root</option><option>Final</option><option>Material Verification</option><option>Other</option></select></label>
+              <label>NDE Stage<select value={createForm.ndeStage} onChange={(event) => setCreateForm((current) => ({ ...current, ndeStage: event.target.value }))}><option value=''>None / Standard</option>{ndeStageOptions.map((stage) => <option key={stage}>{stage}</option>)}</select></label>
               <label>Weld ID<input value={createForm.weldId} onChange={(event) => setCreateForm((current) => ({ ...current, weldId: event.target.value }))} /></label>
               <label>Location<input value={createForm.location} onChange={(event) => setCreateForm((current) => ({ ...current, location: event.target.value }))} /></label>
               <label>Create separate staged weld requests<input type='checkbox' checked={createForm.createSeparateStagedWeldRequests} onChange={(event) => setCreateForm((current) => ({ ...current, createSeparateStagedWeldRequests: event.target.checked }))} /></label>
-              {createForm.createSeparateStagedWeldRequests && <fieldset><legend>Stages</legend><label><input type='checkbox' checked={createForm.stagedPrep} onChange={(event) => setCreateForm((current) => ({ ...current, stagedPrep: event.target.checked }))} />Prep</label><label><input type='checkbox' checked={createForm.stagedRoot} onChange={(event) => setCreateForm((current) => ({ ...current, stagedRoot: event.target.checked }))} />Root</label><label><input type='checkbox' checked={createForm.stagedFinal} onChange={(event) => setCreateForm((current) => ({ ...current, stagedFinal: event.target.checked }))} />Final</label></fieldset>}
+              {createForm.createSeparateStagedWeldRequests && <label>Stages to create<select multiple value={createForm.stagedStages} onChange={(event) => setCreateForm((current) => ({ ...current, stagedStages: Array.from(event.target.selectedOptions, (option) => option.value as typeof stagedWeldStageOptions[number]) }))}>{stagedWeldStageOptions.map((stage) => <option key={stage} value={stage}>{stage}</option>)}</select></label>}
               <label>Code Criteria<input value={createForm.code} onChange={(event) => setCreateForm((current) => ({ ...current, code: event.target.value }))} /></label>
               <label>Facility *<select required value={createForm.facilityId} onChange={(event) => setCreateForm((current) => ({ ...current, facilityId: event.target.value, unit: '', asset: '' }))}><option value="">Select a Facility...</option>{facilities.filter((facility) => facility.isActive).map((facility) => <option key={facility.id} value={facility.id}>{facility.name}</option>)}</select></label>
               <label>Unit *<select required disabled={!createForm.facilityId} value={createForm.unit} onChange={(event) => setCreateForm((current) => ({ ...current, unit: event.target.value, asset: '' }))}><option value="">{createForm.facilityId ? 'Select a Unit...' : 'Select a Facility first...'}</option>{managedUnitOptions.filter((option) => option.isActive && option.facilityId === createForm.facilityId).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
@@ -643,7 +645,7 @@ const todayIso = new Date().toISOString().slice(0, 10);
               <label>Priority<select value={editForm.priority} onChange={(event) => setEditForm((current) => ({ ...current, priority: event.target.value as NdeLogItem['priority'] }))}><option>Low</option><option>Normal</option><option>High</option><option>Critical</option></select></label>
               <label>Due Date *<input required type="date" value={editForm.dueDate} onChange={(event) => setEditForm((current) => ({ ...current, dueDate: event.target.value }))} /></label>
               <label>NDE Method *<select required value={editForm.method} onChange={(event) => setEditForm((current) => ({ ...current, method: event.target.value }))}><option value="">Select an NDE Method...</option>{ndeMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
-              <label>NDE Stage<select value={editForm.ndeStage} onChange={(event) => setEditForm((current) => ({ ...current, ndeStage: event.target.value }))}><option value=''>None / Standard</option><option>Prep</option><option>Root</option><option>Final</option><option>Material Verification</option><option>Other</option></select></label>
+              <label>NDE Stage<select value={editForm.ndeStage} onChange={(event) => setEditForm((current) => ({ ...current, ndeStage: event.target.value }))}><option value=''>None / Standard</option>{ndeStageOptions.map((stage) => <option key={stage}>{stage}</option>)}</select></label>
               <label>Weld ID<input value={editForm.weldId} onChange={(event) => setEditForm((current) => ({ ...current, weldId: event.target.value }))} /></label>
               <label>Location<input value={editForm.location} onChange={(event) => setEditForm((current) => ({ ...current, location: event.target.value }))} /></label>
               <label>Code Criteria<input value={editForm.code} onChange={(event) => setEditForm((current) => ({ ...current, code: event.target.value }))} /></label>

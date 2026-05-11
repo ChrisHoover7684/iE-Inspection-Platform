@@ -54,6 +54,7 @@ const allItems: NavigationItem[] = [
   { key: 'facilities', label: 'Facilities', route: '/facilities', group: 'admin' },
   { key: 'customNdeTypes', label: 'Custom NDE Types', route: '/custom-nde-types', group: 'admin' },
   { key: 'referenceDataProjects', label: 'Reference Data / Projects', route: '/reference-data-projects', group: 'admin' },
+  { key: 'referenceDataUnitsAssets', label: 'Reference Data / Units & Assets', route: '/reference-data-units-assets', group: 'admin' },
   { key: 'systemReadiness', label: 'System Readiness', route: '/system-readiness', group: 'admin' },
   { key: 'stressTestSetup', label: 'Stress Test Setup', route: '/stress-test-setup', group: 'admin' },
   { key: 'tenants', label: 'Tenants', route: '/tenants', group: 'admin' },
@@ -77,7 +78,7 @@ const roleItemKeys: Record<AppRole, string[]> = {
   owner: ['dashboard', 'approvalQueue', 'ndeRequests', 'ndeReports', 'apiInspectionLog', 'assets', 'reports', 'exports'],
   inspector: ['dashboard', 'myReports', 'apiInspectionLog', 'ndeRequests', 'assets', 'returnedReports', 'calculators', 'b313Piping', 'criteriaReferences', 'damageMechanisms'],
   nde_coordinator: ['dashboard', 'ndeRequests', 'schedule', 'resultsReceived', 'overdue', 'cancelled', 'assets'],
-  admin: ['dashboard', 'usersAccess', 'facilities', 'assets', 'customNdeTypes', 'referenceDataProjects', 'reports', 'ndeRequests', 'auditLog', 'settings', 'calculators', 'b313Piping', 'criteriaReferences', 'damageMechanisms'],
+  admin: ['dashboard', 'usersAccess', 'facilities', 'assets', 'customNdeTypes', 'referenceDataProjects', 'referenceDataUnitsAssets', 'reports', 'ndeRequests', 'auditLog', 'settings', 'calculators', 'b313Piping', 'criteriaReferences', 'damageMechanisms'],
   viewer: ['dashboard', 'reports', 'assets', 'downloads'],
   internal_system_owner: ['dashboard', 'systemReadiness', 'stressTestSetup', 'tenants', 'auditLog', 'settings'],
 };

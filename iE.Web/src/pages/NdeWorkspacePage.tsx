@@ -121,18 +121,20 @@ const mockRows: NdeLogItem[] = [
     reportStatus: 'In Progress',
     reportNumber: 'RPT-26-PT-0004',
     accessType: 'Rope Access',
-    inspectionDetails: 'Nozzle N11 Weld 213 root and final cap PT verification before hydrotest.',
-    scopeItems: [
-      { id: 'scope-004-pt-prep', method: 'PT', stage: 'Prep', displayName: 'PT Prep', weldId: 'W-22B-01', location: 'Nozzle N2 Root', notes: 'Surface prep and cleaning' },
-      { id: 'scope-004-pt-root', method: 'PT', stage: 'Root', displayName: 'PT Root', weldId: 'W-22B-01', location: 'Nozzle N2 Root', notes: 'Root pass examination' },
-      { id: 'scope-004-pt-final', method: 'PT', stage: 'Final', displayName: 'PT Final', weldId: 'W-22B-01', location: 'Nozzle N2 Cap', notes: 'Final cap examination' },
-    ],
+    inspectionDetails: 'Nozzle N11 Weld 213 PT Prep verification before hydrotest.',
+    ndeStage: 'Prep',
+    weldId: 'W-22B-01',
+    location: 'Nozzle N11 Weld 213',
+    relatedRequestGroupId: 'weld-w-22b-01-nozzle-n11-weld-213',
+    relatedRequestGroupLabel: 'W-22B-01 / Nozzle N11 Weld 213',
   },
   { id: 'nde-005', requestNumber: 'NDE-26-0005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09', reportStatus: 'In Progress', reportNumber: 'RPT-26-PMI-0005', accessType: 'Platform', project: 'Demo Turnaround 2026', owningGroup: 'Inspection', code: 'API 570', unit: '01-CRUDE', facilityId: 'fac-demo-main' },
   { id: 'nde-006', requestNumber: 'NDE-26-0006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-0006', reportFileName: 'RPT-26-PAUT-0006.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-0006.pdf', accessType: 'Ladder', project: 'Demo Turnaround 2026', owningGroup: 'Inspection', code: 'API 570', unit: '07-TANK FARM', facilityId: 'fac-demo-main' },
   { id: 'nde-007', requestNumber: 'NDE-26-0007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Complete', reportNumber: 'RPT-26-VT-0007', reportFileName: 'RPT-26-VT-0007.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-VT-0007.pdf', accessType: 'Confined Space', project: 'Demo Turnaround 2026', owningGroup: 'Inspection', code: 'API 570', unit: '03-FCC', facilityId: 'fac-demo-main' },
   { id: 'nde-008', requestNumber: 'NDE-26-0008', equipmentTag: 'PSV-91', method: 'UT Thickness', status: 'Cancelled', priority: 'Low', requestedBy: 'C. White', assignedTo: 'B. Young', dueDate: '2026-05-04', reportStatus: 'Not Started', accessType: 'Aerial Lift', project: 'Demo Turnaround 2026', owningGroup: 'Inspection', code: 'API 570', unit: '06-UTILITIES', facilityId: 'fac-demo-main' },
   { id: 'nde-009', requestNumber: 'NDE-26-0009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-0009', accessType: 'Scaffold', project: 'Demo Turnaround 2026', owningGroup: 'Inspection', code: 'API 570', unit: '02-VAC', facilityId: 'fac-demo-main' },
+  { id: 'nde-011', requestNumber: 'NDE-26-0011', assetTag: 'HX-22B', method: 'PT', ndeStage: 'Root', weldId: 'W-22B-01', location: 'Nozzle N11 Weld 213', status: 'Requested', priority: 'Critical', requestedBy: 'A. Lopez', assignedTo: 'D. Kim', dueDate: '2026-05-13', reportStatus: 'Not Started', accessType: 'Rope Access', project: 'Unit 73 Maintenance', owningGroup: 'Mechanical Integrity', code: 'NBIC', unit: '02-VAC', facilityId: 'fac-demo-main', relatedRequestGroupId: 'weld-w-22b-01-nozzle-n11-weld-213', relatedRequestGroupLabel: 'W-22B-01 / Nozzle N11 Weld 213' },
+  { id: 'nde-012', requestNumber: 'NDE-26-0012', assetTag: 'HX-22B', method: 'PT', ndeStage: 'Final', weldId: 'W-22B-01', location: 'Nozzle N11 Weld 213', status: 'Requested', priority: 'Critical', requestedBy: 'A. Lopez', assignedTo: 'D. Kim', dueDate: '2026-05-14', reportStatus: 'Not Started', accessType: 'Rope Access', project: 'Unit 73 Maintenance', owningGroup: 'Mechanical Integrity', code: 'NBIC', unit: '02-VAC', facilityId: 'fac-demo-main', relatedRequestGroupId: 'weld-w-22b-01-nozzle-n11-weld-213', relatedRequestGroupLabel: 'W-22B-01 / Nozzle N11 Weld 213' },
   { id: 'nde-010', requestNumber: 'NDE-26-0010', assetTag: 'P-300C', method: 'PAUT', status: 'Reviewed', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-0010', reportFileName: 'RPT-26-PAUT-0010.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-0010.pdf', project: 'Corrosion Study 2026', owningGroup: 'Operations', code: 'API 510', unit: '02-VAC', facilityId: 'fac-demo-main' },
 ];
 
@@ -185,6 +187,7 @@ export function NdeWorkspacePage({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [demoCreateMessage, setDemoCreateMessage] = useState<string>('');
   const requiredFieldsMessage = 'Project, Owning Group, Due Date, NDE Method, Facility, Unit, Asset, and Access Method are required.';
+  const stagedSelectionMessage = 'Select at least one NDE stage for staged weld requests.';
   const [managedProjectOptions, setManagedProjectOptions] = useState(() => getProjectOptions());
   const [managedUnitOptions, setManagedUnitOptions] = useState(() => getUnitOptions());
   const facilities = useMemo(() => getFacilities(), []);
@@ -194,11 +197,11 @@ export function NdeWorkspacePage({
   const [createForm, setCreateForm] = useState({
     project: '', owningGroup: '', requester: currentUserDisplayName, priority: 'Normal' as NdeLogItem['priority'], dueDate: '',
     taskType: '', code: '', facilityId: '', unit: '', asset: '', inspectionDetails: '', requestStatus: 'Draft' as NdeLogStatus,
-    accessType: '', reference: '',
+    accessType: '', reference: '', ndeStage: '', weldId: '', location: '', createSeparateStagedWeldRequests: false, stagedPrep: false, stagedRoot: false, stagedFinal: false,
   });
   const [editForm, setEditForm] = useState({
     project: '', owningGroup: '', priority: 'Normal' as NdeLogItem['priority'], dueDate: '', method: '',
-    code: '', facilityId: '', unit: '', asset: '', accessType: '', reference: '', inspectionDetails: '',
+    code: '', facilityId: '', unit: '', asset: '', accessType: '', reference: '', inspectionDetails: '', ndeStage: '', weldId: '', location: '',
   });
 
   useEffect(() => {
@@ -326,10 +329,6 @@ const todayIso = new Date().toISOString().slice(0, 10);
     return facilities.find((facility) => facility.id === unitFacilityId)?.name ?? '—';
   };
 
-  const formatScopeSummary = (item: NdeLogItem) =>
-    item.scopeItems?.length
-      ? item.scopeItems.map((scopeItem) => scopeItem.displayName).join(', ')
-      : '';
 
   const filteredItems = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();
@@ -350,7 +349,10 @@ const todayIso = new Date().toISOString().slice(0, 10);
           row.owningGroup,
           row.code,
           row.unit,
-          row.scopeItems?.map((scopeItem) => `${scopeItem.displayName} ${scopeItem.stage} ${scopeItem.weldId ?? ''}`).join(' '),
+          row.ndeStage,
+          row.weldId,
+          row.location,
+          row.relatedRequestGroupLabel,
           row.inspectionDetails,
           row.requestedBy,
           row.assignedTo,
@@ -358,7 +360,7 @@ const todayIso = new Date().toISOString().slice(0, 10);
           .filter(Boolean)
           .join(' ')
           .toLowerCase()
-          .includes(searchText.toLowerCase());
+.includes(normalizedSearch);
 
       return byStatus && bySearch;
     });
@@ -371,11 +373,26 @@ const todayIso = new Date().toISOString().slice(0, 10);
       return;
     }
 
+    if (createForm.createSeparateStagedWeldRequests && !createForm.weldId.trim()) {
+      setCreateValidationMessage('Weld ID is required for staged weld requests.');
+      return;
+    }
+
+    const stagedSelections = [
+      createForm.stagedPrep ? 'Prep' : null,
+      createForm.stagedRoot ? 'Root' : null,
+      createForm.stagedFinal ? 'Final' : null,
+    ].filter(Boolean) as Array<'Prep' | 'Root' | 'Final'>;
+
+    if (createForm.createSeparateStagedWeldRequests && stagedSelections.length === 0) {
+      setCreateValidationMessage(stagedSelectionMessage);
+      return;
+    }
+
     const nextSequence = getNextRequestSequence(items);
-    const requestNumber = formatRequestNumber(nextSequence);
-    const createdItem: NdeLogItem = {
+    const createBase = (sequence: number): NdeLogItem => ({
       id: `nde-${String(nextSequence).padStart(4, '0')}`,
-      requestNumber,
+      requestNumber: formatRequestNumber(sequence),
       assetTag: createForm.asset,
       method: createForm.taskType,
       status: createForm.requestStatus,
@@ -393,10 +410,26 @@ const todayIso = new Date().toISOString().slice(0, 10);
       unit: createForm.unit || undefined,
       facilityId: createForm.facilityId || undefined,
       facilityName: facilities.find((facility) => facility.id === createForm.facilityId)?.name,
-    };
+      ndeStage: createForm.ndeStage ? createForm.ndeStage as NdeLogItem['ndeStage'] : undefined,
+      weldId: createForm.weldId || undefined,
+      location: createForm.location || undefined,
+    });
 
-    setItems((current) => [createdItem, ...current]);
-    setSelectedId(createdItem.id);
+    const createdItems = createForm.createSeparateStagedWeldRequests
+      ? (() => {
+        const relatedRequestGroupId = `group-${Date.now()}-${nextSequence}`;
+        return stagedSelections.map((stage, index) => ({
+          ...createBase(nextSequence + index),
+          id: `nde-${String(nextSequence + index).padStart(4, '0')}`,
+          ndeStage: stage,
+          relatedRequestGroupId,
+          relatedRequestGroupLabel: createForm.weldId || createForm.location || 'Staged weld requests',
+        }));
+      })()
+      : [{ ...createBase(nextSequence), id: `nde-${String(nextSequence).padStart(4, '0')}` }];
+
+    setItems((current) => [...createdItems, ...current]);
+    setSelectedId(createdItems[0].id);
     setIsCreateModalOpen(false);
     setCreateValidationMessage(null);
     setDemoCreateMessage('Request creation is demo-only (in-memory) until backend persistence is connected.');
@@ -417,6 +450,9 @@ const todayIso = new Date().toISOString().slice(0, 10);
       accessType: selectedItem.accessType ?? '',
       reference: selectedItem.reference ?? '',
       inspectionDetails: selectedItem.inspectionDetails ?? '',
+      ndeStage: selectedItem.ndeStage ?? '',
+      weldId: selectedItem.weldId ?? '',
+      location: selectedItem.location ?? '',
     });
     setEditValidationMessage(null);
     setIsEditModalOpen(true);
@@ -451,6 +487,9 @@ const todayIso = new Date().toISOString().slice(0, 10);
         unit: editForm.unit || undefined,
         facilityId: editForm.facilityId || undefined,
         facilityName: facilities.find((facility) => facility.id === editForm.facilityId)?.name,
+        ndeStage: editForm.ndeStage ? editForm.ndeStage as NdeLogItem['ndeStage'] : undefined,
+        weldId: editForm.weldId || undefined,
+        location: editForm.location || undefined,
         reportNumber,
       };
     }));
@@ -482,7 +521,7 @@ const todayIso = new Date().toISOString().slice(0, 10);
   };
 
   const exportVisibleTable = () => {
-    const headers = ['Request #', 'Facility', 'Unit #', 'Asset / Circuit / Equipment', 'Project', 'Owning Group', 'Code Criteria', 'Unit', 'Method', 'Access Method', 'Reference', 'Inspection Details', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
+    const headers = ['Request #', 'Facility', 'Unit #', 'Asset / Circuit / Equipment', 'Project', 'Owning Group', 'Code Criteria', 'Unit', 'Method', 'NDE Stage', 'Weld ID', 'Location', 'Related Request Group', 'Access Method', 'Reference', 'Inspection Details', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
     const rows = filteredItems.map((item) => [
       item.requestNumber,
       resolveFacilityName(item),
@@ -493,6 +532,10 @@ const todayIso = new Date().toISOString().slice(0, 10);
       item.codeCriteria ?? item.code ?? '—',
       item.unit ?? '—',
       item.method,
+      item.ndeStage ?? '—',
+      item.weldId ?? '—',
+      item.location ?? '—',
+      item.relatedRequestGroupLabel ?? item.relatedRequestGroupId ?? '—',
       item.accessType ?? '—',
       item.reference ?? '—',
       item.inspectionDetails ?? '—',
@@ -515,6 +558,11 @@ const todayIso = new Date().toISOString().slice(0, 10);
     () => filteredItems.find((item) => item.id === selectedId) ?? null,
     [filteredItems, selectedId],
   );
+
+  const relatedRequests = useMemo(() => {
+    if (!selectedItem?.relatedRequestGroupId) return [] as NdeLogItem[];
+    return items.filter((item) => item.relatedRequestGroupId === selectedItem.relatedRequestGroupId && item.id !== selectedItem.id);
+  }, [items, selectedItem]);
 
   const allowedTransitions = useMemo(
     () => (selectedItem ? getAllowedNdeTransitions(selectedItem.status) : []),
@@ -551,6 +599,11 @@ const todayIso = new Date().toISOString().slice(0, 10);
               <label>Priority<select value={createForm.priority} onChange={(event) => setCreateForm((current) => ({ ...current, priority: event.target.value as NdeLogItem['priority'] }))}><option>Low</option><option>Normal</option><option>High</option><option>Critical</option></select></label>
               <label>Due Date *<input required type="date" value={createForm.dueDate} onChange={(event) => setCreateForm((current) => ({ ...current, dueDate: event.target.value }))} /></label>
               <label>NDE Method *<select required value={createForm.taskType} onChange={(event) => setCreateForm((current) => ({ ...current, taskType: event.target.value }))}><option value="">Select an NDE Method...</option>{ndeMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              <label>NDE Stage<select value={createForm.ndeStage} onChange={(event) => setCreateForm((current) => ({ ...current, ndeStage: event.target.value }))}><option value=''>None / Standard</option><option>Prep</option><option>Root</option><option>Final</option><option>Material Verification</option><option>Other</option></select></label>
+              <label>Weld ID<input value={createForm.weldId} onChange={(event) => setCreateForm((current) => ({ ...current, weldId: event.target.value }))} /></label>
+              <label>Location<input value={createForm.location} onChange={(event) => setCreateForm((current) => ({ ...current, location: event.target.value }))} /></label>
+              <label>Create separate staged weld requests<input type='checkbox' checked={createForm.createSeparateStagedWeldRequests} onChange={(event) => setCreateForm((current) => ({ ...current, createSeparateStagedWeldRequests: event.target.checked }))} /></label>
+              {createForm.createSeparateStagedWeldRequests && <fieldset><legend>Stages</legend><label><input type='checkbox' checked={createForm.stagedPrep} onChange={(event) => setCreateForm((current) => ({ ...current, stagedPrep: event.target.checked }))} />Prep</label><label><input type='checkbox' checked={createForm.stagedRoot} onChange={(event) => setCreateForm((current) => ({ ...current, stagedRoot: event.target.checked }))} />Root</label><label><input type='checkbox' checked={createForm.stagedFinal} onChange={(event) => setCreateForm((current) => ({ ...current, stagedFinal: event.target.checked }))} />Final</label></fieldset>}
               <label>Code Criteria<input value={createForm.code} onChange={(event) => setCreateForm((current) => ({ ...current, code: event.target.value }))} /></label>
               <label>Facility *<select required value={createForm.facilityId} onChange={(event) => setCreateForm((current) => ({ ...current, facilityId: event.target.value, unit: '', asset: '' }))}><option value="">Select a Facility...</option>{facilities.filter((facility) => facility.isActive).map((facility) => <option key={facility.id} value={facility.id}>{facility.name}</option>)}</select></label>
               <label>Unit *<select required disabled={!createForm.facilityId} value={createForm.unit} onChange={(event) => setCreateForm((current) => ({ ...current, unit: event.target.value, asset: '' }))}><option value="">{createForm.facilityId ? 'Select a Unit...' : 'Select a Facility first...'}</option>{managedUnitOptions.filter((option) => option.isActive && option.facilityId === createForm.facilityId).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
@@ -590,6 +643,9 @@ const todayIso = new Date().toISOString().slice(0, 10);
               <label>Priority<select value={editForm.priority} onChange={(event) => setEditForm((current) => ({ ...current, priority: event.target.value as NdeLogItem['priority'] }))}><option>Low</option><option>Normal</option><option>High</option><option>Critical</option></select></label>
               <label>Due Date *<input required type="date" value={editForm.dueDate} onChange={(event) => setEditForm((current) => ({ ...current, dueDate: event.target.value }))} /></label>
               <label>NDE Method *<select required value={editForm.method} onChange={(event) => setEditForm((current) => ({ ...current, method: event.target.value }))}><option value="">Select an NDE Method...</option>{ndeMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              <label>NDE Stage<select value={editForm.ndeStage} onChange={(event) => setEditForm((current) => ({ ...current, ndeStage: event.target.value }))}><option value=''>None / Standard</option><option>Prep</option><option>Root</option><option>Final</option><option>Material Verification</option><option>Other</option></select></label>
+              <label>Weld ID<input value={editForm.weldId} onChange={(event) => setEditForm((current) => ({ ...current, weldId: event.target.value }))} /></label>
+              <label>Location<input value={editForm.location} onChange={(event) => setEditForm((current) => ({ ...current, location: event.target.value }))} /></label>
               <label>Code Criteria<input value={editForm.code} onChange={(event) => setEditForm((current) => ({ ...current, code: event.target.value }))} /></label>
               <label>Facility *<select required value={editForm.facilityId} onChange={(event) => setEditForm((current) => ({ ...current, facilityId: event.target.value, unit: '', asset: '' }))}><option value="">Select a Facility...</option>{facilities.filter((facility) => facility.isActive).map((facility) => <option key={facility.id} value={facility.id}>{facility.name}</option>)}</select></label>
               <label>Unit *<select required disabled={!editForm.facilityId} value={editForm.unit} onChange={(event) => setEditForm((current) => ({ ...current, unit: event.target.value, asset: '' }))}><option value="">{editForm.facilityId ? 'Select a Unit...' : 'Select a Facility first...'}</option>{managedUnitOptions.filter((option) => option.isActive && option.facilityId === editForm.facilityId).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
@@ -657,7 +713,7 @@ const todayIso = new Date().toISOString().slice(0, 10);
         <table className="nde-table">
           <thead>
             <tr>
-              <th>Select</th><th>Request #</th><th>Facility</th><th>Unit #</th><th>Asset / Circuit / Equipment</th><th>Method</th><th>Access Method</th><th>Status</th><th>Priority</th><th>Due</th>
+              <th>Select</th><th>Request #</th><th>Facility</th><th>Unit #</th><th>Asset / Circuit / Equipment</th><th>Method</th><th>Stage</th><th>Access Method</th><th>Status</th><th>Priority</th><th>Due</th>
               <th>Report Status</th><th>Report #</th><th>Actions</th>
             </tr>
           </thead>
@@ -676,10 +732,8 @@ const todayIso = new Date().toISOString().slice(0, 10);
                 <td className="nde-facility-cell nowrap">{resolveFacilityName(item)}</td>
                 <td className="nde-unit-number-cell">{getUnitNumberDisplay(item)}</td>
                 <td>{getAssetDisplay(item)}</td>
-                <td>
-                  <div>{item.method}</div>
-                  {formatScopeSummary(item) && <div className="muted nde-scope-summary">{formatScopeSummary(item)}</div>}
-                </td>
+                <td>{item.method}</td>
+                <td>{item.ndeStage ?? '—'}</td>
                 <td>{item.accessType ?? '—'}</td>
                 <td>{item.status}</td>
                 <td>{item.priority}</td>
@@ -742,6 +796,9 @@ const todayIso = new Date().toISOString().slice(0, 10);
                 <dt>Request #</dt><dd>{selectedItem.requestNumber}</dd>
                 <dt>Report #</dt><dd>{selectedItem.reportNumber ?? '—'}</dd>
                 <dt>Method</dt><dd>{selectedItem.method}</dd>
+                <dt>NDE Stage</dt><dd>{selectedItem.ndeStage ?? '—'}</dd>
+                <dt>Weld ID</dt><dd>{selectedItem.weldId ?? '—'}</dd>
+                <dt>Location</dt><dd>{selectedItem.location ?? '—'}</dd>
                 <dt>Project</dt><dd>{selectedItem.project ?? '—'}</dd>
                 <dt>Owning Group</dt><dd>{selectedItem.owningGroup ?? '—'}</dd>
                 <dt>Code Criteria</dt><dd>{selectedItem.codeCriteria ?? selectedItem.code ?? '—'}</dd>
@@ -756,21 +813,24 @@ const todayIso = new Date().toISOString().slice(0, 10);
                 <dt>Due Date</dt><dd>{selectedItem.dueDate ?? '—'}</dd>
                 <dt>Results Received Date</dt><dd>{selectedItem.resultReceivedDate ?? '—'}</dd>
               </dl>
-              {!!selectedItem.scopeItems?.length && (
-                <div className="nde-scope-items-panel">
-                  <h3>Request Scope Items</h3>
-                  <ul>
-                    {selectedItem.scopeItems.map((scopeItem) => (
-                      <li key={scopeItem.id}>
-                        <strong>{scopeItem.displayName}</strong>
-                        <span className="muted"> ({scopeItem.method} / {scopeItem.stage})</span>
-                        {scopeItem.weldId && <span> • Weld {scopeItem.weldId}</span>}
-                        {scopeItem.location && <span> • {scopeItem.location}</span>}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              <div className="nde-history-panel">
+                <h3>Related Requests</h3>
+                {relatedRequests.length === 0 && <p className="muted">No related requests.</p>}
+                {relatedRequests.length > 0 && (
+                  <table className="nde-table">
+                    <thead>
+                      <tr><th>Request #</th><th>Method</th><th>Stage</th><th>Status</th><th>Report Status</th><th>Report #</th></tr>
+                    </thead>
+                    <tbody>
+                      {relatedRequests.map((item) => (
+                        <tr key={item.id}>
+                          <td>{item.requestNumber}</td><td>{item.method}</td><td>{item.ndeStage ?? '—'}</td><td>{item.status}</td><td>{formatReportStatus(item.reportStatus)}</td><td>{item.reportNumber ?? '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
               {isDownloadableReport(selectedItem) && selectedItem.reportDownloadUrl && selectedItem.reportFileName && (
                 <button type="button" onClick={() => triggerDownload(selectedItem.reportDownloadUrl as string, selectedItem.reportFileName as string)}>Download Report</button>
               )}

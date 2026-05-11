@@ -78,13 +78,16 @@ public class NdeLogReadModelFoundationTests
         Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Complete && r.ReportNumber == "RPT-26-VT-0007");
         Assert.DoesNotContain(rows, r => r.Status == NdeLogStatuses.Scheduled && r.ReportStatus == NdeReportStatuses.Complete);
         Assert.Contains(rows, r => r.Status == NdeLogStatuses.Scheduled);
-        var weldScopeRequest = Assert.Single(rows.Where(r => r.Id == "nde-004"));
-        Assert.NotNull(weldScopeRequest.ScopeItems);
-        Assert.Equal(3, weldScopeRequest.ScopeItems!.Count);
-        Assert.Contains(weldScopeRequest.ScopeItems, s => s.DisplayName == "PT Prep" && s.Method == "PT" && s.Stage == "Prep");
-        Assert.Contains(weldScopeRequest.ScopeItems, s => s.DisplayName == "PT Root" && s.Method == "PT" && s.Stage == "Root");
-        Assert.Contains(weldScopeRequest.ScopeItems, s => s.DisplayName == "PT Final" && s.Method == "PT" && s.Stage == "Final");
-        Assert.Equal("Nozzle N2 root and cap PT verification before hydrotest.", weldScopeRequest.InspectionDetails);
+        var stagedWeldRequests = rows.Where(r => r.RelatedRequestGroupId == "weld-w-22b-01-nozzle-n11-weld-213").ToList();
+        Assert.Equal(3, stagedWeldRequests.Count);
+        Assert.Contains(stagedWeldRequests, r => r.RequestNumber == "NDE-26-0004" && r.NdeStage == "Prep");
+        Assert.Contains(stagedWeldRequests, r => r.RequestNumber == "NDE-26-0011" && r.NdeStage == "Root");
+        Assert.Contains(stagedWeldRequests, r => r.RequestNumber == "NDE-26-0012" && r.NdeStage == "Final");
+        Assert.All(stagedWeldRequests, r =>
+        {
+            Assert.Equal("W-22B-01", r.WeldId);
+            Assert.Equal("Nozzle N11 Weld 213", r.Location);
+        });
         Assert.Contains(rows, r => r.Project == "Demo Turnaround 2026" && r.OwningGroup == "Inspection" && r.Code == "API 570" && r.Unit == "Unit 73");
         Assert.Contains(rows, r => r.Project == "Unit 73 Maintenance" && r.OwningGroup == "Mechanical Integrity" && r.Code == "NBIC" && r.Unit == "Unit 73");
     }

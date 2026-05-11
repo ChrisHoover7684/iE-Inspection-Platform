@@ -44,16 +44,11 @@ public sealed record NdeLogItemReadModel(
     string? Code = null,
     string? Unit = null,
     string? InspectionDetails = null,
-    IReadOnlyList<NdeRequestScopeItemReadModel>? ScopeItems = null);
-
-public sealed record NdeRequestScopeItemReadModel(
-    string Id,
-    string Method,
-    string Stage,
-    string DisplayName,
-    string? WeldId,
-    string? Location,
-    string? Notes);
+    string? NdeStage = null,
+    string? WeldId = null,
+    string? Location = null,
+    string? RelatedRequestGroupId = null,
+    string? RelatedRequestGroupLabel = null);
 
 public sealed record NdeLogTransitionRequest(string NextStatus, string? Comment, string Actor);
 public sealed record NdeLogTransitionEventReadModel(string Id,string NdeRequestId,string FromStatus,string ToStatus,string Actor,DateTime TimestampUtc,string? Comment);
@@ -76,18 +71,15 @@ public sealed class DemoNdeLogReadModelService : INdeLogReadModelService
         new("nde-001", NdeNumbering.FormatRequestNumber(DemoYear, 1), "P-102A", null, null, "UT Thickness", NdeLogStatuses.Draft, "Normal", "J. Rivera", "L. Tran", "2026-05-20", null, NdeReportStatuses.NotStarted, null, null, null, "Ground", "Demo Turnaround 2026", "Inspection", "API 570", "Unit 73"),
         new("nde-002", NdeNumbering.FormatRequestNumber(DemoYear, 2), null, "CIR-4A-220", null, "RT", NdeLogStatuses.Requested, "High", "M. Patel", "S. Owens", "2026-05-17", null, NdeReportStatuses.InProgress, NdeNumbering.FormatReportNumber(DemoYear, "RT", 2), null, null, "Scaffold", "Demo Turnaround 2026", "Inspection", "API 570", "Unit 73"),
         new("nde-003", NdeNumbering.FormatRequestNumber(DemoYear, 3), null, null, "E-4401", "MT", NdeLogStatuses.Scheduled, "Normal", "T. Nguyen", "R. Hall", "2026-05-13", null, NdeReportStatuses.NotAvailable, null, null, null, "Scaffold", "Demo Turnaround 2026", "Inspection", "API 570", "Unit 73"),
-        new("nde-004", NdeNumbering.FormatRequestNumber(DemoYear, 4), "HX-22B", null, null, "PT", NdeLogStatuses.InProgress, "Critical", "A. Lopez", "D. Kim", "2026-05-12", null, NdeReportStatuses.InProgress, NdeNumbering.FormatReportNumber(DemoYear, "PT", 4), null, null, "Rope Access", "Unit 73 Maintenance", "Mechanical Integrity", "NBIC", "Unit 73", "Nozzle N2 root and cap PT verification before hydrotest.",
-        [
-            new("scope-004-pt-prep", "PT", "Prep", "PT Prep", "W-22B-01", "Nozzle N2 Root", "Surface prep and cleaning"),
-            new("scope-004-pt-root", "PT", "Root", "PT Root", "W-22B-01", "Nozzle N2 Root", "Root pass examination"),
-            new("scope-004-pt-final", "PT", "Final", "PT Final", "W-22B-01", "Nozzle N2 Cap", "Final cap examination")
-        ]),
+        new("nde-004", NdeNumbering.FormatRequestNumber(DemoYear, 4), "HX-22B", null, null, "PT", NdeLogStatuses.InProgress, "Critical", "A. Lopez", "D. Kim", "2026-05-12", null, NdeReportStatuses.InProgress, NdeNumbering.FormatReportNumber(DemoYear, "PT", 4), null, null, "Rope Access", "Unit 73 Maintenance", "Mechanical Integrity", "NBIC", "Unit 73", "Nozzle N11 Weld 213 PT Prep verification before hydrotest.", "Prep", "W-22B-01", "Nozzle N11 Weld 213", "weld-w-22b-01-nozzle-n11-weld-213", "W-22B-01 / Nozzle N11 Weld 213"),
         new("nde-005", NdeNumbering.FormatRequestNumber(DemoYear, 5), null, "CIR-3C-118", null, "PMI", NdeLogStatuses.ResultsReceived, "High", "G. Martin", "V. Chen", "2026-05-10", "2026-05-09", NdeReportStatuses.InProgress, NdeNumbering.FormatReportNumber(DemoYear, "PMI", 5), null, null, "Platform", "Demo Turnaround 2026", "Inspection", "API 570", "Unit 73"),
         new("nde-006", NdeNumbering.FormatRequestNumber(DemoYear, 6), null, null, "TK-804", "PAUT", NdeLogStatuses.Reviewed, "Normal", "P. Singh", "N. Brooks", "2026-05-09", "2026-05-08", NdeReportStatuses.Complete, NdeNumbering.FormatReportNumber(DemoYear, "PAUT", 6), $"{NdeNumbering.FormatReportNumber(DemoYear, "PAUT", 6)}.pdf", $"/demo-downloads/{NdeNumbering.FormatReportNumber(DemoYear, "PAUT", 6)}.pdf", "Ladder", "Demo Turnaround 2026", "Inspection", "API 570", "Unit 73"),
         new("nde-007", NdeNumbering.FormatRequestNumber(DemoYear, 7), "L-5507", null, null, "VT", NdeLogStatuses.Closed, "Low", "R. Scott", "H. Diaz", "2026-05-06", "2026-05-05", NdeReportStatuses.Complete, NdeNumbering.FormatReportNumber(DemoYear, "VT", 7), $"{NdeNumbering.FormatReportNumber(DemoYear, "VT", 7)}.pdf", $"/demo-downloads/{NdeNumbering.FormatReportNumber(DemoYear, "VT", 7)}.pdf", "Confined Space", "Demo Turnaround 2026", "Inspection", "API 570", "Unit 73"),
         new("nde-008", NdeNumbering.FormatRequestNumber(DemoYear, 8), null, null, "PSV-91", "UT Thickness", NdeLogStatuses.Cancelled, "Low", "C. White", "B. Young", "2026-05-04", null, NdeReportStatuses.NotStarted, null, null, null, "Aerial Lift", "Demo Turnaround 2026", "Inspection", "API 570", "Unit 73"),
         new("nde-009", NdeNumbering.FormatRequestNumber(DemoYear, 9), null, "CIR-9D-032", null, "RT", NdeLogStatuses.Overdue, "Critical", "D. Reed", "M. Gray", "2026-05-01", null, NdeReportStatuses.InProgress, NdeNumbering.FormatReportNumber(DemoYear, "RT", 9), null, null, "Scaffold", "Demo Turnaround 2026", "Inspection", "API 570", "Unit 73"),
-        new("nde-010", NdeNumbering.FormatRequestNumber(DemoYear, 10), "P-300C", null, null, "PAUT", NdeLogStatuses.Reviewed, "High", "L. Ward", "K. Adams", "2026-05-14", null, NdeReportStatuses.Complete, NdeNumbering.FormatReportNumber(DemoYear, "PAUT", 10), $"{NdeNumbering.FormatReportNumber(DemoYear, "PAUT", 10)}.pdf", $"/demo-downloads/{NdeNumbering.FormatReportNumber(DemoYear, "PAUT", 10)}.pdf", "Aerial Lift", "Corrosion Study 2026", "Operations", "API 510", "Crude West")
+        new("nde-010", NdeNumbering.FormatRequestNumber(DemoYear, 10), "P-300C", null, null, "PAUT", NdeLogStatuses.Reviewed, "High", "L. Ward", "K. Adams", "2026-05-14", null, NdeReportStatuses.Complete, NdeNumbering.FormatReportNumber(DemoYear, "PAUT", 10), $"{NdeNumbering.FormatReportNumber(DemoYear, "PAUT", 10)}.pdf", $"/demo-downloads/{NdeNumbering.FormatReportNumber(DemoYear, "PAUT", 10)}.pdf", "Aerial Lift", "Corrosion Study 2026", "Operations", "API 510", "Crude West"),
+        new("nde-011", NdeNumbering.FormatRequestNumber(DemoYear, 11), "HX-22B", null, null, "PT", NdeLogStatuses.Requested, "Critical", "A. Lopez", "D. Kim", "2026-05-13", null, NdeReportStatuses.NotStarted, null, null, null, "Rope Access", "Unit 73 Maintenance", "Mechanical Integrity", "NBIC", "Unit 73", "Nozzle N11 Weld 213 PT Root verification before hydrotest.", "Root", "W-22B-01", "Nozzle N11 Weld 213", "weld-w-22b-01-nozzle-n11-weld-213", "W-22B-01 / Nozzle N11 Weld 213"),
+        new("nde-012", NdeNumbering.FormatRequestNumber(DemoYear, 12), "HX-22B", null, null, "PT", NdeLogStatuses.Requested, "Critical", "A. Lopez", "D. Kim", "2026-05-14", null, NdeReportStatuses.NotStarted, null, null, null, "Rope Access", "Unit 73 Maintenance", "Mechanical Integrity", "NBIC", "Unit 73", "Nozzle N11 Weld 213 PT Final verification before hydrotest.", "Final", "W-22B-01", "Nozzle N11 Weld 213", "weld-w-22b-01-nozzle-n11-weld-213", "W-22B-01 / Nozzle N11 Weld 213")
     ];
     private readonly List<NdeLogTransitionEventReadModel> _events = [];
 

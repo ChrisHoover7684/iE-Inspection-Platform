@@ -118,6 +118,11 @@ th, td {
     margin-bottom: 8px;
 }
 
+.nde-scope-summary {
+    font-size: 12px;
+    margin-top: 2px;
+}
+
 .nde-row-selected {
     background: #e7f1ff;
 }

@@ -221,7 +221,7 @@ describe('App routes', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
     expect(await screen.findByText('Request creation is demo-only (in-memory) until backend persistence is connected.')).toBeInTheDocument();
     fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, or assignee'), { target: { value: 'PT Root' } });
-    expect(screen.getByText('PT Root')).toBeInTheDocument();
+    expect(screen.getByText(/PT Root/)).toBeInTheDocument();
   });
 
   it('loads API Inspection Reports page from /reports', async () => {

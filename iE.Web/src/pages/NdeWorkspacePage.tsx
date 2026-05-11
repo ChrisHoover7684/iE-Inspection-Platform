@@ -226,6 +226,10 @@ export function NdeWorkspacePage({
   };
 
   const formatTimestamp = (timestampUtc: string) => new Date(timestampUtc).toLocaleString();
+  const formatScopeSummary = (item: NdeLogItem) =>
+    item.scopeItems?.length
+      ? item.scopeItems.map((scopeItem) => scopeItem.displayName).join(', ')
+      : '';
 
   const filteredItems = useMemo(() => {
     return baseItems.filter((row) => {
@@ -464,7 +468,10 @@ export function NdeWorkspacePage({
                 }} onClick={(event) => event.stopPropagation()} /></td>
                 <td>{item.requestNumber}</td>
                 <td>{item.assetTag ?? item.circuitId ?? item.equipmentTag ?? '—'}</td>
-                <td>{item.method}</td>
+                <td>
+                  <div>{item.method}</div>
+                  {formatScopeSummary(item) && <div className="muted nde-scope-summary">{formatScopeSummary(item)}</div>}
+                </td>
                 <td>{item.status}</td>
                 <td>{item.priority}</td>
                 <td>{item.dueDate ?? '—'}</td>

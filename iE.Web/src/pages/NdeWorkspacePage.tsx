@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ndeApi } from '../api';
 import type { NdeLogItem, NdeLogStatus, NdeLogTransitionEvent } from '../types';
-import { accessMethodOptions, ndeMethodOptions, owningGroupOptions, projectOptions } from '../ndeRequestReferenceData';
+import { accessMethodOptions, getProjectOptions, ndeMethodOptions, owningGroupOptions } from '../ndeRequestReferenceData';
 
 type NdeWorkspacePageProps = {
   initialStatus?: NdeLogStatus | 'All';
@@ -104,6 +104,7 @@ export function NdeWorkspacePage({
   const [eventHistoryError, setEventHistoryError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [demoCreateMessage, setDemoCreateMessage] = useState<string>('');
+  const [managedProjectOptions, setManagedProjectOptions] = useState(() => getProjectOptions());
   const currentUserDisplayName = 'Operator (placeholder)';
   const [createForm, setCreateForm] = useState({
     project: '', owningGroup: '', requester: currentUserDisplayName, priority: 'Normal' as NdeLogItem['priority'], dueDate: '',
@@ -114,6 +115,10 @@ export function NdeWorkspacePage({
   useEffect(() => {
     setStatusFilter(initialStatus);
   }, [initialStatus]);
+
+  useEffect(() => {
+    setManagedProjectOptions(getProjectOptions());
+  }, [isCreateModalOpen]);
 
   useEffect(() => {
     let active = true;
@@ -347,7 +352,7 @@ export function NdeWorkspacePage({
           <div className="card nde-modal-card">
             <h3>New NDE Request</h3>
             <div className="nde-modal-grid">
-              <label>Project<select value={createForm.project} onChange={(event) => setCreateForm((current) => ({ ...current, project: event.target.value }))}><option value="">Select a Project...</option>{projectOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              <label>Project<select value={createForm.project} onChange={(event) => setCreateForm((current) => ({ ...current, project: event.target.value }))}><option value="">Select a Project...</option>{managedProjectOptions.filter((option) => option.isActive).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
               <label>Owning Group<select value={createForm.owningGroup} onChange={(event) => setCreateForm((current) => ({ ...current, owningGroup: event.target.value }))}><option value="">Select an Owning Group...</option>{owningGroupOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               <label>Requester<input value={createForm.requester} readOnly /></label>
               <label>Priority<select value={createForm.priority} onChange={(event) => setCreateForm((current) => ({ ...current, priority: event.target.value as NdeLogItem['priority'] }))}><option>Low</option><option>Normal</option><option>High</option><option>Critical</option></select></label>

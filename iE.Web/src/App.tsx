@@ -11,6 +11,7 @@ import { AppShell } from './components/AppShell';
 import { B31_3PipingCalculatorPage } from './B31_3PipingCalculatorPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { NdeWorkspacePage } from './pages/NdeWorkspacePage';
+import { ReferenceDataProjectsPage } from './pages/ReferenceDataProjectsPage';
 
 function ShellRoute({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>;
@@ -48,7 +49,7 @@ export default function App() {
       <Route path="/users-access" element={placeholder('Users & Access', 'Coming soon: user and access administration.')} />
       <Route path="/facilities" element={placeholder('Facilities', 'Coming soon: facility administration and scopes.')} />
       <Route path="/custom-nde-types" element={placeholder('Custom NDE Types', 'Coming soon: tenant-specific NDE type configuration.')} />
-      <Route path="/reference-data-projects" element={placeholder('Reference Data / Projects', 'Admin-managed project setup will be connected later.')} />
+      <Route path="/reference-data-projects" element={<ShellRoute><ReferenceDataProjectsPage /></ShellRoute>} />
       <Route path="/audit-log" element={placeholder('Audit Log', 'Coming soon: system audit events and history.')} />
       <Route path="/settings" element={placeholder('Settings', 'Coming soon: tenant and application settings.')} />
       <Route path="/system-readiness" element={placeholder('System Readiness', 'Coming soon: internal system readiness dashboard.')} />

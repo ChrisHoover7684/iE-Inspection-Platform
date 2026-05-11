@@ -29,6 +29,17 @@ export type NdeLogItem = {
   reportNumber?: string;
   reportFileName?: string;
   reportDownloadUrl?: string;
+  scopeItems?: NdeRequestScopeItem[];
+};
+
+export type NdeRequestScopeItem = {
+  id: string;
+  method: string;
+  stage: string;
+  displayName: string;
+  weldId?: string;
+  location?: string;
+  notes?: string;
 };
 
 export type NdeLogTransitionEvent = {

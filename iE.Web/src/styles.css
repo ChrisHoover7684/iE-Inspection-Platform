@@ -1129,6 +1129,11 @@ html, body, #root {
     font-weight: 600;
 }
 
+.nde-scope-items-panel ul {
+    margin: 6px 0 10px;
+    padding-left: 18px;
+}
+
 @media (max-width: 980px) {
     .nde-workspace-layout {
         grid-template-columns: 1fr;

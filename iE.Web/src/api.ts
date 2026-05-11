@@ -33,7 +33,8 @@ import type {
   Ug45TableEntry,
   NdeLogItem,
   NdeLogStatus,
-  NdeLogTransitionEvent
+  NdeLogTransitionEvent,
+  NdeReportDraft
 } from './types';
 
 const DEFAULT_API_BASE_URL = 'http://localhost:5229';
@@ -158,5 +159,11 @@ export const ndeApi = {
       body: JSON.stringify({ nextStatus, comment, actor }),
     }, `POST /api/nde/log/${id}/transition`)
   ,
-  getLogItemEvents: (id: string) => apiFetch<NdeLogTransitionEvent[]>(`/api/nde/log/${id}/events`, undefined, `GET /api/nde/log/${id}/events`)
+  getLogItemEvents: (id: string) => apiFetch<NdeLogTransitionEvent[]>(`/api/nde/log/${id}/events`, undefined, `GET /api/nde/log/${id}/events`),
+  getNdeReportDraft: (ndeRequestId: string) => apiFetch<NdeReportDraft>(`/api/nde-reports/${ndeRequestId}/draft`, undefined, `GET /api/nde-reports/${ndeRequestId}/draft`),
+  getNdeReportDrafts: () => apiFetch<NdeReportDraft[]>(`/api/nde-reports/drafts`, undefined, 'GET /api/nde-reports/drafts'),
+  saveNdeReportDraft: (ndeRequestId: string, draft: NdeReportDraft) =>
+    apiFetch<NdeReportDraft>(`/api/nde-reports/${ndeRequestId}/draft`, { method: 'PUT', body: JSON.stringify(draft) }, `PUT /api/nde-reports/${ndeRequestId}/draft`),
+  completeNdeReportDraft: (ndeRequestId: string, draft: NdeReportDraft) =>
+    apiFetch<NdeReportDraft>(`/api/nde-reports/${ndeRequestId}/complete`, { method: 'POST', body: JSON.stringify(draft) }, `POST /api/nde-reports/${ndeRequestId}/complete`)
 };

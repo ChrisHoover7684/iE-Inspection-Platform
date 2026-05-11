@@ -60,6 +60,8 @@ public interface INdeLogReadModelService
     NdeLogTransitionResult Transition(string id, NdeLogTransitionRequest request);
     IReadOnlyList<NdeLogTransitionEventReadModel> GetEvents(string id);
     bool Exists(string id);
+    bool TryGetLogItem(string id, out NdeLogItemReadModel? item);
+    void SyncReportMetadata(string id, string? reportNumber, string reportStatus, string? reportFileName, string? reportDownloadUrl);
 }
 
 public sealed class DemoNdeLogReadModelService : INdeLogReadModelService
@@ -86,6 +88,26 @@ public sealed class DemoNdeLogReadModelService : INdeLogReadModelService
     public IReadOnlyList<NdeLogItemReadModel> GetLogItems() => _items.ToList();
     public IReadOnlyList<NdeLogTransitionEventReadModel> GetEvents(string id) => _events.Where(x => x.NdeRequestId == id).OrderBy(x => x.TimestampUtc).ToList();
     public bool Exists(string id) => _items.Any(x => x.Id == id);
+    public bool TryGetLogItem(string id, out NdeLogItemReadModel? item)
+    {
+        item = _items.FirstOrDefault(x => x.Id == id);
+        return item is not null;
+    }
+
+    public void SyncReportMetadata(string id, string? reportNumber, string reportStatus, string? reportFileName, string? reportDownloadUrl)
+    {
+        var index = _items.FindIndex(x => x.Id == id);
+        if (index < 0) return;
+        var current = _items[index];
+        var nextDownload = string.IsNullOrWhiteSpace(reportDownloadUrl) ? current.ReportDownloadUrl : reportDownloadUrl;
+        _items[index] = current with
+        {
+            ReportNumber = reportNumber ?? current.ReportNumber,
+            ReportStatus = reportStatus,
+            ReportFileName = reportFileName ?? current.ReportFileName,
+            ReportDownloadUrl = nextDownload
+        };
+    }
 
     public NdeLogTransitionResult Transition(string id, NdeLogTransitionRequest request)
     {

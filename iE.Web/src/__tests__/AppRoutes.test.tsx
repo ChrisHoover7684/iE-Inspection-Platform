@@ -226,7 +226,7 @@ describe('App routes', () => {
     fireEvent.change(within(modal).getByLabelText('Reference'), { target: { value: 'REF-EDIT-900' } });
     fireEvent.change(within(modal).getByLabelText('NDE Method *'), { target: { value: 'RT' } });
     fireEvent.change(within(modal).getByLabelText('Due Date *'), { target: { value: '2026-05-21' } });
-    fireEvent.change(within(modal).getByLabelText('Asset *'), { target: { value: 'P-102A' } });
+    fireEvent.change(within(modal).getByLabelText('Asset *'), { target: { value: 'HX-22B' } });
     fireEvent.change(within(modal).getByLabelText('Access Method *'), { target: { value: 'Ladder' } });
     fireEvent.change(within(modal).getByLabelText('Inspection Details'), { target: { value: 'Edited in-page demo details' } });
     fireEvent.click(within(modal).getByRole('button', { name: 'Save' }));
@@ -237,7 +237,7 @@ describe('App routes', () => {
     expect(screen.getByText('Unit 73 Maintenance')).toBeInTheDocument();
     expect(screen.getByText('Operations')).toBeInTheDocument();
     expect(screen.getByText('NBIC')).toBeInTheDocument();
-    expect(screen.getByText('Unit 77')).toBeInTheDocument();
+    expect(screen.getByText('02-VAC')).toBeInTheDocument();
 
     const updatedRow = screen.getAllByText('NDE-26-001')[0].closest('tr') as HTMLTableRowElement;
     expect(within(updatedRow).getByText('RT')).toBeInTheDocument();
@@ -281,7 +281,7 @@ describe('App routes', () => {
     fireEvent.change(within(modal).getByLabelText('NDE Method *'), { target: { value: 'UT Thickness' } });
     fireEvent.change(within(modal).getByLabelText('Unit *'), { target: { value: '01-CRUDE' } });
     expect(within(modal).queryByText('Robinson TA 2026')).not.toBeInTheDocument();
-    fireEvent.change(within(modal).getByLabelText('Asset *'), { target: { value: 'P-102A' } });
+    fireEvent.change(within(modal).getByLabelText('Asset *'), { target: { value: 'HX-22B' } });
     fireEvent.change(within(modal).getByLabelText('Access Method *'), { target: { value: 'Rope Access' } });
     fireEvent.change(within(modal).getByLabelText('Reference'), { target: { value: 'REF-ROPE-77' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
@@ -358,7 +358,7 @@ describe('App routes', () => {
 
   it('renders reference-data-projects page with default demo options and no Robinson-specific names', () => {
     render(
-      <MemoryRouter initialEntries={['/reference-data-projects', '/reference-data-units-assets']}>
+      <MemoryRouter initialEntries={['/reference-data-projects']}>
         <App />
       </MemoryRouter>,
     );
@@ -372,7 +372,7 @@ describe('App routes', () => {
 
   it('allows admin to add/deactivate/reset project options and reflects active options in New NDE Request project dropdown', async () => {
     render(
-      <MemoryRouter initialEntries={['/reference-data-projects', '/reference-data-units-assets']}>
+      <MemoryRouter initialEntries={['/reference-data-projects']}>
         <App />
       </MemoryRouter>,
     );
@@ -396,13 +396,39 @@ describe('App routes', () => {
 
     cleanup();
     render(
-      <MemoryRouter initialEntries={['/reference-data-projects', '/reference-data-units-assets']}>
+      <MemoryRouter initialEntries={['/reference-data-projects']}>
         <App />
       </MemoryRouter>,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Reset to Demo Defaults' }));
     expect(screen.queryByDisplayValue('Demo Reliability Sprint')).not.toBeInTheDocument();
     expect(screen.getByDisplayValue('Demo Turnaround 2026')).toBeInTheDocument();
+  });
+
+
+  it('searches inspection details tokens N11 and Weld 213 case-insensitively', async () => {
+    render(<MemoryRouter initialEntries={['/nde-requests']}><App /></MemoryRouter>);
+    expect(await screen.findByText('NDE-26-004')).toBeInTheDocument();
+    const search = screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code criteria, unit, access method, reference, inspection details, or assignee');
+
+    fireEvent.change(search, { target: { value: 'N11' } });
+    await waitFor(() => expect(screen.getByText('NDE-26-004')).toBeInTheDocument());
+    expect(screen.queryByText('NDE-26-001')).not.toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: 'weld 213' } });
+    await waitFor(() => expect(screen.getByText('NDE-26-004')).toBeInTheDocument());
+    expect(screen.queryByText('NDE-26-002')).not.toBeInTheDocument();
+  });
+
+  it('renders units/assets reference page with scoped regions', () => {
+    render(<MemoryRouter initialEntries={['/reference-data-units-assets']}><App /></MemoryRouter>);
+    expect(screen.getByRole('heading', { level: 2, name: 'Reference Data / Units & Assets' })).toBeInTheDocument();
+    expect(screen.getByText('Demo Facility')).toBeInTheDocument();
+    const unitsRegion = screen.getByRole('region', { name: 'Unit reference data' });
+    const assetsRegion = screen.getByRole('region', { name: 'Asset reference data' });
+    expect(within(unitsRegion).getByText('01-CRUDE')).toBeInTheDocument();
+    expect(within(unitsRegion).getByText('02-VAC')).toBeInTheDocument();
+    expect(within(assetsRegion).getByDisplayValue('P-102A')).toBeInTheDocument();
   });
 
   it('loads API Inspection Reports page from /reports', async () => {

@@ -238,10 +238,11 @@ export function NdeWorkspacePage({
       : '';
 
   const filteredItems = useMemo(() => {
+    const normalizedSearch = searchText.trim().toLowerCase();
     return baseItems.filter((row) => {
       const byStatus = statusFilter === 'All' || row.status === statusFilter;
       const bySearch =
-        searchText.trim().length === 0
+        normalizedSearch.length === 0
         || [
           row.requestNumber,
           row.assetTag,

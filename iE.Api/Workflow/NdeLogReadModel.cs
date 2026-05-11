@@ -39,6 +39,10 @@ public sealed record NdeLogItemReadModel(
     string? ReportFileName,
     string? ReportDownloadUrl,
     string? AccessType = null,
+    string? Project = null,
+    string? OwningGroup = null,
+    string? Code = null,
+    string? Unit = null,
     string? InspectionDetails = null,
     IReadOnlyList<NdeRequestScopeItemReadModel>? ScopeItems = null);
 
@@ -69,10 +73,10 @@ public sealed class DemoNdeLogReadModelService : INdeLogReadModelService
 
     private readonly List<NdeLogItemReadModel> _items =
     [
-        new("nde-001", NdeNumbering.FormatRequestNumber(DemoYear, 1), "P-102A", null, null, "UT Thickness", NdeLogStatuses.Draft, "Normal", "J. Rivera", "L. Tran", "2026-05-20", null, NdeReportStatuses.NotStarted, null, null, null, "Ground"),
+        new("nde-001", NdeNumbering.FormatRequestNumber(DemoYear, 1), "P-102A", null, null, "UT Thickness", NdeLogStatuses.Draft, "Normal", "J. Rivera", "L. Tran", "2026-05-20", null, NdeReportStatuses.NotStarted, null, null, null, "Ground", "Demo Turnaround 2026", "Inspection", "API 570", "Unit 73"),
         new("nde-002", NdeNumbering.FormatRequestNumber(DemoYear, 2), null, "CIR-4A-220", null, "RT", NdeLogStatuses.Requested, "High", "M. Patel", "S. Owens", "2026-05-17", null, NdeReportStatuses.InProgress, NdeNumbering.FormatReportNumber(DemoYear, "RT", 2), null, null),
         new("nde-003", NdeNumbering.FormatRequestNumber(DemoYear, 3), null, null, "E-4401", "MT", NdeLogStatuses.Scheduled, "Normal", "T. Nguyen", "R. Hall", "2026-05-13", null, NdeReportStatuses.NotAvailable, null, null, null, "Scaffold"),
-        new("nde-004", NdeNumbering.FormatRequestNumber(DemoYear, 4), "HX-22B", null, null, "PT", NdeLogStatuses.InProgress, "Critical", "A. Lopez", "D. Kim", "2026-05-12", null, NdeReportStatuses.InProgress, NdeNumbering.FormatReportNumber(DemoYear, "PT", 4), null, null, "Rope Access", "Nozzle N2 root and cap PT verification before hydrotest.",
+        new("nde-004", NdeNumbering.FormatRequestNumber(DemoYear, 4), "HX-22B", null, null, "PT", NdeLogStatuses.InProgress, "Critical", "A. Lopez", "D. Kim", "2026-05-12", null, NdeReportStatuses.InProgress, NdeNumbering.FormatReportNumber(DemoYear, "PT", 4), null, null, "Rope Access", "Unit 73 Maintenance", "Mechanical Integrity", "NBIC", "Unit 73", "Nozzle N2 root and cap PT verification before hydrotest.",
         [
             new("scope-004-pt-prep", "PT", "Prep", "PT Prep", "W-22B-01", "Nozzle N2 Root", "Surface prep and cleaning"),
             new("scope-004-pt-root", "PT", "Root", "PT Root", "W-22B-01", "Nozzle N2 Root", "Root pass examination"),
@@ -83,7 +87,7 @@ public sealed class DemoNdeLogReadModelService : INdeLogReadModelService
         new("nde-007", NdeNumbering.FormatRequestNumber(DemoYear, 7), "L-5507", null, null, "VT", NdeLogStatuses.Closed, "Low", "R. Scott", "H. Diaz", "2026-05-06", "2026-05-05", NdeReportStatuses.Complete, NdeNumbering.FormatReportNumber(DemoYear, "VT", 7), "RPT-26-VT-007.pdf", "/demo-downloads/RPT-26-VT-007.pdf", "Confined Space"),
         new("nde-008", NdeNumbering.FormatRequestNumber(DemoYear, 8), null, null, "PSV-91", "UT Thickness", NdeLogStatuses.Cancelled, "Low", "C. White", "B. Young", "2026-05-04", null, NdeReportStatuses.NotStarted, null, null, null, "Aerial Lift"),
         new("nde-009", NdeNumbering.FormatRequestNumber(DemoYear, 9), null, "CIR-9D-032", null, "RT", NdeLogStatuses.Overdue, "Critical", "D. Reed", "M. Gray", "2026-05-01", null, NdeReportStatuses.InProgress, NdeNumbering.FormatReportNumber(DemoYear, "RT", 9), null, null, "Scaffold"),
-        new("nde-010", NdeNumbering.FormatRequestNumber(DemoYear, 10), "P-300C", null, null, "PAUT", NdeLogStatuses.Reviewed, "High", "L. Ward", "K. Adams", "2026-05-14", null, NdeReportStatuses.Complete, NdeNumbering.FormatReportNumber(DemoYear, "PAUT", 10), "RPT-26-PAUT-010.pdf", "/demo-downloads/RPT-26-PAUT-010.pdf", "Aerial Lift")
+        new("nde-010", NdeNumbering.FormatRequestNumber(DemoYear, 10), "P-300C", null, null, "PAUT", NdeLogStatuses.Reviewed, "High", "L. Ward", "K. Adams", "2026-05-14", null, NdeReportStatuses.Complete, NdeNumbering.FormatReportNumber(DemoYear, "PAUT", 10), "RPT-26-PAUT-010.pdf", "/demo-downloads/RPT-26-PAUT-010.pdf", "Aerial Lift", "Corrosion Study 2026", "Operations", "API 510", "Crude West")
     ];
     private readonly List<NdeLogTransitionEventReadModel> _events = [];
 

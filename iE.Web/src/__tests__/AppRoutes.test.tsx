@@ -19,7 +19,7 @@ vi.mock('../api', async () => {
         { id: 'nde-005', requestNumber: 'NDE-26-005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09', reportStatus: 'In Progress', reportNumber: 'RPT-26-PMI-005' },
         { id: 'nde-006', requestNumber: 'NDE-26-006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-006', reportFileName: 'RPT-26-PAUT-006.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-006.pdf', accessType: 'Ladder' },
         { id: 'nde-007', requestNumber: 'NDE-26-007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Complete', reportNumber: 'RPT-26-VT-007', reportFileName: 'RPT-26-VT-007.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-VT-007.pdf' },
-        { id: 'nde-001', requestNumber: 'NDE-26-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started' },
+        { id: 'nde-001', requestNumber: 'NDE-26-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started', project: 'Demo Turnaround 2026', owningGroup: 'Inspection', code: 'API 570', unit: 'Unit 73' },
         { id: 'nde-002', requestNumber: 'NDE-26-002', circuitId: 'CIR-4A-220', method: 'RT', status: 'Requested', priority: 'High', requestedBy: 'M. Patel', assignedTo: 'S. Owens', dueDate: '2026-05-17', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-002' },
         { id: 'nde-004', requestNumber: 'NDE-26-004', assetTag: 'HX-22B', method: 'PT', status: 'In Progress', priority: 'Critical', requestedBy: 'A. Lopez', assignedTo: 'D. Kim', dueDate: '2026-05-12', reportStatus: 'In Progress', reportNumber: 'RPT-26-PT-004', accessType: 'Rope Access', inspectionDetails: 'Nozzle N2 root and cap PT verification before hydrotest.', scopeItems: [{ id: 'scope-004-pt-prep', method: 'PT', stage: 'Prep', displayName: 'PT Prep', weldId: 'W-22B-01', location: 'Nozzle N2 Root' }, { id: 'scope-004-pt-root', method: 'PT', stage: 'Root', displayName: 'PT Root', weldId: 'W-22B-01', location: 'Nozzle N2 Root' }, { id: 'scope-004-pt-final', method: 'PT', stage: 'Final', displayName: 'PT Final', weldId: 'W-22B-01', location: 'Nozzle N2 Cap' }] },
         { id: 'nde-003', requestNumber: 'NDE-26-003', equipmentTag: 'E-4401', method: 'MT', status: 'Scheduled', priority: 'Normal', requestedBy: 'T. Nguyen', assignedTo: 'R. Hall', dueDate: '2026-05-13', reportStatus: 'Not Available' },
@@ -214,6 +214,15 @@ describe('App routes', () => {
     expect(within(modal).getByLabelText('Reference')).toBeInTheDocument();
     expect(within(modal).getByLabelText('Inspection Details')).toBeInTheDocument();
 
+    expect(within(modal).getByLabelText('Project')).toHaveValue('Demo Turnaround 2026');
+    expect(within(modal).getByLabelText('Owning Group')).toHaveValue('Inspection');
+    expect(within(modal).getByLabelText('Code')).toHaveValue('API 570');
+    expect(within(modal).getByLabelText('Unit')).toHaveValue('Unit 73');
+
+    fireEvent.change(within(modal).getByLabelText('Project'), { target: { value: 'Unit 73 Maintenance' } });
+    fireEvent.change(within(modal).getByLabelText('Owning Group'), { target: { value: 'Operations' } });
+    fireEvent.change(within(modal).getByLabelText('Code'), { target: { value: 'NBIC' } });
+    fireEvent.change(within(modal).getByLabelText('Unit'), { target: { value: 'Unit 77' } });
     fireEvent.change(within(modal).getByLabelText('Reference'), { target: { value: 'REF-EDIT-900' } });
     fireEvent.change(within(modal).getByLabelText('NDE Method'), { target: { value: 'RT' } });
     fireEvent.change(within(modal).getByLabelText('Inspection Details'), { target: { value: 'Edited in-page demo details' } });
@@ -222,11 +231,24 @@ describe('App routes', () => {
     expect(screen.getByText('Request edits are demo-only until backend persistence is connected.')).toBeInTheDocument();
     expect(screen.getByText('REF-EDIT-900')).toBeInTheDocument();
     expect(screen.getByText('Edited in-page demo details')).toBeInTheDocument();
+    expect(screen.getByText('Unit 73 Maintenance')).toBeInTheDocument();
+    expect(screen.getByText('Operations')).toBeInTheDocument();
+    expect(screen.getByText('NBIC')).toBeInTheDocument();
+    expect(screen.getByText('Unit 77')).toBeInTheDocument();
 
     const updatedRow = screen.getAllByText('NDE-26-001')[0].closest('tr') as HTMLTableRowElement;
     expect(within(updatedRow).getByText('RT')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, access method, reference, inspection details, or assignee'), { target: { value: 'REF-EDIT-900' } });
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code, unit, access method, reference, inspection details, or assignee'), { target: { value: 'REF-EDIT-900' } });
+    expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
+
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code, unit, access method, reference, inspection details, or assignee'), { target: { value: 'Unit 73 Maintenance' } });
+    expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
+
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code, unit, access method, reference, inspection details, or assignee'), { target: { value: 'Operations' } });
+    expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
+
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code, unit, access method, reference, inspection details, or assignee'), { target: { value: 'NBIC' } });
     expect(screen.getAllByText('NDE-26-001').length).toBeGreaterThan(0);
   });
 
@@ -241,7 +263,7 @@ describe('App routes', () => {
     expect(screen.queryByDisplayValue('All')).toBeInTheDocument();
     expect(screen.queryByLabelText('Access Method')).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, access method, reference, inspection details, or assignee'), { target: { value: 'Rope Access' } });
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code, unit, access method, reference, inspection details, or assignee'), { target: { value: 'Rope Access' } });
     expect(screen.getByText('NDE-26-004')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
@@ -293,7 +315,7 @@ describe('App routes', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create Request' }));
     expect(await screen.findByText('Request creation is demo-only (in-memory) until backend persistence is connected.')).toBeInTheDocument();
     expect(screen.getByText('Created request detail unique token ZX-441')).toBeInTheDocument();
-    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, access method, reference, inspection details, or assignee'), { target: { value: 'zx-441' } });
+    fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, project, owning group, code, unit, access method, reference, inspection details, or assignee'), { target: { value: 'zx-441' } });
     expect(screen.queryByText('NDE-26-004')).not.toBeInTheDocument();
     expect(screen.queryByText('No NDE Requests NDE items yet')).not.toBeInTheDocument();
   });

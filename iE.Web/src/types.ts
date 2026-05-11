@@ -31,6 +31,10 @@ export type NdeLogItem = {
   reportDownloadUrl?: string;
   accessType?: string;
   reference?: string;
+  project?: string;
+  owningGroup?: string;
+  code?: string;
+  unit?: string;
   inspectionDetails?: string;
   scopeItems?: NdeRequestScopeItem[];
 };

@@ -150,7 +150,7 @@ export function NdeWorkspacePage({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [demoCreateMessage, setDemoCreateMessage] = useState<string>('');
-  const requiredFieldsMessage = 'Project, Owning Group, Due Date, NDE Method, Unit, Asset, and Access Method are required.';
+  const requiredFieldsMessage = 'Project, Owning Group, Due Date, NDE Method, Facility, Unit, Asset, and Access Method are required.';
   const [managedProjectOptions, setManagedProjectOptions] = useState(() => getProjectOptions());
   const [managedUnitOptions, setManagedUnitOptions] = useState(() => getUnitOptions());
   const facilities = useMemo(() => getFacilities(), []);
@@ -159,12 +159,12 @@ export function NdeWorkspacePage({
   const currentUserDisplayName = 'Operator (placeholder)';
   const [createForm, setCreateForm] = useState({
     project: '', owningGroup: '', requester: currentUserDisplayName, priority: 'Normal' as NdeLogItem['priority'], dueDate: '',
-    taskType: '', code: '', unit: '', asset: '', inspectionDetails: '', requestStatus: 'Draft' as NdeLogStatus,
+    taskType: '', code: '', facilityId: '', unit: '', asset: '', inspectionDetails: '', requestStatus: 'Draft' as NdeLogStatus,
     accessType: '', reference: '',
   });
   const [editForm, setEditForm] = useState({
     project: '', owningGroup: '', priority: 'Normal' as NdeLogItem['priority'], dueDate: '', method: '',
-    code: '', unit: '', asset: '', accessType: '', reference: '', inspectionDetails: '',
+    code: '', facilityId: '', unit: '', asset: '', accessType: '', reference: '', inspectionDetails: '',
   });
 
   useEffect(() => {
@@ -312,7 +312,7 @@ export function NdeWorkspacePage({
   }, [baseItems, searchText, statusFilter]);
 
   const createRequestFromForm = () => {
-    const hasMissingRequiredFields = !createForm.project || !createForm.owningGroup || !createForm.dueDate || !createForm.taskType || !createForm.unit || !createForm.asset || !createForm.accessType;
+    const hasMissingRequiredFields = !createForm.project || !createForm.owningGroup || !createForm.dueDate || !createForm.taskType || !createForm.facilityId || !createForm.unit || !createForm.asset || !createForm.accessType;
     if (hasMissingRequiredFields) {
       setCreateValidationMessage(requiredFieldsMessage);
       return;
@@ -338,6 +338,8 @@ export function NdeWorkspacePage({
       code: createForm.code || undefined,
       codeCriteria: createForm.code || undefined,
       unit: createForm.unit || undefined,
+      facilityId: createForm.facilityId || undefined,
+      facilityName: facilities.find((facility) => facility.id === createForm.facilityId)?.name,
     };
 
     setItems((current) => [createdItem, ...current]);
@@ -356,6 +358,7 @@ export function NdeWorkspacePage({
       dueDate: selectedItem.dueDate ?? '',
       method: selectedItem.method ?? '',
       code: selectedItem.code ?? '',
+      facilityId: selectedItem.facilityId ?? managedUnitOptions.find((unit) => unit.name === selectedItem.unit)?.facilityId ?? '',
       unit: selectedItem.unit ?? '',
       asset: selectedItem.assetTag ?? selectedItem.circuitId ?? selectedItem.equipmentTag ?? '',
       accessType: selectedItem.accessType ?? '',
@@ -368,7 +371,7 @@ export function NdeWorkspacePage({
 
   const saveEditForm = () => {
     if (!selectedId) return;
-    const hasMissingRequiredFields = !editForm.project || !editForm.owningGroup || !editForm.dueDate || !editForm.method || !editForm.unit || !editForm.asset || !editForm.accessType;
+    const hasMissingRequiredFields = !editForm.project || !editForm.owningGroup || !editForm.dueDate || !editForm.method || !editForm.facilityId || !editForm.unit || !editForm.asset || !editForm.accessType;
     if (hasMissingRequiredFields) {
       setEditValidationMessage(requiredFieldsMessage);
       return;
@@ -394,6 +397,8 @@ export function NdeWorkspacePage({
         code: editForm.code || undefined,
         codeCriteria: editForm.code || undefined,
         unit: editForm.unit || undefined,
+        facilityId: editForm.facilityId || undefined,
+        facilityName: facilities.find((facility) => facility.id === editForm.facilityId)?.name,
         reportNumber,
       };
     }));
@@ -493,8 +498,9 @@ export function NdeWorkspacePage({
               <label>Due Date *<input required type="date" value={createForm.dueDate} onChange={(event) => setCreateForm((current) => ({ ...current, dueDate: event.target.value }))} /></label>
               <label>NDE Method *<select required value={createForm.taskType} onChange={(event) => setCreateForm((current) => ({ ...current, taskType: event.target.value }))}><option value="">Select an NDE Method...</option>{ndeMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               <label>Code Criteria<input value={createForm.code} onChange={(event) => setCreateForm((current) => ({ ...current, code: event.target.value }))} /></label>
-              <label>Unit *<select required value={createForm.unit} onChange={(event) => setCreateForm((current) => ({ ...current, unit: event.target.value, asset: '' }))}><option value="">Select a Unit...</option>{managedUnitOptions.filter((option) => option.isActive).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
-              <label>Asset *<select required disabled={!createForm.unit} value={createForm.asset} onChange={(event) => setCreateForm((current) => ({ ...current, asset: event.target.value }))}><option value="">{createForm.unit ? 'Select an Asset...' : 'Select a Unit first...'}</option>{getAssetsForUnit(createForm.unit).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
+              <label>Facility *<select required value={createForm.facilityId} onChange={(event) => setCreateForm((current) => ({ ...current, facilityId: event.target.value, unit: '', asset: '' }))}><option value="">Select a Facility...</option>{facilities.filter((facility) => facility.isActive).map((facility) => <option key={facility.id} value={facility.id}>{facility.name}</option>)}</select></label>
+              <label>Unit *<select required disabled={!createForm.facilityId} value={createForm.unit} onChange={(event) => setCreateForm((current) => ({ ...current, unit: event.target.value, asset: '' }))}><option value="">{createForm.facilityId ? 'Select a Unit...' : 'Select a Facility first...'}</option>{managedUnitOptions.filter((option) => option.isActive && option.facilityId === createForm.facilityId).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
+              <label>Asset *<select required disabled={!createForm.unit} value={createForm.asset} onChange={(event) => setCreateForm((current) => ({ ...current, asset: event.target.value }))}><option value="">{createForm.unit ? 'Select an Asset...' : 'Select a Unit first...'}</option>{getAssetsForUnit(createForm.unit, createForm.facilityId).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
               <label>Request Status<select value={createForm.requestStatus} onChange={(event) => setCreateForm((current) => ({ ...current, requestStatus: event.target.value as NdeLogStatus }))}><option>Draft</option><option>Requested</option></select></label>
               <label>Access Method *<select required value={createForm.accessType} onChange={(event) => setCreateForm((current) => ({ ...current, accessType: event.target.value }))}><option value="">Select an Access Method...</option>{accessMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               
@@ -531,8 +537,9 @@ export function NdeWorkspacePage({
               <label>Due Date *<input required type="date" value={editForm.dueDate} onChange={(event) => setEditForm((current) => ({ ...current, dueDate: event.target.value }))} /></label>
               <label>NDE Method *<select required value={editForm.method} onChange={(event) => setEditForm((current) => ({ ...current, method: event.target.value }))}><option value="">Select an NDE Method...</option>{ndeMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               <label>Code Criteria<input value={editForm.code} onChange={(event) => setEditForm((current) => ({ ...current, code: event.target.value }))} /></label>
-              <label>Unit *<select required value={editForm.unit} onChange={(event) => setEditForm((current) => ({ ...current, unit: event.target.value, asset: '' }))}><option value="">Select a Unit...</option>{managedUnitOptions.filter((option) => option.isActive).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
-              <label>Asset *<select required disabled={!editForm.unit} value={editForm.asset} onChange={(event) => setEditForm((current) => ({ ...current, asset: event.target.value }))}><option value="">{editForm.unit ? 'Select an Asset...' : 'Select a Unit first...'}</option>{getAssetsForUnit(editForm.unit).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
+              <label>Facility *<select required value={editForm.facilityId} onChange={(event) => setEditForm((current) => ({ ...current, facilityId: event.target.value, unit: '', asset: '' }))}><option value="">Select a Facility...</option>{facilities.filter((facility) => facility.isActive).map((facility) => <option key={facility.id} value={facility.id}>{facility.name}</option>)}</select></label>
+              <label>Unit *<select required disabled={!editForm.facilityId} value={editForm.unit} onChange={(event) => setEditForm((current) => ({ ...current, unit: event.target.value, asset: '' }))}><option value="">{editForm.facilityId ? 'Select a Unit...' : 'Select a Facility first...'}</option>{managedUnitOptions.filter((option) => option.isActive && option.facilityId === editForm.facilityId).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
+              <label>Asset *<select required disabled={!editForm.unit} value={editForm.asset} onChange={(event) => setEditForm((current) => ({ ...current, asset: event.target.value }))}><option value="">{editForm.unit ? 'Select an Asset...' : 'Select a Unit first...'}</option>{getAssetsForUnit(editForm.unit, editForm.facilityId).map((option) => <option key={option.id} value={option.name}>{option.name}</option>)}</select></label>
               <label>Access Method *<select required value={editForm.accessType} onChange={(event) => setEditForm((current) => ({ ...current, accessType: event.target.value }))}><option value="">Select an Access Method...</option>{accessMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               <label>Reference<input value={editForm.reference} onChange={(event) => setEditForm((current) => ({ ...current, reference: event.target.value }))} /></label>
             </div>
@@ -681,7 +688,7 @@ export function NdeWorkspacePage({
                 <dt>Owning Group</dt><dd>{selectedItem.owningGroup ?? '—'}</dd>
                 <dt>Code Criteria</dt><dd>{selectedItem.codeCriteria ?? selectedItem.code ?? '—'}</dd>
                 <dt>Unit</dt><dd>{selectedItem.unit ?? '—'}</dd>
-                <dt>Facility</dt><dd>{(() => { const unitOption = selectedItem.unit ? managedUnitOptions.find((unit) => unit.name === selectedItem.unit) : undefined; const facility = unitOption ? facilities.find((item) => item.id === unitOption.facilityId) : undefined; return facility?.name ?? '—'; })()}</dd>
+                <dt>Facility</dt><dd>{selectedItem.facilityName ?? facilities.find((facility) => facility.id === selectedItem.facilityId)?.name ?? '—'}</dd>
                 <dt>Access Method</dt><dd>{selectedItem.accessType ?? '—'}</dd>
                 <dt>Reference</dt><dd>{selectedItem.reference ?? '—'}</dd>
                 <dt>Status</dt><dd>{selectedItem.status}</dd>

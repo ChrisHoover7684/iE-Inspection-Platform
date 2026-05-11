@@ -10,6 +10,7 @@ import {
   type FacilityAuthorityRole,
   type OrganizationUser,
 } from '../organizationReferenceData';
+import { getUnitOptions } from '../ndeRequestReferenceData';
 
 const authorityRoleOptions: FacilityAuthorityRole[] = ['Facility Admin', 'Inspection Manager', 'Inspector', 'NDE Coordinator', 'NDE Requester', 'Report Reviewer', 'Viewer'];
 const makeId = () => `user-${Math.random().toString(36).slice(2, 9)}`;
@@ -23,6 +24,7 @@ export function UsersAccessFoundationPage() {
 
   const [newUser, setNewUser] = useState({ name: '', email: '', organizationRole: 'Member' as OrganizationUser['organizationRole'] });
   const [newAccess, setNewAccess] = useState({ userId: '', facilityId: '', unitName: 'All Units', role: 'Viewer' as FacilityAuthorityRole });
+  const unitOptions = useMemo(() => newAccess.facilityId ? getUnitOptions(newAccess.facilityId).filter((unit) => unit.isActive) : [], [newAccess.facilityId]);
 
   const persistUsers = (next: OrganizationUser[]) => { setUsers(next); saveOrganizationUsers(next); };
   const persistAccess = (next: typeof access) => { setAccess(next); saveFacilityAccessAssignments(next); };
@@ -63,8 +65,8 @@ export function UsersAccessFoundationPage() {
           <h3>Facility Access Roles</h3>
           <div className="nde-modal-grid">
             <label>User<select value={newAccess.userId} onChange={(event) => setNewAccess((current) => ({ ...current, userId: event.target.value }))}><option value="">Select user</option>{users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></label>
-            <label>Facility<select value={newAccess.facilityId} onChange={(event) => setNewAccess((current) => ({ ...current, facilityId: event.target.value }))}><option value="">Select facility</option>{facilities.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}</select></label>
-            <label>Unit<select value={newAccess.unitName} onChange={(event) => setNewAccess((current) => ({ ...current, unitName: event.target.value }))}><option>All Units</option><option>01-CRUDE</option><option>02-VAC</option><option>03-FCC</option></select></label>
+            <label>Facility<select value={newAccess.facilityId} onChange={(event) => setNewAccess((current) => ({ ...current, facilityId: event.target.value, unitName: 'All Units' }))}><option value="">Select facility</option>{facilities.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}</select></label>
+            <label>Unit<select disabled={!newAccess.facilityId} value={newAccess.unitName} onChange={(event) => setNewAccess((current) => ({ ...current, unitName: event.target.value }))}><option>All Units</option>{unitOptions.map((unit) => <option key={unit.id} value={unit.name}>{unit.name}</option>)}</select></label>
             <label>Role<select value={newAccess.role} onChange={(event) => setNewAccess((current) => ({ ...current, role: event.target.value as FacilityAuthorityRole }))}>{authorityRoleOptions.map((role) => <option key={role}>{role}</option>)}</select></label>
           </div>
           <button type="button" onClick={() => {

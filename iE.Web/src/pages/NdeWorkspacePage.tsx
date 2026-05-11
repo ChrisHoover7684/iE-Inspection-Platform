@@ -21,7 +21,11 @@ const statusOptions: Array<NdeLogStatus | 'All'> = [
   'Cancelled',
   'Overdue',
 ];
-const accessTypeOptions = ['All', 'Ground', 'Scaffold', 'Rope Access', 'Aerial Lift', 'Ladder', 'Platform', 'Confined Space'] as const;
+const accessMethodOptions = ['All', 'Ground', 'Scaffold', 'Rope Access', 'Aerial Lift', 'Ladder', 'Platform', 'Confined Space', 'Other'] as const;
+const createAccessMethodOptions = ['Ground', 'Platform', 'Ladder', 'Scaffold', 'Aerial Lift', 'Rope Access', 'Confined Space', 'Other'] as const;
+const projectOptions = ['Robinson TA 2026', 'MPC Robinson 2026 TA', 'Unit 73 Maintenance', 'Piping Reliability Program', 'Tank Inspection Program', 'Other'] as const;
+const owningGroupOptions = ['Inspection', 'Maintenance', 'Operations', 'Construction', 'Turnaround', 'Reliability', 'Engineering', 'Other'] as const;
+const ndeMethodOptions = ['PT', 'MT', 'RT', 'UT Thickness', 'PAUT', 'PMI', 'VT', 'ET', 'MFL', 'LRUT', 'Other'] as const;
 
 // Frontend-only demo/read-model data for NDE workspace usability.
 // Replace with backend read-model data when the NDE workflow API is connected.
@@ -58,22 +62,6 @@ const mockRows: NdeLogItem[] = [
 ];
 
 type NdeTransition = { label: string; status: NdeLogStatus };
-type NdeScopeTemplateOption = {
-  key: string;
-  method: string;
-  stage: string;
-  displayName: string;
-};
-
-const ndeScopeTemplateOptions: NdeScopeTemplateOption[] = [
-  { key: 'pt-prep', method: 'PT', stage: 'Prep', displayName: 'PT Prep' },
-  { key: 'pt-root', method: 'PT', stage: 'Root', displayName: 'PT Root' },
-  { key: 'pt-final', method: 'PT', stage: 'Final', displayName: 'PT Final' },
-  { key: 'mt-final', method: 'MT', stage: 'Final', displayName: 'MT Final' },
-  { key: 'rt-final', method: 'RT', stage: 'Final', displayName: 'RT Final' },
-  { key: 'pmi-material-verification', method: 'PMI', stage: 'Material Verification', displayName: 'PMI Material Verification' },
-];
-
 function getAllowedNdeTransitions(status: NdeLogStatus): NdeTransition[] {
   switch (status) {
     case 'Draft':
@@ -108,7 +96,7 @@ export function NdeWorkspacePage({
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<NdeLogStatus | 'All'>(initialStatus);
-  const [accessTypeFilter, setAccessTypeFilter] = useState<(typeof accessTypeOptions)[number]>('All');
+  const [accessTypeFilter, setAccessTypeFilter] = useState<(typeof accessMethodOptions)[number]>('All');
   const [searchText, setSearchText] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedForBulkDownload, setSelectedForBulkDownload] = useState<string[]>([]);
@@ -121,12 +109,12 @@ export function NdeWorkspacePage({
   const [eventHistoryError, setEventHistoryError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [demoCreateMessage, setDemoCreateMessage] = useState<string>('');
+  const currentUserDisplayName = 'Operator (placeholder)';
   const [createForm, setCreateForm] = useState({
-    project: '', owningGroup: '', requester: '', priority: 'Normal' as NdeLogItem['priority'], dueDate: '',
-    taskType: 'PT', code: '', unit: '', asset: '', inspectionDetails: '', requestStatus: 'Draft' as NdeLogStatus,
-    accessType: '', billing1: '', billing2: '', billing3: '', billing4: '', weldId: '', location: '', scopeNotes: '',
+    project: '', owningGroup: '', requester: currentUserDisplayName, priority: 'Normal' as NdeLogItem['priority'], dueDate: '',
+    taskType: '', code: '', unit: '', asset: '', inspectionDetails: '', requestStatus: 'Draft' as NdeLogStatus,
+    accessType: '', reference: '',
   });
-  const [selectedScopeOptions, setSelectedScopeOptions] = useState<string[]>([]);
 
   useEffect(() => {
     setStatusFilter(initialStatus);
@@ -247,6 +235,7 @@ export function NdeWorkspacePage({
           row.equipmentTag,
           row.method,
           row.accessType,
+          row.reference,
           row.scopeItems?.map((scopeItem) => `${scopeItem.displayName} ${scopeItem.stage} ${scopeItem.weldId ?? ''}`).join(' '),
           row.inspectionDetails,
           row.requestedBy,
@@ -264,19 +253,6 @@ export function NdeWorkspacePage({
 
   const createRequestFromForm = () => {
     const nextSequence = items.length + 1;
-    const scopeItems = selectedScopeOptions.map((key, index) => {
-      const option = ndeScopeTemplateOptions.find((scopeOption) => scopeOption.key === key);
-      return {
-        id: `scope-${nextSequence}-${index}`,
-        method: option?.method ?? 'PT',
-        stage: option?.stage ?? 'Prep',
-        displayName: option?.displayName ?? 'PT Prep',
-        weldId: createForm.weldId || undefined,
-        location: createForm.location || undefined,
-        notes: createForm.scopeNotes || undefined,
-      };
-    });
-
     const createdItem: NdeLogItem = {
       id: `nde-${String(nextSequence).padStart(3, '0')}`,
       requestNumber: `NDE-26-${String(nextSequence).padStart(3, '0')}`,
@@ -288,8 +264,8 @@ export function NdeWorkspacePage({
       dueDate: createForm.dueDate,
       reportStatus: 'Not Started',
       accessType: createForm.accessType || undefined,
+      reference: createForm.reference || undefined,
       inspectionDetails: createForm.inspectionDetails || undefined,
-      scopeItems,
     };
 
     setItems((current) => [createdItem, ...current]);
@@ -321,12 +297,13 @@ export function NdeWorkspacePage({
   };
 
   const exportVisibleTable = () => {
-    const headers = ['Request #', 'Asset / Circuit / Equipment', 'Method', 'Access Type', 'Inspection Details', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
+    const headers = ['Request #', 'Asset / Circuit / Equipment', 'Method', 'Access Method', 'Reference', 'Inspection Details', 'Status', 'Priority', 'Due', 'Results Received', 'Report Status', 'Report #'];
     const rows = filteredItems.map((item) => [
       item.requestNumber,
       item.assetTag ?? item.circuitId ?? item.equipmentTag ?? '—',
       item.method,
       item.accessType ?? '—',
+      item.reference ?? '—',
       item.inspectionDetails ?? '—',
       item.status,
       item.priority,
@@ -376,33 +353,25 @@ export function NdeWorkspacePage({
           <div className="card nde-modal-card">
             <h3>New NDE Request</h3>
             <div className="nde-modal-grid">
-              <label>Project<input value={createForm.project} onChange={(event) => setCreateForm((current) => ({ ...current, project: event.target.value }))} /></label>
-              <label>Owning Group<input value={createForm.owningGroup} onChange={(event) => setCreateForm((current) => ({ ...current, owningGroup: event.target.value }))} /></label>
-              <label>Requester<input value={createForm.requester} onChange={(event) => setCreateForm((current) => ({ ...current, requester: event.target.value }))} /></label>
+              <label>Project<select value={createForm.project} onChange={(event) => setCreateForm((current) => ({ ...current, project: event.target.value }))}><option value="">Select a Project...</option>{projectOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              <label>Owning Group<select value={createForm.owningGroup} onChange={(event) => setCreateForm((current) => ({ ...current, owningGroup: event.target.value }))}><option value="">Select an Owning Group...</option>{owningGroupOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              <label>Requester<input value={createForm.requester} readOnly /></label>
               <label>Priority<select value={createForm.priority} onChange={(event) => setCreateForm((current) => ({ ...current, priority: event.target.value as NdeLogItem['priority'] }))}><option>Low</option><option>Normal</option><option>High</option><option>Critical</option></select></label>
               <label>Due Date<input type="date" value={createForm.dueDate} onChange={(event) => setCreateForm((current) => ({ ...current, dueDate: event.target.value }))} /></label>
-              <label>Task Type / NDE Method<input value={createForm.taskType} onChange={(event) => setCreateForm((current) => ({ ...current, taskType: event.target.value }))} /></label>
+              <label>NDE Method<select value={createForm.taskType} onChange={(event) => setCreateForm((current) => ({ ...current, taskType: event.target.value }))}><option value="">Select an NDE Method...</option>{ndeMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               <label>Code<input value={createForm.code} onChange={(event) => setCreateForm((current) => ({ ...current, code: event.target.value }))} /></label>
               <label>Unit<input value={createForm.unit} onChange={(event) => setCreateForm((current) => ({ ...current, unit: event.target.value }))} /></label>
               <label>Asset<input value={createForm.asset} onChange={(event) => setCreateForm((current) => ({ ...current, asset: event.target.value }))} /></label>
-              <label>Inspection Details<textarea value={createForm.inspectionDetails} onChange={(event) => setCreateForm((current) => ({ ...current, inspectionDetails: event.target.value }))} /></label>
               <label>Request Status<select value={createForm.requestStatus} onChange={(event) => setCreateForm((current) => ({ ...current, requestStatus: event.target.value as NdeLogStatus }))}><option>Draft</option><option>Requested</option></select></label>
-              <label>Access Type<input value={createForm.accessType} onChange={(event) => setCreateForm((current) => ({ ...current, accessType: event.target.value }))} /></label>
-              <label>Billing #1<input value={createForm.billing1} onChange={(event) => setCreateForm((current) => ({ ...current, billing1: event.target.value }))} /></label>
-              <label>Billing #2<input value={createForm.billing2} onChange={(event) => setCreateForm((current) => ({ ...current, billing2: event.target.value }))} /></label>
-              <label>Billing #3<input value={createForm.billing3} onChange={(event) => setCreateForm((current) => ({ ...current, billing3: event.target.value }))} /></label>
-              <label>Billing #4<input value={createForm.billing4} onChange={(event) => setCreateForm((current) => ({ ...current, billing4: event.target.value }))} /></label>
+              <label>Access Method<select value={createForm.accessType} onChange={(event) => setCreateForm((current) => ({ ...current, accessType: event.target.value }))}><option value="">Select an Access Method...</option>{createAccessMethodOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              
+              
+              
+              
+              <label>Reference<input value={createForm.reference} onChange={(event) => setCreateForm((current) => ({ ...current, reference: event.target.value }))} /></label>
               <label>Attachments placeholder<input disabled value="File upload coming soon" /></label>
             </div>
-            <div className="nde-scope-options">
-              <h4>Scope Items</h4>
-              {ndeScopeTemplateOptions.map((option) => (
-                <label key={option.key}><input type="checkbox" checked={selectedScopeOptions.includes(option.key)} onChange={(event) => setSelectedScopeOptions((current) => event.target.checked ? [...current, option.key] : current.filter((item) => item !== option.key))} />{option.displayName}</label>
-              ))}
-              <label>Weld ID<input value={createForm.weldId} onChange={(event) => setCreateForm((current) => ({ ...current, weldId: event.target.value }))} /></label>
-              <label>Location<input value={createForm.location} onChange={(event) => setCreateForm((current) => ({ ...current, location: event.target.value }))} /></label>
-              <label>Notes<input value={createForm.scopeNotes} onChange={(event) => setCreateForm((current) => ({ ...current, scopeNotes: event.target.value }))} /></label>
-            </div>
+            <label>Inspection Details<textarea value={createForm.inspectionDetails} onChange={(event) => setCreateForm((current) => ({ ...current, inspectionDetails: event.target.value }))} /></label>
             <div className="row">
               <button type="button" onClick={createRequestFromForm}>Create Request</button>
               <button type="button" onClick={() => setIsCreateModalOpen(false)}>Cancel</button>
@@ -424,7 +393,7 @@ export function NdeWorkspacePage({
           <input
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
-            placeholder="Search request #, asset, method, inspection details, or assignee"
+            placeholder="Search request #, asset, method, access method, reference, inspection details, or assignee"
           />
         </label>
         <label>
@@ -434,9 +403,9 @@ export function NdeWorkspacePage({
           </select>
         </label>
         <label>
-          Access Type
-          <select value={accessTypeFilter} onChange={(event) => setAccessTypeFilter(event.target.value as (typeof accessTypeOptions)[number])}>
-            {accessTypeOptions.map((accessType) => <option key={accessType} value={accessType}>{accessType}</option>)}
+          Access Method
+          <select value={accessTypeFilter} onChange={(event) => setAccessTypeFilter(event.target.value as (typeof accessMethodOptions)[number])}>
+            {accessMethodOptions.map((accessType) => <option key={accessType} value={accessType}>{accessType}</option>)}
           </select>
         </label>
       </div>
@@ -468,7 +437,7 @@ export function NdeWorkspacePage({
         <table>
           <thead>
             <tr>
-              <th>Select</th><th>Request #</th><th>Asset / Circuit / Equipment</th><th>Method</th><th>Access Type</th><th>Status</th><th>Priority</th><th>Due</th>
+              <th>Select</th><th>Request #</th><th>Asset / Circuit / Equipment</th><th>Method</th><th>Access Method</th><th>Status</th><th>Priority</th><th>Due</th>
               <th>Report Status</th><th>Report #</th><th>Actions</th>
             </tr>
           </thead>
@@ -548,7 +517,8 @@ export function NdeWorkspacePage({
                 <dt>Report #</dt><dd>{selectedItem.reportNumber ?? '—'}</dd>
                 <dt>Asset / Circuit / Equipment</dt><dd>{selectedItem.assetTag ?? selectedItem.circuitId ?? selectedItem.equipmentTag ?? '—'}</dd>
                 <dt>Method</dt><dd>{selectedItem.method}</dd>
-                <dt>Access Type</dt><dd>{selectedItem.accessType ?? '—'}</dd>
+                <dt>Access Method</dt><dd>{selectedItem.accessType ?? '—'}</dd>
+                <dt>Reference</dt><dd>{selectedItem.reference ?? '—'}</dd>
                 <dt>Status</dt><dd>{selectedItem.status}</dd>
                 <dt>Inspection Details</dt><dd>{selectedItem.inspectionDetails ?? '—'}</dd>
                 <dt>Report Status</dt><dd>{formatReportStatus(selectedItem.reportStatus)}</dd>

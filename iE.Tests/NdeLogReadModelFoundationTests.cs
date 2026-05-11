@@ -73,9 +73,9 @@ public class NdeLogReadModelFoundationTests
             var methodCode = NdeNumbering.GetMethodAbbreviation(r.Method);
             Assert.Contains($"-26-{methodCode}-", r.ReportNumber!, StringComparison.Ordinal);
         });
-        Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Complete && r.ReportNumber == "RPT-26-PAUT-006");
-        Assert.Contains(rows, r => r.RequestNumber == "NDE-26-010" && r.Status == NdeLogStatuses.Reviewed && r.ReportStatus == NdeReportStatuses.Complete);
-        Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Complete && r.ReportNumber == "RPT-26-VT-007");
+        Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Complete && r.ReportNumber == "RPT-26-PAUT-0006");
+        Assert.Contains(rows, r => r.RequestNumber == "NDE-26-0010" && r.Status == NdeLogStatuses.Reviewed && r.ReportStatus == NdeReportStatuses.Complete);
+        Assert.Contains(rows, r => r.ReportStatus == NdeReportStatuses.Complete && r.ReportNumber == "RPT-26-VT-0007");
         Assert.DoesNotContain(rows, r => r.Status == NdeLogStatuses.Scheduled && r.ReportStatus == NdeReportStatuses.Complete);
         Assert.Contains(rows, r => r.Status == NdeLogStatuses.Scheduled);
         var weldScopeRequest = Assert.Single(rows.Where(r => r.Id == "nde-004"));

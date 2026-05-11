@@ -3,10 +3,10 @@ namespace iE.Api.Workflow;
 public static class NdeNumbering
 {
     public static string FormatRequestNumber(int year, int sequence)
-        => $"NDE-{year % 100:00}-{sequence:000}";
+        => $"NDE-{year % 100:00}-{sequence:0000}";
 
     public static string FormatReportNumber(int year, string method, int sequence)
-        => $"RPT-{year % 100:00}-{GetMethodAbbreviation(method)}-{sequence:000}";
+        => $"RPT-{year % 100:00}-{GetMethodAbbreviation(method)}-{sequence:0000}";
 
     public static string GetMethodAbbreviation(string method)
         => method.Trim() switch

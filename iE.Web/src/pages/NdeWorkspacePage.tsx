@@ -24,7 +24,7 @@ const statusOptions: Array<NdeLogStatus | 'All'> = [
   'Overdue',
 ];
 
-const requestNumberPattern = /^NDE-(\d{2})-(\d{3})$/;
+const requestNumberPattern = /^NDE-(\d{2})-(\d{4})$/;
 const methodAbbreviations: Record<string, string> = {
   PT: 'PT',
   MT: 'MT',
@@ -53,7 +53,7 @@ function getNextRequestSequence(rows: NdeLogItem[]) {
 }
 
 function formatRequestNumber(sequence: number, yearSuffix = getCurrentYearSuffix()) {
-  return `NDE-${yearSuffix}-${String(sequence).padStart(3, '0')}`;
+  return `NDE-${yearSuffix}-${String(sequence).padStart(4, '0')}`;
 }
 
 function formatReportNumber(requestNumber: string, method: string) {
@@ -100,16 +100,16 @@ function syncWorkflowFields(item: NdeLogItem, nextStatus: NdeLogStatus, todayIso
 // Frontend-only demo/read-model data for NDE workspace usability.
 // Replace with backend read-model data when the NDE workflow API is connected.
 const mockRows: NdeLogItem[] = [
-  { id: 'nde-001', requestNumber: 'NDE-26-001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started', accessType: 'Ground', project: 'Demo Turnaround 2026', owningGroup: 'Inspection', code: 'API 570', unit: '01-CRUDE' },
-  { id: 'nde-002', requestNumber: 'NDE-26-002', circuitId: 'CIR-4A-220', method: 'RT', status: 'Requested', priority: 'High', requestedBy: 'M. Patel', assignedTo: 'S. Owens', dueDate: '2026-05-17', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-002' },
-  { id: 'nde-003', requestNumber: 'NDE-26-003', equipmentTag: 'E-4401', method: 'MT', status: 'Scheduled', priority: 'Normal', requestedBy: 'T. Nguyen', assignedTo: 'R. Hall', dueDate: '2026-05-13', reportStatus: 'Not Available' },
+  { id: 'nde-001', requestNumber: 'NDE-26-0001', assetTag: 'P-102A', method: 'UT Thickness', status: 'Draft', priority: 'Normal', requestedBy: 'J. Rivera', assignedTo: 'L. Tran', dueDate: '2026-05-20', reportStatus: 'Not Started', accessType: 'Ground', project: 'Demo Turnaround 2026', owningGroup: 'Inspection', code: 'API 570', unit: '01-CRUDE' },
+  { id: 'nde-002', requestNumber: 'NDE-26-0002', circuitId: 'CIR-4A-220', method: 'RT', status: 'Requested', priority: 'High', requestedBy: 'M. Patel', assignedTo: 'S. Owens', dueDate: '2026-05-17', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-0002', accessType: 'Scaffold', project: 'Demo Turnaround 2026', owningGroup: 'Inspection', code: 'API 570', unit: '01-CRUDE' },
+  { id: 'nde-003', requestNumber: 'NDE-26-0003', equipmentTag: 'E-4401', method: 'MT', status: 'Scheduled', priority: 'Normal', requestedBy: 'T. Nguyen', assignedTo: 'R. Hall', dueDate: '2026-05-13', reportStatus: 'Not Available', accessType: 'Scaffold', project: 'Demo Turnaround 2026', owningGroup: 'Inspection', code: 'API 570', unit: '01-CRUDE' },
   {
     id: 'nde-004',
     project: 'Unit 73 Maintenance',
     owningGroup: 'Mechanical Integrity',
     code: 'NBIC',
     unit: '01-CRUDE',
-    requestNumber: 'NDE-26-004',
+    requestNumber: 'NDE-26-0004',
     assetTag: 'HX-22B',
     method: 'PT',
     status: 'In Progress',
@@ -118,7 +118,7 @@ const mockRows: NdeLogItem[] = [
     assignedTo: 'D. Kim',
     dueDate: '2026-05-12',
     reportStatus: 'In Progress',
-    reportNumber: 'RPT-26-PT-004',
+    reportNumber: 'RPT-26-PT-0004',
     accessType: 'Rope Access',
     inspectionDetails: 'Nozzle N11 Weld 213 root and final cap PT verification before hydrotest.',
     scopeItems: [
@@ -127,12 +127,12 @@ const mockRows: NdeLogItem[] = [
       { id: 'scope-004-pt-final', method: 'PT', stage: 'Final', displayName: 'PT Final', weldId: 'W-22B-01', location: 'Nozzle N2 Cap', notes: 'Final cap examination' },
     ],
   },
-  { id: 'nde-005', requestNumber: 'NDE-26-005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09', reportStatus: 'In Progress', reportNumber: 'RPT-26-PMI-005' },
-  { id: 'nde-006', requestNumber: 'NDE-26-006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-006', reportFileName: 'RPT-26-PAUT-006.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-006.pdf', accessType: 'Ladder' },
-  { id: 'nde-007', requestNumber: 'NDE-26-007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Complete', reportNumber: 'RPT-26-VT-007', reportFileName: 'RPT-26-VT-007.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-VT-007.pdf' },
-  { id: 'nde-008', requestNumber: 'NDE-26-008', equipmentTag: 'PSV-91', method: 'UT Thickness', status: 'Cancelled', priority: 'Low', requestedBy: 'C. White', assignedTo: 'B. Young', dueDate: '2026-05-04', reportStatus: 'Not Started' },
-  { id: 'nde-009', requestNumber: 'NDE-26-009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-009' },
-  { id: 'nde-010', requestNumber: 'NDE-26-010', assetTag: 'P-300C', method: 'PAUT', status: 'Reviewed', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-010', reportFileName: 'RPT-26-PAUT-010.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-010.pdf', project: 'Corrosion Study 2026', owningGroup: 'Operations', code: 'API 510', unit: '02-VAC' },
+  { id: 'nde-005', requestNumber: 'NDE-26-0005', circuitId: 'CIR-3C-118', method: 'PMI', status: 'Results Received', priority: 'High', requestedBy: 'G. Martin', assignedTo: 'V. Chen', dueDate: '2026-05-10', resultReceivedDate: '2026-05-09', reportStatus: 'In Progress', reportNumber: 'RPT-26-PMI-0005' },
+  { id: 'nde-006', requestNumber: 'NDE-26-0006', equipmentTag: 'TK-804', method: 'PAUT', status: 'Reviewed', priority: 'Normal', requestedBy: 'P. Singh', assignedTo: 'N. Brooks', dueDate: '2026-05-09', resultReceivedDate: '2026-05-08', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-0006', reportFileName: 'RPT-26-PAUT-0006.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-0006.pdf', accessType: 'Ladder' },
+  { id: 'nde-007', requestNumber: 'NDE-26-0007', assetTag: 'L-5507', method: 'VT', status: 'Closed', priority: 'Low', requestedBy: 'R. Scott', assignedTo: 'H. Diaz', dueDate: '2026-05-06', resultReceivedDate: '2026-05-05', reportStatus: 'Complete', reportNumber: 'RPT-26-VT-0007', reportFileName: 'RPT-26-VT-0007.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-VT-0007.pdf' },
+  { id: 'nde-008', requestNumber: 'NDE-26-0008', equipmentTag: 'PSV-91', method: 'UT Thickness', status: 'Cancelled', priority: 'Low', requestedBy: 'C. White', assignedTo: 'B. Young', dueDate: '2026-05-04', reportStatus: 'Not Started' },
+  { id: 'nde-009', requestNumber: 'NDE-26-0009', circuitId: 'CIR-9D-032', method: 'RT', status: 'Overdue', priority: 'Critical', requestedBy: 'D. Reed', assignedTo: 'M. Gray', dueDate: '2026-05-01', reportStatus: 'In Progress', reportNumber: 'RPT-26-RT-0009' },
+  { id: 'nde-010', requestNumber: 'NDE-26-0010', assetTag: 'P-300C', method: 'PAUT', status: 'Reviewed', priority: 'High', requestedBy: 'L. Ward', assignedTo: 'K. Adams', dueDate: '2026-05-14', reportStatus: 'Complete', reportNumber: 'RPT-26-PAUT-0010', reportFileName: 'RPT-26-PAUT-0010.pdf', reportDownloadUrl: '/demo-downloads/RPT-26-PAUT-0010.pdf', project: 'Corrosion Study 2026', owningGroup: 'Operations', code: 'API 510', unit: '02-VAC' },
 ];
 
 type NdeTransition = { label: string; status: NdeLogStatus };
@@ -215,13 +215,7 @@ export function NdeWorkspacePage({
     ndeApi.getLogItems()
       .then((rows) => {
         if (!active) return;
-        const requiresReason = nextStatus === 'Cancelled';
-    if (requiresReason && !transitionComment.trim()) {
-      setTransitionError('Cancellation reason is required.');
-      return;
-    }
-
-    const todayIso = new Date().toISOString().slice(0, 10);
+const todayIso = new Date().toISOString().slice(0, 10);
         setItems(rows.map((row) => syncWorkflowFields(row, row.status, todayIso)));
         setLoadError(null);
       })
@@ -379,7 +373,7 @@ export function NdeWorkspacePage({
     const nextSequence = getNextRequestSequence(items);
     const requestNumber = formatRequestNumber(nextSequence);
     const createdItem: NdeLogItem = {
-      id: `nde-${String(nextSequence).padStart(3, '0')}`,
+      id: `nde-${String(nextSequence).padStart(4, '0')}`,
       requestNumber,
       assetTag: createForm.asset,
       method: createForm.taskType,

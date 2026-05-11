@@ -40,6 +40,7 @@ const nonPlaceholderRoutes = new Set(['/dashboard', '/calculators/corrosion-rate
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  window.localStorage.clear();
 });
 
 describe('App routes', () => {
@@ -259,6 +260,56 @@ describe('App routes', () => {
     fireEvent.change(screen.getByPlaceholderText('Search request #, asset, method, access method, reference, inspection details, or assignee'), { target: { value: 'zx-441' } });
     expect(screen.queryByText('NDE-26-004')).not.toBeInTheDocument();
     expect(screen.queryByText('No NDE Requests NDE items yet')).not.toBeInTheDocument();
+  });
+
+
+  it('renders reference-data-projects page with default demo options and no Robinson-specific names', () => {
+    render(
+      <MemoryRouter initialEntries={['/reference-data-projects']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Reference Data / Projects' })).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Demo Turnaround 2026')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Unit 73 Maintenance')).toBeInTheDocument();
+    expect(screen.queryByText('Robinson TA 2026')).not.toBeInTheDocument();
+    expect(screen.queryByText('MPC Robinson 2026 TA')).not.toBeInTheDocument();
+  });
+
+  it('allows admin to add/deactivate/reset project options and reflects active options in New NDE Request project dropdown', async () => {
+    render(
+      <MemoryRouter initialEntries={['/reference-data-projects']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('Add a project option'), { target: { value: 'Demo Reliability Sprint' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add Project' }));
+    expect(screen.getByDisplayValue('Demo Reliability Sprint')).toBeInTheDocument();
+
+    const addedRow = screen.getByDisplayValue('Demo Reliability Sprint').closest('tr') as HTMLTableRowElement;
+    fireEvent.click(within(addedRow).getByRole('button', { name: 'Deactivate' }));
+    expect(within(addedRow).getByText('Inactive')).toBeInTheDocument();
+
+    render(
+      <MemoryRouter initialEntries={['/nde-requests']}>
+        <App />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '+ New NDE Request' }));
+    const projectSelect = screen.getByLabelText('Project');
+    expect(within(projectSelect).queryByRole('option', { name: 'Demo Reliability Sprint' })).not.toBeInTheDocument();
+
+    cleanup();
+    render(
+      <MemoryRouter initialEntries={['/reference-data-projects']}>
+        <App />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Reset to Demo Defaults' }));
+    expect(screen.queryByDisplayValue('Demo Reliability Sprint')).not.toBeInTheDocument();
+    expect(screen.getByDisplayValue('Demo Turnaround 2026')).toBeInTheDocument();
   });
 
   it('loads API Inspection Reports page from /reports', async () => {

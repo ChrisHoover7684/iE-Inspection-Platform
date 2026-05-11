@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getFacilities } from '../organizationReferenceData';
 import {
   defaultUnits,
@@ -15,7 +16,9 @@ const makeId = (name: string) => name.toLowerCase().trim().replace(/[^a-z0-9]+/g
 
 export function ReferenceDataUnitsAssetsPage() {
   const facilities = getFacilities().filter((f) => f.isActive);
-  const [selectedFacilityId, setSelectedFacilityId] = useState(facilities[0]?.id ?? '');
+  const [searchParams] = useSearchParams();
+  const initialFacilityId = searchParams.get('facilityId');
+  const [selectedFacilityId, setSelectedFacilityId] = useState(() => facilities.some((f) => f.id === initialFacilityId) ? (initialFacilityId as string) : (facilities[0]?.id ?? ''));
   const [units, setUnits] = useState<UnitReferenceOption[]>(() => getUnitOptions());
   const [selectedUnitId, setSelectedUnitId] = useState('');
   const [newUnitNumber, setNewUnitNumber] = useState('');

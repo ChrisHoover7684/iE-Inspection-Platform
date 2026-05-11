@@ -111,7 +111,6 @@ export type InspectionReport = {
   reportNumber?: string;
   equipmentTag?: string;
   unit?: string;
-  facilityId?: string;
   facilityName?: string;
   systemId?: string;
   circuitId?: string;

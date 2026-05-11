@@ -55,6 +55,21 @@ const mockRows: NdeLogItem[] = [
 ];
 
 type NdeTransition = { label: string; status: NdeLogStatus };
+type NdeScopeTemplateOption = {
+  key: string;
+  method: string;
+  stage: string;
+  displayName: string;
+};
+
+const ndeScopeTemplateOptions: NdeScopeTemplateOption[] = [
+  { key: 'pt-prep', method: 'PT', stage: 'Prep', displayName: 'PT Prep' },
+  { key: 'pt-root', method: 'PT', stage: 'Root', displayName: 'PT Root' },
+  { key: 'pt-final', method: 'PT', stage: 'Final', displayName: 'PT Final' },
+  { key: 'mt-final', method: 'MT', stage: 'Final', displayName: 'MT Final' },
+  { key: 'rt-final', method: 'RT', stage: 'Final', displayName: 'RT Final' },
+  { key: 'pmi-material-verification', method: 'PMI', stage: 'Material Verification', displayName: 'PMI Material Verification' },
+];
 
 function getAllowedNdeTransitions(status: NdeLogStatus): NdeTransition[] {
   switch (status) {
@@ -100,6 +115,14 @@ export function NdeWorkspacePage({
   const [eventHistory, setEventHistory] = useState<NdeLogTransitionEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const [eventHistoryError, setEventHistoryError] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [demoCreateMessage, setDemoCreateMessage] = useState<string>('');
+  const [createForm, setCreateForm] = useState({
+    project: '', owningGroup: '', requester: '', priority: 'Normal' as NdeLogItem['priority'], dueDate: '',
+    taskType: 'PT', code: '', unit: '', asset: '', inspectionDetails: '', requestStatus: 'Draft' as NdeLogStatus,
+    accessType: '', billing1: '', billing2: '', billing3: '', billing4: '', weldId: '', location: '', scopeNotes: '',
+  });
+  const [selectedScopeOptions, setSelectedScopeOptions] = useState<string[]>([]);
 
   useEffect(() => {
     setStatusFilter(initialStatus);
@@ -203,6 +226,10 @@ export function NdeWorkspacePage({
   };
 
   const formatTimestamp = (timestampUtc: string) => new Date(timestampUtc).toLocaleString();
+  const formatScopeSummary = (item: NdeLogItem) =>
+    item.scopeItems?.length
+      ? item.scopeItems.map((scopeItem) => scopeItem.displayName).join(', ')
+      : '';
 
   const filteredItems = useMemo(() => {
     return baseItems.filter((row) => {
@@ -215,6 +242,7 @@ export function NdeWorkspacePage({
           row.circuitId,
           row.equipmentTag,
           row.method,
+          row.scopeItems?.map((scopeItem) => `${scopeItem.displayName} ${scopeItem.stage} ${scopeItem.weldId ?? ''}`).join(' '),
           row.requestedBy,
           row.assignedTo,
         ]
@@ -226,6 +254,40 @@ export function NdeWorkspacePage({
       return byStatus && bySearch;
     });
   }, [baseItems, searchText, statusFilter]);
+
+  const createRequestFromForm = () => {
+    const nextSequence = items.length + 1;
+    const scopeItems = selectedScopeOptions.map((key, index) => {
+      const option = ndeScopeTemplateOptions.find((scopeOption) => scopeOption.key === key);
+      return {
+        id: `scope-${nextSequence}-${index}`,
+        method: option?.method ?? 'PT',
+        stage: option?.stage ?? 'Prep',
+        displayName: option?.displayName ?? 'PT Prep',
+        weldId: createForm.weldId || undefined,
+        location: createForm.location || undefined,
+        notes: createForm.scopeNotes || undefined,
+      };
+    });
+
+    const createdItem: NdeLogItem = {
+      id: `nde-${String(nextSequence).padStart(3, '0')}`,
+      requestNumber: `NDE-26-${String(nextSequence).padStart(3, '0')}`,
+      assetTag: createForm.asset,
+      method: createForm.taskType,
+      status: createForm.requestStatus,
+      priority: createForm.priority,
+      requestedBy: createForm.requester,
+      dueDate: createForm.dueDate,
+      reportStatus: 'Not Started',
+      scopeItems,
+    };
+
+    setItems((current) => [createdItem, ...current]);
+    setSelectedId(createdItem.id);
+    setIsCreateModalOpen(false);
+    setDemoCreateMessage('Request creation is demo-only (in-memory) until backend persistence is connected.');
+  };
 
   const visibleIds = useMemo(() => filteredItems.map((item) => item.id), [filteredItems]);
   const visibleSelectedCount = useMemo(() => selectedForBulkDownload.filter((id) => visibleIds.includes(id)).length, [selectedForBulkDownload, visibleIds]);
@@ -292,9 +354,51 @@ export function NdeWorkspacePage({
       <div className="card">
         <h2>{title}</h2>
         <p className="muted">{description}</p>
+        <button type="button" onClick={() => setIsCreateModalOpen(true)}>+ New NDE Request</button>
         {isLoading && <p className="muted">Loading NDE log rows…</p>}
         {loadError && <p className="muted">{loadError}</p>}
+        {demoCreateMessage && <p className="muted">{demoCreateMessage}</p>}
       </div>
+
+      {isCreateModalOpen && (
+        <div className="nde-modal-backdrop" role="dialog" aria-modal="true" aria-label="New NDE Request">
+          <div className="card nde-modal-card">
+            <h3>New NDE Request</h3>
+            <div className="nde-modal-grid">
+              <label>Project<input value={createForm.project} onChange={(event) => setCreateForm((current) => ({ ...current, project: event.target.value }))} /></label>
+              <label>Owning Group<input value={createForm.owningGroup} onChange={(event) => setCreateForm((current) => ({ ...current, owningGroup: event.target.value }))} /></label>
+              <label>Requester<input value={createForm.requester} onChange={(event) => setCreateForm((current) => ({ ...current, requester: event.target.value }))} /></label>
+              <label>Priority<select value={createForm.priority} onChange={(event) => setCreateForm((current) => ({ ...current, priority: event.target.value as NdeLogItem['priority'] }))}><option>Low</option><option>Normal</option><option>High</option><option>Critical</option></select></label>
+              <label>Due Date<input type="date" value={createForm.dueDate} onChange={(event) => setCreateForm((current) => ({ ...current, dueDate: event.target.value }))} /></label>
+              <label>Task Type / NDE Method<input value={createForm.taskType} onChange={(event) => setCreateForm((current) => ({ ...current, taskType: event.target.value }))} /></label>
+              <label>Code<input value={createForm.code} onChange={(event) => setCreateForm((current) => ({ ...current, code: event.target.value }))} /></label>
+              <label>Unit<input value={createForm.unit} onChange={(event) => setCreateForm((current) => ({ ...current, unit: event.target.value }))} /></label>
+              <label>Asset<input value={createForm.asset} onChange={(event) => setCreateForm((current) => ({ ...current, asset: event.target.value }))} /></label>
+              <label>Inspection Details<textarea value={createForm.inspectionDetails} onChange={(event) => setCreateForm((current) => ({ ...current, inspectionDetails: event.target.value }))} /></label>
+              <label>Request Status<select value={createForm.requestStatus} onChange={(event) => setCreateForm((current) => ({ ...current, requestStatus: event.target.value as NdeLogStatus }))}><option>Draft</option><option>Requested</option></select></label>
+              <label>Access Type<input value={createForm.accessType} onChange={(event) => setCreateForm((current) => ({ ...current, accessType: event.target.value }))} /></label>
+              <label>Billing #1<input value={createForm.billing1} onChange={(event) => setCreateForm((current) => ({ ...current, billing1: event.target.value }))} /></label>
+              <label>Billing #2<input value={createForm.billing2} onChange={(event) => setCreateForm((current) => ({ ...current, billing2: event.target.value }))} /></label>
+              <label>Billing #3<input value={createForm.billing3} onChange={(event) => setCreateForm((current) => ({ ...current, billing3: event.target.value }))} /></label>
+              <label>Billing #4<input value={createForm.billing4} onChange={(event) => setCreateForm((current) => ({ ...current, billing4: event.target.value }))} /></label>
+              <label>Attachments placeholder<input disabled value="File upload coming soon" /></label>
+            </div>
+            <div className="nde-scope-options">
+              <h4>Scope Items</h4>
+              {ndeScopeTemplateOptions.map((option) => (
+                <label key={option.key}><input type="checkbox" checked={selectedScopeOptions.includes(option.key)} onChange={(event) => setSelectedScopeOptions((current) => event.target.checked ? [...current, option.key] : current.filter((item) => item !== option.key))} />{option.displayName}</label>
+              ))}
+              <label>Weld ID<input value={createForm.weldId} onChange={(event) => setCreateForm((current) => ({ ...current, weldId: event.target.value }))} /></label>
+              <label>Location<input value={createForm.location} onChange={(event) => setCreateForm((current) => ({ ...current, location: event.target.value }))} /></label>
+              <label>Notes<input value={createForm.scopeNotes} onChange={(event) => setCreateForm((current) => ({ ...current, scopeNotes: event.target.value }))} /></label>
+            </div>
+            <div className="row">
+              <button type="button" onClick={createRequestFromForm}>Create Request</button>
+              <button type="button" onClick={() => setIsCreateModalOpen(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="nde-summary-grid" aria-label="NDE queue summary">
         <article className="card"><h3>Total</h3><p>{summary.total}</p></article>
@@ -364,7 +468,10 @@ export function NdeWorkspacePage({
                 }} onClick={(event) => event.stopPropagation()} /></td>
                 <td>{item.requestNumber}</td>
                 <td>{item.assetTag ?? item.circuitId ?? item.equipmentTag ?? '—'}</td>
-                <td>{item.method}</td>
+                <td>
+                  <div>{item.method}</div>
+                  {formatScopeSummary(item) && <div className="muted nde-scope-summary">{formatScopeSummary(item)}</div>}
+                </td>
                 <td>{item.status}</td>
                 <td>{item.priority}</td>
                 <td>{item.dueDate ?? '—'}</td>

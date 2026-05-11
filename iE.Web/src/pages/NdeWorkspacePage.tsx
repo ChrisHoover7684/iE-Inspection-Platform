@@ -71,6 +71,29 @@ function formatReportNumber(requestNumber: string, method: string) {
   return `RPT-${match[1]}-${methodCode}-${match[2]}`;
 }
 
+function FillReportIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M9 3h6l3 3v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h2Zm0 3H8v13h8V7h-3a1 1 0 0 1-1-1V5h-3v1Zm8.71 9.04-3.75 3.75-2.12.35.35-2.12 3.75-3.75 1.77 1.77Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function ViewEditReportIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 5C6.9 5 2.73 8.11 1 12c1.73 3.89 5.9 7 11 7 5.1 0 9.27-3.11 11-7-1.73-3.89-5.9-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm6.55 3.04-1.06-1.06 2.8-2.8 1.06 1.06-2.8 2.8Zm1.94-4.2-1.06-1.06.85-.85a.75.75 0 0 1 1.06 1.06l-.85.85Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function DownloadReportIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.29a1 1 0 1 1 1.4 1.42l-4 3.96a1 1 0 0 1-1.4 0l-4-3.96a1 1 0 1 1 1.4-1.42L11 12.59V4a1 1 0 0 1 1-1Zm-7 14a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z" fill="currentColor" />
+    </svg>
+  );
+}
 
 function getReportStatusForWorkflowStatus(status: NdeLogStatus, currentStatus?: NdeLogItem['reportStatus'], hasReportNumber = false): NdeLogItem['reportStatus'] {
   switch (status) {
@@ -838,12 +861,29 @@ const todayIso = new Date().toISOString().slice(0, 10);
                 <td>{formatReportStatus(item.reportStatus)}</td>
                 <td className="nde-report-number-cell">{item.reportNumber ?? '—'}</td>
                 <td className="nowrap">
-                  <button type="button" onClick={(event) => { event.stopPropagation(); openReportWorkspace(item); }}>
-                    {item.reportStatus === 'Not Started' ? 'Fill Report' : 'View / Edit Report'}
+                  <div className="nde-action-buttons">
+                  <button
+                    type="button"
+                    className="icon-action-button"
+                    aria-label={item.reportStatus === 'Not Started' ? `Fill report for ${item.requestNumber}` : `View or edit report ${item.reportNumber ?? item.requestNumber}`}
+                    title={item.reportStatus === 'Not Started' ? `Fill report for ${item.requestNumber}` : `View or edit report ${item.reportNumber ?? item.requestNumber}`}
+                    data-tooltip={item.reportStatus === 'Not Started' ? `Fill report for ${item.requestNumber}` : `View or edit report ${item.reportNumber ?? item.requestNumber}`}
+                    onClick={(event) => { event.stopPropagation(); openReportWorkspace(item); }}
+                  >
+                    <span aria-hidden="true">{item.reportStatus === 'Not Started' ? <FillReportIcon /> : <ViewEditReportIcon />}</span>
                   </button>
                   <button
                     type="button"
-                    title={isDownloadableReport(item) ? 'Download ready report' : 'Report template/download not connected yet.'}
+                    className="icon-action-button"
+                    aria-label={isDownloadableReport(item) && item.reportNumber
+                      ? `Download completed report ${item.reportNumber}`
+                      : 'Download unavailable until a completed downloadable report exists. Use Print / Save as PDF for demo-generated reports.'}
+                    title={isDownloadableReport(item) && item.reportNumber
+                      ? `Download completed report ${item.reportNumber}`
+                      : 'Download unavailable until a completed downloadable report exists. Use Print / Save as PDF for demo-generated reports.'}
+                    data-tooltip={isDownloadableReport(item) && item.reportNumber
+                      ? `Download completed report ${item.reportNumber}`
+                      : 'Download unavailable until a completed downloadable report exists. Use Print / Save as PDF for demo-generated reports.'}
                     disabled={!isDownloadableReport(item)}
                     onClick={(event) => {
                       event.stopPropagation();
@@ -851,7 +891,8 @@ const todayIso = new Date().toISOString().slice(0, 10);
                         triggerDownload(item.reportDownloadUrl, item.reportFileName);
                       }
                     }}
-                  >Download Report</button>
+                  ><span aria-hidden="true"><DownloadReportIcon /></span></button>
+                  </div>
                 </td>
               </tr>
             ))}

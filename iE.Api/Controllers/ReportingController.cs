@@ -394,6 +394,7 @@ public class ReportingController(
         }
 
         report.CreatedAt = DateTime.UtcNow;
+        report.Calculations ??= [];
 
         reportAccessGuard.ApplyCreateOwnership(report);
         var createAccess = reportAccessGuard.CanAccessReport(report, AuthCapabilities.ReportsWrite);
@@ -441,6 +442,7 @@ public class ReportingController(
         report.CreatedAt = existing.CreatedAt;
         report.CreatedByUserId = existing.CreatedByUserId;
         report.UpdatedAt = DateTime.UtcNow;
+        report.Calculations ??= [];
         reportAccessGuard.ApplyUpdateOwnership(report);
 
         var updateAccess = reportAccessGuard.CanAccessReport(existing, AuthCapabilities.ReportsWrite);

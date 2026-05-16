@@ -23,6 +23,7 @@ public class InspectionReport
     public List<InspectionFinding> Findings { get; set; } = new();
     public List<InspectionObservation> Observations { get; set; } = new();
     public List<InspectionPhoto> Photos { get; set; } = new();
+    public List<InspectionCalculationSnapshot> Calculations { get; set; } = new();
     public List<ReportReviewHistory> ReviewHistory { get; set; } = new();
     public PipingInspectionProfile? PipingProfile { get; set; }
 }

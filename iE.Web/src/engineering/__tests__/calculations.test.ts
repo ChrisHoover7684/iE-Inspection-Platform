@@ -197,4 +197,18 @@ describe('engineering calculations foundation', () => {
     expect(result.warnings.some((w) => w.code === 'B313_CALCULATION_FAILED')).toBe(true);
     expectFoundationFields(result);
   });
+
+  it('corrosion result can be saved as report snapshot metadata', () => {
+    const result = calculateCorrosionRate({
+      initialThicknessInches: 1,
+      finalThicknessInches: 0.9,
+      exposureTimeYears: 2,
+      inspectionFactor: 0.5,
+      currentThicknessInches: 0.9,
+      tminInches: 0.5
+    });
+    const snapshot = { ...result, linkedSectionId: 'sec-1', linkedFieldId: 'field-1', linkedFindingId: 'finding-1' };
+    expect(snapshot.linkedSectionId).toBe('sec-1');
+    expect(snapshot.inputs).toBeTypeOf('object');
+  });
 });

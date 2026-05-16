@@ -73,17 +73,18 @@ async function apiFetch<T>(path: string, init?: RequestInit, operation?: string)
 }
 
 export const reportingApi = {
+  normalizeReport: (report: InspectionReport): InspectionReport => ({ ...report, calculations: report.calculations ?? [] }),
   getTemplates: () => apiFetch<ReportTemplate[]>('/api/reports/templates', undefined, 'GET /api/reports/templates'),
   getTemplateById: (templateId: string) => apiFetch<ReportTemplate>(`/api/reports/templates/${templateId}`, undefined, `GET /api/reports/templates/${templateId}`),
-  getInstances: () => apiFetch<InspectionReport[]>('/api/reports/instances'),
-  getInstanceById: (id: string) => apiFetch<InspectionReport>(`/api/reports/instances/${id}`),
+  getInstances: async () => (await apiFetch<InspectionReport[]>('/api/reports/instances')).map((report) => reportingApi.normalizeReport(report)),
+  getInstanceById: async (id: string) => reportingApi.normalizeReport(await apiFetch<InspectionReport>(`/api/reports/instances/${id}`)),
   createInstanceFromTemplate: (templateId: string) =>
     apiFetch<InspectionReport>(`/api/reports/templates/${templateId}/instances`, {
       method: 'POST',
       body: JSON.stringify({ clientOrganizationId: 'client-demo-refining', facilityId: 'facility-demo-gulf-coast' })
-    }, `POST /api/reports/templates/${templateId}/instances`),
+    }, `POST /api/reports/templates/${templateId}/instances`).then((report) => reportingApi.normalizeReport(report)),
   saveInstance: (id: string, report: InspectionReport) =>
-    apiFetch<InspectionReport>(`/api/reports/instances/${id}`, { method: 'PUT', body: JSON.stringify(report) }),
+    apiFetch<InspectionReport>(`/api/reports/instances/${id}`, { method: 'PUT', body: JSON.stringify(report) }).then((saved) => reportingApi.normalizeReport(saved)),
   syncFindings: (id: string) =>
     apiFetch<InspectionReport>(`/api/reports/instances/${id}/sync-findings`, { method: 'POST', body: '{}' }),
   async exportDocx(id: string): Promise<{ blob: Blob; fileName: string }> {

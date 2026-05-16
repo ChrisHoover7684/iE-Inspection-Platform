@@ -177,6 +177,8 @@ export type InspectionFinding = {
   repairRequired: boolean;
   repairRecommendation?: string | null;
   photoIds?: string[];
+  addToSummary?: boolean;
+  summaryText?: string | null;
 };
 
 export type InspectionPhoto = {

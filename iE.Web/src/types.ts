@@ -141,6 +141,7 @@ export type InspectionReport = {
   sections: InspectionReportSection[];
   findings: InspectionFinding[];
   photos: InspectionPhoto[];
+  calculations: InspectionCalculationSnapshot[];
 };
 
 export type InspectionReportSection = {
@@ -330,3 +331,4 @@ export type ConicalShellCalculationRequest = { input:ConicalShellInput; material
 export type HeadCalculationRequest = { input:HeadThicknessInput; materialStress:PressureVesselMaterialStressInput|null; };
 export type NozzleCalculationRequest = { input:NozzleThicknessInput; };
 export type CalculationEnvelope<T> = { resolvedAllowableStressPsi:number; materialMatched:string|null; temperatureUsed:number; wasInterpolated:boolean; wasExtrapolated:boolean; stressSourceMessage:string; result:T; warnings:string[]; };
+import type { InspectionCalculationSnapshot } from './engineering/types';

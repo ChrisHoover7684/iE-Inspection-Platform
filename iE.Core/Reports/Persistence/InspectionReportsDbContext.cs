@@ -432,6 +432,48 @@ public class InspectionReportsDbContext(DbContextOptions<InspectionReportsDbCont
                 photoBuilder.Property(p => p.FileUrl).HasMaxLength(2000);
             });
 
+            builder.OwnsMany(r => r.Calculations, calcBuilder =>
+            {
+                calcBuilder.ToTable("InspectionCalculations");
+                calcBuilder.WithOwner().HasForeignKey("InspectionReportId");
+                calcBuilder.Property<int>("IdPk");
+                calcBuilder.HasKey("IdPk");
+
+                calcBuilder.Property(c => c.Id).HasMaxLength(128);
+                calcBuilder.Property(c => c.CalculationType).HasMaxLength(128);
+                calcBuilder.Property(c => c.DisplayName).HasMaxLength(256);
+                calcBuilder.Property(c => c.FormulaVersion).HasMaxLength(128);
+                calcBuilder.Property(c => c.Inputs).HasMaxLength(16000);
+                calcBuilder.Property(c => c.Outputs).HasMaxLength(16000);
+                calcBuilder.Property(c => c.InsertLabel).HasMaxLength(512);
+                calcBuilder.Property(c => c.LinkedSectionId).HasMaxLength(128);
+                calcBuilder.Property(c => c.LinkedFieldId).HasMaxLength(128);
+                calcBuilder.Property(c => c.LinkedFindingId).HasMaxLength(128);
+
+                calcBuilder.OwnsMany(c => c.StandardReferences, refs =>
+                {
+                    refs.ToTable("InspectionCalculationReferences");
+                    refs.WithOwner().HasForeignKey("CalculationIdPk");
+                    refs.Property<int>("IdPk");
+                    refs.HasKey("IdPk");
+                    refs.Property(r => r.Standard).HasMaxLength(128);
+                    refs.Property(r => r.Edition).HasMaxLength(128);
+                    refs.Property(r => r.Paragraph).HasMaxLength(128);
+                    refs.Property(r => r.Note).HasMaxLength(1000);
+                });
+
+                calcBuilder.OwnsMany(c => c.Warnings, warnings =>
+                {
+                    warnings.ToTable("InspectionCalculationWarnings");
+                    warnings.WithOwner().HasForeignKey("CalculationIdPk");
+                    warnings.Property<int>("IdPk");
+                    warnings.HasKey("IdPk");
+                    warnings.Property(w => w.Code).HasMaxLength(128);
+                    warnings.Property(w => w.Message).HasMaxLength(2000);
+                    warnings.Property(w => w.Severity).HasMaxLength(32);
+                });
+            });
+
             builder.OwnsMany(r => r.ReviewHistory, reviewHistoryBuilder =>
             {
                 reviewHistoryBuilder.ToTable("ReportReviewHistory");

@@ -117,6 +117,13 @@ public class InspectionReportRepository(InspectionReportsDbContext dbContext)
             existing.Photos.Add(photo);
         }
 
+        dbContext.Entry(existing).Collection(r => r.Calculations).Load();
+        existing.Calculations.Clear();
+        foreach (var calculation in report.Calculations ?? new List<InspectionCalculationSnapshot>())
+        {
+            existing.Calculations.Add(calculation);
+        }
+
         dbContext.SaveChanges();
         return existing;
     }

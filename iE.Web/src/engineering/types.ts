@@ -23,3 +23,9 @@ export type EngineeringCalculationResult<TInputs, TOutputs> = {
   calculatedAt: string;
   insertLabel: string;
 };
+
+export type InspectionCalculationSnapshot = EngineeringCalculationResult<unknown, unknown> & {
+  linkedSectionId?: string;
+  linkedFieldId?: string;
+  linkedFindingId?: string;
+};

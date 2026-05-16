@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ApiError, reportingApi } from './api';
 import type { InlineSuggestion, InspectionReport, InspectionReportAnswer, NarrativeResult, ReportTemplate, UiAlert } from './types';
+import { calculateCorrosionRate } from './engineering/calculations/corrosionRate';
+import type { InspectionCalculationSnapshot } from './engineering/types';
 
 const TEMPLATE_ID = 'api-570-piping-external';
 const ACTIVE_REPORT_ID_STORAGE_KEY = 'ie_api570_active_report_id';
@@ -79,6 +81,10 @@ export function Api570PipingExternalEntryPage() {
   const [message, setMessage] = useState('');
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeField, setActiveField] = useState<{ sectionIndex: number; answerIndex: number } | null>(null);
+  const [selectedTool, setSelectedTool] = useState('corrosion-rate');
+  const [calcInput, setCalcInput] = useState({ initialThicknessInches: 0.5, finalThicknessInches: 0.45, exposureTimeYears: 1, currentThicknessInches: 0.45, tminInches: 0.35, inspectionFactor: 0.5 });
+  const [calcResult, setCalcResult] = useState<InspectionCalculationSnapshot | null>(null);
 
   useEffect(() => { void (async () => { /* unchanged init */
     try {
@@ -194,6 +200,16 @@ export function Api570PipingExternalEntryPage() {
     setReport(latest);
     setIsDirty(true);
   };
+  const toolRegistry = [{ id: 'corrosion-rate', label: 'Corrosion Rate' }, { id: 'pipe-lookup', label: 'Pipe Lookup' }, { id: 'b31-3-piping', label: 'B31.3 Piping' }];
+  const appendSummaryToActiveField = () => {
+    if (!report || !activeField || !calcResult) return;
+    const latest = structuredClone(report);
+    const answer = latest.sections[activeField.sectionIndex]?.answers?.[activeField.answerIndex];
+    if (!answer) return;
+    answer.comment = `${answer.comment ?? ''}${answer.comment ? ' ' : ''}${calcResult.insertLabel}`.trim();
+    setReport(latest);
+    setIsDirty(true);
+  };
 
   if (!report) return <div className="page">{error || 'Loading API 570 Piping External report...'}</div>;
 
@@ -237,7 +253,7 @@ export function Api570PipingExternalEntryPage() {
               return <div className="inspection-row" key={`${section.sectionId}-${answer.fieldId}-${answerIndex}`}>
                 <div><label><strong>{answer.label}</strong></label></div>
                 <div><select value={toCondition(answer)} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value === 'na' ? 'N/A' : e.target.value, recommendationRequired: e.target.value === 'issue' ? answer.recommendationRequired ?? false : false, photoRequired: e.target.value === 'issue' ? answer.photoRequired ?? false : false })}><option value="na">N/A</option><option value="acceptable">Acceptable</option><option value="monitor">Monitor</option><option value="issue">Issue</option></select></div>
-                <div><textarea placeholder="Notes" value={answer.comment ?? ''} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { comment: e.target.value })} />
+                <div><textarea placeholder="Notes" value={answer.comment ?? ''} onFocus={() => setActiveField({ sectionIndex, answerIndex })} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { comment: e.target.value })} />
                 {suggestions.length > 0 && <ul className="suggestions">{suggestions.map((s, idx) => <li key={`${s.promptType}-${idx}`}><strong>{s.severity.toUpperCase()}:</strong> {s.suggestion}</li>)}</ul>}</div>
                 {(showIssueDetails || showMonitorDetails) && <div className="inspection-row-details">
                   {showIssueDetails && <select value={answer.values?.[0] || ''} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { values: [e.target.value] })}><option value="">Severity</option><option value="Low">Low</option><option value="Medium">Medium</option><option value="High">High</option><option value="Critical">Critical</option></select>}
@@ -273,6 +289,26 @@ export function Api570PipingExternalEntryPage() {
             <button className="refresh-alerts-btn" type="button" onClick={async () => { if (!report) return; const next = await reportingApi.getAlerts(report); setAlerts(next); }}>Refresh Alerts</button>
             {alerts.length === 0 ? <p className="muted">No alerts loaded.</p> : <ul>{alerts.map((a) => <li key={a.id}><strong>{a.severity}:</strong> {a.title}</li>)}</ul>}
           </section>
+        </div>
+        <div className="sidebar-section">
+          <h4>Engineering Tools</h4>
+          <select value={selectedTool} onChange={(e) => setSelectedTool(e.target.value)}>
+            {toolRegistry.map((tool) => <option key={tool.id} value={tool.id}>{tool.label}</option>)}
+          </select>
+          {selectedTool === 'corrosion-rate' ? <>
+            <div className="compact-grid">
+              {Object.entries(calcInput).map(([k, v]) => <input key={k} type="number" step="any" value={v} placeholder={k} onChange={(e) => setCalcInput((c) => ({ ...c, [k]: Number(e.target.value) }))} />)}
+            </div>
+            <button type="button" onClick={() => setCalcResult(calculateCorrosionRate(calcInput))}>Calculate</button>
+            {calcResult && <>
+              <p className="muted">{calcResult.insertLabel}</p>
+              <p className="muted">Warnings: {calcResult.warnings.length}</p>
+              <button type="button" onClick={() => { if (!report) return; const latest = structuredClone(report); latest.calculations = [...(latest.calculations ?? []), calcResult]; setReport(latest); setIsDirty(true); }}>Save to Report Calculations</button>
+              <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
+            </>}
+          </> : <p className="muted">Available as standalone calculator; report insert coming next.</p>}
+          <h4>Saved Calculations</h4>
+          {(report.calculations ?? []).length === 0 ? <p className="muted">No saved calculations.</p> : <ul>{(report.calculations ?? []).map((c) => <li key={c.id}><strong>{c.displayName}</strong><br />{new Date(c.calculatedAt).toLocaleString()} · {c.insertLabel} · warnings: {c.warnings.length}</li>)}</ul>}
         </div>
       </aside>
     </div>

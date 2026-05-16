@@ -34,11 +34,26 @@ export type Api570ThicknessAssessmentRow = {
 
 export type Api570ThicknessAssessmentInputs = {
   b31SnapshotId: string;
+  monitorMarginThresholdIn: number;
   cmlReadings: Api570CmlReadingInput[];
 };
 export type Api570ThicknessAssessmentOutputs = { rows: Api570ThicknessAssessmentRow[] };
 
 const norm = (v?: string) => (v ?? '').trim().toLowerCase();
+const DEFAULT_MONITOR_MARGIN_THRESHOLD_IN = 0.02;
+
+export function normalizeNpsValue(value?: string): string {
+  const raw = (value ?? '').trim().toLowerCase();
+  if (!raw) return '';
+  const stripped = raw
+    .replace(/^nps\s*/i, '')
+    .replace(/in(ch|ches)?$/i, '')
+    .replace(/"/g, '')
+    .trim();
+  const numeric = Number(stripped);
+  if (!Number.isFinite(numeric)) return stripped;
+  return `${numeric}`;
+}
 
 export function assessApi570Thickness(
   inputs: Api570ThicknessAssessmentInputs,
@@ -47,7 +62,8 @@ export function assessApi570Thickness(
   const warnings: EngineeringCalculationWarning[] = [];
   const calculatedAt = new Date().toISOString();
   const rows = inputs.cmlReadings.map((reading) => {
-    const npsMatches = b31Rows.filter((r) => r.nps === reading.nps && r.requiredThicknessIn != null);
+    const normalizedReadingNps = normalizeNpsValue(reading.nps);
+    const npsMatches = b31Rows.filter((r) => normalizeNpsValue(r.nps) === normalizedReadingNps && r.requiredThicknessIn != null);
     const matched = npsMatches.find((r) => {
       if (!reading.spec && !reading.grade) return true;
       return (!reading.spec || norm(r.spec) === norm(reading.spec)) && (!reading.grade || norm(r.grade) === norm(reading.grade));
@@ -60,7 +76,8 @@ export function assessApi570Thickness(
 
     const tmin = matched.requiredThicknessIn;
     const margin = reading.currentThicknessIn - tmin;
-    let status: Api570ThicknessStatus = margin < 0 ? 'Below Tmin' : margin <= 0.02 ? 'Monitor' : 'Acceptable';
+    const monitorMarginThresholdIn = Number.isFinite(inputs.monitorMarginThresholdIn) ? inputs.monitorMarginThresholdIn : DEFAULT_MONITOR_MARGIN_THRESHOLD_IN;
+    let status: Api570ThicknessStatus = margin < 0 ? 'Below Tmin' : margin <= monitorMarginThresholdIn ? 'Monitor' : 'Acceptable';
     let recommendedAction = status === 'Below Tmin'
       ? 'Below Tmin: mark related report item as Issue and Recommendation Required; evaluate repair/mitigation immediately.'
       : status === 'Monitor'
@@ -69,16 +86,31 @@ export function assessApi570Thickness(
 
     let corrosionRateInPerYear: number | null = null;
     let remainingLifeYears: number | null = null;
-    if (reading.priorThicknessIn != null && reading.priorInspectionDate) {
-      const years = Math.abs((new Date(reading.currentInspectionDate).getTime() - new Date(reading.priorInspectionDate).getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+    if (!reading.currentInspectionDate) {
+      warnings.push({ code: 'MISSING_CURRENT_DATE', message: `${reading.cmlId}: current inspection date is required`, severity: 'warning' });
+    }
+    if (reading.currentThicknessIn <= 0) {
+      warnings.push({ code: 'CURRENT_THICKNESS_NON_POSITIVE', message: `${reading.cmlId}: current thickness must be greater than zero`, severity: 'warning' });
+    }
+    if (reading.priorThicknessIn != null && reading.priorInspectionDate && reading.currentInspectionDate) {
+      const currentDateMs = new Date(reading.currentInspectionDate).getTime();
+      const priorDateMs = new Date(reading.priorInspectionDate).getTime();
+      if (priorDateMs > currentDateMs) {
+        warnings.push({ code: 'PRIOR_DATE_AFTER_CURRENT', message: `${reading.cmlId}: prior inspection date is after current inspection date`, severity: 'warning' });
+      }
+      const years = (currentDateMs - priorDateMs) / (1000 * 60 * 60 * 24 * 365.25);
+      if (!Number.isFinite(years) || years <= 0) {
+        warnings.push({ code: 'INVALID_DATE_INTERVAL', message: `${reading.cmlId}: prior/current inspection dates produce a zero or invalid interval`, severity: 'warning' });
+      }
       const corr = calculateCorrosionRate({
         initialThicknessInches: reading.priorThicknessIn,
         finalThicknessInches: reading.currentThicknessIn,
-        exposureTimeYears: years,
+        exposureTimeYears: Math.abs(years),
         inspectionFactor: 0.5,
         currentThicknessInches: reading.currentThicknessIn,
         tminInches: tmin
       });
+      corr.warnings.forEach((w) => warnings.push({ ...w, message: `${reading.cmlId}: ${w.message}` }));
       corrosionRateInPerYear = corr.outputs.corrosionRateInchesPerYear;
       remainingLifeYears = corr.outputs.remainingLifeYears;
     } else {

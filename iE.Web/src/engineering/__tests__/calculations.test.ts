@@ -5,7 +5,7 @@ import { calculateRequiredThicknessMargin } from '../calculations/pressureVessel
 import { calculateTankShellCorrosionMargin } from '../calculations/tankShell';
 import { toB31_3EngineeringSnapshot } from '../calculations/b31_3Piping';
 import { applyMaterialPreset, buildCircuitBatchSnapshot, formatCircuitBatchSummary, mapB313RowResult, resolveCircuitConditionsFromReport, toResultDisplayRows } from '../calculations/b31_3CircuitBatch';
-import { assessApi570Thickness } from '../calculations/api570ThicknessAssessment';
+import { assessApi570Thickness, normalizeNpsValue } from '../calculations/api570ThicknessAssessment';
 
 describe('engineering calculations foundation', () => {
   const expectFoundationFields = (result: { calculationType: string; formulaVersion: string; displayName: string; calculatedAt: string; insertLabel: string; warnings: unknown[]; standardReferences: unknown[]; }) => {
@@ -311,7 +311,7 @@ describe('engineering calculations foundation', () => {
 
   it('api570 assessment matches by NPS and handles status/margin/corrosion/missing Tmin', () => {
     const b31Rows = [mapB313RowResult('1', { id: '1', nps: '2', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel' }, null, { success: true, message: 'ok', allowableStressPsi: 1, eFactor: 1, yCoefficient: 0.4, wFactor: 1, requiredThicknessIn: 0.25 }, [])];
-    const snapshot = assessApi570Thickness({ b31SnapshotId: 'snap-1', cmlReadings: [
+    const snapshot = assessApi570Thickness({ b31SnapshotId: 'snap-1', monitorMarginThresholdIn: 0.02, cmlReadings: [
       { id: 'c1', cmlId: 'CML-1', location: 'elbow', nps: '2', currentThicknessIn: 0.23, priorThicknessIn: 0.28, priorInspectionDate: '2024-01-01', currentInspectionDate: '2025-01-01' },
       { id: 'c2', cmlId: 'CML-2', location: 'run', nps: '2', currentThicknessIn: 0.3, priorThicknessIn: 0.32, priorInspectionDate: '2024-01-01', currentInspectionDate: '2025-01-01' },
       { id: 'c3', cmlId: 'CML-3', location: 'tee', nps: '8', currentThicknessIn: 0.4, currentInspectionDate: '2025-01-01' }
@@ -324,6 +324,27 @@ describe('engineering calculations foundation', () => {
     expect(snapshot.outputs.rows[2].status).toBe('Missing Tmin');
     expect(snapshot.warnings.some((w) => w.code === 'MISSING_TMIN')).toBe(true);
     expect(snapshot.inputs.cmlReadings.length).toBe(3);
+    expect(snapshot.inputs.monitorMarginThresholdIn).toBe(0.02);
+  });
+
+  it('api570 assessment normalizes common NPS formats', () => {
+    expect(normalizeNpsValue('2')).toBe('2');
+    expect(normalizeNpsValue('2.0')).toBe('2');
+    expect(normalizeNpsValue('2 in')).toBe('2');
+    expect(normalizeNpsValue('2"')).toBe('2');
+    expect(normalizeNpsValue('NPS 2')).toBe('2');
+    const b31Rows = [mapB313RowResult('1', { id: '1', nps: '2', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel' }, null, { success: true, message: 'ok', allowableStressPsi: 1, eFactor: 1, yCoefficient: 0.4, wFactor: 1, requiredThicknessIn: 0.25 }, [])];
+    const snapshot = assessApi570Thickness({ b31SnapshotId: 'snap-1', monitorMarginThresholdIn: 0.02, cmlReadings: [{ id: 'c1', cmlId: 'CML-1', location: '', nps: 'NPS 2.0 in', currentThicknessIn: 0.26, currentInspectionDate: '2025-01-01' }] }, b31Rows);
+    expect(snapshot.outputs.rows[0].status).toBe('Monitor');
+  });
+
+  it('api570 assessment adds date and propagated corrosion warnings', () => {
+    const b31Rows = [mapB313RowResult('1', { id: '1', nps: '2', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel' }, null, { success: true, message: 'ok', allowableStressPsi: 1, eFactor: 1, yCoefficient: 0.4, wFactor: 1, requiredThicknessIn: 0.25 }, [])];
+    const snapshot = assessApi570Thickness({ b31SnapshotId: 'snap-1', monitorMarginThresholdIn: 0.05, cmlReadings: [{ id: 'c1', cmlId: 'CML-1', location: '', nps: '2', currentThicknessIn: 0, priorThicknessIn: 0.3, priorInspectionDate: '2025-01-01', currentInspectionDate: '2024-01-01' }, { id: 'c2', cmlId: 'CML-2', location: '', nps: '2', currentThicknessIn: 0.3, priorThicknessIn: 0.31, priorInspectionDate: '2025-01-01', currentInspectionDate: '2025-01-01' }] }, b31Rows);
+    expect(snapshot.warnings.some((w) => w.code === 'PRIOR_DATE_AFTER_CURRENT')).toBe(true);
+    expect(snapshot.warnings.some((w) => w.code === 'INVALID_DATE_INTERVAL')).toBe(true);
+    expect(snapshot.warnings.some((w) => w.code === 'CURRENT_THICKNESS_NON_POSITIVE')).toBe(true);
+    expect(snapshot.warnings.some((w) => w.code === 'EXPOSURE_TIME_NON_POSITIVE')).toBe(true);
   });
 
 });

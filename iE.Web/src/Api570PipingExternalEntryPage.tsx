@@ -110,6 +110,7 @@ export function Api570PipingExternalEntryPage() {
   const [b31Shared, setB31Shared] = useState({ wFactor: 1, yOverride: '', eOverride: '', defaultJointType: 'Seamless', defaultJointQualityKey: 'Seamless' });
   const [isB31BatchRunning, setIsB31BatchRunning] = useState(false);
   const [api570SelectedB31SnapshotId, setApi570SelectedB31SnapshotId] = useState('');
+  const [api570MonitorMarginThresholdIn, setApi570MonitorMarginThresholdIn] = useState(0.02);
   const [api570Rows, setApi570Rows] = useState<Api570CmlReadingInput[]>([{ id: crypto.randomUUID(), cmlId: 'CML-1', location: '', nps: '2', spec: 'A106', grade: 'B', currentThicknessIn: 0.3, priorThicknessIn: 0.34, priorInspectionDate: '', currentInspectionDate: new Date().toISOString().slice(0,10) }]);
 
   useEffect(() => { void (async () => { /* unchanged init */
@@ -393,7 +394,7 @@ export function Api570PipingExternalEntryPage() {
           <select value={selectedTool} onChange={(e) => setSelectedTool(e.target.value)}>
             {toolRegistry.map((tool) => <option key={tool.id} value={tool.id}>{tool.label}</option>)}
           </select>
-          <button type="button" onClick={() => setIsToolWorkspaceOpen(true)} disabled={selectedTool !== 'b31-3-piping'}>
+          <button type="button" onClick={() => setIsToolWorkspaceOpen(true)} disabled={!['b31-3-piping', 'api-570-thickness-assessment'].includes(selectedTool)}>
             Open Tool Workspace
           </button>
           {selectedTool === 'corrosion-rate' ? <>
@@ -439,50 +440,22 @@ export function Api570PipingExternalEntryPage() {
               <button type="button" onClick={saveCalculationSnapshot} disabled={savedCalculationIds.has(calcResult.id)}>{savedCalculationIds.has(calcResult.id) ? 'Saved to Report' : 'Save to Report Calculations'}</button>
               <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
             </>}
-          </> : selectedTool === 'api-570-thickness-assessment' ? <>
-            <p className="muted">Select saved B31.3 snapshot and assess CML readings.</p>
-            <select value={api570SelectedB31SnapshotId} onChange={(e)=>setApi570SelectedB31SnapshotId(e.target.value)}>
-              <option value="">Select B31.3 snapshot</option>
-              {(report.calculations ?? []).filter((c)=>c.calculationType==='b31-3-piping-circuit-batch').map((c)=><option key={c.id} value={c.id}>{new Date(c.calculatedAt).toLocaleString()} · {c.insertLabel}</option>)}
-            </select>
-            {api570Rows.map((row)=><div className="compact-grid" key={row.id}>
-              <input value={row.cmlId} placeholder="CML ID" onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,cmlId:e.target.value}:r))} />
-              <input value={row.location} placeholder="Location" onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,location:e.target.value}:r))} />
-              <input value={row.nps} placeholder="NPS" onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,nps:e.target.value}:r))} />
-              <input type="number" step="any" value={row.currentThicknessIn} placeholder="Current thickness" onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,currentThicknessIn:Number(e.target.value)}:r))} />
-              <input type="number" step="any" value={row.priorThicknessIn ?? ''} placeholder="Prior thickness" onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,priorThicknessIn:e.target.value===''?null:Number(e.target.value)}:r))} />
-              <input type="date" value={row.priorInspectionDate ?? ''} onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,priorInspectionDate:e.target.value}:r))} />
-              <input type="date" value={row.currentInspectionDate} onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,currentInspectionDate:e.target.value}:r))} />
-              <button type="button" onClick={()=>setApi570Rows((rows)=>rows.filter((r)=>r.id!==row.id))}>Remove</button>
-            </div>)}
-            <button type="button" onClick={()=>setApi570Rows((rows)=>[...rows,{ id: crypto.randomUUID(), cmlId: '', location: '', nps: '', currentThicknessIn: 0, priorThicknessIn: null, priorInspectionDate: '', currentInspectionDate: new Date().toISOString().slice(0,10) }])}>Add CML Row</button>
-            <button type="button" onClick={()=>{
-              const b31 = (report.calculations ?? []).find((c)=>c.id===api570SelectedB31SnapshotId && c.calculationType==='b31-3-piping-circuit-batch');
-              if (!b31) { setError('Select a saved B31.3 snapshot first.'); return; }
-              const assessed = assessApi570Thickness({ b31SnapshotId: b31.id, cmlReadings: api570Rows }, ((b31.outputs as { rows: unknown[] }).rows as any[]));
-              setCalcResult(assessed as never);
-            }}>Run Assessment</button>
-            {calcResult?.calculationType === 'api-570-thickness-assessment' && <>
-              <div className="tool-results-table-wrap"><table className="tool-results-table"><thead><tr><th>CML/Location</th><th>NPS</th><th>Current t</th><th>Tmin</th><th>Margin</th><th>CR (in/yr)</th><th>Remaining Life (yr)</th><th>Status</th><th>Recommended Action</th></tr></thead>
-              <tbody>{((calcResult.outputs as any).rows as any[]).map((r,idx)=><tr key={idx}><td>{r.cmlId} {r.location ? `(${r.location})`:''}</td><td>{r.nps}</td><td>{r.currentThicknessIn?.toFixed?.(4)}</td><td>{r.tminIn?.toFixed?.(4) ?? 'N/A'}</td><td>{r.marginToTminIn?.toFixed?.(4) ?? 'N/A'}</td><td>{r.corrosionRateInPerYear?.toFixed?.(4) ?? 'N/A'}</td><td>{r.remainingLifeYears?.toFixed?.(2) ?? 'N/A'}</td><td>{r.status}</td><td>{r.recommendedAction}</td></tr>)}</tbody></table></div>
-              <button type="button" onClick={saveCalculationSnapshot} disabled={savedCalculationIds.has(calcResult.id)}>{savedCalculationIds.has(calcResult.id) ? 'Saved to Report' : 'Save to Report Calculations'}</button>
-              <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
-            </>}
-          </> : <>
+          </> : (selectedTool === 'api-570-thickness-assessment' || selectedTool === 'b31-3-piping') ? <>
             <p className="muted">Use the workspace to run B31.3 circuit Tmin batch tools and save to report calculations.</p>
-            {calcResult?.calculationType === 'b31-3-piping-circuit-batch' && <p className="muted">{calcResult.insertLabel}</p>}
-          </>}
+            {(calcResult?.calculationType === 'b31-3-piping-circuit-batch' || calcResult?.calculationType === 'api-570-thickness-assessment') && <p className="muted">{calcResult.insertLabel}</p>}
+          </> : null}
           <h4>Saved Calculations</h4>
           {(report.calculations ?? []).length === 0 ? <p className="muted">No saved calculations.</p> : <ul>{(report.calculations ?? []).map((c) => <li key={c.id}><strong>{c.displayName}</strong><br />{new Date(c.calculatedAt).toLocaleString()} · {c.insertLabel} · warnings: {c.warnings.length}</li>)}</ul>}
         </div>
       </aside>
     </div>
-    {isToolWorkspaceOpen && selectedTool === 'b31-3-piping' && <div className="tool-workspace-backdrop" onClick={() => setIsToolWorkspaceOpen(false)}>
+    {isToolWorkspaceOpen && ['b31-3-piping', 'api-570-thickness-assessment'].includes(selectedTool) && <div className="tool-workspace-backdrop" onClick={() => setIsToolWorkspaceOpen(false)}>
       <div className="tool-workspace-dialog" role="dialog" aria-label="Engineering Tool Workspace" onClick={(e) => e.stopPropagation()}>
         <div className="tool-workspace-header">
-          <h3>Engineering Tool Workspace — B31.3 Circuit Tmin Batch</h3>
+          <h3>Engineering Tool Workspace — {selectedTool === 'b31-3-piping' ? 'B31.3 Circuit Tmin Batch' : 'API 570 Thickness Assessment'}</h3>
           <button type="button" ref={workspaceCloseButtonRef} onClick={() => setIsToolWorkspaceOpen(false)}>Close</button>
         </div>
+        {selectedTool === 'b31-3-piping' && <>
         <div className="sidebar-section"><h4>Circuit Conditions</h4>
           <p className="muted">Design Pressure: {b31SourceMeta.pressure.value ?? 'Not found'} psig — from {b31SourceMeta.pressure.source}</p>
           <p className="muted">Design Temperature: {b31SourceMeta.temperature.value ?? 'Not found'} °F — from {b31SourceMeta.temperature.source}</p>
@@ -550,6 +523,39 @@ export function Api570PipingExternalEntryPage() {
               <button type="button" onClick={saveCalculationSnapshot} disabled={savedCalculationIds.has(calcResult.id)}>{savedCalculationIds.has(calcResult.id) ? 'Saved to Report' : 'Save to Report Calculations'}</button>
               <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
             </>}
+        </>
+        }
+        {selectedTool === 'api-570-thickness-assessment' && <>
+          <p className="muted">Select saved B31.3 snapshot and assess CML readings.</p>
+          <select value={api570SelectedB31SnapshotId} onChange={(e)=>setApi570SelectedB31SnapshotId(e.target.value)}>
+            <option value="">Select B31.3 snapshot</option>
+            {(report.calculations ?? []).filter((c)=>c.calculationType==='b31-3-piping-circuit-batch').map((c)=><option key={c.id} value={c.id}>{new Date(c.calculatedAt).toLocaleString()} · {c.insertLabel}</option>)}
+          </select>
+          <input type="number" step="any" value={api570MonitorMarginThresholdIn} placeholder="Monitor margin threshold (in)" onChange={(e)=>setApi570MonitorMarginThresholdIn(Number(e.target.value))} />
+          {api570Rows.map((row)=><div className="compact-grid" key={row.id}>
+            <input value={row.cmlId} placeholder="CML ID" onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,cmlId:e.target.value}:r))} />
+            <input value={row.location} placeholder="Location" onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,location:e.target.value}:r))} />
+            <input value={row.nps} placeholder="NPS" onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,nps:e.target.value}:r))} />
+            <input type="number" step="any" value={row.currentThicknessIn} placeholder="Current thickness" onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,currentThicknessIn:Number(e.target.value)}:r))} />
+            <input type="number" step="any" value={row.priorThicknessIn ?? ''} placeholder="Prior thickness" onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,priorThicknessIn:e.target.value===''?null:Number(e.target.value)}:r))} />
+            <input type="date" value={row.priorInspectionDate ?? ''} onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,priorInspectionDate:e.target.value}:r))} />
+            <input type="date" value={row.currentInspectionDate} onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,currentInspectionDate:e.target.value}:r))} />
+            <button type="button" onClick={()=>setApi570Rows((rows)=>rows.filter((r)=>r.id!==row.id))}>Remove</button>
+          </div>)}
+          <button type="button" onClick={()=>setApi570Rows((rows)=>[...rows,{ id: crypto.randomUUID(), cmlId: '', location: '', nps: '', currentThicknessIn: 0, priorThicknessIn: null, priorInspectionDate: '', currentInspectionDate: new Date().toISOString().slice(0,10) }])}>Add CML Row</button>
+          <button type="button" onClick={()=>{
+            const b31 = (report.calculations ?? []).find((c)=>c.id===api570SelectedB31SnapshotId && c.calculationType==='b31-3-piping-circuit-batch');
+            if (!b31) { setError('Select a saved B31.3 snapshot first.'); return; }
+            const assessed = assessApi570Thickness({ b31SnapshotId: b31.id, monitorMarginThresholdIn: api570MonitorMarginThresholdIn, cmlReadings: api570Rows }, ((b31.outputs as { rows: unknown[] }).rows as any[]));
+            setCalcResult(assessed as never);
+          }}>Run Assessment</button>
+          {calcResult?.calculationType === 'api-570-thickness-assessment' && <>
+            <div className="tool-results-table-wrap"><table className="tool-results-table"><thead><tr><th>CML/Location</th><th>NPS</th><th>Current t</th><th>Tmin</th><th>Margin</th><th>CR (in/yr)</th><th>Remaining Life (yr)</th><th>Status</th><th>Recommended Action</th></tr></thead>
+            <tbody>{((calcResult.outputs as any).rows as any[]).map((r,idx)=><tr key={idx}><td>{r.cmlId} {r.location ? `(${r.location})`:''}</td><td>{r.nps}</td><td>{r.currentThicknessIn?.toFixed?.(4)}</td><td>{r.tminIn?.toFixed?.(4) ?? 'N/A'}</td><td>{r.marginToTminIn?.toFixed?.(4) ?? 'N/A'}</td><td>{r.corrosionRateInPerYear?.toFixed?.(4) ?? 'N/A'}</td><td>{r.remainingLifeYears?.toFixed?.(2) ?? 'N/A'}</td><td>{r.status}</td><td>{r.recommendedAction}</td></tr>)}</tbody></table></div>
+            <button type="button" onClick={saveCalculationSnapshot} disabled={savedCalculationIds.has(calcResult.id)}>{savedCalculationIds.has(calcResult.id) ? 'Saved to Report' : 'Save to Report Calculations'}</button>
+            <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
+          </>}
+        </>}
       </div>
     </div>}
   </div>;

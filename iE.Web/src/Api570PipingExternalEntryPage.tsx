@@ -6,7 +6,7 @@ import { calculateCorrosionRate } from './engineering/calculations/corrosionRate
 import { calculatePipeDimensions } from './engineering/calculations/pipeLookup';
 import type { InspectionCalculationSnapshot } from './engineering/types';
 import { applyMaterialPreset, B31_MATERIAL_PRESETS, buildCircuitBatchSnapshot, formatCircuitBatchSummary, mapB313RowResult, NPS_OD_LOOKUP, resolveCircuitConditionsFromReport, toResultDisplayRows, type B31CircuitRowInput, type B31CircuitSourceMetadata } from './engineering/calculations/b31_3CircuitBatch';
-import { assessApi570Thickness, formatApi570AssessmentSummary, toApi570FindingDraftsFromAssessment, type Api570CmlReadingInput } from './engineering/calculations/api570ThicknessAssessment';
+import { assessApi570Thickness, buildApi570FindingDedupeKey, formatApi570AssessmentSummary, toApi570FindingDraftsFromAssessment, type Api570CmlReadingInput } from './engineering/calculations/api570ThicknessAssessment';
 
 const TEMPLATE_ID = 'api-570-piping-external';
 const ACTIVE_REPORT_ID_STORAGE_KEY = 'ie_api570_active_report_id';
@@ -112,6 +112,7 @@ export function Api570PipingExternalEntryPage() {
   const [api570SelectedB31SnapshotId, setApi570SelectedB31SnapshotId] = useState('');
   const [api570MonitorMarginThresholdIn, setApi570MonitorMarginThresholdIn] = useState(0.02);
   const [api570Rows, setApi570Rows] = useState<Api570CmlReadingInput[]>([{ id: crypto.randomUUID(), cmlId: 'CML-1', location: '', nps: '2', spec: 'A106', grade: 'B', currentThicknessIn: 0.3, priorThicknessIn: 0.34, priorInspectionDate: '', currentInspectionDate: new Date().toISOString().slice(0,10) }]);
+  const [lastApi570FindingsSnapshotId, setLastApi570FindingsSnapshotId] = useState('');
 
   useEffect(() => { void (async () => { /* unchanged init */
     try {
@@ -310,21 +311,46 @@ export function Api570PipingExternalEntryPage() {
     setIsDirty(true);
   };
 
+  const ensureSavedCalculationSnapshot = (latest: InspectionReport): InspectionCalculationSnapshot | null => {
+    if (!calcResult) return null;
+    const existing = (latest.calculations ?? []).find((c) => c.id === calcResult.id);
+    if (existing) return existing;
+    if (savedCalculationIds.has(calcResult.id)) {
+      const byTypeAndTime = [...(latest.calculations ?? [])]
+        .reverse()
+        .find((c) => c.calculationType === calcResult.calculationType && c.calculatedAt === calcResult.calculatedAt);
+      if (byTypeAndTime) return byTypeAndTime;
+    }
+    const activeAnswer = activeField ? latest.sections[activeField.sectionIndex]?.answers?.[activeField.answerIndex] : null;
+    const activeSection = activeField ? latest.sections[activeField.sectionIndex] : null;
+    const snapshotToSave: InspectionCalculationSnapshot = {
+      ...calcResult,
+      id: `${calcResult.calculationType}-${new Date().toISOString()}-${Math.random().toString(36).slice(2, 8)}`,
+      linkedSectionId: activeSection?.sectionId,
+      linkedFieldId: activeAnswer?.fieldId
+    };
+    latest.calculations = [...(latest.calculations ?? []), snapshotToSave];
+    setSavedCalculationIds((current) => new Set(current).add(calcResult.id));
+    return snapshotToSave;
+  };
+
 
   const createFindingsFromAssessment = () => {
     if (!report || calcResult?.calculationType !== 'api-570-thickness-assessment') return;
-    const drafts = toApi570FindingDraftsFromAssessment(calcResult as never);
+    const latest = structuredClone(report);
+    const savedAssessmentSnapshot = ensureSavedCalculationSnapshot(latest);
+    if (!savedAssessmentSnapshot) return;
+
+    const drafts = toApi570FindingDraftsFromAssessment(calcResult as never, { assessmentSnapshotIdOverride: savedAssessmentSnapshot.id });
     if (drafts.length === 0) {
       setMessage('No Below Tmin rows available for finding creation.');
       return;
     }
-
-    const latest = structuredClone(report);
     const existingKeys = new Set((latest.findings ?? []).map((f) => f.associatedChecklistItem));
     let added = 0;
 
     for (const draft of drafts) {
-      const dedupeKey = `api570-thickness:${draft.assessmentSnapshotId}:${draft.cmlId}`;
+      const dedupeKey = buildApi570FindingDedupeKey(draft.assessmentSnapshotId, draft.cmlId);
       if (existingKeys.has(dedupeKey)) continue;
       existingKeys.add(dedupeKey);
       latest.findings = [...(latest.findings ?? []), {
@@ -357,8 +383,9 @@ export function Api570PipingExternalEntryPage() {
     }
 
     setReport(latest);
+    setLastApi570FindingsSnapshotId(savedAssessmentSnapshot.id);
     setIsDirty(true);
-    setMessage(`Added ${added} finding${added === 1 ? '' : 's'} from Below Tmin rows.`);
+    setMessage(`Added ${added} finding${added === 1 ? '' : 's'} from Below Tmin rows using saved assessment snapshot ${savedAssessmentSnapshot.id}.`);
   };
 
   if (!report) return <div className="page">{error || 'Loading API 570 Piping External report...'}</div>;
@@ -604,6 +631,7 @@ export function Api570PipingExternalEntryPage() {
             <div className="tool-results-table-wrap"><table className="tool-results-table"><thead><tr><th>CML/Location</th><th>NPS</th><th>Current t</th><th>Tmin</th><th>Margin</th><th>CR (in/yr)</th><th>Remaining Life (yr)</th><th>Status</th><th>Recommended Action</th></tr></thead>
             <tbody>{((calcResult.outputs as any).rows as any[]).map((r,idx)=><tr key={idx}><td>{r.cmlId} {r.location ? `(${r.location})`:''}</td><td>{r.nps}</td><td>{r.currentThicknessIn?.toFixed?.(4)}</td><td>{r.tminIn?.toFixed?.(4) ?? 'N/A'}</td><td>{r.marginToTminIn?.toFixed?.(4) ?? 'N/A'}</td><td>{r.corrosionRateInPerYear?.toFixed?.(4) ?? 'N/A'}</td><td>{r.remainingLifeYears?.toFixed?.(2) ?? 'N/A'}</td><td>{r.status}</td><td>{r.recommendedAction}</td></tr>)}</tbody></table></div>
             <button type="button" onClick={createFindingsFromAssessment} disabled={toApi570FindingDraftsFromAssessment(calcResult as never).length === 0}>Create Findings from Below Tmin Rows</button>
+            {lastApi570FindingsSnapshotId && <p className="muted">Latest finding linkage snapshot: {lastApi570FindingsSnapshotId}</p>}
             <button type="button" onClick={saveCalculationSnapshot} disabled={savedCalculationIds.has(calcResult.id)}>{savedCalculationIds.has(calcResult.id) ? 'Saved to Report' : 'Save to Report Calculations'}</button>
             <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
           </>}

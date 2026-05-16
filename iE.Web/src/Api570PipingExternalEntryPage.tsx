@@ -6,7 +6,7 @@ import { calculateCorrosionRate } from './engineering/calculations/corrosionRate
 import { calculatePipeDimensions } from './engineering/calculations/pipeLookup';
 import type { InspectionCalculationSnapshot } from './engineering/types';
 import { applyMaterialPreset, B31_MATERIAL_PRESETS, buildCircuitBatchSnapshot, formatCircuitBatchSummary, mapB313RowResult, NPS_OD_LOOKUP, resolveCircuitConditionsFromReport, toResultDisplayRows, type B31CircuitRowInput, type B31CircuitSourceMetadata } from './engineering/calculations/b31_3CircuitBatch';
-import { assessApi570Thickness, formatApi570AssessmentSummary, type Api570CmlReadingInput } from './engineering/calculations/api570ThicknessAssessment';
+import { assessApi570Thickness, formatApi570AssessmentSummary, toApi570FindingDraftsFromAssessment, type Api570CmlReadingInput } from './engineering/calculations/api570ThicknessAssessment';
 
 const TEMPLATE_ID = 'api-570-piping-external';
 const ACTIVE_REPORT_ID_STORAGE_KEY = 'ie_api570_active_report_id';
@@ -310,6 +310,57 @@ export function Api570PipingExternalEntryPage() {
     setIsDirty(true);
   };
 
+
+  const createFindingsFromAssessment = () => {
+    if (!report || calcResult?.calculationType !== 'api-570-thickness-assessment') return;
+    const drafts = toApi570FindingDraftsFromAssessment(calcResult as never);
+    if (drafts.length === 0) {
+      setMessage('No Below Tmin rows available for finding creation.');
+      return;
+    }
+
+    const latest = structuredClone(report);
+    const existingKeys = new Set((latest.findings ?? []).map((f) => f.associatedChecklistItem));
+    let added = 0;
+
+    for (const draft of drafts) {
+      const dedupeKey = `api570-thickness:${draft.assessmentSnapshotId}:${draft.cmlId}`;
+      if (existingKeys.has(dedupeKey)) continue;
+      existingKeys.add(dedupeKey);
+      latest.findings = [...(latest.findings ?? []), {
+        id: crypto.randomUUID(),
+        location: draft.location || draft.cmlId,
+        componentType: 'Piping CML',
+        findingType: draft.severity === 'Critical' ? 'Critical Thickness Deviation' : 'Thickness Deviation',
+        associatedChecklistItem: dedupeKey,
+        description: `API 570 thickness assessment row ${draft.cmlId} (${draft.nps}") current t=${draft.currentThicknessIn.toFixed(4)} in, Tmin=${draft.tminIn.toFixed(4)} in, margin=${draft.marginToTminIn.toFixed(4)} in.${draft.matchedB31RowId ? ` Matched B31 row: ${draft.matchedB31RowId}.` : ''}`,
+        severity: draft.severity,
+        repairRequired: true,
+        repairRecommendation: `${draft.recommendation} Recommended action: evaluate repair or mitigation plan for CML ${draft.cmlId}.`
+      }];
+      added += 1;
+
+      for (const section of latest.sections ?? []) {
+        for (const answer of section.answers ?? []) {
+          const hay = `${answer.label} ${answer.value ?? ''} ${answer.comment ?? ''}`.toLowerCase();
+          if (hay.includes(draft.cmlId.toLowerCase())) {
+            answer.value = 'Issue';
+            answer.recommendationRequired = true;
+          }
+        }
+      }
+    }
+
+    if (added === 0) {
+      setMessage('No new findings added: matching CML findings already exist for this assessment snapshot.');
+      return;
+    }
+
+    setReport(latest);
+    setIsDirty(true);
+    setMessage(`Added ${added} finding${added === 1 ? '' : 's'} from Below Tmin rows.`);
+  };
+
   if (!report) return <div className="page">{error || 'Loading API 570 Piping External report...'}</div>;
 
   return <div className="page report-page api570-report">
@@ -441,7 +492,7 @@ export function Api570PipingExternalEntryPage() {
               <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
             </>}
           </> : (selectedTool === 'api-570-thickness-assessment' || selectedTool === 'b31-3-piping') ? <>
-            <p className="muted">Use the workspace to run the B31.3 circuit Tmin batch and save snapshot results to report calculations.</p>
+            <p className="muted">Use the workspace to run the B31.3 circuit Tmin batch, then assess API 570 CML readings against saved B31.3 Tmin snapshots.</p>
             {(calcResult?.calculationType === 'b31-3-piping-circuit-batch' || calcResult?.calculationType === 'api-570-thickness-assessment') && <p className="muted">{calcResult.insertLabel}</p>}
           </> : null}
           <h4>Saved Calculations</h4>
@@ -552,6 +603,7 @@ export function Api570PipingExternalEntryPage() {
           {calcResult?.calculationType === 'api-570-thickness-assessment' && <>
             <div className="tool-results-table-wrap"><table className="tool-results-table"><thead><tr><th>CML/Location</th><th>NPS</th><th>Current t</th><th>Tmin</th><th>Margin</th><th>CR (in/yr)</th><th>Remaining Life (yr)</th><th>Status</th><th>Recommended Action</th></tr></thead>
             <tbody>{((calcResult.outputs as any).rows as any[]).map((r,idx)=><tr key={idx}><td>{r.cmlId} {r.location ? `(${r.location})`:''}</td><td>{r.nps}</td><td>{r.currentThicknessIn?.toFixed?.(4)}</td><td>{r.tminIn?.toFixed?.(4) ?? 'N/A'}</td><td>{r.marginToTminIn?.toFixed?.(4) ?? 'N/A'}</td><td>{r.corrosionRateInPerYear?.toFixed?.(4) ?? 'N/A'}</td><td>{r.remainingLifeYears?.toFixed?.(2) ?? 'N/A'}</td><td>{r.status}</td><td>{r.recommendedAction}</td></tr>)}</tbody></table></div>
+            <button type="button" onClick={createFindingsFromAssessment} disabled={toApi570FindingDraftsFromAssessment(calcResult as never).length === 0}>Create Findings from Below Tmin Rows</button>
             <button type="button" onClick={saveCalculationSnapshot} disabled={savedCalculationIds.has(calcResult.id)}>{savedCalculationIds.has(calcResult.id) ? 'Saved to Report' : 'Save to Report Calculations'}</button>
             <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
           </>}

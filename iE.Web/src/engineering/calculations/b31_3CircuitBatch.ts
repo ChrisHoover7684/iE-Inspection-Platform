@@ -20,6 +20,7 @@ export type B31CircuitSharedInputs = {
 export type B31CircuitRowInput = {
   id: string;
   nps: string;
+  materialPreset?: string;
   schedule?: string;
   outsideDiameterIn?: number | null;
   spec: string;
@@ -33,10 +34,52 @@ export type B31CircuitRowInput = {
   note?: string;
 };
 
+export type B31MaterialPresetKey = 'A106_GR_B_SEAMLESS' | 'A53_GR_B_ERW_EB' | 'CUSTOM';
+
+export type B31MaterialPreset = {
+  key: B31MaterialPresetKey;
+  label: string;
+  spec: string;
+  grade: string;
+  productForm: string;
+  materialCategory: string;
+  jointType: string;
+  jointQualityKey: string;
+};
+
+export const B31_MATERIAL_PRESETS: B31MaterialPreset[] = [
+  { key: 'A106_GR_B_SEAMLESS', label: 'A106 Gr B seamless', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: 'Seamless', jointQualityKey: 'Seamless' },
+  { key: 'A53_GR_B_ERW_EB', label: 'A53 Gr B ERW / E-B', spec: 'A53', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: 'ERW', jointQualityKey: 'E/B' },
+  { key: 'CUSTOM', label: 'Custom', spec: '', grade: '', productForm: '', materialCategory: '', jointType: '', jointQualityKey: '' }
+];
+
+export function applyMaterialPreset(row: B31CircuitRowInput, presetKey: B31MaterialPresetKey): B31CircuitRowInput {
+  const preset = B31_MATERIAL_PRESETS.find((candidate) => candidate.key === presetKey);
+  if (!preset) return row;
+  return {
+    ...row,
+    materialPreset: preset.key,
+    spec: preset.spec,
+    grade: preset.grade,
+    productForm: preset.productForm,
+    materialCategory: preset.materialCategory,
+    jointType: preset.jointType,
+    jointQualityKey: preset.jointQualityKey
+  };
+}
+
 export type B31CircuitRowResult = {
   rowId: string;
   nps: string;
+  materialPreset?: string;
   schedule?: string;
+  spec?: string;
+  grade?: string;
+  productForm?: string;
+  materialCategory?: string;
+  jointType?: string;
+  jointQualityKey?: string;
+  note?: string;
   material: string;
   outsideDiameterIn: number | null;
   success: boolean;
@@ -129,7 +172,7 @@ export function buildCircuitBatchSnapshot(
       { standard: 'ASME B31.3', note: 'Required thickness evaluation for piping.' },
       { standard: 'API 570', note: 'Inspection and fitness-for-service workflow context.' }
     ],
-    inputs: { shared, rows: rows.map((r) => ({ id: r.rowId, nps: r.nps, schedule: r.schedule, outsideDiameterIn: r.outsideDiameterIn, spec: '', grade: '', productForm: '', materialCategory: '' })) },
+    inputs: { shared, rows: rows.map((r) => ({ id: r.rowId, nps: r.nps, materialPreset: r.materialPreset, schedule: r.schedule, outsideDiameterIn: r.outsideDiameterIn, spec: r.spec ?? '', grade: r.grade ?? '', productForm: r.productForm ?? '', materialCategory: r.materialCategory ?? '', jointType: r.jointType ?? '', jointQualityKey: r.jointQualityKey ?? '', note: r.note })) },
     outputs: { rows, successfulRows: rows.length - failed, failedRows: failed, governingRequiredThicknessIn: governing },
     warnings,
     calculatedAt,
@@ -137,11 +180,59 @@ export function buildCircuitBatchSnapshot(
   };
 }
 
+export type B31CircuitResultRowDisplay = {
+  nps: string;
+  material: string;
+  outsideDiameterIn: number | null;
+  allowableStressPsi: number | null;
+  eFactor: number | null;
+  yCoefficient: number | null;
+  wFactor: number | null;
+  requiredThicknessIn: number | null;
+  statusMessage: string;
+};
+
+export function toResultDisplayRows(rows: B31CircuitRowResult[]): B31CircuitResultRowDisplay[] {
+  return rows.map((row) => ({
+    nps: row.nps,
+    material: row.material,
+    outsideDiameterIn: row.outsideDiameterIn,
+    allowableStressPsi: row.allowableStressPsi,
+    eFactor: row.eFactor,
+    yCoefficient: row.yCoefficient,
+    wFactor: row.wFactor,
+    requiredThicknessIn: row.requiredThicknessIn,
+    statusMessage: row.success ? 'OK' : row.message
+  }));
+}
+
+export function formatCircuitBatchSummary(snapshot: EngineeringCalculationResult<{ shared: B31CircuitSharedInputs; rows: B31CircuitRowInput[] }, B31CircuitBatchOutputs>): string {
+  const pressure = snapshot.inputs.shared.pressurePsi;
+  const temperature = snapshot.inputs.shared.temperatureF;
+  const lines = [`B31.3 circuit Tmin batch at ${pressure} psig / ${temperature}°F:`];
+  snapshot.outputs.rows.forEach((row) => {
+    if (row.success && row.requiredThicknessIn != null) {
+      lines.push(`- ${row.nps} in ${row.material}: Tmin ${row.requiredThicknessIn.toFixed(4)} in`);
+    }
+  });
+  const failedRows = snapshot.outputs.rows.filter((row) => !row.success).map((row) => `${row.nps} in ${row.material}: ${row.message}`);
+  if (failedRows.length > 0) lines.push(`Failed rows: ${failedRows.join('; ')}`);
+  return lines.join('\n');
+}
+
 export function mapB313RowResult(rowId: string, row: B31CircuitRowInput, input: B313ThicknessInput | null, result: B313ThicknessResult | null, warnings: string[]): B31CircuitRowResult {
   return {
     rowId,
     nps: row.nps,
+    materialPreset: row.materialPreset,
     schedule: row.schedule,
+    spec: row.spec,
+    grade: row.grade,
+    productForm: row.productForm,
+    materialCategory: row.materialCategory,
+    jointType: row.jointType,
+    jointQualityKey: row.jointQualityKey,
+    note: row.note,
     material: `${row.spec} ${row.grade}`.trim(),
     outsideDiameterIn: row.outsideDiameterIn ?? input?.outsideDiameterIn ?? null,
     success: result?.success ?? false,

@@ -198,6 +198,21 @@ describe('engineering calculations foundation', () => {
     expectFoundationFields(result);
   });
 
+
+
+  it('pipe lookup result can be saved as report snapshot metadata', () => {
+    const result = calculatePipeDimensions({ nps: '6', schedule: '40', outsideDiameter: 6.625, nominalThickness: 0.28 });
+    const snapshot = { ...result, linkedSectionId: 'sec-pipe', linkedFieldId: 'field-pipe' };
+    expect(snapshot.calculationType).toBe('pipe-lookup');
+    expect(snapshot.formulaVersion).toBe('asme-b36-foundation-v1');
+    expect(snapshot.standardReferences.length).toBeGreaterThan(0);
+    expect(snapshot.insertLabel).toContain('Sch 40');
+    expect(snapshot.inputs).toBeTypeOf('object');
+    expect(snapshot.outputs).toBeTypeOf('object');
+    expect(snapshot.calculatedAt).toBeTruthy();
+    expect(snapshot.linkedSectionId).toBe('sec-pipe');
+  });
+
   it('corrosion result can be saved as report snapshot metadata', () => {
     const result = calculateCorrosionRate({
       initialThicknessInches: 1,

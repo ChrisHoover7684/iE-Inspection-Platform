@@ -4,6 +4,7 @@ import { calculatePipeDimensions } from '../calculations/pipeLookup';
 import { calculateRequiredThicknessMargin } from '../calculations/pressureVessel';
 import { calculateTankShellCorrosionMargin } from '../calculations/tankShell';
 import { toB31_3EngineeringSnapshot } from '../calculations/b31_3Piping';
+import { buildCircuitBatchSnapshot, mapB313RowResult, resolveCircuitConditionsFromReport } from '../calculations/b31_3CircuitBatch';
 
 describe('engineering calculations foundation', () => {
   const expectFoundationFields = (result: { calculationType: string; formulaVersion: string; displayName: string; calculatedAt: string; insertLabel: string; warnings: unknown[]; standardReferences: unknown[]; }) => {
@@ -225,5 +226,43 @@ describe('engineering calculations foundation', () => {
     const snapshot = { ...result, linkedSectionId: 'sec-1', linkedFieldId: 'field-1', linkedFindingId: 'finding-1' };
     expect(snapshot.linkedSectionId).toBe('sec-1');
     expect(snapshot.inputs).toBeTypeOf('object');
+  });
+
+  it('b31 circuit batch uses shared pressure/temperature for all rows and one snapshot', () => {
+    const shared = {
+      pressurePsi: 285,
+      temperatureF: 100,
+      sourceMetadata: {
+        pressure: { value: 285, source: 'Inspection Context', isManual: false },
+        temperature: { value: 100, source: 'Inspection Context', isManual: false }
+      },
+      defaultJointType: 'Seamless',
+      defaultJointQualityKey: 'Seamless',
+      wFactor: 1,
+      yOverride: null,
+      eOverride: null
+    };
+    const rows = [
+      mapB313RowResult('1', { id: '1', nps: '2', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel' }, { pressurePsi: 285, temperatureF: 100, outsideDiameterIn: 2.375, spec: 'A106', grade: 'B', productForm: 'Pipe', unsNo: '', classConditionTemper: '', materialCategory: 'Carbon Steel', jointType: 'Seamless', jointQualityKey: 'Seamless' }, { success: true, message: 'ok', allowableStressPsi: 20000, eFactor: 1, yCoefficient: 0.4, wFactor: 1, requiredThicknessIn: 0.09 }, []),
+      mapB313RowResult('2', { id: '2', nps: '4', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel' }, { pressurePsi: 285, temperatureF: 100, outsideDiameterIn: 4.5, spec: 'A106', grade: 'B', productForm: 'Pipe', unsNo: '', classConditionTemper: '', materialCategory: 'Carbon Steel', jointType: 'Seamless', jointQualityKey: 'Seamless' }, { success: false, message: 'Allowable stress missing', allowableStressPsi: null, eFactor: null, yCoefficient: null, wFactor: 1, requiredThicknessIn: null }, ['fallback OD'])
+    ];
+    expect(rows.every((r) => r.input?.pressurePsi === 285 && r.input?.temperatureF === 100)).toBe(true);
+    expect(rows.every((r) => !('rowPressurePsi' in (r.input ?? {})) && !('rowTemperatureF' in (r.input ?? {})))).toBe(true);
+    const snapshot = buildCircuitBatchSnapshot(shared, rows);
+    expect(snapshot.calculationType).toBe('b31-3-piping-circuit-batch');
+    expect(snapshot.outputs.failedRows).toBe(1);
+    expect(snapshot.warnings.some((w) => w.code === 'B313_ROW_FAILED')).toBe(true);
+    expect(snapshot.inputs.shared.sourceMetadata.pressure.source).toBe('Inspection Context');
+  });
+
+  it('b31 circuit report source metadata supports manual override warning', () => {
+    const report = {
+      id: 'r', clientOrganizationId: '', facilityId: '', templateId: '', status: '', createdAt: '', sections: [{ sectionId: 's1', sectionTitle: 'Inspection Context', order: 1, answers: [{ fieldId: 'design-pressure', label: 'Design Pressure', dataType: 'number', value: '285 psig', values: [] }, { fieldId: 'design-temperature', label: 'Design Temperature', dataType: 'number', value: '100 F', values: [] }] }], findings: [], photos: [], calculations: []
+    } as any;
+    const meta = resolveCircuitConditionsFromReport(report);
+    expect(meta.pressure.value).toBe(285);
+    expect(meta.temperature.value).toBe(100);
+    const snapshot = buildCircuitBatchSnapshot({ pressurePsi: 300, temperatureF: 125, sourceMetadata: { pressure: { value: 300, source: 'Manual', isManual: true }, temperature: { value: 125, source: 'Manual', isManual: true } }, defaultJointType: 'Seamless', defaultJointQualityKey: 'Seamless' }, []);
+    expect(snapshot.warnings.some((w) => w.code === 'CIRCUIT_PRESSURE_OR_TEMPERATURE_MANUAL_OVERRIDE')).toBe(true);
   });
 });

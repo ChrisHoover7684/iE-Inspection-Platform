@@ -95,24 +95,30 @@ export function assessApi570Thickness(
     if (reading.priorThicknessIn != null && reading.priorInspectionDate && reading.currentInspectionDate) {
       const currentDateMs = new Date(reading.currentInspectionDate).getTime();
       const priorDateMs = new Date(reading.priorInspectionDate).getTime();
-      if (priorDateMs > currentDateMs) {
+      const years = (currentDateMs - priorDateMs) / (1000 * 60 * 60 * 24 * 365.25);
+      const isPriorDateAfterCurrent = priorDateMs > currentDateMs;
+      if (isPriorDateAfterCurrent) {
         warnings.push({ code: 'PRIOR_DATE_AFTER_CURRENT', message: `${reading.cmlId}: prior inspection date is after current inspection date`, severity: 'warning' });
       }
-      const years = (currentDateMs - priorDateMs) / (1000 * 60 * 60 * 24 * 365.25);
-      if (!Number.isFinite(years) || years <= 0) {
+
+      const hasInvalidDateInterval = !Number.isFinite(years) || years <= 0;
+      if (hasInvalidDateInterval) {
         warnings.push({ code: 'INVALID_DATE_INTERVAL', message: `${reading.cmlId}: prior/current inspection dates produce a zero or invalid interval`, severity: 'warning' });
       }
-      const corr = calculateCorrosionRate({
-        initialThicknessInches: reading.priorThicknessIn,
-        finalThicknessInches: reading.currentThicknessIn,
-        exposureTimeYears: Math.abs(years),
-        inspectionFactor: 0.5,
-        currentThicknessInches: reading.currentThicknessIn,
-        tminInches: tmin
-      });
-      corr.warnings.forEach((w) => warnings.push({ ...w, message: `${reading.cmlId}: ${w.message}` }));
-      corrosionRateInPerYear = corr.outputs.corrosionRateInchesPerYear;
-      remainingLifeYears = corr.outputs.remainingLifeYears;
+
+      if (!isPriorDateAfterCurrent && !hasInvalidDateInterval) {
+        const corr = calculateCorrosionRate({
+          initialThicknessInches: reading.priorThicknessIn,
+          finalThicknessInches: reading.currentThicknessIn,
+          exposureTimeYears: years,
+          inspectionFactor: 0.5,
+          currentThicknessInches: reading.currentThicknessIn,
+          tminInches: tmin
+        });
+        corr.warnings.forEach((w) => warnings.push({ ...w, message: `${reading.cmlId}: ${w.message}` }));
+        corrosionRateInPerYear = corr.outputs.corrosionRateInchesPerYear;
+        remainingLifeYears = corr.outputs.remainingLifeYears;
+      }
     } else {
       warnings.push({ code: 'MISSING_PRIOR_DATA', message: `${reading.cmlId}: prior thickness/date missing; corrosion rate not calculated`, severity: 'info' });
     }

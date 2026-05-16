@@ -6,6 +6,7 @@ import { calculateCorrosionRate } from './engineering/calculations/corrosionRate
 import { calculatePipeDimensions } from './engineering/calculations/pipeLookup';
 import type { InspectionCalculationSnapshot } from './engineering/types';
 import { applyMaterialPreset, B31_MATERIAL_PRESETS, buildCircuitBatchSnapshot, formatCircuitBatchSummary, mapB313RowResult, NPS_OD_LOOKUP, resolveCircuitConditionsFromReport, toResultDisplayRows, type B31CircuitRowInput, type B31CircuitSourceMetadata } from './engineering/calculations/b31_3CircuitBatch';
+import { assessApi570Thickness, formatApi570AssessmentSummary, type Api570CmlReadingInput } from './engineering/calculations/api570ThicknessAssessment';
 
 const TEMPLATE_ID = 'api-570-piping-external';
 const ACTIVE_REPORT_ID_STORAGE_KEY = 'ie_api570_active_report_id';
@@ -108,6 +109,8 @@ export function Api570PipingExternalEntryPage() {
   const [b31ManualTemperature, setB31ManualTemperature] = useState<number | ''>('');
   const [b31Shared, setB31Shared] = useState({ wFactor: 1, yOverride: '', eOverride: '', defaultJointType: 'Seamless', defaultJointQualityKey: 'Seamless' });
   const [isB31BatchRunning, setIsB31BatchRunning] = useState(false);
+  const [api570SelectedB31SnapshotId, setApi570SelectedB31SnapshotId] = useState('');
+  const [api570Rows, setApi570Rows] = useState<Api570CmlReadingInput[]>([{ id: crypto.randomUUID(), cmlId: 'CML-1', location: '', nps: '2', spec: 'A106', grade: 'B', currentThicknessIn: 0.3, priorThicknessIn: 0.34, priorInspectionDate: '', currentInspectionDate: new Date().toISOString().slice(0,10) }]);
 
   useEffect(() => { void (async () => { /* unchanged init */
     try {
@@ -276,13 +279,13 @@ export function Api570PipingExternalEntryPage() {
     setReport(latest);
     setIsDirty(true);
   };
-  const toolRegistry = [{ id: 'corrosion-rate', label: 'Corrosion Rate' }, { id: 'pipe-lookup', label: 'Pipe Lookup' }, { id: 'b31-3-piping', label: 'B31.3 Piping' }];
+  const toolRegistry = [{ id: 'corrosion-rate', label: 'Corrosion Rate' }, { id: 'pipe-lookup', label: 'Pipe Lookup' }, { id: 'b31-3-piping', label: 'B31.3 Piping' }, { id: 'api-570-thickness-assessment', label: 'API 570 Thickness Assessment' }];
   const appendSummaryToActiveField = () => {
     if (!report || !activeField || !calcResult) return;
     const latest = structuredClone(report);
     const answer = latest.sections[activeField.sectionIndex]?.answers?.[activeField.answerIndex];
     if (!answer) return;
-    const summary = calcResult.calculationType === 'b31-3-piping-circuit-batch' ? formatCircuitBatchSummary(calcResult as never) : calcResult.insertLabel;
+    const summary = calcResult.calculationType === 'b31-3-piping-circuit-batch' ? formatCircuitBatchSummary(calcResult as never) : calcResult.calculationType === 'api-570-thickness-assessment' ? formatApi570AssessmentSummary(calcResult as never) : calcResult.insertLabel;
     answer.comment = `${answer.comment ?? ''}${answer.comment ? '\n' : ''}${summary}`.trim();
     setReport(latest);
     setIsDirty(true);
@@ -433,6 +436,35 @@ export function Api570PipingExternalEntryPage() {
               <p className="muted">Lower wall tolerance (-12.5%): {(calcResult.outputs as { lowerLimitMinus12_5: number }).lowerLimitMinus12_5.toFixed(4)} in</p>
               <p className="muted">Upper wall tolerance (+12.5%): {(calcResult.outputs as { upperLimitPlus12_5: number }).upperLimitPlus12_5.toFixed(4)} in</p>
               <p className="muted">Warnings: {calcResult.warnings.length}</p>
+              <button type="button" onClick={saveCalculationSnapshot} disabled={savedCalculationIds.has(calcResult.id)}>{savedCalculationIds.has(calcResult.id) ? 'Saved to Report' : 'Save to Report Calculations'}</button>
+              <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
+            </>}
+          </> : selectedTool === 'api-570-thickness-assessment' ? <>
+            <p className="muted">Select saved B31.3 snapshot and assess CML readings.</p>
+            <select value={api570SelectedB31SnapshotId} onChange={(e)=>setApi570SelectedB31SnapshotId(e.target.value)}>
+              <option value="">Select B31.3 snapshot</option>
+              {(report.calculations ?? []).filter((c)=>c.calculationType==='b31-3-piping-circuit-batch').map((c)=><option key={c.id} value={c.id}>{new Date(c.calculatedAt).toLocaleString()} · {c.insertLabel}</option>)}
+            </select>
+            {api570Rows.map((row)=><div className="compact-grid" key={row.id}>
+              <input value={row.cmlId} placeholder="CML ID" onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,cmlId:e.target.value}:r))} />
+              <input value={row.location} placeholder="Location" onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,location:e.target.value}:r))} />
+              <input value={row.nps} placeholder="NPS" onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,nps:e.target.value}:r))} />
+              <input type="number" step="any" value={row.currentThicknessIn} placeholder="Current thickness" onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,currentThicknessIn:Number(e.target.value)}:r))} />
+              <input type="number" step="any" value={row.priorThicknessIn ?? ''} placeholder="Prior thickness" onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,priorThicknessIn:e.target.value===''?null:Number(e.target.value)}:r))} />
+              <input type="date" value={row.priorInspectionDate ?? ''} onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,priorInspectionDate:e.target.value}:r))} />
+              <input type="date" value={row.currentInspectionDate} onChange={(e)=>setApi570Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,currentInspectionDate:e.target.value}:r))} />
+              <button type="button" onClick={()=>setApi570Rows((rows)=>rows.filter((r)=>r.id!==row.id))}>Remove</button>
+            </div>)}
+            <button type="button" onClick={()=>setApi570Rows((rows)=>[...rows,{ id: crypto.randomUUID(), cmlId: '', location: '', nps: '', currentThicknessIn: 0, priorThicknessIn: null, priorInspectionDate: '', currentInspectionDate: new Date().toISOString().slice(0,10) }])}>Add CML Row</button>
+            <button type="button" onClick={()=>{
+              const b31 = (report.calculations ?? []).find((c)=>c.id===api570SelectedB31SnapshotId && c.calculationType==='b31-3-piping-circuit-batch');
+              if (!b31) { setError('Select a saved B31.3 snapshot first.'); return; }
+              const assessed = assessApi570Thickness({ b31SnapshotId: b31.id, cmlReadings: api570Rows }, ((b31.outputs as { rows: unknown[] }).rows as any[]));
+              setCalcResult(assessed as never);
+            }}>Run Assessment</button>
+            {calcResult?.calculationType === 'api-570-thickness-assessment' && <>
+              <div className="tool-results-table-wrap"><table className="tool-results-table"><thead><tr><th>CML/Location</th><th>NPS</th><th>Current t</th><th>Tmin</th><th>Margin</th><th>CR (in/yr)</th><th>Remaining Life (yr)</th><th>Status</th><th>Recommended Action</th></tr></thead>
+              <tbody>{((calcResult.outputs as any).rows as any[]).map((r,idx)=><tr key={idx}><td>{r.cmlId} {r.location ? `(${r.location})`:''}</td><td>{r.nps}</td><td>{r.currentThicknessIn?.toFixed?.(4)}</td><td>{r.tminIn?.toFixed?.(4) ?? 'N/A'}</td><td>{r.marginToTminIn?.toFixed?.(4) ?? 'N/A'}</td><td>{r.corrosionRateInPerYear?.toFixed?.(4) ?? 'N/A'}</td><td>{r.remainingLifeYears?.toFixed?.(2) ?? 'N/A'}</td><td>{r.status}</td><td>{r.recommendedAction}</td></tr>)}</tbody></table></div>
               <button type="button" onClick={saveCalculationSnapshot} disabled={savedCalculationIds.has(calcResult.id)}>{savedCalculationIds.has(calcResult.id) ? 'Saved to Report' : 'Save to Report Calculations'}</button>
               <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
             </>}

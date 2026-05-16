@@ -115,20 +115,21 @@ internal static class ExternalInspectionTemplates
                 CommonTemplateSections.Field("temporary-repairs-observed", "Temporary Repairs Observed", "textarea", false, "Identify clamps, wraps, or other temporary repairs and remaining serviceability concerns."),
                 CommonTemplateSections.Field("approximate-feet-findings", "Approximate Feet of Findings", "number"),
                 CommonTemplateSections.Field("external-summary", "External Summary", "textarea", true, externalSummary)),
-            CommonTemplateSections.CreateSection("coating-insulation-condition", "Coating / Insulation Condition", 5, false,
+            CommonTemplateSections.ComponentSection(5),
+            CommonTemplateSections.CreateSection("coating-insulation-condition", "Coating / Insulation Condition", 6, false,
                 CommonTemplateSections.Field("coating-condition", "Coating Detail", "textarea"),
                 CommonTemplateSections.Field("insulation-condition", "Insulation Detail", "textarea"),
                 CommonTemplateSections.Field("insulation-jacketing-seal-condition", "Insulation Jacketing / Seal Condition", "textarea", false, "Record broken jacketing, open seams, wet insulation indicators, and damaged weather seals."),
                 CommonTemplateSections.Field("wet-insulation-indicators", "Wet Insulation Indicators", "boolean", false, "Mark yes when moisture intrusion indicators are present (staining, corrosion products, dampness, ice)."),
                 CommonTemplateSections.Field("cui-concern", "CUI Concern", "select", false, null, "Low", "Moderate", "High")),
-            CommonTemplateSections.CreateSection("thickness-cml-review", "Thickness / CML Review", 6, false,
+            CommonTemplateSections.CreateSection("thickness-cml-review", "Thickness / CML Review", 7, false,
                 CommonTemplateSections.Field("thickness-review-summary", "Thickness Review Summary", "textarea")),
-            CommonTemplateSections.Findings(7),
-            CommonTemplateSections.NdeTesting(8),
-            CommonTemplateSections.RepairsPerformed(9),
-            CommonTemplateSections.Recommendations(10),
-            CommonTemplateSections.Photos(11),
-            CommonTemplateSections.ReturnToService(12)
+            CommonTemplateSections.Findings(8),
+            CommonTemplateSections.NdeTesting(9),
+            CommonTemplateSections.RepairsPerformed(10),
+            CommonTemplateSections.Recommendations(11),
+            CommonTemplateSections.Photos(12),
+            CommonTemplateSections.ReturnToService(13)
         ];
     }
 

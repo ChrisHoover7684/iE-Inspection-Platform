@@ -6,6 +6,7 @@ import { calculateTankShellCorrosionMargin } from '../calculations/tankShell';
 import { toB31_3EngineeringSnapshot } from '../calculations/b31_3Piping';
 import { applyMaterialPreset, buildCircuitBatchSnapshot, formatCircuitBatchSummary, mapB313RowResult, resolveCircuitConditionsFromReport, toResultDisplayRows } from '../calculations/b31_3CircuitBatch';
 import { assessApi570Thickness, buildApi570FindingDedupeKey, normalizeNpsValue, toApi570FindingDraftsFromAssessment } from '../calculations/api570ThicknessAssessment';
+import { API510_COMPONENT_PRESETS, API570_COMPONENT_PRESETS, createAndAddComponentSection, createComponentSection, upsertFindingFromComponentSection } from '../../reporting/componentSections';
 
 describe('engineering calculations foundation', () => {
   const expectFoundationFields = (result: { calculationType: string; formulaVersion: string; displayName: string; calculatedAt: string; insertLabel: string; warnings: unknown[]; standardReferences: unknown[]; }) => {
@@ -420,4 +421,50 @@ describe('engineering calculations foundation', () => {
     expect(snapshot.outputs.rows[0].remainingLifeYears).not.toBeNull();
   });
 
+});
+
+
+describe('component section builder', () => {
+  it('API 570 component presets exist', () => {
+    expect(API570_COMPONENT_PRESETS).toContain('Valve');
+    expect(API570_COMPONENT_PRESETS).toContain('CUI Area');
+  });
+
+  it('API 510 component presets exist', () => {
+    expect(API510_COMPONENT_PRESETS).toContain('Shell');
+    expect(API510_COMPONENT_PRESETS).toContain('Demister / Internals');
+  });
+
+  it('creating component section adds repeatable section data', () => {
+    const report: any = { sections: [], findings: [] };
+    const next = createAndAddComponentSection(report, 'Valve');
+    expect(next.sections).toHaveLength(1);
+    expect(next.sections[0].isRepeatable).toBe(true);
+    expect(next.sections[0].instanceNumber).toBe(1);
+  });
+
+  it('Create Finding checkbox creates a finding payload and preserves photo/summary tags', () => {
+    const section = createComponentSection(1, 'Valve');
+    section.answers.find((a) => a.fieldId === 'create-finding')!.value = 'true';
+    section.answers.find((a) => a.fieldId === 'component-tag')!.value = 'XV-101';
+    section.answers.find((a) => a.fieldId === 'component-location')!.value = 'North rack';
+    section.answers.find((a) => a.fieldId === 'finding-notes')!.value = 'Minor seepage';
+    section.answers.find((a) => a.fieldId === 'photo-tag')!.value = 'IMG-570-01';
+    section.answers.find((a) => a.fieldId === 'add-to-summary')!.value = 'true';
+    const updated = upsertFindingFromComponentSection({ id: 'r', clientOrganizationId: '', facilityId: '', templateId: '', status: '', createdAt: '', sections: [], findings: [], photos: [], calculations: [] } as any, section);
+    expect(updated.findings).toHaveLength(1);
+    expect(updated.findings[0].photoIds?.[0]).toBe('IMG-570-01');
+    expect(updated.findings[0].addToSummary).toBe(true);
+    expect(updated.findings[0].summaryText).toBe('Minor seepage');
+  });
+
+  it('duplicate component findings are prevented by upsert', () => {
+    const section = createComponentSection(1, 'Valve');
+    section.answers.find((a) => a.fieldId === 'create-finding')!.value = 'true';
+    section.answers.find((a) => a.fieldId === 'component-tag')!.value = 'XV-101';
+    const base: any = { id: 'r', clientOrganizationId: '', facilityId: '', templateId: '', status: '', createdAt: '', sections: [], findings: [], photos: [], calculations: [] };
+    const first = upsertFindingFromComponentSection(base, section);
+    const second = upsertFindingFromComponentSection(first, section);
+    expect(second.findings).toHaveLength(1);
+  });
 });

@@ -50,6 +50,24 @@ internal static class CommonTemplateSections
             Field("surface-prep", "Surface Preparation Completed", "boolean"),
             Field("permits-controls", "Permits / Safety Controls", "textarea"));
 
+
+    internal static ReportTemplateSection ComponentSection(int order) =>
+        CreateSection("component-section", "Component Section", order, true,
+            Field("component-type", "Component Type", "select", true, null, "Valve", "Control Valve / Control Loop", "Flange Pair", "Bolting / Gasket", "Support", "Spring Can / Hanger", "Guide / Anchor", "Shoe / Saddle", "Bellows / Expansion Joint", "Small Bore Connection", "Branch Connection", "Deadleg", "Injection Point / Mix Point", "Insulation / Jacketing Area", "CUI Area", "Other Component"),
+            Field("component-tag", "Component Name / Tag", "text"),
+            Field("component-location", "Location", "text"),
+            Field("component-condition", "Condition", "select", true, null, "Acceptable", "Monitor", "Issue", "N/A"),
+            Field("finding-notes", "Finding Notes", "textarea"),
+            Field("recommendation-text", "Recommendation Text", "textarea"),
+            Field("photo-tag", "Picture / Photo Tag", "text"),
+            Field("create-finding", "Create Finding", "boolean"),
+            Field("recommendation-required", "Recommendation Required", "boolean"),
+            Field("repair-required", "Repair Required", "boolean"),
+            Field("photo-required", "Photo Required", "boolean"),
+            Field("transfer-to-component-section", "Transfer to Component Section", "boolean"),
+            Field("nde-required", "NDE Required", "boolean"),
+            Field("add-to-summary", "Add to Summary", "boolean"));
+
     internal static ReportTemplateSection Findings(int order) =>
         CreateSection("findings", "Findings", order, true,
             Field("finding-type", "Finding Type", "select", true, null, "Corrosion", "Leak", "Coating", "Insulation", "Mechanical Damage", "Other"),

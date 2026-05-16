@@ -140,6 +140,49 @@ export function assessApi570Thickness(
   };
 }
 
+
+export type Api570FindingDraftSeverity = 'High' | 'Critical';
+
+export type Api570FindingDraft = {
+  assessmentSnapshotId: string;
+  cmlId: string;
+  location: string;
+  nps: string;
+  currentThicknessIn: number;
+  tminIn: number;
+  marginToTminIn: number;
+  matchedB31RowId?: string;
+  recommendation: string;
+  severity: Api570FindingDraftSeverity;
+};
+
+const CRITICAL_MARGIN_THRESHOLD_IN = -0.05;
+
+export function toApi570FindingDraftsFromAssessment(
+  snapshot: EngineeringCalculationResult<Api570ThicknessAssessmentInputs, Api570ThicknessAssessmentOutputs>,
+  options?: { includeMonitorRows?: boolean }
+): Api570FindingDraft[] {
+  const includeMonitorRows = options?.includeMonitorRows ?? false;
+  return snapshot.outputs.rows
+    .filter((row) => row.status === 'Below Tmin' || (includeMonitorRows && row.status === 'Monitor'))
+    .filter((row): row is Api570ThicknessAssessmentRow & { tminIn: number; marginToTminIn: number } => row.tminIn != null && row.marginToTminIn != null)
+    .map((row) => {
+      const severity: Api570FindingDraftSeverity = row.marginToTminIn <= CRITICAL_MARGIN_THRESHOLD_IN ? 'Critical' : 'High';
+      return {
+        assessmentSnapshotId: snapshot.id,
+        cmlId: row.cmlId,
+        location: row.location,
+        nps: row.nps,
+        currentThicknessIn: row.currentThicknessIn,
+        tminIn: row.tminIn,
+        marginToTminIn: row.marginToTminIn,
+        matchedB31RowId: row.matchedB31RowId,
+        recommendation: row.recommendedAction,
+        severity
+      };
+    });
+}
+
 export function formatApi570AssessmentSummary(snapshot: EngineeringCalculationResult<Api570ThicknessAssessmentInputs, Api570ThicknessAssessmentOutputs>): string {
   return snapshot.outputs.rows.map((r) => `${r.cmlId || r.location} (${r.nps}") ${r.status}; t=${r.currentThicknessIn.toFixed(3)} in, Tmin=${r.tminIn?.toFixed(3) ?? 'N/A'} in, margin=${r.marginToTminIn?.toFixed(3) ?? 'N/A'} in. ${r.recommendedAction}`).join('\n');
 }

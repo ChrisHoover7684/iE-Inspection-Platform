@@ -36,6 +36,7 @@ import type {
   NdeLogTransitionEvent,
   NdeReportDraft
 } from './types';
+import type { InspectionCalculationSnapshot } from './engineering/types';
 
 const DEFAULT_API_BASE_URL = 'http://localhost:5229';
 const API_BASE_KEY = 'ie_reports_test_api_base_url';
@@ -73,7 +74,14 @@ async function apiFetch<T>(path: string, init?: RequestInit, operation?: string)
 }
 
 export const reportingApi = {
-  normalizeReport: (report: InspectionReport): InspectionReport => ({ ...report, calculations: report.calculations ?? [] }),
+  normalizeReport: (report: InspectionReport): InspectionReport => ({
+    ...report,
+    calculations: (report.calculations ?? []).map((calculation) => ({
+      ...calculation,
+      inputs: parseJsonSnapshotField(calculation.inputs),
+      outputs: parseJsonSnapshotField(calculation.outputs)
+    }))
+  }),
   getTemplates: () => apiFetch<ReportTemplate[]>('/api/reports/templates', undefined, 'GET /api/reports/templates'),
   getTemplateById: (templateId: string) => apiFetch<ReportTemplate>(`/api/reports/templates/${templateId}`, undefined, `GET /api/reports/templates/${templateId}`),
   getInstances: async () => (await apiFetch<InspectionReport[]>('/api/reports/instances')).map((report) => reportingApi.normalizeReport(report)),
@@ -84,7 +92,13 @@ export const reportingApi = {
       body: JSON.stringify({ clientOrganizationId: 'client-demo-refining', facilityId: 'facility-demo-gulf-coast' })
     }, `POST /api/reports/templates/${templateId}/instances`).then((report) => reportingApi.normalizeReport(report)),
   saveInstance: (id: string, report: InspectionReport) =>
-    apiFetch<InspectionReport>(`/api/reports/instances/${id}`, { method: 'PUT', body: JSON.stringify(report) }).then((saved) => reportingApi.normalizeReport(saved)),
+    apiFetch<InspectionReport>(`/api/reports/instances/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        ...report,
+        calculations: (report.calculations ?? []).map(serializeCalculationSnapshotForSave)
+      })
+    }).then((saved) => reportingApi.normalizeReport(saved)),
   syncFindings: (id: string) =>
     apiFetch<InspectionReport>(`/api/reports/instances/${id}/sync-findings`, { method: 'POST', body: '{}' }),
   async exportDocx(id: string): Promise<{ blob: Blob; fileName: string }> {
@@ -100,6 +114,21 @@ export const reportingApi = {
   getAlerts: (report: InspectionReport) => apiFetch<UiAlert[]>('/api/reports/alerts', { method: 'POST', body: JSON.stringify(report) }),
   generateNarrative: (report: InspectionReport) => apiFetch<NarrativeResult>('/api/reports/generate-narrative', { method: 'POST', body: JSON.stringify(report) })
 };
+
+const parseJsonSnapshotField = (value: unknown): unknown => {
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+};
+
+const serializeCalculationSnapshotForSave = (snapshot: InspectionCalculationSnapshot): InspectionCalculationSnapshot => ({
+  ...snapshot,
+  inputs: typeof snapshot.inputs === 'string' ? snapshot.inputs : JSON.stringify(snapshot.inputs ?? {}),
+  outputs: typeof snapshot.outputs === 'string' ? snapshot.outputs : JSON.stringify(snapshot.outputs ?? {})
+});
 
 
 export const corrosionRateApi = {

@@ -85,6 +85,7 @@ export function Api570PipingExternalEntryPage() {
   const [selectedTool, setSelectedTool] = useState('corrosion-rate');
   const [calcInput, setCalcInput] = useState({ initialThicknessInches: 0.5, finalThicknessInches: 0.45, exposureTimeYears: 1, currentThicknessInches: 0.45, tminInches: 0.35, inspectionFactor: 0.5 });
   const [calcResult, setCalcResult] = useState<InspectionCalculationSnapshot | null>(null);
+  const [savedCalculationIds, setSavedCalculationIds] = useState<Set<string>>(new Set());
 
   useEffect(() => { void (async () => { /* unchanged init */
     try {
@@ -211,6 +212,24 @@ export function Api570PipingExternalEntryPage() {
     setIsDirty(true);
   };
 
+  const saveCalculationSnapshot = () => {
+    if (!report || !calcResult) return;
+    if (savedCalculationIds.has(calcResult.id)) return;
+    const latest = structuredClone(report);
+    const activeAnswer = activeField ? latest.sections[activeField.sectionIndex]?.answers?.[activeField.answerIndex] : null;
+    const activeSection = activeField ? latest.sections[activeField.sectionIndex] : null;
+    const snapshotToSave: InspectionCalculationSnapshot = {
+      ...calcResult,
+      id: `${calcResult.calculationType}-${new Date().toISOString()}-${Math.random().toString(36).slice(2, 8)}`,
+      linkedSectionId: activeSection?.sectionId,
+      linkedFieldId: activeAnswer?.fieldId
+    };
+    latest.calculations = [...(latest.calculations ?? []), snapshotToSave];
+    setReport(latest);
+    setSavedCalculationIds((current) => new Set(current).add(calcResult.id));
+    setIsDirty(true);
+  };
+
   if (!report) return <div className="page">{error || 'Loading API 570 Piping External report...'}</div>;
 
   return <div className="page report-page api570-report">
@@ -303,7 +322,7 @@ export function Api570PipingExternalEntryPage() {
             {calcResult && <>
               <p className="muted">{calcResult.insertLabel}</p>
               <p className="muted">Warnings: {calcResult.warnings.length}</p>
-              <button type="button" onClick={() => { if (!report) return; const latest = structuredClone(report); latest.calculations = [...(latest.calculations ?? []), calcResult]; setReport(latest); setIsDirty(true); }}>Save to Report Calculations</button>
+              <button type="button" onClick={saveCalculationSnapshot} disabled={savedCalculationIds.has(calcResult.id)}>{savedCalculationIds.has(calcResult.id) ? 'Saved to Report' : 'Save to Report Calculations'}</button>
               <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
             </>}
           </> : <p className="muted">Available as standalone calculator; report insert coming next.</p>}

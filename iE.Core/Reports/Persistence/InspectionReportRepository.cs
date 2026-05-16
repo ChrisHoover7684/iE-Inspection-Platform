@@ -88,38 +88,45 @@ public class InspectionReportRepository(InspectionReportsDbContext dbContext)
         }
 
         dbContext.Entry(existing).CurrentValues.SetValues(report);
+        var sections = report.Sections.ToList();
+        var findings = report.Findings.ToList();
+        var observations = report.Observations.ToList();
+        var photos = report.Photos.ToList();
+        var calculations = (report.Calculations ?? [])
+            .Select(CloneCalculationSnapshot)
+            .ToList();
 
         dbContext.Entry(existing).Collection(r => r.Sections).Load();
         existing.Sections.Clear();
-        foreach (var section in report.Sections)
+        foreach (var section in sections)
         {
             existing.Sections.Add(section);
         }
 
         dbContext.Entry(existing).Collection(r => r.Findings).Load();
         existing.Findings.Clear();
-        foreach (var finding in report.Findings)
+        foreach (var finding in findings)
         {
             existing.Findings.Add(finding);
         }
 
         dbContext.Entry(existing).Collection(r => r.Observations).Load();
         existing.Observations.Clear();
-        foreach (var observation in report.Observations)
+        foreach (var observation in observations)
         {
             existing.Observations.Add(observation);
         }
 
         dbContext.Entry(existing).Collection(r => r.Photos).Load();
         existing.Photos.Clear();
-        foreach (var photo in report.Photos)
+        foreach (var photo in photos)
         {
             existing.Photos.Add(photo);
         }
 
         dbContext.Entry(existing).Collection(r => r.Calculations).Load();
         existing.Calculations.Clear();
-        foreach (var calculation in report.Calculations ?? new List<InspectionCalculationSnapshot>())
+        foreach (var calculation in calculations)
         {
             existing.Calculations.Add(calculation);
         }
@@ -139,5 +146,36 @@ public class InspectionReportRepository(InspectionReportsDbContext dbContext)
         dbContext.InspectionReports.Remove(existing);
         dbContext.SaveChanges();
         return true;
+    }
+
+    private static InspectionCalculationSnapshot CloneCalculationSnapshot(InspectionCalculationSnapshot snapshot)
+    {
+        return new InspectionCalculationSnapshot
+        {
+            Id = snapshot.Id,
+            CalculationType = snapshot.CalculationType,
+            DisplayName = snapshot.DisplayName,
+            FormulaVersion = snapshot.FormulaVersion,
+            Inputs = snapshot.Inputs,
+            Outputs = snapshot.Outputs,
+            CalculatedAt = snapshot.CalculatedAt,
+            InsertLabel = snapshot.InsertLabel,
+            LinkedSectionId = snapshot.LinkedSectionId,
+            LinkedFieldId = snapshot.LinkedFieldId,
+            LinkedFindingId = snapshot.LinkedFindingId,
+            StandardReferences = snapshot.StandardReferences.Select(reference => new InspectionCalculationReference
+            {
+                Standard = reference.Standard,
+                Edition = reference.Edition,
+                Paragraph = reference.Paragraph,
+                Note = reference.Note
+            }).ToList(),
+            Warnings = snapshot.Warnings.Select(warning => new InspectionCalculationWarning
+            {
+                Code = warning.Code,
+                Message = warning.Message,
+                Severity = warning.Severity
+            }).ToList()
+        };
     }
 }

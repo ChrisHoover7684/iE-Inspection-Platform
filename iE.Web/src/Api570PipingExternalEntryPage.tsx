@@ -92,6 +92,7 @@ export function Api570PipingExternalEntryPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeField, setActiveField] = useState<{ sectionIndex: number; answerIndex: number } | null>(null);
   const [selectedTool, setSelectedTool] = useState('corrosion-rate');
+  const [isToolWorkspaceOpen, setIsToolWorkspaceOpen] = useState(false);
   const [calcInput, setCalcInput] = useState({ initialThicknessInches: 0.5, finalThicknessInches: 0.45, exposureTimeYears: 1, currentThicknessInches: 0.45, tminInches: 0.35, inspectionFactor: 0.5 });
   const [calcResult, setCalcResult] = useState<InspectionCalculationSnapshot | null>(null);
   const [savedCalculationIds, setSavedCalculationIds] = useState<Set<string>>(new Set());
@@ -228,6 +229,7 @@ export function Api570PipingExternalEntryPage() {
 
   const toolbarRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
+  const workspaceCloseButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     const updateStickyOffsets = () => {
@@ -254,6 +256,18 @@ export function Api570PipingExternalEntryPage() {
       observer?.disconnect();
     };
   }, [report, template, ieAssistEnabled, isDirty, isSaving, findingsCount, recommendationsCount]);
+
+  useEffect(() => {
+    if (!isToolWorkspaceOpen) return;
+    workspaceCloseButtonRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsToolWorkspaceOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isToolWorkspaceOpen]);
 
   const updateHeaderField = (key: keyof InspectionReport, value: string) => {
     if (!report) return;
@@ -376,6 +390,9 @@ export function Api570PipingExternalEntryPage() {
           <select value={selectedTool} onChange={(e) => setSelectedTool(e.target.value)}>
             {toolRegistry.map((tool) => <option key={tool.id} value={tool.id}>{tool.label}</option>)}
           </select>
+          <button type="button" onClick={() => setIsToolWorkspaceOpen(true)} disabled={selectedTool !== 'b31-3-piping'}>
+            Open Tool Workspace
+          </button>
           {selectedTool === 'corrosion-rate' ? <>
             <div className="compact-grid">
               {Object.entries(calcInput).map(([k, v]) => <input key={k} type="number" step="any" value={v} placeholder={k} onChange={(e) => setCalcInput((c) => ({ ...c, [k]: Number(e.target.value) }))} />)}
@@ -420,39 +437,55 @@ export function Api570PipingExternalEntryPage() {
               <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
             </>}
           </> : <>
-            <div className="sidebar-section"><h4>Circuit Conditions</h4>
-              <p className="muted">Design Pressure: {b31SourceMeta.pressure.value ?? 'Not found'} psig — from {b31SourceMeta.pressure.source}</p>
-              <p className="muted">Design Temperature: {b31SourceMeta.temperature.value ?? 'Not found'} °F — from {b31SourceMeta.temperature.source}</p>
-              {(b31SourceMeta.pressure.value == null || b31SourceMeta.temperature.value == null) && <div>
-                <p className="muted">Warning: Circuit pressure/temperature not found; provide one-time manual overrides.</p>
-                <input type="number" placeholder="Manual pressure psig" value={b31ManualPressure} onChange={(e)=>setB31ManualPressure(e.target.value===''?'':Number(e.target.value))} />
-                <input type="number" placeholder="Manual temperature °F" value={b31ManualTemperature} onChange={(e)=>setB31ManualTemperature(e.target.value===''?'':Number(e.target.value))} />
-              </div>}
-              <div className="compact-grid">
-                <input type="text" value={b31Shared.defaultJointType} onChange={(e)=>setB31Shared((c)=>({...c,defaultJointType:e.target.value}))} placeholder="Default Joint Type" />
-                <input type="text" value={b31Shared.defaultJointQualityKey} onChange={(e)=>setB31Shared((c)=>({...c,defaultJointQualityKey:e.target.value}))} placeholder="Default Joint Quality Key" />
-                <input type="number" step="any" value={b31Shared.wFactor} onChange={(e)=>setB31Shared((c)=>({...c,wFactor:Number(e.target.value)}))} placeholder="W factor" />
-                <input type="number" step="any" value={b31Shared.yOverride} onChange={(e)=>setB31Shared((c)=>({...c,yOverride:e.target.value}))} placeholder="Y override (optional)" />
-                <input type="number" step="any" value={b31Shared.eOverride} onChange={(e)=>setB31Shared((c)=>({...c,eOverride:e.target.value}))} placeholder="E override (optional)" />
-              </div>
-            </div>
-            {b31Rows.map((row, idx)=><div key={row.id} className="compact-grid">
-              <input value={row.nps} placeholder="NPS" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,nps:e.target.value}:r))} />
-              <input value={row.schedule ?? ''} placeholder="Schedule" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,schedule:e.target.value}:r))} />
-              <select value={row.materialPreset ?? 'CUSTOM'} onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?applyMaterialPreset(r, e.target.value as 'A106_GR_B_SEAMLESS'|'A53_GR_B_ERW_EB'|'CUSTOM'):r))}>
-                {B31_MATERIAL_PRESETS.map((preset)=><option key={preset.key} value={preset.key}>{preset.label}</option>)}
-              </select>
-              <input value={row.spec} placeholder="Spec" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,spec:e.target.value}:r))} />
-              <input value={row.grade} placeholder="Grade" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,grade:e.target.value}:r))} />
-              <input value={row.productForm} placeholder="Product Form" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,productForm:e.target.value}:r))} />
-              <input value={row.materialCategory} placeholder="Material Category" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,materialCategory:e.target.value}:r))} />
-              <input value={row.jointType ?? ''} placeholder="Joint Type" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,jointType:e.target.value}:r))} />
-              <input value={row.jointQualityKey ?? ''} placeholder="Joint Quality Key" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,jointQualityKey:e.target.value}:r))} />
-              <input value={row.note ?? ''} placeholder="Note / Location (optional)" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,note:e.target.value}:r))} />
-              <button type="button" onClick={()=>setB31Rows((rows)=>rows.filter((r)=>r.id!==row.id))}>Remove</button>
-              <button type="button" onClick={()=>setB31Rows((rows)=>{const target=rows[idx]; return [...rows.slice(0,idx+1),{...target,id:crypto.randomUUID()},...rows.slice(idx+1)]})}>Duplicate</button>
-            </div>)}
-            <button type="button" onClick={()=>setB31Rows((rows)=>[...rows,{ id: crypto.randomUUID(), nps: '', materialPreset: 'A106_GR_B_SEAMLESS', schedule: '', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: b31Shared.defaultJointType, jointQualityKey: b31Shared.defaultJointQualityKey, note: '' }])}>Add Row</button>
+            <p className="muted">Use the workspace to run B31.3 circuit Tmin batch tools and save to report calculations.</p>
+            {calcResult?.calculationType === 'b31-3-piping-circuit-batch' && <p className="muted">{calcResult.insertLabel}</p>}
+          </>}
+          <h4>Saved Calculations</h4>
+          {(report.calculations ?? []).length === 0 ? <p className="muted">No saved calculations.</p> : <ul>{(report.calculations ?? []).map((c) => <li key={c.id}><strong>{c.displayName}</strong><br />{new Date(c.calculatedAt).toLocaleString()} · {c.insertLabel} · warnings: {c.warnings.length}</li>)}</ul>}
+        </div>
+      </aside>
+    </div>
+    {isToolWorkspaceOpen && selectedTool === 'b31-3-piping' && <div className="tool-workspace-backdrop" onClick={() => setIsToolWorkspaceOpen(false)}>
+      <div className="tool-workspace-dialog" role="dialog" aria-label="Engineering Tool Workspace" onClick={(e) => e.stopPropagation()}>
+        <div className="tool-workspace-header">
+          <h3>Engineering Tool Workspace — B31.3 Circuit Tmin Batch</h3>
+          <button type="button" ref={workspaceCloseButtonRef} onClick={() => setIsToolWorkspaceOpen(false)}>Close</button>
+        </div>
+        <div className="sidebar-section"><h4>Circuit Conditions</h4>
+          <p className="muted">Design Pressure: {b31SourceMeta.pressure.value ?? 'Not found'} psig — from {b31SourceMeta.pressure.source}</p>
+          <p className="muted">Design Temperature: {b31SourceMeta.temperature.value ?? 'Not found'} °F — from {b31SourceMeta.temperature.source}</p>
+          {(b31SourceMeta.pressure.value == null || b31SourceMeta.temperature.value == null) && <div>
+            <p className="muted">Warning: Circuit pressure/temperature not found; provide one-time manual overrides.</p>
+            <input type="number" placeholder="Manual pressure psig" value={b31ManualPressure} onChange={(e)=>setB31ManualPressure(e.target.value===''?'':Number(e.target.value))} />
+            <input type="number" placeholder="Manual temperature °F" value={b31ManualTemperature} onChange={(e)=>setB31ManualTemperature(e.target.value===''?'':Number(e.target.value))} />
+          </div>}
+          <h4>Shared Defaults</h4>
+          <div className="compact-grid">
+            <input type="text" value={b31Shared.defaultJointType} onChange={(e)=>setB31Shared((c)=>({...c,defaultJointType:e.target.value}))} placeholder="Default Joint Type" />
+            <input type="text" value={b31Shared.defaultJointQualityKey} onChange={(e)=>setB31Shared((c)=>({...c,defaultJointQualityKey:e.target.value}))} placeholder="Default Joint Quality Key" />
+            <input type="number" step="any" value={b31Shared.wFactor} onChange={(e)=>setB31Shared((c)=>({...c,wFactor:Number(e.target.value)}))} placeholder="W factor" />
+            <input type="number" step="any" value={b31Shared.yOverride} onChange={(e)=>setB31Shared((c)=>({...c,yOverride:e.target.value}))} placeholder="Y override (optional)" />
+            <input type="number" step="any" value={b31Shared.eOverride} onChange={(e)=>setB31Shared((c)=>({...c,eOverride:e.target.value}))} placeholder="E override (optional)" />
+          </div>
+        </div>
+        <h4>Editable Pipe Rows</h4>
+        {b31Rows.map((row, idx)=><div key={row.id} className="compact-grid">
+          <input value={row.nps} placeholder="NPS" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,nps:e.target.value}:r))} />
+          <input value={row.schedule ?? ''} placeholder="Schedule" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,schedule:e.target.value}:r))} />
+          <select value={row.materialPreset ?? 'CUSTOM'} onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?applyMaterialPreset(r, e.target.value as 'A106_GR_B_SEAMLESS'|'A53_GR_B_ERW_EB'|'CUSTOM'):r))}>
+            {B31_MATERIAL_PRESETS.map((preset)=><option key={preset.key} value={preset.key}>{preset.label}</option>)}
+          </select>
+          <input value={row.spec} placeholder="Spec" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,spec:e.target.value}:r))} />
+          <input value={row.grade} placeholder="Grade" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,grade:e.target.value}:r))} />
+          <input value={row.productForm} placeholder="Product Form" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,productForm:e.target.value}:r))} />
+          <input value={row.materialCategory} placeholder="Material Category" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,materialCategory:e.target.value}:r))} />
+          <input value={row.jointType ?? ''} placeholder="Joint Type" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,jointType:e.target.value}:r))} />
+          <input value={row.jointQualityKey ?? ''} placeholder="Joint Quality Key" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,jointQualityKey:e.target.value}:r))} />
+          <input value={row.note ?? ''} placeholder="Note / Location (optional)" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,note:e.target.value}:r))} />
+          <button type="button" onClick={()=>setB31Rows((rows)=>rows.filter((r)=>r.id!==row.id))}>Remove</button>
+          <button type="button" onClick={()=>setB31Rows((rows)=>{const target=rows[idx]; return [...rows.slice(0,idx+1),{...target,id:crypto.randomUUID()},...rows.slice(idx+1)]})}>Duplicate</button>
+        </div>)}
+        <button type="button" onClick={()=>setB31Rows((rows)=>[...rows,{ id: crypto.randomUUID(), nps: '', materialPreset: 'A106_GR_B_SEAMLESS', schedule: '', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: b31Shared.defaultJointType, jointQualityKey: b31Shared.defaultJointQualityKey, note: '' }])}>Add Row</button>
             <button type="button" disabled={isB31BatchRunning} onClick={async ()=>{
               setIsB31BatchRunning(true);
               try {
@@ -476,20 +509,16 @@ export function Api570PipingExternalEntryPage() {
                 setCalcResult(buildCircuitBatchSnapshot({ pressurePsi: pressure, temperatureF: temperature, sourceMetadata: sourceMeta, wFactor: b31Shared.wFactor, yOverride: b31Shared.yOverride===''?null:Number(b31Shared.yOverride), eOverride: b31Shared.eOverride===''?null:Number(b31Shared.eOverride), defaultJointType: b31Shared.defaultJointType, defaultJointQualityKey: b31Shared.defaultJointQualityKey }, rowResults));
               } finally { setIsB31BatchRunning(false); }
             }}>{isB31BatchRunning ? 'Running…' : 'Run Batch Calculation'}</button>
-            {calcResult?.calculationType === 'b31-3-piping-circuit-batch' && <>
+        {calcResult?.calculationType === 'b31-3-piping-circuit-batch' && <>
               <p className="muted">{calcResult.insertLabel}</p>
-              <table>
+              <div className="tool-results-table-wrap"><table className="tool-results-table">
                 <thead><tr><th>NPS</th><th>Material</th><th>OD</th><th>Allowable Stress</th><th>E</th><th>Y</th><th>W</th><th>Required Tmin</th><th>Status/Message</th></tr></thead>
                 <tbody>{toResultDisplayRows((calcResult.outputs as { rows: never[] }).rows as never[]).map((row, index)=><tr key={`${row.nps}-${index}`}><td>{row.nps}</td><td>{row.material}</td><td>{row.outsideDiameterIn?.toFixed?.(4) ?? 'N/A'}</td><td>{row.allowableStressPsi ?? 'N/A'}</td><td>{row.eFactor ?? 'N/A'}</td><td>{row.yCoefficient ?? 'N/A'}</td><td>{row.wFactor ?? 'N/A'}</td><td>{row.requiredThicknessIn?.toFixed?.(4) ?? 'N/A'}</td><td>{row.statusMessage}</td></tr>)}</tbody>
-              </table>
+              </table></div>
               <button type="button" onClick={saveCalculationSnapshot} disabled={savedCalculationIds.has(calcResult.id)}>{savedCalculationIds.has(calcResult.id) ? 'Saved to Report' : 'Save to Report Calculations'}</button>
               <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
             </>}
-          </>}
-          <h4>Saved Calculations</h4>
-          {(report.calculations ?? []).length === 0 ? <p className="muted">No saved calculations.</p> : <ul>{(report.calculations ?? []).map((c) => <li key={c.id}><strong>{c.displayName}</strong><br />{new Date(c.calculatedAt).toLocaleString()} · {c.insertLabel} · warnings: {c.warnings.length}</li>)}</ul>}
-        </div>
-      </aside>
-    </div>
+      </div>
+    </div>}
   </div>;
 }

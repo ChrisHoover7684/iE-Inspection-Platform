@@ -79,7 +79,7 @@ public sealed class DemoNdeReportDraftService(INdeLogReadModelService ndeLogRead
     public NdeReportDraftOperationResult SaveDraft(string ndeRequestId, NdeReportDraftSaveRequest request)
     {
         if (!ndeLogReadModelService.TryGetLogItem(ndeRequestId, out var item) || item is null) return new(false, "not_found");
-        var reportNumber = request.ReportNumber ?? item.ReportNumber ?? NdeNumbering.FormatReportNumber(2026, item.Method, ExtractSequence(item.RequestNumber));
+        var reportNumber = request.ReportNumber ?? item.ReportNumber ?? NdeNumbering.FormatReportNumber(ResolveReportYear(request, item), item.Method, ExtractSequence(item.RequestNumber));
         var saved = new NdeReportDraftReadModel(
             request.Id ?? $"draft-{ndeRequestId}", ndeRequestId, item.RequestNumber, reportNumber, request.Method ?? item.Method, request.Stage ?? item.NdeStage,
             request.Inspector, request.ExaminationDate, request.Procedure, request.AcceptanceCriteria, request.SurfaceCondition,
@@ -94,7 +94,7 @@ public sealed class DemoNdeReportDraftService(INdeLogReadModelService ndeLogRead
     {
         if (!ndeLogReadModelService.TryGetLogItem(ndeRequestId, out var item) || item is null) return new(false, "not_found");
         if (string.IsNullOrWhiteSpace(request.Inspector) || string.IsNullOrWhiteSpace(request.ExaminationDate) || string.IsNullOrWhiteSpace(request.Procedure) || string.IsNullOrWhiteSpace(request.TestResult)) return new(false, "required_fields_missing");
-        var reportNumber = request.ReportNumber ?? item.ReportNumber ?? NdeNumbering.FormatReportNumber(2026, item.Method, ExtractSequence(item.RequestNumber));
+        var reportNumber = request.ReportNumber ?? item.ReportNumber ?? NdeNumbering.FormatReportNumber(ResolveReportYear(request, item), item.Method, ExtractSequence(item.RequestNumber));
         var completed = new NdeReportDraftReadModel(
             request.Id ?? $"draft-{ndeRequestId}", ndeRequestId, item.RequestNumber, reportNumber, request.Method ?? item.Method, request.Stage ?? item.NdeStage,
             request.Inspector, request.ExaminationDate, request.Procedure, request.AcceptanceCriteria, request.SurfaceCondition,
@@ -106,4 +106,29 @@ public sealed class DemoNdeReportDraftService(INdeLogReadModelService ndeLogRead
     }
 
     private static int ExtractSequence(string requestNumber) => int.TryParse(requestNumber.Split('-').LastOrDefault(), out var seq) ? seq : 1;
+
+    private static int ResolveReportYear(NdeReportDraftSaveRequest request, NdeLogItemReadModel item)
+    {
+        var fromRequestNumber = TryParseYearFromRequestNumber(request.RequestNumber ?? item.RequestNumber);
+        if (fromRequestNumber.HasValue) return fromRequestNumber.Value;
+
+        if (DateTime.TryParse(request.ExaminationDate, out var examDate)) return examDate.Year;
+
+        return DateTime.UtcNow.Year;
+    }
+
+    private static int? TryParseYearFromRequestNumber(string? requestNumber)
+    {
+        if (string.IsNullOrWhiteSpace(requestNumber)) return null;
+        var parts = requestNumber.Split('-');
+        if (parts.Length < 3) return null;
+        if (!int.TryParse(parts[1], out var yearToken)) return null;
+
+        return yearToken switch
+        {
+            >= 1000 => yearToken,
+            >= 0 => 2000 + yearToken,
+            _ => null
+        };
+    }
 }

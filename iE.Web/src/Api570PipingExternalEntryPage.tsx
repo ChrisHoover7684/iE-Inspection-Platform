@@ -441,7 +441,7 @@ export function Api570PipingExternalEntryPage() {
               <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
             </>}
           </> : (selectedTool === 'api-570-thickness-assessment' || selectedTool === 'b31-3-piping') ? <>
-            <p className="muted">Use the workspace to run B31.3 circuit Tmin batch tools and save to report calculations.</p>
+            <p className="muted">Use the workspace to run the B31.3 circuit Tmin batch and save snapshot results to report calculations.</p>
             {(calcResult?.calculationType === 'b31-3-piping-circuit-batch' || calcResult?.calculationType === 'api-570-thickness-assessment') && <p className="muted">{calcResult.insertLabel}</p>}
           </> : null}
           <h4>Saved Calculations</h4>
@@ -526,7 +526,7 @@ export function Api570PipingExternalEntryPage() {
         </>
         }
         {selectedTool === 'api-570-thickness-assessment' && <>
-          <p className="muted">Select saved B31.3 snapshot and assess CML readings.</p>
+          <p className="muted">Assess CML thickness readings against saved B31.3 Tmin snapshots.</p>
           <select value={api570SelectedB31SnapshotId} onChange={(e)=>setApi570SelectedB31SnapshotId(e.target.value)}>
             <option value="">Select B31.3 snapshot</option>
             {(report.calculations ?? []).filter((c)=>c.calculationType==='b31-3-piping-circuit-batch').map((c)=><option key={c.id} value={c.id}>{new Date(c.calculatedAt).toLocaleString()} · {c.insertLabel}</option>)}

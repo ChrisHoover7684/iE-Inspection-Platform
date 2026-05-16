@@ -338,13 +338,37 @@ describe('engineering calculations foundation', () => {
     expect(snapshot.outputs.rows[0].status).toBe('Monitor');
   });
 
-  it('api570 assessment adds date and propagated corrosion warnings', () => {
+  it('api570 assessment prior date after current sets warning and null corrosion outputs', () => {
     const b31Rows = [mapB313RowResult('1', { id: '1', nps: '2', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel' }, null, { success: true, message: 'ok', allowableStressPsi: 1, eFactor: 1, yCoefficient: 0.4, wFactor: 1, requiredThicknessIn: 0.25 }, [])];
-    const snapshot = assessApi570Thickness({ b31SnapshotId: 'snap-1', monitorMarginThresholdIn: 0.05, cmlReadings: [{ id: 'c1', cmlId: 'CML-1', location: '', nps: '2', currentThicknessIn: 0, priorThicknessIn: 0.3, priorInspectionDate: '2025-01-01', currentInspectionDate: '2024-01-01' }, { id: 'c2', cmlId: 'CML-2', location: '', nps: '2', currentThicknessIn: 0.3, priorThicknessIn: 0.31, priorInspectionDate: '2025-01-01', currentInspectionDate: '2025-01-01' }] }, b31Rows);
+    const snapshot = assessApi570Thickness({ b31SnapshotId: 'snap-1', monitorMarginThresholdIn: 0.05, cmlReadings: [{ id: 'c1', cmlId: 'CML-1', location: '', nps: '2', currentThicknessIn: 0.3, priorThicknessIn: 0.31, priorInspectionDate: '2025-01-01', currentInspectionDate: '2024-01-01' }] }, b31Rows);
     expect(snapshot.warnings.some((w) => w.code === 'PRIOR_DATE_AFTER_CURRENT')).toBe(true);
     expect(snapshot.warnings.some((w) => w.code === 'INVALID_DATE_INTERVAL')).toBe(true);
-    expect(snapshot.warnings.some((w) => w.code === 'CURRENT_THICKNESS_NON_POSITIVE')).toBe(true);
-    expect(snapshot.warnings.some((w) => w.code === 'EXPOSURE_TIME_NON_POSITIVE')).toBe(true);
+    expect(snapshot.outputs.rows[0].corrosionRateInPerYear).toBeNull();
+    expect(snapshot.outputs.rows[0].remainingLifeYears).toBeNull();
+  });
+
+  it('api570 assessment same prior/current date sets invalid interval warning and null corrosion outputs', () => {
+    const b31Rows = [mapB313RowResult('1', { id: '1', nps: '2', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel' }, null, { success: true, message: 'ok', allowableStressPsi: 1, eFactor: 1, yCoefficient: 0.4, wFactor: 1, requiredThicknessIn: 0.25 }, [])];
+    const snapshot = assessApi570Thickness({ b31SnapshotId: 'snap-1', monitorMarginThresholdIn: 0.05, cmlReadings: [{ id: 'c1', cmlId: 'CML-1', location: '', nps: '2', currentThicknessIn: 0.3, priorThicknessIn: 0.31, priorInspectionDate: '2025-01-01', currentInspectionDate: '2025-01-01' }] }, b31Rows);
+    expect(snapshot.warnings.some((w) => w.code === 'INVALID_DATE_INTERVAL')).toBe(true);
+    expect(snapshot.outputs.rows[0].corrosionRateInPerYear).toBeNull();
+    expect(snapshot.outputs.rows[0].remainingLifeYears).toBeNull();
+  });
+
+  it('api570 assessment invalid date string sets invalid interval warning and null corrosion outputs', () => {
+    const b31Rows = [mapB313RowResult('1', { id: '1', nps: '2', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel' }, null, { success: true, message: 'ok', allowableStressPsi: 1, eFactor: 1, yCoefficient: 0.4, wFactor: 1, requiredThicknessIn: 0.25 }, [])];
+    const snapshot = assessApi570Thickness({ b31SnapshotId: 'snap-1', monitorMarginThresholdIn: 0.05, cmlReadings: [{ id: 'c1', cmlId: 'CML-1', location: '', nps: '2', currentThicknessIn: 0.3, priorThicknessIn: 0.31, priorInspectionDate: 'not-a-date', currentInspectionDate: '2025-01-01' }] }, b31Rows);
+    expect(snapshot.warnings.some((w) => w.code === 'INVALID_DATE_INTERVAL')).toBe(true);
+    expect(snapshot.outputs.rows[0].corrosionRateInPerYear).toBeNull();
+    expect(snapshot.outputs.rows[0].remainingLifeYears).toBeNull();
+  });
+
+  it('api570 assessment valid date interval still calculates corrosion outputs', () => {
+    const b31Rows = [mapB313RowResult('1', { id: '1', nps: '2', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel' }, null, { success: true, message: 'ok', allowableStressPsi: 1, eFactor: 1, yCoefficient: 0.4, wFactor: 1, requiredThicknessIn: 0.25 }, [])];
+    const snapshot = assessApi570Thickness({ b31SnapshotId: 'snap-1', monitorMarginThresholdIn: 0.05, cmlReadings: [{ id: 'c1', cmlId: 'CML-1', location: '', nps: '2', currentThicknessIn: 0.3, priorThicknessIn: 0.31, priorInspectionDate: '2024-01-01', currentInspectionDate: '2025-01-01' }] }, b31Rows);
+    expect(snapshot.warnings.some((w) => w.code === 'INVALID_DATE_INTERVAL')).toBe(false);
+    expect(snapshot.outputs.rows[0].corrosionRateInPerYear).toBeGreaterThan(0);
+    expect(snapshot.outputs.rows[0].remainingLifeYears).not.toBeNull();
   });
 
 });

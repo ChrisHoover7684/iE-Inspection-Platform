@@ -4,7 +4,7 @@ import { calculatePipeDimensions } from '../calculations/pipeLookup';
 import { calculateRequiredThicknessMargin } from '../calculations/pressureVessel';
 import { calculateTankShellCorrosionMargin } from '../calculations/tankShell';
 import { toB31_3EngineeringSnapshot } from '../calculations/b31_3Piping';
-import { buildCircuitBatchSnapshot, mapB313RowResult, resolveCircuitConditionsFromReport } from '../calculations/b31_3CircuitBatch';
+import { applyMaterialPreset, buildCircuitBatchSnapshot, formatCircuitBatchSummary, mapB313RowResult, resolveCircuitConditionsFromReport, toResultDisplayRows } from '../calculations/b31_3CircuitBatch';
 
 describe('engineering calculations foundation', () => {
   const expectFoundationFields = (result: { calculationType: string; formulaVersion: string; displayName: string; calculatedAt: string; insertLabel: string; warnings: unknown[]; standardReferences: unknown[]; }) => {
@@ -264,5 +264,47 @@ describe('engineering calculations foundation', () => {
     expect(meta.temperature.value).toBe(100);
     const snapshot = buildCircuitBatchSnapshot({ pressurePsi: 300, temperatureF: 125, sourceMetadata: { pressure: { value: 300, source: 'Manual', isManual: true }, temperature: { value: 125, source: 'Manual', isManual: true } }, defaultJointType: 'Seamless', defaultJointQualityKey: 'Seamless' }, []);
     expect(snapshot.warnings.some((w) => w.code === 'CIRCUIT_PRESSURE_OR_TEMPERATURE_MANUAL_OVERRIDE')).toBe(true);
+  });
+
+  it('material presets populate expected row fields', () => {
+    const base = { id: '1', nps: '2', spec: '', grade: '', productForm: '', materialCategory: '' };
+    const a106 = applyMaterialPreset(base, 'A106_GR_B_SEAMLESS');
+    expect(a106.spec).toBe('A106');
+    expect(a106.jointType).toBe('Seamless');
+    const a53 = applyMaterialPreset(base, 'A53_GR_B_ERW_EB');
+    expect(a53.spec).toBe('A53');
+    expect(a53.jointQualityKey).toBe('E/B');
+  });
+
+  it('snapshot inputs preserve row material fields', () => {
+    const shared = { pressurePsi: 285, temperatureF: 100, sourceMetadata: { pressure: { value: 285, source: 'Inspection Context', isManual: false }, temperature: { value: 100, source: 'Inspection Context', isManual: false } }, defaultJointType: 'Seamless', defaultJointQualityKey: 'Seamless' };
+    const rows = [mapB313RowResult('1', { id: '1', nps: '2', schedule: '40', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: 'Seamless', jointQualityKey: 'Seamless', note: 'rack A' }, null, null, [])];
+    const snapshot = buildCircuitBatchSnapshot(shared, rows);
+    expect(snapshot.inputs.rows[0].spec).toBe('A106');
+    expect(snapshot.inputs.rows[0].jointQualityKey).toBe('Seamless');
+    expect(snapshot.inputs.rows[0].note).toBe('rack A');
+  });
+
+  it('insert summary formatter includes each pipe size material and Tmin', () => {
+    const shared = { pressurePsi: 285, temperatureF: 100, sourceMetadata: { pressure: { value: 285, source: 'Inspection Context', isManual: false }, temperature: { value: 100, source: 'Inspection Context', isManual: false } }, defaultJointType: 'Seamless', defaultJointQualityKey: 'Seamless' };
+    const rows = [mapB313RowResult('1', { id: '1', nps: '2', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel' }, null, { success: true, message: 'ok', allowableStressPsi: 1, eFactor: 1, yCoefficient: 0.4, wFactor: 1, requiredThicknessIn: 0.1234 }, [])];
+    const summary = formatCircuitBatchSummary(buildCircuitBatchSnapshot(shared, rows));
+    expect(summary).toContain('285 psig / 100°F');
+    expect(summary).toContain('2 in A106 B');
+    expect(summary).toContain('Tmin 0.1234 in');
+  });
+
+  it('results table data model includes expected columns', () => {
+    const rows = [mapB313RowResult('1', { id: '1', nps: '2', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel' }, null, { success: false, message: 'failed', allowableStressPsi: null, eFactor: null, yCoefficient: null, wFactor: null, requiredThicknessIn: null }, [])];
+    const display = toResultDisplayRows(rows)[0];
+    expect(display).toHaveProperty('nps');
+    expect(display).toHaveProperty('material');
+    expect(display).toHaveProperty('outsideDiameterIn');
+    expect(display).toHaveProperty('allowableStressPsi');
+    expect(display).toHaveProperty('eFactor');
+    expect(display).toHaveProperty('yCoefficient');
+    expect(display).toHaveProperty('wFactor');
+    expect(display).toHaveProperty('requiredThicknessIn');
+    expect(display).toHaveProperty('statusMessage');
   });
 });

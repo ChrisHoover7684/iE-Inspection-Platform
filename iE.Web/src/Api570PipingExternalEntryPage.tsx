@@ -5,7 +5,7 @@ import type { InlineSuggestion, InspectionReport, InspectionReportAnswer, Narrat
 import { calculateCorrosionRate } from './engineering/calculations/corrosionRate';
 import { calculatePipeDimensions } from './engineering/calculations/pipeLookup';
 import type { InspectionCalculationSnapshot } from './engineering/types';
-import { buildCircuitBatchSnapshot, mapB313RowResult, NPS_OD_LOOKUP, resolveCircuitConditionsFromReport, type B31CircuitRowInput, type B31CircuitSourceMetadata } from './engineering/calculations/b31_3CircuitBatch';
+import { applyMaterialPreset, B31_MATERIAL_PRESETS, buildCircuitBatchSnapshot, formatCircuitBatchSummary, mapB313RowResult, NPS_OD_LOOKUP, resolveCircuitConditionsFromReport, toResultDisplayRows, type B31CircuitRowInput, type B31CircuitSourceMetadata } from './engineering/calculations/b31_3CircuitBatch';
 
 const TEMPLATE_ID = 'api-570-piping-external';
 const ACTIVE_REPORT_ID_STORAGE_KEY = 'ie_api570_active_report_id';
@@ -63,10 +63,10 @@ const getErrorMessage = (error: unknown, fallback: string) => (error instanceof 
 const findNarrativeSection = (narrative: NarrativeResult, title: string) => narrative.sections.find((section) => section.title.trim().toLowerCase() === title.toLowerCase());
 
 const defaultB31Rows = (): B31CircuitRowInput[] => ([
-  { id: crypto.randomUUID(), nps: '2', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: 'Seamless', jointQualityKey: 'Seamless' },
-  { id: crypto.randomUUID(), nps: '4', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: 'Seamless', jointQualityKey: 'Seamless' },
-  { id: crypto.randomUUID(), nps: '6', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: 'Seamless', jointQualityKey: 'Seamless' },
-  { id: crypto.randomUUID(), nps: '0.75', spec: 'A53', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: 'ERW', jointQualityKey: 'E/B' }
+  { id: crypto.randomUUID(), nps: '2', materialPreset: 'A106_GR_B_SEAMLESS', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: 'Seamless', jointQualityKey: 'Seamless' },
+  { id: crypto.randomUUID(), nps: '4', materialPreset: 'A106_GR_B_SEAMLESS', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: 'Seamless', jointQualityKey: 'Seamless' },
+  { id: crypto.randomUUID(), nps: '6', materialPreset: 'A106_GR_B_SEAMLESS', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: 'Seamless', jointQualityKey: 'Seamless' },
+  { id: crypto.randomUUID(), nps: '0.75', materialPreset: 'A53_GR_B_ERW_EB', spec: 'A53', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: 'ERW', jointQualityKey: 'E/B' }
 ]);
 
 const toCondition = (answer: InspectionReportAnswer): 'acceptable' | 'issue' | 'na' | 'monitor' => {
@@ -268,7 +268,8 @@ export function Api570PipingExternalEntryPage() {
     const latest = structuredClone(report);
     const answer = latest.sections[activeField.sectionIndex]?.answers?.[activeField.answerIndex];
     if (!answer) return;
-    answer.comment = `${answer.comment ?? ''}${answer.comment ? ' ' : ''}${calcResult.insertLabel}`.trim();
+    const summary = calcResult.calculationType === 'b31-3-piping-circuit-batch' ? formatCircuitBatchSummary(calcResult as never) : calcResult.insertLabel;
+    answer.comment = `${answer.comment ?? ''}${answer.comment ? '\n' : ''}${summary}`.trim();
     setReport(latest);
     setIsDirty(true);
   };
@@ -427,19 +428,31 @@ export function Api570PipingExternalEntryPage() {
                 <input type="number" placeholder="Manual pressure psig" value={b31ManualPressure} onChange={(e)=>setB31ManualPressure(e.target.value===''?'':Number(e.target.value))} />
                 <input type="number" placeholder="Manual temperature °F" value={b31ManualTemperature} onChange={(e)=>setB31ManualTemperature(e.target.value===''?'':Number(e.target.value))} />
               </div>}
-              <input type="number" step="any" value={b31Shared.wFactor} onChange={(e)=>setB31Shared((c)=>({...c,wFactor:Number(e.target.value)}))} placeholder="W factor" />
-              <input type="number" step="any" value={b31Shared.yOverride} onChange={(e)=>setB31Shared((c)=>({...c,yOverride:e.target.value}))} placeholder="Y override (optional)" />
-              <input type="number" step="any" value={b31Shared.eOverride} onChange={(e)=>setB31Shared((c)=>({...c,eOverride:e.target.value}))} placeholder="E override (optional)" />
+              <div className="compact-grid">
+                <input type="text" value={b31Shared.defaultJointType} onChange={(e)=>setB31Shared((c)=>({...c,defaultJointType:e.target.value}))} placeholder="Default Joint Type" />
+                <input type="text" value={b31Shared.defaultJointQualityKey} onChange={(e)=>setB31Shared((c)=>({...c,defaultJointQualityKey:e.target.value}))} placeholder="Default Joint Quality Key" />
+                <input type="number" step="any" value={b31Shared.wFactor} onChange={(e)=>setB31Shared((c)=>({...c,wFactor:Number(e.target.value)}))} placeholder="W factor" />
+                <input type="number" step="any" value={b31Shared.yOverride} onChange={(e)=>setB31Shared((c)=>({...c,yOverride:e.target.value}))} placeholder="Y override (optional)" />
+                <input type="number" step="any" value={b31Shared.eOverride} onChange={(e)=>setB31Shared((c)=>({...c,eOverride:e.target.value}))} placeholder="E override (optional)" />
+              </div>
             </div>
             {b31Rows.map((row, idx)=><div key={row.id} className="compact-grid">
               <input value={row.nps} placeholder="NPS" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,nps:e.target.value}:r))} />
               <input value={row.schedule ?? ''} placeholder="Schedule" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,schedule:e.target.value}:r))} />
+              <select value={row.materialPreset ?? 'CUSTOM'} onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?applyMaterialPreset(r, e.target.value as 'A106_GR_B_SEAMLESS'|'A53_GR_B_ERW_EB'|'CUSTOM'):r))}>
+                {B31_MATERIAL_PRESETS.map((preset)=><option key={preset.key} value={preset.key}>{preset.label}</option>)}
+              </select>
               <input value={row.spec} placeholder="Spec" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,spec:e.target.value}:r))} />
               <input value={row.grade} placeholder="Grade" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,grade:e.target.value}:r))} />
+              <input value={row.productForm} placeholder="Product Form" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,productForm:e.target.value}:r))} />
+              <input value={row.materialCategory} placeholder="Material Category" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,materialCategory:e.target.value}:r))} />
+              <input value={row.jointType ?? ''} placeholder="Joint Type" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,jointType:e.target.value}:r))} />
+              <input value={row.jointQualityKey ?? ''} placeholder="Joint Quality Key" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,jointQualityKey:e.target.value}:r))} />
+              <input value={row.note ?? ''} placeholder="Note / Location (optional)" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,note:e.target.value}:r))} />
               <button type="button" onClick={()=>setB31Rows((rows)=>rows.filter((r)=>r.id!==row.id))}>Remove</button>
               <button type="button" onClick={()=>setB31Rows((rows)=>{const target=rows[idx]; return [...rows.slice(0,idx+1),{...target,id:crypto.randomUUID()},...rows.slice(idx+1)]})}>Duplicate</button>
             </div>)}
-            <button type="button" onClick={()=>setB31Rows((rows)=>[...rows,{ id: crypto.randomUUID(), nps: '', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: b31Shared.defaultJointType, jointQualityKey: b31Shared.defaultJointQualityKey }])}>Add Row</button>
+            <button type="button" onClick={()=>setB31Rows((rows)=>[...rows,{ id: crypto.randomUUID(), nps: '', materialPreset: 'A106_GR_B_SEAMLESS', schedule: '', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: b31Shared.defaultJointType, jointQualityKey: b31Shared.defaultJointQualityKey, note: '' }])}>Add Row</button>
             <button type="button" disabled={isB31BatchRunning} onClick={async ()=>{
               setIsB31BatchRunning(true);
               try {
@@ -465,6 +478,10 @@ export function Api570PipingExternalEntryPage() {
             }}>{isB31BatchRunning ? 'Running…' : 'Run Batch Calculation'}</button>
             {calcResult?.calculationType === 'b31-3-piping-circuit-batch' && <>
               <p className="muted">{calcResult.insertLabel}</p>
+              <table>
+                <thead><tr><th>NPS</th><th>Material</th><th>OD</th><th>Allowable Stress</th><th>E</th><th>Y</th><th>W</th><th>Required Tmin</th><th>Status/Message</th></tr></thead>
+                <tbody>{toResultDisplayRows((calcResult.outputs as { rows: never[] }).rows as never[]).map((row, index)=><tr key={`${row.nps}-${index}`}><td>{row.nps}</td><td>{row.material}</td><td>{row.outsideDiameterIn?.toFixed?.(4) ?? 'N/A'}</td><td>{row.allowableStressPsi ?? 'N/A'}</td><td>{row.eFactor ?? 'N/A'}</td><td>{row.yCoefficient ?? 'N/A'}</td><td>{row.wFactor ?? 'N/A'}</td><td>{row.requiredThicknessIn?.toFixed?.(4) ?? 'N/A'}</td><td>{row.statusMessage}</td></tr>)}</tbody>
+              </table>
               <button type="button" onClick={saveCalculationSnapshot} disabled={savedCalculationIds.has(calcResult.id)}>{savedCalculationIds.has(calcResult.id) ? 'Saved to Report' : 'Save to Report Calculations'}</button>
               <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
             </>}

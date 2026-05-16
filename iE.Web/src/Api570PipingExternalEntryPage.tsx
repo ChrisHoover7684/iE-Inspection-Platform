@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ApiError, pipeLookupApi, reportingApi } from './api';
+import { ApiError, b313Api, pipeLookupApi, reportingApi } from './api';
 import type { InlineSuggestion, InspectionReport, InspectionReportAnswer, NarrativeResult, ReportTemplate, UiAlert } from './types';
 import { calculateCorrosionRate } from './engineering/calculations/corrosionRate';
 import { calculatePipeDimensions } from './engineering/calculations/pipeLookup';
 import type { InspectionCalculationSnapshot } from './engineering/types';
+import { buildCircuitBatchSnapshot, mapB313RowResult, NPS_OD_LOOKUP, resolveCircuitConditionsFromReport, type B31CircuitRowInput, type B31CircuitSourceMetadata } from './engineering/calculations/b31_3CircuitBatch';
 
 const TEMPLATE_ID = 'api-570-piping-external';
 const ACTIVE_REPORT_ID_STORAGE_KEY = 'ie_api570_active_report_id';
@@ -61,6 +62,13 @@ const DUPLICATE_HEADER_LABELS = new Set([
 const getErrorMessage = (error: unknown, fallback: string) => (error instanceof ApiError ? error.message : error instanceof Error ? error.message : fallback);
 const findNarrativeSection = (narrative: NarrativeResult, title: string) => narrative.sections.find((section) => section.title.trim().toLowerCase() === title.toLowerCase());
 
+const defaultB31Rows = (): B31CircuitRowInput[] => ([
+  { id: crypto.randomUUID(), nps: '2', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: 'Seamless', jointQualityKey: 'Seamless' },
+  { id: crypto.randomUUID(), nps: '4', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: 'Seamless', jointQualityKey: 'Seamless' },
+  { id: crypto.randomUUID(), nps: '6', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: 'Seamless', jointQualityKey: 'Seamless' },
+  { id: crypto.randomUUID(), nps: '0.75', spec: 'A53', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: 'ERW', jointQualityKey: 'E/B' }
+]);
+
 const toCondition = (answer: InspectionReportAnswer): 'acceptable' | 'issue' | 'na' | 'monitor' => {
   const value = `${answer.value ?? ''} ${answer.comment ?? ''}`.toLowerCase();
   if (value.includes('n/a') || value.includes('na')) return 'na';
@@ -93,6 +101,13 @@ export function Api570PipingExternalEntryPage() {
   const [pipeLookupInput, setPipeLookupInput] = useState({ nps: '', schedule: '' });
   const [isPipeLookupLoading, setIsPipeLookupLoading] = useState(false);
 
+  const [b31Rows, setB31Rows] = useState<B31CircuitRowInput[]>(() => defaultB31Rows());
+  const [b31SourceMeta, setB31SourceMeta] = useState<B31CircuitSourceMetadata>(() => resolveCircuitConditionsFromReport(null));
+  const [b31ManualPressure, setB31ManualPressure] = useState<number | ''>('');
+  const [b31ManualTemperature, setB31ManualTemperature] = useState<number | ''>('');
+  const [b31Shared, setB31Shared] = useState({ wFactor: 1, yOverride: '', eOverride: '', defaultJointType: 'Seamless', defaultJointQualityKey: 'Seamless' });
+  const [isB31BatchRunning, setIsB31BatchRunning] = useState(false);
+
   useEffect(() => { void (async () => { /* unchanged init */
     try {
       const loadedTemplate = await reportingApi.getTemplateById(TEMPLATE_ID); setTemplate(loadedTemplate);
@@ -107,6 +122,10 @@ export function Api570PipingExternalEntryPage() {
   })(); }, [location.state]);
 
   useEffect(() => { localStorage.setItem(IE_ASSIST_STORAGE_KEY, String(ieAssistEnabled)); }, [ieAssistEnabled]);
+
+  useEffect(() => {
+    setB31SourceMeta(resolveCircuitConditionsFromReport(report));
+  }, [report]);
 
 
   useEffect(() => {
@@ -399,7 +418,57 @@ export function Api570PipingExternalEntryPage() {
               <button type="button" onClick={saveCalculationSnapshot} disabled={savedCalculationIds.has(calcResult.id)}>{savedCalculationIds.has(calcResult.id) ? 'Saved to Report' : 'Save to Report Calculations'}</button>
               <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
             </>}
-          </> : <p className="muted">Available as standalone calculator; report insert coming next.</p>}
+          </> : <>
+            <div className="sidebar-section"><h4>Circuit Conditions</h4>
+              <p className="muted">Design Pressure: {b31SourceMeta.pressure.value ?? 'Not found'} psig — from {b31SourceMeta.pressure.source}</p>
+              <p className="muted">Design Temperature: {b31SourceMeta.temperature.value ?? 'Not found'} °F — from {b31SourceMeta.temperature.source}</p>
+              {(b31SourceMeta.pressure.value == null || b31SourceMeta.temperature.value == null) && <div>
+                <p className="muted">Warning: Circuit pressure/temperature not found; provide one-time manual overrides.</p>
+                <input type="number" placeholder="Manual pressure psig" value={b31ManualPressure} onChange={(e)=>setB31ManualPressure(e.target.value===''?'':Number(e.target.value))} />
+                <input type="number" placeholder="Manual temperature °F" value={b31ManualTemperature} onChange={(e)=>setB31ManualTemperature(e.target.value===''?'':Number(e.target.value))} />
+              </div>}
+              <input type="number" step="any" value={b31Shared.wFactor} onChange={(e)=>setB31Shared((c)=>({...c,wFactor:Number(e.target.value)}))} placeholder="W factor" />
+              <input type="number" step="any" value={b31Shared.yOverride} onChange={(e)=>setB31Shared((c)=>({...c,yOverride:e.target.value}))} placeholder="Y override (optional)" />
+              <input type="number" step="any" value={b31Shared.eOverride} onChange={(e)=>setB31Shared((c)=>({...c,eOverride:e.target.value}))} placeholder="E override (optional)" />
+            </div>
+            {b31Rows.map((row, idx)=><div key={row.id} className="compact-grid">
+              <input value={row.nps} placeholder="NPS" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,nps:e.target.value}:r))} />
+              <input value={row.schedule ?? ''} placeholder="Schedule" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,schedule:e.target.value}:r))} />
+              <input value={row.spec} placeholder="Spec" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,spec:e.target.value}:r))} />
+              <input value={row.grade} placeholder="Grade" onChange={(e)=>setB31Rows((rows)=>rows.map((r)=>r.id===row.id?{...r,grade:e.target.value}:r))} />
+              <button type="button" onClick={()=>setB31Rows((rows)=>rows.filter((r)=>r.id!==row.id))}>Remove</button>
+              <button type="button" onClick={()=>setB31Rows((rows)=>{const target=rows[idx]; return [...rows.slice(0,idx+1),{...target,id:crypto.randomUUID()},...rows.slice(idx+1)]})}>Duplicate</button>
+            </div>)}
+            <button type="button" onClick={()=>setB31Rows((rows)=>[...rows,{ id: crypto.randomUUID(), nps: '', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel', jointType: b31Shared.defaultJointType, jointQualityKey: b31Shared.defaultJointQualityKey }])}>Add Row</button>
+            <button type="button" disabled={isB31BatchRunning} onClick={async ()=>{
+              setIsB31BatchRunning(true);
+              try {
+                const pressure = b31SourceMeta.pressure.value ?? (b31ManualPressure === '' ? null : b31ManualPressure);
+                const temperature = b31SourceMeta.temperature.value ?? (b31ManualTemperature === '' ? null : b31ManualTemperature);
+                if (pressure == null || temperature == null) { setError('Circuit pressure and temperature are required.'); return; }
+                const sourceMeta = {
+                  pressure: { ...b31SourceMeta.pressure, value: pressure, isManual: b31SourceMeta.pressure.value == null },
+                  temperature: { ...b31SourceMeta.temperature, value: temperature, isManual: b31SourceMeta.temperature.value == null }
+                };
+                const rowResults = await Promise.all(b31Rows.map(async (row) => {
+                  const warnings:string[] = [];
+                  let od = NPS_OD_LOOKUP[row.nps] ?? null;
+                  if (row.schedule) {
+                    try { const lu = await pipeLookupApi.lookup({ nps: row.nps, schedule: row.schedule }); od = lu.outsideDiameter; } catch { warnings.push('Pipe lookup failed; fallback OD used.'); }
+                  }
+                  if (!od) return mapB313RowResult(row.id, row, null, null, [...warnings, 'Unable to resolve outside diameter.']);
+                  const input = { pressurePsi: pressure, temperatureF: temperature, outsideDiameterIn: od, spec: row.spec, grade: row.grade, productForm: row.productForm, unsNo: row.unsNo ?? '', classConditionTemper: row.classConditionTemper ?? '', materialCategory: row.materialCategory, jointType: row.jointType ?? b31Shared.defaultJointType, jointQualityKey: row.jointQualityKey ?? b31Shared.defaultJointQualityKey, wFactor: b31Shared.wFactor, yOverride: b31Shared.yOverride === '' ? null : Number(b31Shared.yOverride), eOverride: b31Shared.eOverride === '' ? null : Number(b31Shared.eOverride) };
+                  try { const res = await b313Api.calculateThickness(input); return mapB313RowResult(row.id, {...row, outsideDiameterIn: od}, input, res, warnings); } catch (e) { return mapB313RowResult(row.id, {...row, outsideDiameterIn: od}, input, { success:false, message:getErrorMessage(e,'Calculation failed.'), allowableStressPsi:null,eFactor:null,yCoefficient:null,wFactor:null,requiredThicknessIn:null }, warnings); }
+                }));
+                setCalcResult(buildCircuitBatchSnapshot({ pressurePsi: pressure, temperatureF: temperature, sourceMetadata: sourceMeta, wFactor: b31Shared.wFactor, yOverride: b31Shared.yOverride===''?null:Number(b31Shared.yOverride), eOverride: b31Shared.eOverride===''?null:Number(b31Shared.eOverride), defaultJointType: b31Shared.defaultJointType, defaultJointQualityKey: b31Shared.defaultJointQualityKey }, rowResults));
+              } finally { setIsB31BatchRunning(false); }
+            }}>{isB31BatchRunning ? 'Running…' : 'Run Batch Calculation'}</button>
+            {calcResult?.calculationType === 'b31-3-piping-circuit-batch' && <>
+              <p className="muted">{calcResult.insertLabel}</p>
+              <button type="button" onClick={saveCalculationSnapshot} disabled={savedCalculationIds.has(calcResult.id)}>{savedCalculationIds.has(calcResult.id) ? 'Saved to Report' : 'Save to Report Calculations'}</button>
+              <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
+            </>}
+          </>}
           <h4>Saved Calculations</h4>
           {(report.calculations ?? []).length === 0 ? <p className="muted">No saved calculations.</p> : <ul>{(report.calculations ?? []).map((c) => <li key={c.id}><strong>{c.displayName}</strong><br />{new Date(c.calculatedAt).toLocaleString()} · {c.insertLabel} · warnings: {c.warnings.length}</li>)}</ul>}
         </div>

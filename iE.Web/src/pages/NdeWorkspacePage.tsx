@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { ApiError, ndeApi } from '../api';
 
 type NdeStage = NonNullable<NdeLogItem['ndeStage']>;
 
@@ -7,7 +8,6 @@ const stagedWeldStageOptions: Array<Extract<NdeStage, 'Prep' | 'Root' | 'Final' 
 
 const formatReportStatus = (reportStatus: NdeLogItem['reportStatus']) =>
   reportStatus === 'Complete' ? 'Reviewed / Complete' : reportStatus;
-import { ndeApi } from '../api';
 import type { NdeLogItem, NdeLogStatus, NdeLogTransitionEvent, NdeReportDraft, NdeReportTestResult } from '../types';
 import { accessMethodOptions, getAssetsForUnit, getProjectOptions, getUnitOptions, ndeMethodOptions, owningGroupOptions, parseUnitNumber } from '../ndeRequestReferenceData';
 import { getFacilities } from '../organizationReferenceData';
@@ -598,13 +598,17 @@ const todayIso = new Date().toISOString().slice(0, 10);
   };
 
   const openReportWorkspace = async (item: NdeLogItem) => {
-    const reportNumber = item.reportNumber ?? formatReportNumber(item.requestNumber, item.method) ?? `RPT-${getCurrentYearSuffix()}-${item.method}-${item.requestNumber}`;
+    const reportNumber = item.reportNumber ?? formatReportNumber(item.requestNumber, item.method) ?? `RPT-${getCurrentYearSuffix()}-${(methodAbbreviations[item.method] ?? item.method.trim().toUpperCase().replace(/\s+/g, ''))}-${item.requestNumber}`;
     const examinedArea = item.location || item.weldId || item.assetTag || item.circuitId || item.equipmentTag || '';
     let existing: NdeReportDraft | undefined;
     try {
       existing = await ndeApi.getNdeReportDraft(item.id);
-    } catch {
-      setReportMessage('Unable to load saved API draft. Showing prefilled workspace values.');
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        setReportMessage('');
+      } else {
+        setReportMessage('Unable to load saved API draft. Showing prefilled workspace values.');
+      }
     }
     const baseDraft: NdeReportDraft = existing ?? {
       id: `draft-${item.id}`,

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ApiError, reportingApi } from './api';
 import type { InlineSuggestion, InspectionReport, InspectionReportAnswer, NarrativeResult, ReportTemplate, UiAlert } from './types';
@@ -157,6 +157,36 @@ export function Api570PipingExternalEntryPage() {
     });
   }, [sectionBuckets]);
 
+
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const updateStickyOffsets = () => {
+      const root = document.documentElement;
+      const toolbarHeight = toolbarRef.current?.getBoundingClientRect().height ?? 0;
+      const headerHeight = headerRef.current?.getBoundingClientRect().height ?? 0;
+      root.style.setProperty('--toolbar-height', `${Math.ceil(toolbarHeight)}px`);
+      root.style.setProperty('--report-header-height', `${Math.ceil(headerHeight)}px`);
+    };
+
+    updateStickyOffsets();
+
+    const observer = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => updateStickyOffsets())
+      : null;
+
+    if (toolbarRef.current && observer) observer.observe(toolbarRef.current);
+    if (headerRef.current && observer) observer.observe(headerRef.current);
+
+    window.addEventListener('resize', updateStickyOffsets);
+
+    return () => {
+      window.removeEventListener('resize', updateStickyOffsets);
+      observer?.disconnect();
+    };
+  }, [report, template, ieAssistEnabled, isDirty, isSaving, findingsCount, recommendationsCount]);
+
   const updateHeaderField = (key: keyof InspectionReport, value: string) => {
     if (!report) return;
     const latest = structuredClone(report);
@@ -169,7 +199,7 @@ export function Api570PipingExternalEntryPage() {
 
   return <div className="page report-page api570-report">
     <h1 className="report-page-title">API 570 Piping External - Report Entry</h1>
-    <div className="api570-toolbar" >
+    <div className="api570-toolbar" ref={toolbarRef}>
       <div className="toolbar-title"><strong>API 570 Piping External - Report Entry</strong></div>
       <div className="toolbar-metrics">
         <span>Findings: <strong>{findingsCount}</strong></span>
@@ -181,7 +211,7 @@ export function Api570PipingExternalEntryPage() {
       </div>
     </div>
 
-    <div className="report-header-sticky" key="report-header">
+    <div className="report-header-sticky" key="report-header" ref={headerRef}>
       <div className="report-header-shell">
           <div className="report-header-title">Report Header</div>
           <div className="report-header-grid">

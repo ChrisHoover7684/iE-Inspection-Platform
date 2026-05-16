@@ -160,16 +160,17 @@ const CRITICAL_MARGIN_THRESHOLD_IN = -0.05;
 
 export function toApi570FindingDraftsFromAssessment(
   snapshot: EngineeringCalculationResult<Api570ThicknessAssessmentInputs, Api570ThicknessAssessmentOutputs>,
-  options?: { includeMonitorRows?: boolean }
+  options?: { includeMonitorRows?: boolean; assessmentSnapshotIdOverride?: string }
 ): Api570FindingDraft[] {
   const includeMonitorRows = options?.includeMonitorRows ?? false;
+  const assessmentSnapshotId = options?.assessmentSnapshotIdOverride ?? snapshot.id;
   return snapshot.outputs.rows
     .filter((row) => row.status === 'Below Tmin' || (includeMonitorRows && row.status === 'Monitor'))
     .filter((row): row is Api570ThicknessAssessmentRow & { tminIn: number; marginToTminIn: number } => row.tminIn != null && row.marginToTminIn != null)
     .map((row) => {
       const severity: Api570FindingDraftSeverity = row.marginToTminIn <= CRITICAL_MARGIN_THRESHOLD_IN ? 'Critical' : 'High';
       return {
-        assessmentSnapshotId: snapshot.id,
+        assessmentSnapshotId,
         cmlId: row.cmlId,
         location: row.location,
         nps: row.nps,
@@ -181,6 +182,10 @@ export function toApi570FindingDraftsFromAssessment(
         severity
       };
     });
+}
+
+export function buildApi570FindingDedupeKey(assessmentSnapshotId: string, cmlId: string): string {
+  return `api570-thickness:${assessmentSnapshotId}:${cmlId}`;
 }
 
 export function formatApi570AssessmentSummary(snapshot: EngineeringCalculationResult<Api570ThicknessAssessmentInputs, Api570ThicknessAssessmentOutputs>): string {

@@ -5,7 +5,7 @@ import { calculateRequiredThicknessMargin } from '../calculations/pressureVessel
 import { calculateTankShellCorrosionMargin } from '../calculations/tankShell';
 import { toB31_3EngineeringSnapshot } from '../calculations/b31_3Piping';
 import { applyMaterialPreset, buildCircuitBatchSnapshot, formatCircuitBatchSummary, mapB313RowResult, resolveCircuitConditionsFromReport, toResultDisplayRows } from '../calculations/b31_3CircuitBatch';
-import { assessApi570Thickness, normalizeNpsValue, toApi570FindingDraftsFromAssessment } from '../calculations/api570ThicknessAssessment';
+import { assessApi570Thickness, buildApi570FindingDedupeKey, normalizeNpsValue, toApi570FindingDraftsFromAssessment } from '../calculations/api570ThicknessAssessment';
 
 describe('engineering calculations foundation', () => {
   const expectFoundationFields = (result: { calculationType: string; formulaVersion: string; displayName: string; calculatedAt: string; insertLabel: string; warnings: unknown[]; standardReferences: unknown[]; }) => {
@@ -324,6 +324,16 @@ describe('engineering calculations foundation', () => {
     expect(drafts[0].currentThicknessIn).toBeCloseTo(0.19, 6);
     expect(drafts[0].marginToTminIn).toBeCloseTo(-0.06, 6);
     expect(drafts[0].severity).toBe('Critical');
+    expect(buildApi570FindingDedupeKey(drafts[0].assessmentSnapshotId, drafts[0].cmlId)).toBe(`api570-thickness:${snapshot.id}:CML-LOW`);
+  });
+
+  it('finding dedupe key uses saved snapshot id override', () => {
+    const b31Rows = [mapB313RowResult('b31-1', { id: 'b31-1', nps: '2', spec: 'A106', grade: 'B', productForm: 'Pipe', materialCategory: 'Carbon Steel' }, null, { success: true, message: 'ok', allowableStressPsi: 1, eFactor: 1, yCoefficient: 0.4, wFactor: 1, requiredThicknessIn: 0.25 }, [])];
+    const snapshot = assessApi570Thickness({ b31SnapshotId: 'snap-1', monitorMarginThresholdIn: 0.02, cmlReadings: [
+      { id: 'c1', cmlId: 'CML-SAVED', location: 'elbow', nps: '2', currentThicknessIn: 0.19, currentInspectionDate: '2025-01-01' }
+    ] }, b31Rows);
+    const drafts = toApi570FindingDraftsFromAssessment(snapshot, { assessmentSnapshotIdOverride: 'saved-assessment-1' });
+    expect(buildApi570FindingDedupeKey(drafts[0].assessmentSnapshotId, drafts[0].cmlId)).toBe('api570-thickness:saved-assessment-1:CML-SAVED');
   });
 
   it('monitor row is not forced into finding draft by default', () => {
@@ -342,7 +352,7 @@ describe('engineering calculations foundation', () => {
       { id: 'c1', cmlId: 'CML-DUP', location: 'run', nps: '2', currentThicknessIn: 0.2, currentInspectionDate: '2025-01-01' }
     ] }, b31Rows);
     const drafts = toApi570FindingDraftsFromAssessment(snapshot);
-    const keys = drafts.map((d) => `api570-thickness:${d.assessmentSnapshotId}:${d.cmlId}`);
+    const keys = drafts.map((d) => buildApi570FindingDedupeKey(d.assessmentSnapshotId, d.cmlId));
     const deduped = new Set(keys);
     expect(keys).toHaveLength(1);
     expect(deduped.size).toBe(1);

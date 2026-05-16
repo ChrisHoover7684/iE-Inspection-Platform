@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ApiError, reportingApi } from './api';
+import { ApiError, pipeLookupApi, reportingApi } from './api';
 import type { InlineSuggestion, InspectionReport, InspectionReportAnswer, NarrativeResult, ReportTemplate, UiAlert } from './types';
 import { calculateCorrosionRate } from './engineering/calculations/corrosionRate';
+import { calculatePipeDimensions } from './engineering/calculations/pipeLookup';
 import type { InspectionCalculationSnapshot } from './engineering/types';
 
 const TEMPLATE_ID = 'api-570-piping-external';
@@ -87,6 +88,11 @@ export function Api570PipingExternalEntryPage() {
   const [calcResult, setCalcResult] = useState<InspectionCalculationSnapshot | null>(null);
   const [savedCalculationIds, setSavedCalculationIds] = useState<Set<string>>(new Set());
 
+  const [pipeLookupNpsOptions, setPipeLookupNpsOptions] = useState<string[]>([]);
+  const [pipeLookupScheduleOptions, setPipeLookupScheduleOptions] = useState<string[]>([]);
+  const [pipeLookupInput, setPipeLookupInput] = useState({ nps: '', schedule: '' });
+  const [isPipeLookupLoading, setIsPipeLookupLoading] = useState(false);
+
   useEffect(() => { void (async () => { /* unchanged init */
     try {
       const loadedTemplate = await reportingApi.getTemplateById(TEMPLATE_ID); setTemplate(loadedTemplate);
@@ -101,6 +107,42 @@ export function Api570PipingExternalEntryPage() {
   })(); }, [location.state]);
 
   useEffect(() => { localStorage.setItem(IE_ASSIST_STORAGE_KEY, String(ieAssistEnabled)); }, [ieAssistEnabled]);
+
+
+  useEffect(() => {
+    if (selectedTool !== 'pipe-lookup') return;
+    void (async () => {
+      try {
+        const nps = await pipeLookupApi.getNps();
+        setPipeLookupNpsOptions(nps);
+        setPipeLookupInput((current) => ({
+          nps: current.nps || nps[0] || '',
+          schedule: ''
+        }));
+      } catch (e) {
+        setError(getErrorMessage(e, 'Failed to load pipe lookup NPS options.'));
+      }
+    })();
+  }, [selectedTool]);
+
+  useEffect(() => {
+    if (selectedTool !== 'pipe-lookup' || !pipeLookupInput.nps) {
+      setPipeLookupScheduleOptions([]);
+      return;
+    }
+    void (async () => {
+      try {
+        const schedules = await pipeLookupApi.getSchedules(pipeLookupInput.nps);
+        setPipeLookupScheduleOptions(schedules);
+        setPipeLookupInput((current) => ({
+          ...current,
+          schedule: schedules.includes(current.schedule) ? current.schedule : (schedules[0] || '')
+        }));
+      } catch (e) {
+        setError(getErrorMessage(e, 'Failed to load pipe lookup schedule options.'));
+      }
+    })();
+  }, [pipeLookupInput.nps, selectedTool]);
 
   const sortedSections = useMemo(() => (report?.sections || []).map((section, i) => ({ section, i })).sort((a, b) => a.section.order - b.section.order), [report]);
 
@@ -321,6 +363,38 @@ export function Api570PipingExternalEntryPage() {
             <button type="button" onClick={() => setCalcResult(calculateCorrosionRate(calcInput))}>Calculate</button>
             {calcResult && <>
               <p className="muted">{calcResult.insertLabel}</p>
+              <p className="muted">Warnings: {calcResult.warnings.length}</p>
+              <button type="button" onClick={saveCalculationSnapshot} disabled={savedCalculationIds.has(calcResult.id)}>{savedCalculationIds.has(calcResult.id) ? 'Saved to Report' : 'Save to Report Calculations'}</button>
+              <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>
+            </>}
+          </> : selectedTool === 'pipe-lookup' ? <>
+            <div className="compact-grid">
+              <select value={pipeLookupInput.nps} onChange={(e) => setPipeLookupInput({ nps: e.target.value, schedule: '' })}>
+                <option value="">Select NPS</option>
+                {pipeLookupNpsOptions.map((nps) => <option key={nps} value={nps}>{nps}</option>)}
+              </select>
+              <select value={pipeLookupInput.schedule} onChange={(e) => setPipeLookupInput((current) => ({ ...current, schedule: e.target.value }))} disabled={!pipeLookupInput.nps}>
+                <option value="">Select Schedule</option>
+                {pipeLookupScheduleOptions.map((schedule) => <option key={schedule} value={schedule}>{schedule}</option>)}
+              </select>
+            </div>
+            <button type="button" disabled={!pipeLookupInput.nps || !pipeLookupInput.schedule || isPipeLookupLoading} onClick={async () => {
+              setIsPipeLookupLoading(true);
+              try {
+                const lookup = await pipeLookupApi.lookup({ nps: pipeLookupInput.nps, schedule: pipeLookupInput.schedule });
+                setCalcResult(calculatePipeDimensions({ nps: lookup.nps, schedule: lookup.schedule, outsideDiameter: lookup.outsideDiameter, nominalThickness: lookup.nominalThickness }));
+              } catch (e) {
+                setError(getErrorMessage(e, 'Pipe lookup failed.'));
+              } finally {
+                setIsPipeLookupLoading(false);
+              }
+            }}>{isPipeLookupLoading ? 'Running…' : 'Run Lookup'}</button>
+            {calcResult?.calculationType === 'pipe-lookup' && <>
+              <p className="muted">OD: {(calcResult.inputs as { outsideDiameter: number }).outsideDiameter.toFixed(4)} in</p>
+              <p className="muted">Nominal Thickness: {(calcResult.inputs as { nominalThickness: number }).nominalThickness.toFixed(4)} in</p>
+              <p className="muted">Calculated ID: {(calcResult.outputs as { insideDiameter: number }).insideDiameter.toFixed(4)} in</p>
+              <p className="muted">Lower wall tolerance (-12.5%): {(calcResult.outputs as { lowerLimitMinus12_5: number }).lowerLimitMinus12_5.toFixed(4)} in</p>
+              <p className="muted">Upper wall tolerance (+12.5%): {(calcResult.outputs as { upperLimitPlus12_5: number }).upperLimitPlus12_5.toFixed(4)} in</p>
               <p className="muted">Warnings: {calcResult.warnings.length}</p>
               <button type="button" onClick={saveCalculationSnapshot} disabled={savedCalculationIds.has(calcResult.id)}>{savedCalculationIds.has(calcResult.id) ? 'Saved to Report' : 'Save to Report Calculations'}</button>
               <button type="button" onClick={appendSummaryToActiveField}>Insert Summary into Active Notes Field</button>

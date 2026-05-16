@@ -567,6 +567,74 @@ namespace iE.Core.Reports.Migrations
                                 .HasForeignKey("InspectionReportId");
                         });
 
+                    b.OwnsMany("iE.Core.Reports.Domain.InspectionCalculationSnapshot", "Calculations", b1 =>
+                        {
+                            b1.Property<int>("IdPk")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<int>("IdPk"));
+
+                            b1.Property<DateTime>("CalculatedAt")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<string>("CalculationType")
+                                .IsRequired()
+                                .HasMaxLength(128)
+                                .HasColumnType("character varying(128)");
+
+                            b1.Property<string>("DisplayName")
+                                .IsRequired()
+                                .HasMaxLength(256)
+                                .HasColumnType("character varying(256)");
+
+                            b1.Property<string>("FormulaVersion")
+                                .IsRequired()
+                                .HasMaxLength(128)
+                                .HasColumnType("character varying(128)");
+
+                            b1.Property<string>("Id")
+                                .IsRequired()
+                                .HasMaxLength(128)
+                                .HasColumnType("character varying(128)");
+
+                            b1.Property<string>("Inputs")
+                                .IsRequired()
+                                .HasMaxLength(16000)
+                                .HasColumnType("character varying(16000)");
+
+                            b1.Property<string>("InspectionReportId")
+                                .IsRequired()
+                                .HasColumnType("character varying(64)");
+
+                            b1.Property<string>("InsertLabel")
+                                .IsRequired()
+                                .HasMaxLength(512)
+                                .HasColumnType("character varying(512)");
+
+                            b1.Property<string>("LinkedFieldId")
+                                .HasMaxLength(128)
+                                .HasColumnType("character varying(128)");
+
+                            b1.Property<string>("LinkedFindingId")
+                                .HasMaxLength(128)
+                                .HasColumnType("character varying(128)");
+
+                            b1.Property<string>("LinkedSectionId")
+                                .HasMaxLength(128)
+                                .HasColumnType("character varying(128)");
+
+                            b1.Property<string>("Outputs")
+                                .IsRequired()
+                                .HasMaxLength(16000)
+                                .HasColumnType("character varying(16000)");
+
+                            b1.HasKey("IdPk");
+                            b1.HasIndex("InspectionReportId");
+                            b1.ToTable("InspectionCalculations", (string)null);
+                            b1.WithOwner().HasForeignKey("InspectionReportId");
+                        });
+
                     b.OwnsMany("iE.Core.Reports.InspectionReportSection", "Sections", b1 =>
                         {
                             b1.Property<int>("Id")

@@ -56,7 +56,7 @@ public static class InspectionComponentCatalog
             DesignConditionSourceOptions = ["shell-side", "tube-side", "channel-side"],
             ParentThicknessSourceOptions = ["selected-parent", "manual-entry"],
             NozzleLocationRequired = true,
-            NozzleLocationOptions = ["shell", "channel-head", "bonnet-head", "tubesheet-area"],
+            NozzleLocationOptions = ["shell", "channel-channel-head", "bonnet-head", "tubesheet-area"],
             SupportsTminCalculation = true,
             TminCalculationMethod = "UG-27/UG-32 with selected parent thickness",
             SupportsNozzleUg45 = true,

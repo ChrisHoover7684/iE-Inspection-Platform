@@ -105,20 +105,23 @@ const buildApi510ExternalFields = (equipmentFamily: string, equipmentSubtype: st
       defaultLayoutOrder: 150 + index
     }));
 
-  const nozzleDetailFields = baseTag === 'api510.external.exchanger'
-    ? [
-      'nozzle-id-tag','nozzle-service','parent-component','nozzle-location','pressure-boundary-side','nozzle-nps-diameter','ug45-calculation-required','ug45-parent-thickness-source','design-pressure-source','design-temperature-source'
-    ].map((k, index) => mkField({
-      fieldTag: `api510.external.exchanger.shell-tube.nozzles.${k}`,
-      label: `Shell and Tube Nozzle ${k.replace(/-/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())}`,
-      ...baseMeta, sectionGroup: 'Component Condition', componentType: 'Nozzles',
-      dataType: ['ug45-calculation-required'].includes(k) ? 'boolean' : (['pressure-boundary-side','parent-component'].includes(k) ? 'select' : 'text'),
-      options: k === 'pressure-boundary-side' ? ['shell-side','tube-side','channel-side','shared','unknown'] : (k === 'parent-component' ? ['shell','channel-channel-head','shell-cover','channel-cover','bonnet-head','tubesheet-area','other-component'] : []),
-      required: ['parent-component','pressure-boundary-side'].includes(k),
-      supportsFinding: false, supportsRecommendation: false, supportsRepairRequired: false, supportsPhotoTag: false, supportsSummary: false, supportsNdeRequest: false,
-      defaultLayoutOrder: 450 + index
-    }))
-    : [];
+  const nozzleDetails = ['nozzle-id-tag','nozzle-service','parent-component','nozzle-location','pressure-boundary-side','nozzle-nps-diameter','ug45-calculation-required','ug45-parent-thickness-source','design-pressure-source','design-temperature-source'];
+  const nozzleComponents = API510_EXTERNAL_COMPONENT_DEFINITIONS.filter((d) => d.fieldTagPrefix.startsWith(`${baseTag}.`) && d.componentKey === 'nozzles');
+  const nozzleDetailFields = nozzleComponents.flatMap((component, cIndex) => nozzleDetails.map((k, index) => mkField({
+    fieldTag: `${component.fieldTagPrefix}.${k}`,
+    label: `${component.equipmentSubtype} Nozzle ${k.replace(/-/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())}`,
+    ...baseMeta, sectionGroup: 'Component Condition', componentType: 'Nozzles',
+    dataType: ['ug45-calculation-required'].includes(k) ? 'boolean' : (['pressure-boundary-side','parent-component','nozzle-location','design-pressure-source','design-temperature-source','ug45-parent-thickness-source'].includes(k) ? 'select' : 'text'),
+    options: k === 'pressure-boundary-side' ? ['shell-side','tube-side','channel-side','shared','unknown']
+      : k === 'parent-component' ? component.allowedParentComponentKeys
+      : k === 'nozzle-location' ? (component.nozzleLocationOptions ?? [])
+      : k === 'design-pressure-source' || k === 'design-temperature-source' ? (component.designConditionSourceOptions ?? [])
+      : k === 'ug45-parent-thickness-source' ? (component.parentThicknessSourceOptions ?? [])
+      : [],
+    required: ['parent-component','nozzle-location'].includes(k) && ((component.parentComponentRequired ?? false) || (component.nozzleLocationRequired ?? false)),
+    supportsFinding: false, supportsRecommendation: false, supportsRepairRequired: false, supportsPhotoTag: false, supportsSummary: false, supportsNdeRequest: false,
+    defaultLayoutOrder: 450 + (cIndex * 20) + index
+  })));
 
   return [...headerAndContext, ...exchangerDesignFields, ...componentConditionFields, ...nozzleDetailFields];
 };

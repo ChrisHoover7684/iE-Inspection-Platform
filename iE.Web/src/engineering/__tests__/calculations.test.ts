@@ -545,14 +545,19 @@ describe('inspection field catalog', () => {
     const tags = getMvpExternalInspectionFields().map((f) => f.fieldTag);
     expect(tags).toEqual(expect.arrayContaining([
       'api510.external.exchanger.shell-tube.shell.condition',
-      'api510.external.exchanger.shell-tube.channel-head.condition',
-      'api510.external.exchanger.plate-frame.plate-pack.condition',
+      'api510.external.exchanger.shell-tube.channel-channel-head.condition',
+      'api510.external.exchanger.plate-frame.plate-pack-external.condition',
       'api510.external.exchanger.double-pipe.outer-pipe.condition',
       'api510.external.exchanger.air-cooler.header-box.condition',
-      'api510.external.drum-vessel.shell.condition',
-      'api510.external.drum-vessel.nozzles.condition',
-      'api510.external.tower-column.shell-courses.condition',
-      'api510.external.tower-column.platforms-ladders.condition'
+      'api510.external.exchanger.air-cooler.tube-bundle-external.condition',
+      'api510.external.exchanger.air-cooler.nozzles.condition',
+      'api510.external.exchanger.air-cooler.frame-supports.condition',
+      'api510.external.drum-vessel.horizontal-drum.shell.condition',
+      'api510.external.drum-vessel.vertical-drum.shell.condition',
+      'api510.external.drum-vessel.vertical-drum.nozzles.condition',
+      'api510.external.drum-vessel.horizontal-drum.nozzles.condition',
+      'api510.external.tower-column.distillation.shell-courses.condition',
+      'api510.external.tower-column.distillation.platforms-ladders-handrails.condition'
     ]));
   });
 
@@ -575,7 +580,7 @@ describe('inspection field catalog', () => {
     expect(doc).toContain('Control Valve / Control Loop');
     expect(doc).toContain('API 510 External Exchanger: Shell and Tube Exchanger, Plate and Frame Exchanger, Double Pipe Exchanger, Air Cooler / Fin Fan');
     expect(doc).toContain('api510.external.exchanger.shell-tube.shell.condition');
-    expect(doc).toContain('api510.external.drum-vessel.nozzles.condition');
+    expect(doc).toContain('api510.external.drum-vessel.horizontal-drum.nozzles.condition');
     expect(doc).toContain('api510.external.tower-column.distillation.platforms-ladders-handrails.condition');
     expect(doc).toContain('api570.external.piping.component.create-finding');
     expect(doc).toContain('api570.external.piping.component.repair-required');
@@ -595,7 +600,12 @@ describe('inspection field catalog', () => {
       'api510.external.exchanger.plate-frame.frame-head.condition',
       'api510.external.exchanger.double-pipe.inner-pipe-external.condition',
       'api510.external.exchanger.air-cooler.header-box.condition',
+      'api510.external.exchanger.air-cooler.tube-bundle-external.condition',
+      'api510.external.exchanger.air-cooler.nozzles.condition',
+      'api510.external.exchanger.air-cooler.frame-supports.condition',
       'api510.external.drum-vessel.horizontal-drum.shell.condition',
+      'api510.external.drum-vessel.vertical-drum.shell.condition',
+      'api510.external.drum-vessel.vertical-drum.nozzles.condition',
       'api510.external.drum-vessel.vertical-drum.shell.condition',
       'api510.external.tower-column.distillation.shell-courses.condition',
       'api510.external.tower-column.distillation.tray-manways.condition'
@@ -606,7 +616,7 @@ describe('inspection field catalog', () => {
   it('word export includes component availability metadata columns', () => {
     const doc = buildFieldCatalogWordReviewDocument();
     expect(doc).toContain('Component Availability Metadata:');
-    expect(doc).toContain('Equipment Family|Equipment Subtype|Component|Requirement Level|Default Selected|Parent Component Required|Allowed Parent Components|Pressure Boundary Side|Design Pressure Field Tag|Design Temperature Field Tag|Supports Tmin Calculation|Tmin Calculation Method|Supports Nozzle UG-45|Review Notes');
+    expect(doc).toContain('Equipment Family|Equipment Subtype|Component|Requirement Level|Default Selected|Parent Component Required|Allowed Parent Components|Pressure Boundary Side|Design Pressure Field Tag|Design Temperature Field Tag|Supports Tmin Calculation|Tmin Calculation Method|Supports Nozzle UG-45|Supports Finding|Supports Recommendation|Supports Photo Tag|Supports NDE Request|Review Notes');
     expect(doc).toContain('Pressure Equipment|Shell and Tube Exchanger|Shell|minimum|true');
     expect(doc).toContain('Pressure Equipment|Shell and Tube Exchanger|Shell Cover|optional|false');
   });

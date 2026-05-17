@@ -7,7 +7,7 @@ import { toB31_3EngineeringSnapshot } from '../calculations/b31_3Piping';
 import { applyMaterialPreset, buildCircuitBatchSnapshot, formatCircuitBatchSummary, mapB313RowResult, resolveCircuitConditionsFromReport, toResultDisplayRows } from '../calculations/b31_3CircuitBatch';
 import { assessApi570Thickness, buildApi570FindingDedupeKey, normalizeNpsValue, toApi570FindingDraftsFromAssessment } from '../calculations/api570ThicknessAssessment';
 import { API510_EXTERNAL_COMPONENT_PRESETS, API510_INTERNAL_COMPONENT_PRESETS, API570_COMPONENT_PRESETS, createAndAddComponentSection, createComponentSection, upsertFindingFromComponentSection } from '../../reporting/componentSections';
-import { FIELD_CATALOG_WORD_INTRO, FIELD_CATALOG_WORD_TITLE, buildFieldCatalogWordReviewDocument } from '../../reporting/fieldCatalogWordExport';
+import { FIELD_CATALOG_WORD_INTRO, FIELD_CATALOG_WORD_TITLE, buildFieldCatalogWordReviewDocument, exportFieldCatalogWordReview } from '../../reporting/fieldCatalogWordExport';
 import { externalInspectionFieldSets, futureOnlyApi510InternalFields, getMvpExternalInspectionFields } from '../../reporting/inspectionFieldCatalog';
 
 describe('engineering calculations foundation', () => {
@@ -532,14 +532,21 @@ describe('inspection field catalog', () => {
     expect(futureOnlyApi510InternalFields.every((f) => !tags.includes(f.fieldTag))).toBe(true);
   });
 
-  it('word export includes core review columns', () => {
+  it('word export creates a real docx blob output', async () => {
+    const blob = await exportFieldCatalogWordReview();
+    expect(blob.type).toBe('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    expect(blob.size).toBeGreaterThan(0);
+  });
+
+  it('word export includes title, intro, and review columns', async () => {
     const doc = buildFieldCatalogWordReviewDocument();
-    expect(doc).toContain(FIELD_CATALOG_WORD_TITLE);
-    expect(doc).toContain(FIELD_CATALOG_WORD_INTRO);
-    expect(doc).toContain('Field Tag');
-    expect(doc).toContain('Label');
-    expect(doc).toContain('Data Type');
-    expect(doc).toContain('Options');
-    expect(doc).toContain('Review Notes');
+    const json = JSON.stringify(doc);
+    expect(json).toContain(FIELD_CATALOG_WORD_TITLE);
+    expect(json).toContain(FIELD_CATALOG_WORD_INTRO);
+    expect(json).toContain('Field Tag');
+    expect(json).toContain('Label');
+    expect(json).toContain('Data Type');
+    expect(json).toContain('Options');
+    expect(json).toContain('Review Notes');
   });
 });

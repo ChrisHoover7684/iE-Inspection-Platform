@@ -7,6 +7,8 @@ import { toB31_3EngineeringSnapshot } from '../calculations/b31_3Piping';
 import { applyMaterialPreset, buildCircuitBatchSnapshot, formatCircuitBatchSummary, mapB313RowResult, resolveCircuitConditionsFromReport, toResultDisplayRows } from '../calculations/b31_3CircuitBatch';
 import { assessApi570Thickness, buildApi570FindingDedupeKey, normalizeNpsValue, toApi570FindingDraftsFromAssessment } from '../calculations/api570ThicknessAssessment';
 import { API510_EXTERNAL_COMPONENT_PRESETS, API510_INTERNAL_COMPONENT_PRESETS, API570_COMPONENT_PRESETS, createAndAddComponentSection, createComponentSection, upsertFindingFromComponentSection } from '../../reporting/componentSections';
+import { FIELD_CATALOG_WORD_INTRO, FIELD_CATALOG_WORD_TITLE, buildFieldCatalogWordReviewDocument } from '../../reporting/fieldCatalogWordExport';
+import { externalInspectionFieldSets, futureOnlyApi510InternalFields, getMvpExternalInspectionFields } from '../../reporting/inspectionFieldCatalog';
 
 describe('engineering calculations foundation', () => {
   const expectFoundationFields = (result: { calculationType: string; formulaVersion: string; displayName: string; calculatedAt: string; insertLabel: string; warnings: unknown[]; standardReferences: unknown[]; }) => {
@@ -486,5 +488,40 @@ describe('component section builder', () => {
     const first = upsertFindingFromComponentSection(base, section);
     const second = upsertFindingFromComponentSection(first, section);
     expect(second.findings).toHaveLength(1);
+  });
+});
+
+
+describe('inspection field catalog', () => {
+  it('has required external field sets and unique tags', () => {
+    expect(externalInspectionFieldSets.some((s) => s.id === 'api-570-external-piping')).toBe(true);
+    expect(externalInspectionFieldSets.some((s) => s.id === 'api-510-external-exchangers')).toBe(true);
+    expect(externalInspectionFieldSets.some((s) => s.id === 'api-510-external-drum-vessel')).toBe(true);
+    expect(externalInspectionFieldSets.some((s) => s.id === 'api-510-external-tower-column')).toBe(true);
+    const tags = getMvpExternalInspectionFields().map((f) => f.fieldTag);
+    expect(new Set(tags).size).toBe(tags.length);
+  });
+
+  it('api 570 component fields include finding/recommendation/photo/summary flags', () => {
+    const fields = externalInspectionFieldSets.find((s) => s.id === 'api-570-external-piping')?.fields ?? [];
+    expect(fields.some((f) => f.fieldTag === 'finding-notes' && f.supportsFinding && f.supportsSummary)).toBe(true);
+    expect(fields.some((f) => f.fieldTag === 'recommendation-text' && f.supportsRecommendation)).toBe(true);
+    expect(fields.some((f) => f.fieldTag === 'photo-reference-picture-tag' && f.supportsPhotoTag)).toBe(true);
+  });
+
+  it('future API 510 internal fields are excluded from MVP export', () => {
+    const tags = getMvpExternalInspectionFields().map((f) => f.fieldTag);
+    expect(futureOnlyApi510InternalFields.every((f) => !tags.includes(f.fieldTag))).toBe(true);
+  });
+
+  it('word export includes core review columns', () => {
+    const doc = buildFieldCatalogWordReviewDocument();
+    expect(doc).toContain(FIELD_CATALOG_WORD_TITLE);
+    expect(doc).toContain(FIELD_CATALOG_WORD_INTRO);
+    expect(doc).toContain('Field Tag');
+    expect(doc).toContain('Label');
+    expect(doc).toContain('Data Type');
+    expect(doc).toContain('Options');
+    expect(doc).toContain('Review Notes');
   });
 });

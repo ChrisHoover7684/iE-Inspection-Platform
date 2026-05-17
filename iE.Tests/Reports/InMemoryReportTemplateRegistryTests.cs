@@ -6,7 +6,6 @@ public class InMemoryReportTemplateRegistryTests
 {
     private static readonly string[] RequiredExternalInspectionTemplates =
     [
-        "api-510-vessel-external",
         "api-570-piping-external",
         "api-570-piping-cui-external",
         "sti-sp001-tank-external"
@@ -15,7 +14,6 @@ public class InMemoryReportTemplateRegistryTests
     private static readonly string[] RequiredRepairRecommendationTemplates =
     [
         "repair-recommendation-general",
-        "repair-recommendation-api-510-vessel",
         "repair-recommendation-api-570-piping",
         "repair-recommendation-sti-sp001-tank"
     ];
@@ -27,7 +25,7 @@ public class InMemoryReportTemplateRegistryTests
     {
         var templates = registry.GetTemplates();
 
-        Assert.Equal(8, templates.Count);
+        Assert.Equal(6, templates.Count);
 
         foreach (var templateId in RequiredExternalInspectionTemplates.Concat(RequiredRepairRecommendationTemplates))
         {
@@ -110,9 +108,9 @@ public class InMemoryReportTemplateRegistryTests
     [Fact]
     public void GetTemplateById_IsCaseInsensitive()
     {
-        var template = registry.GetTemplateById("API-510-VESSEL-EXTERNAL");
+        var template = registry.GetTemplateById("API-570-PIPING-EXTERNAL");
 
         Assert.NotNull(template);
-        Assert.Equal("api-510-vessel-external", template!.Id);
+        Assert.Equal("api-570-piping-external", template!.Id);
     }
 }

@@ -4,7 +4,6 @@ internal static class ExternalInspectionTemplates
 {
     public static IReadOnlyList<ReportTemplate> Build() =>
     [
-        CreateApi510VesselExternal(),
         CreateApi570PipingExternal(),
         CreateApi570PipingCuiExternal(),
         CreateStiSp001TankExternal()

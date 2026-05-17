@@ -1,4 +1,4 @@
-import { API510_EXTERNAL_COMPONENT_DEFINITIONS, API510_EXCHANGER_DESIGN_CONDITION_FIELDS } from './inspectionComponentCatalog';
+import { API510_EXTERNAL_COMPONENT_DEFINITIONS, API510_EXCHANGER_DESIGN_CONDITION_FIELDS, API510_VESSEL_TOWER_DESIGN_CONDITION_FIELDS } from './inspectionComponentCatalog';
 export type InspectionFieldDefinition = {
   fieldTag: string;
   label: string;
@@ -86,8 +86,13 @@ const buildApi510ExternalFields = (equipmentFamily: string, equipmentSubtype: st
     defaultLayoutOrder: 200 + ((index + 1) * 10)
   }));
 
-  const exchangerDesignFields = baseTag === 'api510.external.exchanger'
-    ? API510_EXCHANGER_DESIGN_CONDITION_FIELDS.map((tag, index) => mkField({
+  const designConditionFieldTags = baseTag === 'api510.external.exchanger'
+    ? API510_EXCHANGER_DESIGN_CONDITION_FIELDS
+    : (baseTag === 'api510.external.drum-vessel' || baseTag === 'api510.external.tower-column')
+      ? API510_VESSEL_TOWER_DESIGN_CONDITION_FIELDS.filter((tag) => tag.startsWith(baseTag))
+      : [];
+
+  const exchangerDesignFields = designConditionFieldTags.map((tag, index) => mkField({
       fieldTag: tag,
       label: `${tag.split('.').slice(-2).join(' ').replace('-', ' ').replace(/\b\w/g, (m) => m.toUpperCase())}`,
       ...baseMeta,
@@ -98,8 +103,7 @@ const buildApi510ExternalFields = (equipmentFamily: string, equipmentSubtype: st
       required: false,
       supportsFinding: false, supportsRecommendation: false, supportsRepairRequired: false, supportsPhotoTag: false, supportsSummary: false, supportsNdeRequest: false,
       defaultLayoutOrder: 150 + index
-    }))
-    : [];
+    }));
 
   const nozzleDetailFields = baseTag === 'api510.external.exchanger'
     ? [

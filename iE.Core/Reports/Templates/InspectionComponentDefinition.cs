@@ -16,6 +16,12 @@ public sealed class InspectionComponentDefinition
     public string PressureBoundarySide { get; init; } = "unknown";
     public string? DesignPressureFieldTag { get; init; }
     public string? DesignTemperatureFieldTag { get; init; }
+    public IReadOnlyDictionary<string, string> DesignPressureFieldTagsByPressureBoundarySide { get; init; } = new Dictionary<string, string>();
+    public IReadOnlyDictionary<string, string> DesignTemperatureFieldTagsByPressureBoundarySide { get; init; } = new Dictionary<string, string>();
+    public IReadOnlyList<string> DesignConditionSourceOptions { get; init; } = [];
+    public IReadOnlyList<string> ParentThicknessSourceOptions { get; init; } = [];
+    public bool NozzleLocationRequired { get; init; }
+    public IReadOnlyList<string> NozzleLocationOptions { get; init; } = [];
     public bool SupportsTminCalculation { get; init; }
     public string? TminCalculationMethod { get; init; }
     public bool SupportsNozzleUg45 { get; init; }

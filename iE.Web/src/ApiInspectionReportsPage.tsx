@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError, reportingApi } from './api';
+import { exportFieldCatalogWordReview } from './reporting/fieldCatalogWordExport';
 import type { InspectionReport } from './types';
 
 type SortColumn =
@@ -294,6 +295,18 @@ export function ApiInspectionReportsPage() {
     navigate('/reports/api-570-piping-external', { state: { reportId: report.id } });
   };
 
+  const downloadFieldCatalogReview = async () => {
+    const blob = await exportFieldCatalogWordReview();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'external-inspection-field-catalog-review.docx';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="dashboard-shell">
       <section className="dashboard-content">
@@ -346,6 +359,7 @@ export function ApiInspectionReportsPage() {
                 {typeOptions.map((type) => <option key={type} value={type}>{type === 'all' ? 'All Report Types' : type}</option>)}
               </select>
               <button type="button" className="clear-filters-btn" onClick={clearAllFilters}>Clear All Filters</button>
+              <button type="button" onClick={downloadFieldCatalogReview}>Export Field Catalog Review (.docx)</button>
             </div>
             <div className="bulk-action-toolbar">
               <span>{selectedReportIds.length} selected</span>

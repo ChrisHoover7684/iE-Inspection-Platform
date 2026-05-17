@@ -21,6 +21,27 @@ public class InspectionComponentCatalogTests
         Assert.Contains("tube-side", nozzle.ReviewNotes);
     }
 
+    [Fact]
+    public void Api510ExternalComponentDefinitions_ExposeShellTubeTminEligibilityMetadata()
+    {
+        var shell = InspectionComponentCatalog.Api510ExternalComponentDefinitions
+            .Single(d => d.EquipmentSubtype == "Shell and Tube Exchanger" && d.ComponentKey == "shell");
+        var shellCover = InspectionComponentCatalog.Api510ExternalComponentDefinitions
+            .Single(d => d.EquipmentSubtype == "Shell and Tube Exchanger" && d.ComponentKey == "shell-cover");
+        var channelHead = InspectionComponentCatalog.Api510ExternalComponentDefinitions
+            .Single(d => d.EquipmentSubtype == "Shell and Tube Exchanger" && d.ComponentKey == "channel-channel-head");
+
+        Assert.True(shell.SupportsTminCalculation);
+        Assert.Equal("UG-27 cylindrical shell", shell.TminCalculationMethod);
+        Assert.Equal("shell-side", shell.PressureBoundarySide);
+
+        Assert.True(shellCover.SupportsTminCalculation);
+        Assert.Equal("shell-side", shellCover.PressureBoundarySide);
+
+        Assert.True(channelHead.SupportsTminCalculation);
+        Assert.Equal("tube-side", channelHead.PressureBoundarySide);
+    }
+
     [Theory]
     [InlineData("Horizontal Drum", new[] { "shell", "heads" })]
     [InlineData("Distillation Tower", new[] { "shell-courses", "heads" })]

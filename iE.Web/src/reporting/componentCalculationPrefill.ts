@@ -15,6 +15,7 @@ export type ComponentCalculationPrefill = {
   designTemperatureFieldTag?: string;
   designTemperatureValue?: string | number;
   supportsTminCalculation: boolean;
+  calculationMethodLabel?: string;
   supportsUg45: boolean;
   parentThicknessSourceOptions: string[];
   missingRequiredInputWarnings: string[];
@@ -69,6 +70,9 @@ export const buildComponentCalculationPrefill = (
   if (equipmentSubtype === 'Shell and Tube Exchanger' && context.componentKey === 'channel-channel-head') {
     notes.push('Channel / Channel Head resolves to tube-side design pressure and temperature context.');
   }
+  if (equipmentSubtype === 'Shell and Tube Exchanger' && (context.componentKey === 'channel-cover' || context.componentKey === 'channel-head-dollar-plate' || context.componentKey === 'bonnet-head')) {
+    notes.push('Tube-side design pressure and temperature apply for channel/channel-head family components.');
+  }
 
   return {
     equipmentSubtype: context.equipmentSubtype,
@@ -82,6 +86,7 @@ export const buildComponentCalculationPrefill = (
     designTemperatureFieldTag,
     designTemperatureValue: designTemperatureFieldTag ? fieldValues[designTemperatureFieldTag] ?? undefined : undefined,
     supportsTminCalculation: context.tminCalculationSupported,
+    calculationMethodLabel: context.tminCalculationMethod,
     supportsUg45: context.ug45Supported,
     parentThicknessSourceOptions: context.parentThicknessSourceOptions,
     missingRequiredInputWarnings: context.validationWarnings,

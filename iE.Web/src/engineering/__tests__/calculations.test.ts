@@ -6,7 +6,7 @@ import { calculateTankShellCorrosionMargin } from '../calculations/tankShell';
 import { toB31_3EngineeringSnapshot } from '../calculations/b31_3Piping';
 import { applyMaterialPreset, buildCircuitBatchSnapshot, formatCircuitBatchSummary, mapB313RowResult, resolveCircuitConditionsFromReport, toResultDisplayRows } from '../calculations/b31_3CircuitBatch';
 import { assessApi570Thickness, buildApi570FindingDedupeKey, normalizeNpsValue, toApi570FindingDraftsFromAssessment } from '../calculations/api570ThicknessAssessment';
-import { API510_EXTERNAL_COMPONENT_PRESETS, API510_INTERNAL_COMPONENT_PRESETS, API570_COMPONENT_PRESETS, createAndAddComponentSection, createComponentSection, upsertFindingFromComponentSection } from '../../reporting/componentSections';
+import { API510_EXTERNAL_COMPONENT_PRESETS, API510_EXTERNAL_COMPONENT_PRESET_GROUPS, API510_INTERNAL_COMPONENT_PRESETS, API570_COMPONENT_PRESETS, createAndAddComponentSection, createComponentSection, upsertFindingFromComponentSection } from '../../reporting/componentSections';
 
 describe('engineering calculations foundation', () => {
   const expectFoundationFields = (result: { calculationType: string; formulaVersion: string; displayName: string; calculatedAt: string; insertLabel: string; warnings: unknown[]; standardReferences: unknown[]; }) => {
@@ -487,4 +487,13 @@ describe('component section builder', () => {
     const second = upsertFindingFromComponentSection(first, section);
     expect(second.findings).toHaveLength(1);
   });
+  it('api 510 external preset groups include required exchanger and vessel/tower items', () => {
+    expect(API510_EXTERNAL_COMPONENT_PRESET_GROUPS.shellTubeExchanger).toContain('Shell');
+    expect(API510_EXTERNAL_COMPONENT_PRESET_GROUPS.shellTubeExchanger).toContain('Channel Cover');
+    expect(API510_EXTERNAL_COMPONENT_PRESET_GROUPS.plateFrameExchanger).toContain('Plate Pack External');
+    expect(API510_EXTERNAL_COMPONENT_PRESET_GROUPS.doublePipeExchanger).toContain('Return Bends');
+    expect(API510_EXTERNAL_COMPONENT_PRESET_GROUPS.drumsVessels).toContain('Saddle / Skirt / Legs');
+    expect(API510_EXTERNAL_COMPONENT_PRESET_GROUPS.towersColumns).toContain('Base Ring / Anchor Bolts');
+  });
+
 });

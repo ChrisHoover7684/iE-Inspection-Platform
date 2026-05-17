@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError, reportingApi } from './api';
-import type { InspectionReport } from './types';
+import type { InspectionReport, ReportTemplate } from './types';
+import { buildExternalTemplateCatalog } from './reporting/reportTemplateCatalog';
 
 type SortColumn =
   | 'reportNumber'
@@ -53,6 +54,8 @@ export function ApiInspectionReportsPage() {
   const [reports, setReports] = useState<InspectionReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [templates, setTemplates] = useState<ReportTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('api-570-piping-external');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -111,8 +114,9 @@ export function ApiInspectionReportsPage() {
       setIsLoading(true);
       setError('');
       try {
-        const instances = await reportingApi.getInstances();
+        const [instances, templateData] = await Promise.all([reportingApi.getInstances(), reportingApi.getTemplates()]);
         setReports(instances);
+        setTemplates(templateData);
       } catch (loadError) {
         setError(getErrorMessage(loadError, 'Unable to load reports.'));
       } finally {
@@ -305,7 +309,15 @@ export function ApiInspectionReportsPage() {
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
           />
-          <button type="button" className="new-report-btn" onClick={() => navigate('/reports/api-570-piping-external')}>
+          <select value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)}>
+            {buildExternalTemplateCatalog(templates)
+              .sort((a, b) => `${a.standard}|${a.inspectionScope}|${a.equipmentFamily}|${a.equipmentSubtype}`.localeCompare(`${b.standard}|${b.inspectionScope}|${b.equipmentFamily}|${b.equipmentSubtype}`))
+              .map((item) => <option key={item.templateId} value={item.templateId}>{`${item.standard} > ${item.inspectionScope} > ${item.equipmentFamily} > ${item.equipmentSubtype}`}</option>)}
+          </select>
+          <button type="button" className="new-report-btn" onClick={async () => {
+            const created = await reportingApi.createInstanceFromTemplate(selectedTemplateId);
+            navigate(`/reports-test/${created.id}`);
+          }}>
             New Report
           </button>
           <div className="profile-pill">Inspector User</div>

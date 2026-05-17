@@ -9,7 +9,20 @@ public class InMemoryReportTemplateRegistryTests
         "api-510-vessel-external",
         "api-570-piping-external",
         "api-570-piping-cui-external",
-        "sti-sp001-tank-external"
+        "sti-sp001-tank-external",
+        "api-510-exchanger-shell-tube-external",
+        "api-510-exchanger-plate-frame-external",
+        "api-510-exchanger-double-pipe-external",
+        "api-510-exchanger-air-cooler-external",
+        "api-510-drum-horizontal-external",
+        "api-510-drum-vertical-external",
+        "api-510-drum-separator-ko-external",
+        "api-510-drum-accumulator-receiver-external",
+        "api-510-vessel-generic-external",
+        "api-510-tower-distillation-external",
+        "api-510-tower-absorber-stripper-external",
+        "api-510-tower-packed-column-external",
+        "api-510-tower-tray-column-external"
     ];
 
     private static readonly string[] RequiredRepairRecommendationTemplates =
@@ -27,7 +40,7 @@ public class InMemoryReportTemplateRegistryTests
     {
         var templates = registry.GetTemplates();
 
-        Assert.Equal(8, templates.Count);
+        Assert.Equal(21, templates.Count);
 
         foreach (var templateId in RequiredExternalInspectionTemplates.Concat(RequiredRepairRecommendationTemplates))
         {
@@ -114,5 +127,13 @@ public class InMemoryReportTemplateRegistryTests
 
         Assert.NotNull(template);
         Assert.Equal("api-510-vessel-external", template!.Id);
+    }
+
+    [Fact]
+    public void Api510ExternalCatalog_DoesNotExposeInternalTemplates()
+    {
+        var catalog = ReportTemplateCatalog.BuildExternalMvpCatalog(registry.GetTemplates());
+        Assert.Contains(catalog, c => c.TemplateId == "api-510-exchanger-shell-tube-external");
+        Assert.DoesNotContain(catalog, c => c.InspectionScope == "Internal" && c.Standard == "API 510");
     }
 }

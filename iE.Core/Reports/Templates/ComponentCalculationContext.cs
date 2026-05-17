@@ -13,10 +13,13 @@ public sealed class ComponentCalculationContext
     public string? SelectedNozzleLocation { get; init; }
     public string PressureBoundarySide { get; init; } = "unknown";
     public string? DesignPressureFieldTag { get; init; }
+    public string? DesignPressureValue { get; init; }
     public string? DesignTemperatureFieldTag { get; init; }
+    public string? DesignTemperatureValue { get; init; }
     public bool TminCalculationSupported { get; init; }
     public string? TminCalculationMethod { get; init; }
     public bool Ug45Supported { get; init; }
     public IReadOnlyList<string> ParentThicknessSourceOptions { get; init; } = [];
     public IReadOnlyList<string> ValidationWarnings { get; init; } = [];
+    public IReadOnlyList<string> Notes { get; init; } = [];
 }

@@ -74,6 +74,57 @@ export const API510_EXTERNAL_COMPONENT_DEFINITIONS: InspectionComponentDefinitio
   ...build('Tray Column', 'api510.external.tower-column.tray-column', [{ key: 'shell-courses', label: 'Shell Courses', requirementLevel: 'minimum' },{ key: 'nozzles', label: 'Nozzles', requirementLevel: 'minimum' },{ key: 'manways', label: 'Manways', requirementLevel: 'minimum' },{ key: 'skirt', label: 'Skirt', requirementLevel: 'minimum' },{ key: 'base-ring-anchor-bolts', label: 'Base Ring / Anchor Bolts', requirementLevel: 'minimum' },{ key: 'platforms-ladders-handrails', label: 'Platforms / Ladders / Handrails', requirementLevel: 'minimum' },{ key: 'heads', label: 'Heads', requirementLevel: 'optional' },{ key: 'insulation-jacketing', label: 'Insulation / Jacketing', requirementLevel: 'optional' },{ key: 'coating', label: 'Coating', requirementLevel: 'optional' },{ key: 'supports-bracing', label: 'Supports / Bracing', requirementLevel: 'optional' },{ key: 'davits-lifting-attachments', label: 'Davits / Lifting Attachments', requirementLevel: 'optional' },{ key: 'external-piping-attachments', label: 'External Piping Attachments', requirementLevel: 'optional' },{ key: 'vents-drains', label: 'Vents / Drains', requirementLevel: 'optional' },{ key: 'nameplate-markings', label: 'Nameplate / Markings', requirementLevel: 'optional' },{ key: 'cml-locations', label: 'CML Locations', requirementLevel: 'optional' },{ key: 'other-component', label: 'Other Component', requirementLevel: 'optional' },{ key: 'tray-access-manways', label: 'Tray Access Manways', requirementLevel: 'optional' },{ key: 'downcomer-tray-access-locations', label: 'Downcomer / Tray Access Locations', requirementLevel: 'optional' },{ key: 'draw-pan-connections', label: 'Draw Pan Connections', requirementLevel: 'optional' }])
 
 ].map((d) => {
+  if (d.equipmentSubtype === 'Shell and Tube Exchanger') {
+    if (d.componentKey === 'shell') return ({
+      ...d,
+      supportsTminCalculation: true,
+      tminCalculationMethod: 'UG-27 cylindrical shell',
+      designPressureFieldTag: `${shellTubePrefix}.shell-side.design-pressure`,
+      designTemperatureFieldTag: `${shellTubePrefix}.shell-side.design-temperature`
+    });
+    if (d.componentKey === 'shell-cover') return ({
+      ...d,
+      supportsTminCalculation: true,
+      tminCalculationMethod: 'UG-32 formed head',
+      designPressureFieldTag: `${shellTubePrefix}.shell-side.design-pressure`,
+      designTemperatureFieldTag: `${shellTubePrefix}.shell-side.design-temperature`
+    });
+    if (d.componentKey === 'channel-channel-head') return ({
+      ...d,
+      supportsTminCalculation: true,
+      tminCalculationMethod: 'UG-32 formed head',
+      designPressureFieldTag: `${shellTubePrefix}.tube-side.design-pressure`,
+      designTemperatureFieldTag: `${shellTubePrefix}.tube-side.design-temperature`,
+      reviewNotes: 'Tube-side design conditions apply for channel/channel-head components.'
+    });
+    if (d.componentKey === 'channel-cover') return ({
+      ...d,
+      supportsTminCalculation: true,
+      tminCalculationMethod: 'flat cover / channel cover method placeholder',
+      designPressureFieldTag: `${shellTubePrefix}.tube-side.design-pressure`,
+      designTemperatureFieldTag: `${shellTubePrefix}.tube-side.design-temperature`
+    });
+    if (d.componentKey === 'channel-head-dollar-plate') return ({
+      ...d,
+      supportsTminCalculation: true,
+      tminCalculationMethod: 'flat cover / channel cover method placeholder',
+      designPressureFieldTag: `${shellTubePrefix}.tube-side.design-pressure`,
+      designTemperatureFieldTag: `${shellTubePrefix}.tube-side.design-temperature`
+    });
+    if (d.componentKey === 'bonnet-head') return ({
+      ...d,
+      supportsTminCalculation: true,
+      tminCalculationMethod: 'UG-32 formed head',
+      designPressureFieldTag: `${shellTubePrefix}.tube-side.design-pressure`,
+      designTemperatureFieldTag: `${shellTubePrefix}.tube-side.design-temperature`
+    });
+    if (d.componentKey === 'tubesheet-area') return ({
+      ...d,
+      supportsTminCalculation: false,
+      tminCalculationMethod: 'review only unless calculation method is selected',
+      reviewNotes: 'Shared/interface region; review only unless a specific calculation method is selected.'
+    });
+  }
   if (d.componentKey !== 'nozzles') return d;
   if (d.equipmentSubtype === 'Shell and Tube Exchanger') return ({
     ...d,
@@ -84,7 +135,7 @@ export const API510_EXTERNAL_COMPONENT_DEFINITIONS: InspectionComponentDefinitio
     designConditionSourceOptions: ['shell-side', 'tube-side'],
     parentThicknessSourceOptions: ['selected-parent', 'manual-entry'],
     supportsTminCalculation: true,
-    tminCalculationMethod: 'UG-27/UG-32 with selected parent thickness',
+    tminCalculationMethod: 'UG-45 nozzle neck minimum thickness',
     supportsNozzleUg45: true,
     designPressureFieldTag: `${shellTubePrefix}.shell-side.design-pressure`,
     designTemperatureFieldTag: `${shellTubePrefix}.shell-side.design-temperature`,

@@ -743,13 +743,32 @@ describe('inspection field catalog', () => {
 
     const shell = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'shell', undefined, undefined, undefined, values);
     expect(shell?.resolvedPressureSide).toBe('shell-side');
+    expect(shell?.supportsTminCalculation).toBe(true);
+    expect(shell?.calculationMethodLabel).toBe('UG-27 cylindrical shell');
     expect(shell?.designPressureValue).toBe(275);
     expect(shell?.designTemperatureValue).toBe(500);
+
+    const shellCover = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'shell-cover', undefined, undefined, undefined, values);
+    expect(shellCover?.resolvedPressureSide).toBe('shell-side');
+    expect(shellCover?.supportsTminCalculation).toBe(true);
+    expect(shellCover?.calculationMethodLabel).toBe('UG-32 formed head');
+
+    expect(channelHead?.supportsTminCalculation).toBe(true);
+    expect(channelHead?.calculationMethodLabel).toBe('UG-32 formed head');
+
+    const channelCover = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'channel-cover', undefined, undefined, undefined, values);
+    expect(channelCover?.resolvedPressureSide).toBe('tube-side');
+    expect(channelCover?.supportsTminCalculation).toBe(true);
+
+    const bonnetHead = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'bonnet-head', undefined, undefined, undefined, values);
+    expect(bonnetHead?.resolvedPressureSide).toBe('tube-side');
+    expect(bonnetHead?.supportsTminCalculation).toBe(true);
 
     const nozzleTube = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'nozzles', 'tube-side', 'channel-channel-head', 'channel-channel-head', values);
     expect(nozzleTube?.resolvedPressureSide).toBe('tube-side');
     expect(nozzleTube?.designPressureValue).toBe(300);
     expect(nozzleTube?.designTemperatureValue).toBe(450);
+    expect(nozzleTube?.supportsUg45).toBe(true);
 
     const nozzleShell = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'nozzles', 'shell-side', 'shell', 'shell', values);
     expect(nozzleShell?.resolvedPressureSide).toBe('shell-side');

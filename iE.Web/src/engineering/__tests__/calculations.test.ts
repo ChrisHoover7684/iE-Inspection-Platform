@@ -10,6 +10,7 @@ import { API510_EXTERNAL_COMPONENT_PRESETS, API510_INTERNAL_COMPONENT_PRESETS, A
 import { FIELD_CATALOG_WORD_INTRO, FIELD_CATALOG_WORD_TITLE, buildFieldCatalogWordReviewDocument, exportFieldCatalogWordReview } from '../../reporting/fieldCatalogWordExport';
 import { API510_EXTERNAL_DRUM_VESSEL_COMPONENT_PRESETS, API510_EXTERNAL_EXCHANGER_COMPONENT_PRESETS, API510_EXTERNAL_TOWER_COLUMN_COMPONENT_PRESETS, API570_EXTERNAL_COMPONENT_PRESETS, externalInspectionFieldSets, futureOnlyApi510InternalFields, getMvpExternalInspectionFields } from '../../reporting/inspectionFieldCatalog';
 import { API510_EXTERNAL_COMPONENT_DEFINITIONS } from '../../reporting/inspectionComponentCatalog';
+import { resolveComponentCalculationContext } from '../../reporting/componentCalculationContext';
 
 describe('engineering calculations foundation', () => {
   const expectFoundationFields = (result: { calculationType: string; formulaVersion: string; displayName: string; calculatedAt: string; insertLabel: string; warnings: unknown[]; standardReferences: unknown[]; }) => {
@@ -689,4 +690,39 @@ describe('inspection field catalog', () => {
       'api510.external.tower-column.design-temperature'
     ]));
   });
+
+  it('resolver maps shell/tube/channel sides to design fields and validates required context', () => {
+    const nozzle = API510_EXTERNAL_COMPONENT_DEFINITIONS.find((d) => d.equipmentSubtype === 'Shell and Tube Exchanger' && d.componentKey === 'nozzles');
+    expect(nozzle).toBeTruthy();
+
+    const shell = resolveComponentCalculationContext(nozzle!, 'shell-side', 'shell', 'shell');
+    expect(shell.designPressureFieldTag).toBe('api510.external.exchanger.shell-tube.shell-side.design-pressure');
+
+    const tube = resolveComponentCalculationContext(nozzle!, 'tube-side', 'shell', 'shell');
+    expect(tube.designTemperatureFieldTag).toBe('api510.external.exchanger.shell-tube.tube-side.design-temperature');
+
+    const channel = resolveComponentCalculationContext(nozzle!, 'channel-side', 'channel-head', 'channel-head');
+    expect(channel.selectedParentComponent).toBe('channel-channel-head');
+    expect(channel.selectedNozzleLocation).toBe('channel-channel-head');
+    expect(channel.designPressureFieldTag).toBe('api510.external.exchanger.shell-tube.channel-side.design-pressure');
+
+    const missingParent = resolveComponentCalculationContext(nozzle!, 'shell-side', undefined, 'shell');
+    expect(missingParent.validationWarnings.some((w) => w.includes('Parent component is required'))).toBe(true);
+
+    const missingLocation = resolveComponentCalculationContext(nozzle!, 'shell-side', 'shell', undefined);
+    expect(missingLocation.validationWarnings.some((w) => w.includes('Nozzle location is required'))).toBe(true);
+  });
+
+  it('generated API 510 nozzle detail fields exist across external component groups and docx', () => {
+    const fields = getMvpExternalInspectionFields().map((f) => f.fieldTag);
+    expect(fields).toContain('api510.external.drum-vessel.horizontal-drum.nozzles.nozzle-id-tag');
+    expect(fields).toContain('api510.external.tower-column.distillation.nozzles.nozzle-id-tag');
+    expect(fields).toContain('api510.external.exchanger.air-cooler.nozzles.nozzle-id-tag');
+    expect(fields).toContain('api510.external.exchanger.double-pipe.nozzles.nozzle-id-tag');
+
+    const doc = buildFieldCatalogWordReviewDocument();
+    expect(doc).toContain('api510.external.exchanger.air-cooler.nozzles.nozzle-id-tag');
+    expect(doc).toContain('api510.external.drum-vessel.horizontal-drum.nozzles.nozzle-id-tag');
+  });
+
 });

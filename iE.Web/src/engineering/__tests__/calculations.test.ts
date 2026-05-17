@@ -8,7 +8,7 @@ import { applyMaterialPreset, buildCircuitBatchSnapshot, formatCircuitBatchSumma
 import { assessApi570Thickness, buildApi570FindingDedupeKey, normalizeNpsValue, toApi570FindingDraftsFromAssessment } from '../calculations/api570ThicknessAssessment';
 import { API510_EXTERNAL_COMPONENT_PRESETS, API510_INTERNAL_COMPONENT_PRESETS, API570_COMPONENT_PRESETS, createAndAddComponentSection, createComponentSection, upsertFindingFromComponentSection } from '../../reporting/componentSections';
 import { FIELD_CATALOG_WORD_INTRO, FIELD_CATALOG_WORD_TITLE, buildFieldCatalogWordReviewDocument, exportFieldCatalogWordReview } from '../../reporting/fieldCatalogWordExport';
-import { API570_EXTERNAL_COMPONENT_PRESETS, externalInspectionFieldSets, futureOnlyApi510InternalFields, getMvpExternalInspectionFields } from '../../reporting/inspectionFieldCatalog';
+import { API510_EXTERNAL_DRUM_VESSEL_COMPONENT_PRESETS, API510_EXTERNAL_EXCHANGER_COMPONENT_PRESETS, API510_EXTERNAL_TOWER_COLUMN_COMPONENT_PRESETS, API570_EXTERNAL_COMPONENT_PRESETS, externalInspectionFieldSets, futureOnlyApi510InternalFields, getMvpExternalInspectionFields } from '../../reporting/inspectionFieldCatalog';
 
 describe('engineering calculations foundation', () => {
   const expectFoundationFields = (result: { calculationType: string; formulaVersion: string; displayName: string; calculatedAt: string; insertLabel: string; warnings: unknown[]; standardReferences: unknown[]; }) => {
@@ -493,9 +493,8 @@ describe('component section builder', () => {
 
 
 describe('inspection field catalog', () => {
-  it('exposes only API 570 external MVP field set with unique tags', () => {
-    expect(externalInspectionFieldSets).toHaveLength(1);
-    expect(externalInspectionFieldSets[0].id).toBe('api-570-external-piping');
+  it('exposes API 570 and API 510 external MVP field sets with unique tags', () => {
+    expect(externalInspectionFieldSets.map((s) => s.id)).toEqual(expect.arrayContaining(['api-570-external-piping', 'api-510-external-exchanger', 'api-510-external-drum-vessel', 'api-510-external-tower-column']));
     const tags = getMvpExternalInspectionFields().map((f) => f.fieldTag);
     expect(new Set(tags).size).toBe(tags.length);
     expect(tags.every((tag) => !tag.startsWith('api510.internal'))).toBe(true);
@@ -533,6 +532,29 @@ describe('inspection field catalog', () => {
     expect(pipingSet?.componentPresets).toEqual(API570_EXTERNAL_COMPONENT_PRESETS);
   });
 
+
+  it('api 510 external component presets and durable tags are present', () => {
+    const exchanger = externalInspectionFieldSets.find((s) => s.id === 'api-510-external-exchanger');
+    const vessel = externalInspectionFieldSets.find((s) => s.id === 'api-510-external-drum-vessel');
+    const tower = externalInspectionFieldSets.find((s) => s.id === 'api-510-external-tower-column');
+    expect(exchanger?.componentPresets).toEqual(API510_EXTERNAL_EXCHANGER_COMPONENT_PRESETS);
+    expect(vessel?.componentPresets).toEqual(API510_EXTERNAL_DRUM_VESSEL_COMPONENT_PRESETS);
+    expect(tower?.componentPresets).toEqual(API510_EXTERNAL_TOWER_COLUMN_COMPONENT_PRESETS);
+
+    const tags = getMvpExternalInspectionFields().map((f) => f.fieldTag);
+    expect(tags).toEqual(expect.arrayContaining([
+      'api510.external.exchanger.shell-tube.shell.condition',
+      'api510.external.exchanger.shell-tube.channel-head.condition',
+      'api510.external.exchanger.plate-frame.plate-pack.condition',
+      'api510.external.exchanger.double-pipe.outer-pipe.condition',
+      'api510.external.exchanger.air-cooler.header-box.condition',
+      'api510.external.drum-vessel.shell.condition',
+      'api510.external.drum-vessel.nozzles.condition',
+      'api510.external.tower-column.shell-courses.condition',
+      'api510.external.tower-column.platforms-ladders.condition'
+    ]));
+  });
+
   it('future API 510 internal fields are excluded from MVP export', () => {
     const tags = getMvpExternalInspectionFields().map((f) => f.fieldTag);
     expect(futureOnlyApi510InternalFields.every((f) => !tags.includes(f.fieldTag))).toBe(true);
@@ -550,6 +572,10 @@ describe('inspection field catalog', () => {
     expect(doc).toContain(FIELD_CATALOG_WORD_INTRO);
     expect(doc).toContain('Component Presets:');
     expect(doc).toContain('Control Valve / Control Loop');
+    expect(doc).toContain('API 510 External Exchanger: Shell and Tube, Plate and Frame, Double Pipe, Air Cooler / Fin Fan');
+    expect(doc).toContain('api510.external.exchanger.shell-tube.shell.condition');
+    expect(doc).toContain('api510.external.drum-vessel.nozzles.condition');
+    expect(doc).toContain('api510.external.tower-column.platforms-ladders.condition');
     expect(doc).toContain('api570.external.piping.component.create-finding');
     expect(doc).toContain('api570.external.piping.component.repair-required');
     expect(doc).toContain('Review Notes');

@@ -504,9 +504,27 @@ describe('inspection field catalog', () => {
 
   it('api 570 component fields include finding/recommendation/photo/summary flags', () => {
     const fields = externalInspectionFieldSets.find((s) => s.id === 'api-570-external-piping')?.fields ?? [];
-    expect(fields.some((f) => f.fieldTag === 'finding-notes' && f.supportsFinding && f.supportsSummary)).toBe(true);
-    expect(fields.some((f) => f.fieldTag === 'recommendation-text' && f.supportsRecommendation)).toBe(true);
-    expect(fields.some((f) => f.fieldTag === 'photo-reference-picture-tag' && f.supportsPhotoTag)).toBe(true);
+    expect(fields.some((f) => f.fieldTag === 'api570.external.piping.component.finding-notes' && f.supportsFinding && f.supportsSummary)).toBe(true);
+    expect(fields.some((f) => f.fieldTag === 'api570.external.piping.component.recommendation-text' && f.supportsRecommendation)).toBe(true);
+    expect(fields.some((f) => f.fieldTag === 'api570.external.piping.component.photo-tag' && f.supportsPhotoTag)).toBe(true);
+  });
+
+
+
+  it('api 510 sets include useful core external groups/fields', () => {
+    const exchanger = externalInspectionFieldSets.find((s) => s.id === 'api-510-external-exchangers');
+    expect(exchanger).toBeTruthy();
+    const tags = (exchanger?.fields ?? []).map((f) => f.fieldTag);
+    expect(tags).toContain('api510.external.exchanger.external-condition.summary');
+    expect(tags).toContain('api510.external.exchanger.leakage-staining.summary');
+    expect(tags).toContain('api510.external.exchanger.coating.condition');
+    expect(tags).toContain('api510.external.exchanger.insulation.condition');
+    expect(tags).toContain('api510.external.exchanger.supports-foundation.condition');
+    expect(tags).toContain('api510.external.exchanger.cml-thickness.review-summary');
+    expect(tags).toContain('api510.external.exchanger.component.condition');
+    expect(tags).toContain('api510.external.exchanger.finding.notes');
+    expect(tags).toContain('api510.external.exchanger.recommendation.text');
+    expect(tags).toContain('api510.external.exchanger.photo.reference-tag');
   });
 
   it('future API 510 internal fields are excluded from MVP export', () => {

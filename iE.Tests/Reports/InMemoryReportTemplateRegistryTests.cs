@@ -14,6 +14,7 @@ public class InMemoryReportTemplateRegistryTests
     private static readonly string[] RequiredRepairRecommendationTemplates =
     [
         "repair-recommendation-general",
+        "repair-recommendation-api-510-vessel",
         "repair-recommendation-api-570-piping",
         "repair-recommendation-sti-sp001-tank"
     ];
@@ -25,12 +26,22 @@ public class InMemoryReportTemplateRegistryTests
     {
         var templates = registry.GetTemplates();
 
-        Assert.Equal(6, templates.Count);
+        Assert.Equal(7, templates.Count);
 
         foreach (var templateId in RequiredExternalInspectionTemplates.Concat(RequiredRepairRecommendationTemplates))
         {
             Assert.Contains(templates, template => template.Id == templateId);
         }
+    }
+
+
+    [Fact]
+    public void GetTemplates_DoesNotExposeApi510ExternalInspectionTemplate()
+    {
+        var templates = registry.GetTemplates();
+
+        Assert.DoesNotContain(templates, t => t.Id == "api-510-vessel-external");
+        Assert.Contains(templates, t => t.Id == "repair-recommendation-api-510-vessel");
     }
 
     [Fact]

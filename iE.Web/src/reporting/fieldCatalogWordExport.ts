@@ -1,4 +1,5 @@
 import { externalInspectionFieldSets, getMvpExternalInspectionFields } from './inspectionFieldCatalog';
+import { API510_EXTERNAL_ALL_COMPONENT_DEFINITIONS } from './inspectionComponentCatalog';
 
 export const FIELD_CATALOG_WORD_TITLE = 'External Inspection Field Catalog Review';
 export const FIELD_CATALOG_WORD_INTRO = 'This document is a field catalog review document. It is not a final report template. Use it to review field names, tags, grouping, options, and layout order before generating report templates.';
@@ -11,6 +12,7 @@ const textCell = (text: string) => `<w:tc><w:p><w:r><w:t xml:space="preserve">${
 const buildDocumentXml = () => {
   const fields = [...getMvpExternalInspectionFields()].sort((a, b) => groupKey(a).localeCompare(groupKey(b)) || a.defaultLayoutOrder - b.defaultLayoutOrder || a.fieldTag.localeCompare(b.fieldTag));
   const componentPresetMetadata = externalInspectionFieldSets.map((set) => `${set.name}: ${set.componentPresets.join(', ')}`).join('\n');
+  const componentAvailabilityMetadata = API510_EXTERNAL_ALL_COMPONENT_DEFINITIONS.map((d) => `${d.equipmentFamily}|${d.equipmentSubtype}|${d.label}|${d.requirementLevel}|${d.defaultSelected}|${d.supportsFinding}|${d.supportsRecommendation}|${d.supportsPhotoTag}|${d.supportsNdeRequest}|${d.reviewNotes ?? ''}`).join('\n');
   const headers = ['Field Tag', 'Label', 'Section Group', 'Component Type', 'Data Type', 'Options', 'Required', 'Supports Finding', 'Supports Recommendation', 'Supports Repair Required', 'Supports Photo Tag', 'Supports Summary', 'Supports NDE Request', 'Default Layout Order', 'Review Notes'];
   const headerRow = `<w:tr>${headers.map((h) => textCell(h)).join('')}</w:tr>`;
   const rows = fields.map((f) => `<w:tr>${[

@@ -572,13 +572,42 @@ describe('inspection field catalog', () => {
     expect(doc).toContain(FIELD_CATALOG_WORD_INTRO);
     expect(doc).toContain('Component Presets:');
     expect(doc).toContain('Control Valve / Control Loop');
-    expect(doc).toContain('API 510 External Exchanger: Shell and Tube, Plate and Frame, Double Pipe, Air Cooler / Fin Fan');
+    expect(doc).toContain('API 510 External Exchanger: Shell and Tube Exchanger, Plate and Frame Exchanger, Double Pipe Exchanger, Air Cooler / Fin Fan');
     expect(doc).toContain('api510.external.exchanger.shell-tube.shell.condition');
     expect(doc).toContain('api510.external.drum-vessel.nozzles.condition');
     expect(doc).toContain('api510.external.tower-column.platforms-ladders.condition');
     expect(doc).toContain('api570.external.piping.component.create-finding');
     expect(doc).toContain('api570.external.piping.component.repair-required');
     expect(doc).toContain('Review Notes');
+  });
+
+
+  it('api510 component availability includes exchanger minimum/optional sets and excludes internal', () => {
+    const fields = getMvpExternalInspectionFields().map((f) => f.fieldTag);
+    expect(fields).toEqual(expect.arrayContaining([
+      'api510.external.exchanger.shell-tube.shell.condition',
+      'api510.external.exchanger.shell-tube.channel-channel-head.condition',
+      'api510.external.exchanger.shell-tube.nozzles.condition',
+      'api510.external.exchanger.shell-tube.shell-cover.condition',
+      'api510.external.exchanger.shell-tube.bonnet-head.condition',
+      'api510.external.exchanger.shell-tube.tubesheet-area.condition',
+      'api510.external.exchanger.plate-frame.frame-head.condition',
+      'api510.external.exchanger.double-pipe.inner-pipe-external.condition',
+      'api510.external.exchanger.air-cooler.header-box.condition',
+      'api510.external.drum-vessel.horizontal-drum.shell.condition',
+      'api510.external.drum-vessel.vertical-drum.shell.condition',
+      'api510.external.tower-column.distillation.shell-courses.condition',
+      'api510.external.tower-column.distillation.tray-manways.condition'
+    ]));
+    expect(fields.some((t) => t.includes('api510.internal'))).toBe(false);
+  });
+
+  it('word export includes component availability metadata columns', () => {
+    const doc = buildFieldCatalogWordReviewDocument();
+    expect(doc).toContain('Component Availability Metadata:');
+    expect(doc).toContain('Equipment Family|Equipment Subtype|Component|Requirement Level|Default Selected|Supports Finding|Supports Recommendation|Supports Photo Tag|Supports NDE Request|Review Notes');
+    expect(doc).toContain('Pressure Equipment|Shell and Tube Exchanger|Shell|minimum|true');
+    expect(doc).toContain('Pressure Equipment|Shell and Tube Exchanger|Shell Cover|optional|false');
   });
 });
 

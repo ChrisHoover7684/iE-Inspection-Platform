@@ -11,6 +11,7 @@ import { FIELD_CATALOG_WORD_INTRO, FIELD_CATALOG_WORD_TITLE, buildFieldCatalogWo
 import { API510_EXTERNAL_DRUM_VESSEL_COMPONENT_PRESETS, API510_EXTERNAL_EXCHANGER_COMPONENT_PRESETS, API510_EXTERNAL_TOWER_COLUMN_COMPONENT_PRESETS, API570_EXTERNAL_COMPONENT_PRESETS, externalInspectionFieldSets, futureOnlyApi510InternalFields, getMvpExternalInspectionFields } from '../../reporting/inspectionFieldCatalog';
 import { API510_EXTERNAL_COMPONENT_DEFINITIONS } from '../../reporting/inspectionComponentCatalog';
 import { resolveComponentCalculationContext } from '../../reporting/componentCalculationContext';
+import { buildComponentCalculationPrefill } from '../../reporting/componentCalculationPrefill';
 
 describe('engineering calculations foundation', () => {
   const expectFoundationFields = (result: { calculationType: string; formulaVersion: string; displayName: string; calculatedAt: string; insertLabel: string; warnings: unknown[]; standardReferences: unknown[]; }) => {
@@ -721,6 +722,52 @@ describe('inspection field catalog', () => {
 
     const missingLocation = resolveComponentCalculationContext(nozzle!, 'shell-side', 'shell', undefined);
     expect(missingLocation.validationWarnings.some((w) => w.includes('Nozzle location is required'))).toBe(true);
+  });
+
+  it('api510 shell-and-tube prefill resolves side tags/values and warnings without affecting api570 fields', () => {
+    const values = {
+      'api510.external.exchanger.shell-tube.shell-side.design-pressure': 275,
+      'api510.external.exchanger.shell-tube.shell-side.design-temperature': 500,
+      'api510.external.exchanger.shell-tube.tube-side.design-pressure': 300,
+      'api510.external.exchanger.shell-tube.tube-side.design-temperature': 450,
+      'api570.external.piping.component.condition': 'Acceptable'
+    };
+
+    const channelHead = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'channel-channel-head', undefined, undefined, undefined, values);
+    expect(channelHead?.resolvedPressureSide).toBe('tube-side');
+    expect(channelHead?.designPressureFieldTag).toBe('api510.external.exchanger.shell-tube.tube-side.design-pressure');
+    expect(channelHead?.designTemperatureFieldTag).toBe('api510.external.exchanger.shell-tube.tube-side.design-temperature');
+    expect(channelHead?.designPressureValue).toBe(300);
+    expect(channelHead?.designTemperatureValue).toBe(450);
+    expect(channelHead?.notes.some((n) => n.includes('Channel / Channel Head'))).toBe(true);
+
+    const shell = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'shell', undefined, undefined, undefined, values);
+    expect(shell?.resolvedPressureSide).toBe('shell-side');
+    expect(shell?.designPressureValue).toBe(275);
+    expect(shell?.designTemperatureValue).toBe(500);
+
+    const nozzleTube = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'nozzles', 'tube-side', 'channel-channel-head', 'channel-channel-head', values);
+    expect(nozzleTube?.resolvedPressureSide).toBe('tube-side');
+    expect(nozzleTube?.designPressureValue).toBe(300);
+    expect(nozzleTube?.designTemperatureValue).toBe(450);
+
+    const nozzleShell = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'nozzles', 'shell-side', 'shell', 'shell', values);
+    expect(nozzleShell?.resolvedPressureSide).toBe('shell-side');
+    expect(nozzleShell?.designPressureValue).toBe(275);
+    expect(nozzleShell?.designTemperatureValue).toBe(500);
+
+    const nozzleChannelSide = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'nozzles', 'channel-side', 'channel-head', 'channel-head', values);
+    expect(nozzleChannelSide?.resolvedPressureSide).toBe('tube-side');
+    expect(nozzleChannelSide?.missingRequiredInputWarnings.some((w) => w.includes('deprecated'))).toBe(true);
+    expect(nozzleChannelSide?.notes.some((n) => n.includes('normalized to tube-side'))).toBe(true);
+
+    const missingParent = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'nozzles', 'shell-side', undefined, 'shell', values);
+    expect(missingParent?.missingRequiredInputWarnings.some((w) => w.includes('Parent component is required'))).toBe(true);
+
+    const missingLocation = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'nozzles', 'shell-side', 'shell', undefined, values);
+    expect(missingLocation?.missingRequiredInputWarnings.some((w) => w.includes('Nozzle location is required'))).toBe(true);
+
+    expect(values['api570.external.piping.component.condition']).toBe('Acceptable');
   });
 
   it('generated API 510 nozzle detail fields exist across external component groups and docx', () => {

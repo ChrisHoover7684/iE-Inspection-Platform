@@ -18,6 +18,7 @@ public class InspectionComponentCatalogTests
         Assert.Equal("api510.external.exchanger.shell-tube.tube-side.design-temperature", nozzle.DesignTemperatureFieldTagsByPressureBoundarySide["tube-side"]);
         Assert.DoesNotContain("channel-side", nozzle.DesignConditionSourceOptions);
         Assert.True(nozzle.SupportsNozzleUg45);
+        Assert.Contains("tube-side", nozzle.ReviewNotes);
     }
 
     [Theory]

@@ -58,6 +58,7 @@ public static class InspectionComponentCatalog
             SupportsTminCalculation = true,
             TminCalculationMethod = "UG-27/UG-32 with selected parent thickness",
             SupportsNozzleUg45 = true,
+            ReviewNotes = "Nozzle can be assigned to shell-side/tube-side parent. Channel / Channel Head is treated as tube-side for design pressure and temperature. UG-45 metadata required.",
             SupportsFinding = true,
             SupportsRecommendation = true,
             SupportsRepairRequired = true,

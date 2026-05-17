@@ -5,6 +5,19 @@ internal static class ExternalInspectionTemplates
     public static IReadOnlyList<ReportTemplate> Build() =>
     [
         CreateApi510VesselExternal(),
+        CreateApi510ExchangerShellTubeExternal(),
+        CreateApi510ExchangerPlateFrameExternal(),
+        CreateApi510ExchangerDoublePipeExternal(),
+        CreateApi510ExchangerAirCoolerExternal(),
+        CreateApi510DrumHorizontalExternal(),
+        CreateApi510DrumVerticalExternal(),
+        CreateApi510DrumSeparatorKoExternal(),
+        CreateApi510DrumAccumulatorReceiverExternal(),
+        CreateApi510VesselGenericExternal(),
+        CreateApi510TowerDistillationExternal(),
+        CreateApi510TowerAbsorberStripperExternal(),
+        CreateApi510TowerPackedColumnExternal(),
+        CreateApi510TowerTrayColumnExternal(),
         CreateApi570PipingExternal(),
         CreateApi570PipingCuiExternal(),
         CreateStiSp001TankExternal()
@@ -16,6 +29,9 @@ internal static class ExternalInspectionTemplates
         Name = "API 510 Vessel External Inspection",
         Standard = "API 510",
         EquipmentType = "Pressure Vessel",
+        InspectionScope = "External",
+        EquipmentFamily = "Drums / Pressure Vessels",
+        EquipmentSubtype = "Generic Pressure Vessel",
         Description = "External visual inspection template for pressure vessels.",
         Sections =
         [
@@ -47,6 +63,58 @@ internal static class ExternalInspectionTemplates
             CommonTemplateSections.ReturnToService(13)
         ]
     };
+
+
+
+    private static ReportTemplate CreateApi510ExternalTemplate(string id, string name, string family, string subtype, params ReportTemplateField[] subtypeFields) => new()
+    {
+        Id = id,
+        Name = name,
+        Standard = "API 510",
+        InspectionScope = "External",
+        EquipmentType = "Pressure Vessel",
+        EquipmentFamily = family,
+        EquipmentSubtype = subtype,
+        Description = $"External visual inspection template for {subtype.ToLowerInvariant()}.",
+        Sections =
+        [
+            CommonTemplateSections.ReportHeader(1, "Equipment Tag"),
+            CommonTemplateSections.InspectionContext(2),
+            CommonTemplateSections.ScopePreparation(3),
+            CommonTemplateSections.CreateSection("external-inspection", "External Inspection", 4, false, subtypeFields),
+            CommonTemplateSections.CreateSection("component-condition", "Component Condition", 5, true,
+                CommonTemplateSections.Field("component-name", "Component", "text", true),
+                CommonTemplateSections.Field("condition", "Condition", "select", true, null, "Acceptable", "Monitor", "Finding"),
+                CommonTemplateSections.Field("notes", "Notes", "textarea")),
+            CommonTemplateSections.Findings(6),
+            CommonTemplateSections.NdeTesting(7),
+            CommonTemplateSections.RepairsPerformed(8),
+            CommonTemplateSections.Recommendations(9),
+            CommonTemplateSections.Photos(10),
+            CommonTemplateSections.ReturnToService(11)
+        ]
+    };
+
+    private static ReportTemplate CreateApi510ExchangerShellTubeExternal() => CreateApi510ExternalTemplate("api-510-exchanger-shell-tube-external", "API 510 External - Shell and Tube Exchanger", "Exchangers", "Shell and Tube Exchanger",
+        CommonTemplateSections.Field("shell-condition", "Shell Condition", "textarea"),
+        CommonTemplateSections.Field("channel-head-condition", "Channel Head Condition", "textarea"),
+        CommonTemplateSections.Field("tubesheet-area-condition", "Tubesheet Area Condition", "textarea"),
+        CommonTemplateSections.Field("external-summary", "External Summary", "textarea", true));
+    private static ReportTemplate CreateApi510ExchangerPlateFrameExternal() => CreateApi510ExternalTemplate("api-510-exchanger-plate-frame-external", "API 510 External - Plate and Frame Exchanger", "Exchangers", "Plate and Frame Exchanger",
+        CommonTemplateSections.Field("frame-head-condition", "Frame Head Condition", "textarea"), CommonTemplateSections.Field("plate-pack-external", "Plate Pack External Condition", "textarea"), CommonTemplateSections.Field("external-summary", "External Summary", "textarea", true));
+    private static ReportTemplate CreateApi510ExchangerDoublePipeExternal() => CreateApi510ExternalTemplate("api-510-exchanger-double-pipe-external", "API 510 External - Double Pipe Exchanger", "Exchangers", "Double Pipe Exchanger",
+        CommonTemplateSections.Field("inner-pipe-external", "Inner Pipe External Condition", "textarea"), CommonTemplateSections.Field("outer-pipe", "Outer Pipe Condition", "textarea"), CommonTemplateSections.Field("external-summary", "External Summary", "textarea", true));
+    private static ReportTemplate CreateApi510ExchangerAirCoolerExternal() => CreateApi510ExternalTemplate("api-510-exchanger-air-cooler-external", "API 510 External - Air Cooler / Fin Fan", "Exchangers", "Air Cooler / Fin Fan",
+        CommonTemplateSections.Field("bundle-external", "Bundle External Condition", "textarea"), CommonTemplateSections.Field("fan-guard-structure", "Fan/Guard/Structure Condition", "textarea"), CommonTemplateSections.Field("external-summary", "External Summary", "textarea", true));
+    private static ReportTemplate CreateApi510DrumHorizontalExternal() => CreateApi510ExternalTemplate("api-510-drum-horizontal-external", "API 510 External - Horizontal Drum", "Drums / Pressure Vessels", "Horizontal Drum", CommonTemplateSections.Field("external-summary", "External Summary", "textarea", true));
+    private static ReportTemplate CreateApi510DrumVerticalExternal() => CreateApi510ExternalTemplate("api-510-drum-vertical-external", "API 510 External - Vertical Drum", "Drums / Pressure Vessels", "Vertical Drum", CommonTemplateSections.Field("external-summary", "External Summary", "textarea", true));
+    private static ReportTemplate CreateApi510DrumSeparatorKoExternal() => CreateApi510ExternalTemplate("api-510-drum-separator-ko-external", "API 510 External - Separator / KO Drum", "Drums / Pressure Vessels", "Separator / KO Drum", CommonTemplateSections.Field("external-summary", "External Summary", "textarea", true));
+    private static ReportTemplate CreateApi510DrumAccumulatorReceiverExternal() => CreateApi510ExternalTemplate("api-510-drum-accumulator-receiver-external", "API 510 External - Accumulator / Receiver", "Drums / Pressure Vessels", "Accumulator / Receiver", CommonTemplateSections.Field("external-summary", "External Summary", "textarea", true));
+    private static ReportTemplate CreateApi510VesselGenericExternal() => CreateApi510ExternalTemplate("api-510-vessel-generic-external", "API 510 External - Generic Pressure Vessel", "Drums / Pressure Vessels", "Generic Pressure Vessel", CommonTemplateSections.Field("external-summary", "External Summary", "textarea", true));
+    private static ReportTemplate CreateApi510TowerDistillationExternal() => CreateApi510ExternalTemplate("api-510-tower-distillation-external", "API 510 External - Distillation Tower", "Towers / Columns", "Distillation Tower", CommonTemplateSections.Field("external-summary", "External Summary", "textarea", true));
+    private static ReportTemplate CreateApi510TowerAbsorberStripperExternal() => CreateApi510ExternalTemplate("api-510-tower-absorber-stripper-external", "API 510 External - Absorber / Stripper", "Towers / Columns", "Absorber / Stripper", CommonTemplateSections.Field("external-summary", "External Summary", "textarea", true));
+    private static ReportTemplate CreateApi510TowerPackedColumnExternal() => CreateApi510ExternalTemplate("api-510-tower-packed-column-external", "API 510 External - Packed Column", "Towers / Columns", "Packed Column", CommonTemplateSections.Field("external-summary", "External Summary", "textarea", true));
+    private static ReportTemplate CreateApi510TowerTrayColumnExternal() => CreateApi510ExternalTemplate("api-510-tower-tray-column-external", "API 510 External - Tray Column", "Towers / Columns", "Tray Column", CommonTemplateSections.Field("external-summary", "External Summary", "textarea", true));
 
     private static ReportTemplate CreateApi570PipingExternal() => new()
     {

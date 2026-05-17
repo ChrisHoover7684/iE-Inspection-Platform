@@ -92,6 +92,9 @@ export type ReportTemplate = {
   name: string;
   standard: string;
   equipmentType: string;
+  inspectionScope?: string;
+  equipmentFamily?: string;
+  equipmentSubtype?: string;
   description?: string;
   sections: TemplateSection[];
 };

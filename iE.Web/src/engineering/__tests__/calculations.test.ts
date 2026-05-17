@@ -8,7 +8,7 @@ import { applyMaterialPreset, buildCircuitBatchSnapshot, formatCircuitBatchSumma
 import { assessApi570Thickness, buildApi570FindingDedupeKey, normalizeNpsValue, toApi570FindingDraftsFromAssessment } from '../calculations/api570ThicknessAssessment';
 import { API510_EXTERNAL_COMPONENT_PRESETS, API510_INTERNAL_COMPONENT_PRESETS, API570_COMPONENT_PRESETS, createAndAddComponentSection, createComponentSection, upsertFindingFromComponentSection } from '../../reporting/componentSections';
 import { FIELD_CATALOG_WORD_INTRO, FIELD_CATALOG_WORD_TITLE, buildFieldCatalogWordReviewDocument, exportFieldCatalogWordReview } from '../../reporting/fieldCatalogWordExport';
-import { externalInspectionFieldSets, futureOnlyApi510InternalFields, getMvpExternalInspectionFields } from '../../reporting/inspectionFieldCatalog';
+import { API570_EXTERNAL_COMPONENT_PRESETS, externalInspectionFieldSets, futureOnlyApi510InternalFields, getMvpExternalInspectionFields } from '../../reporting/inspectionFieldCatalog';
 
 describe('engineering calculations foundation', () => {
   const expectFoundationFields = (result: { calculationType: string; formulaVersion: string; displayName: string; calculatedAt: string; insertLabel: string; warnings: unknown[]; standardReferences: unknown[]; }) => {
@@ -493,38 +493,44 @@ describe('component section builder', () => {
 
 
 describe('inspection field catalog', () => {
-  it('has required external field sets and unique tags', () => {
-    expect(externalInspectionFieldSets.some((s) => s.id === 'api-570-external-piping')).toBe(true);
-    expect(externalInspectionFieldSets.some((s) => s.id === 'api-510-external-exchangers')).toBe(true);
-    expect(externalInspectionFieldSets.some((s) => s.id === 'api-510-external-drum-vessel')).toBe(true);
-    expect(externalInspectionFieldSets.some((s) => s.id === 'api-510-external-tower-column')).toBe(true);
+  it('exposes only API 570 external MVP field set with unique tags', () => {
+    expect(externalInspectionFieldSets).toHaveLength(1);
+    expect(externalInspectionFieldSets[0].id).toBe('api-570-external-piping');
     const tags = getMvpExternalInspectionFields().map((f) => f.fieldTag);
     expect(new Set(tags).size).toBe(tags.length);
+    expect(tags.every((tag) => !tag.startsWith('api510.internal'))).toBe(true);
   });
 
-  it('api 570 component fields include finding/recommendation/photo/summary flags', () => {
+  it('api 570 component field catalog contains all MVP component action fields', () => {
     const fields = externalInspectionFieldSets.find((s) => s.id === 'api-570-external-piping')?.fields ?? [];
-    expect(fields.some((f) => f.fieldTag === 'api570.external.piping.component.finding-notes' && f.supportsFinding && f.supportsSummary)).toBe(true);
-    expect(fields.some((f) => f.fieldTag === 'api570.external.piping.component.recommendation-text' && f.supportsRecommendation)).toBe(true);
-    expect(fields.some((f) => f.fieldTag === 'api570.external.piping.component.photo-tag' && f.supportsPhotoTag)).toBe(true);
+    const tags = fields.map((f) => f.fieldTag);
+    expect(tags).toEqual(expect.arrayContaining([
+      'api570.external.piping.component.type',
+      'api570.external.piping.component.tag-name',
+      'api570.external.piping.component.location',
+      'api570.external.piping.component.condition',
+      'api570.external.piping.component.finding-notes',
+      'api570.external.piping.component.recommendation-text',
+      'api570.external.piping.component.photo-tag',
+      'api570.external.piping.component.create-finding',
+      'api570.external.piping.component.recommendation-required',
+      'api570.external.piping.component.repair-required',
+      'api570.external.piping.component.photo-required',
+      'api570.external.piping.component.nde-required',
+      'api570.external.piping.component.add-to-summary'
+    ]));
+
+    expect(fields.some((f) => f.fieldTag === 'api570.external.piping.component.create-finding' && f.supportsFinding)).toBe(true);
+    expect(fields.some((f) => f.fieldTag === 'api570.external.piping.component.recommendation-required' && f.supportsRecommendation)).toBe(true);
+    expect(fields.some((f) => f.fieldTag === 'api570.external.piping.component.repair-required' && f.supportsRepairRequired)).toBe(true);
+    expect(fields.some((f) => f.fieldTag === 'api570.external.piping.component.photo-required' && f.supportsPhotoTag)).toBe(true);
+    expect(fields.some((f) => f.fieldTag === 'api570.external.piping.component.nde-required' && f.supportsNdeRequest)).toBe(true);
+    expect(fields.some((f) => f.fieldTag === 'api570.external.piping.component.add-to-summary' && f.supportsSummary)).toBe(true);
   });
 
-
-
-  it('api 510 sets include useful core external groups/fields', () => {
-    const exchanger = externalInspectionFieldSets.find((s) => s.id === 'api-510-external-exchangers');
-    expect(exchanger).toBeTruthy();
-    const tags = (exchanger?.fields ?? []).map((f) => f.fieldTag);
-    expect(tags).toContain('api510.external.exchanger.external-condition.summary');
-    expect(tags).toContain('api510.external.exchanger.leakage-staining.summary');
-    expect(tags).toContain('api510.external.exchanger.coating.condition');
-    expect(tags).toContain('api510.external.exchanger.insulation.condition');
-    expect(tags).toContain('api510.external.exchanger.supports-foundation.condition');
-    expect(tags).toContain('api510.external.exchanger.cml-thickness.review-summary');
-    expect(tags).toContain('api510.external.exchanger.component.condition');
-    expect(tags).toContain('api510.external.exchanger.finding.notes');
-    expect(tags).toContain('api510.external.exchanger.recommendation.text');
-    expect(tags).toContain('api510.external.exchanger.photo.reference-tag');
+  it('api 570 component presets are included in catalog metadata', () => {
+    const pipingSet = externalInspectionFieldSets.find((s) => s.id === 'api-570-external-piping');
+    expect(pipingSet?.componentPresets).toEqual(API570_EXTERNAL_COMPONENT_PRESETS);
   });
 
   it('future API 510 internal fields are excluded from MVP export', () => {
@@ -538,15 +544,15 @@ describe('inspection field catalog', () => {
     expect(blob.size).toBeGreaterThan(0);
   });
 
-  it('word export includes title, intro, and review columns', async () => {
+  it('word export includes title, intro, presets metadata and MVP fields', async () => {
     const doc = buildFieldCatalogWordReviewDocument();
-    const json = JSON.stringify(doc);
-    expect(json).toContain(FIELD_CATALOG_WORD_TITLE);
-    expect(json).toContain(FIELD_CATALOG_WORD_INTRO);
-    expect(json).toContain('Field Tag');
-    expect(json).toContain('Label');
-    expect(json).toContain('Data Type');
-    expect(json).toContain('Options');
-    expect(json).toContain('Review Notes');
+    expect(doc).toContain(FIELD_CATALOG_WORD_TITLE);
+    expect(doc).toContain(FIELD_CATALOG_WORD_INTRO);
+    expect(doc).toContain('Component Presets:');
+    expect(doc).toContain('Control Valve / Control Loop');
+    expect(doc).toContain('api570.external.piping.component.create-finding');
+    expect(doc).toContain('api570.external.piping.component.repair-required');
+    expect(doc).toContain('Review Notes');
   });
 });
+

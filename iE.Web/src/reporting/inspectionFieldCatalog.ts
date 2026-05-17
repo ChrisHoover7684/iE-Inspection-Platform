@@ -1,3 +1,4 @@
+import { API510_EXTERNAL_COMPONENT_DEFINITIONS, API510_EXCHANGER_DESIGN_CONDITION_FIELDS } from './inspectionComponentCatalog';
 export type InspectionFieldDefinition = {
   fieldTag: string;
   label: string;
@@ -85,16 +86,46 @@ const buildApi510ExternalFields = (equipmentFamily: string, equipmentSubtype: st
     defaultLayoutOrder: 200 + ((index + 1) * 10)
   }));
 
-  return [...headerAndContext, ...componentConditionFields];
+  const exchangerDesignFields = baseTag === 'api510.external.exchanger'
+    ? API510_EXCHANGER_DESIGN_CONDITION_FIELDS.map((tag, index) => mkField({
+      fieldTag: tag,
+      label: `${tag.split('.').slice(-2).join(' ').replace('-', ' ').replace(/\b\w/g, (m) => m.toUpperCase())}`,
+      ...baseMeta,
+      sectionGroup: 'Inspection Context',
+      componentType: 'Design Conditions',
+      dataType: 'number',
+      options: [],
+      required: false,
+      supportsFinding: false, supportsRecommendation: false, supportsRepairRequired: false, supportsPhotoTag: false, supportsSummary: false, supportsNdeRequest: false,
+      defaultLayoutOrder: 150 + index
+    }))
+    : [];
+
+  const nozzleDetailFields = baseTag === 'api510.external.exchanger'
+    ? [
+      'nozzle-id-tag','nozzle-service','parent-component','nozzle-location','pressure-boundary-side','nozzle-nps-diameter','ug45-calculation-required','ug45-parent-thickness-source','design-pressure-source','design-temperature-source'
+    ].map((k, index) => mkField({
+      fieldTag: `api510.external.exchanger.shell-tube.nozzles.${k}`,
+      label: `Shell and Tube Nozzle ${k.replace(/-/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())}`,
+      ...baseMeta, sectionGroup: 'Component Condition', componentType: 'Nozzles',
+      dataType: ['ug45-calculation-required'].includes(k) ? 'boolean' : (['pressure-boundary-side','parent-component'].includes(k) ? 'select' : 'text'),
+      options: k === 'pressure-boundary-side' ? ['shell-side','tube-side','channel-side','shared','unknown'] : (k === 'parent-component' ? ['shell','channel-channel-head','shell-cover','channel-cover','bonnet-head','tubesheet-area','other-component'] : []),
+      required: ['parent-component','pressure-boundary-side'].includes(k),
+      supportsFinding: false, supportsRecommendation: false, supportsRepairRequired: false, supportsPhotoTag: false, supportsSummary: false, supportsNdeRequest: false,
+      defaultLayoutOrder: 450 + index
+    }))
+    : [];
+
+  return [...headerAndContext, ...exchangerDesignFields, ...componentConditionFields, ...nozzleDetailFields];
 };
 
 export const API570_EXTERNAL_COMPONENT_PRESETS = [
   'Valve','Control Valve / Control Loop','Flange Pair','Bolting / Gasket','Support','Spring Can / Hanger','Guide / Anchor','Shoe / Saddle','Bellows / Expansion Joint','Small Bore Connection','Branch Connection','Deadleg','Injection Point / Mix Point','Insulation / Jacketing Area','CUI Area','Other Component'
 ];
 
-export const API510_EXTERNAL_EXCHANGER_COMPONENT_PRESETS = ['Shell and Tube', 'Plate and Frame', 'Double Pipe', 'Air Cooler / Fin Fan'];
-export const API510_EXTERNAL_DRUM_VESSEL_COMPONENT_PRESETS = ['Shell', 'Heads', 'Nozzles', 'Manways', 'Supports', 'Skirt / Saddle'];
-export const API510_EXTERNAL_TOWER_COLUMN_COMPONENT_PRESETS = ['Shell Courses', 'Nozzles', 'Platforms / Ladders', 'Supports', 'Internals Access'];
+export const API510_EXTERNAL_EXCHANGER_COMPONENT_PRESETS = ['Shell and Tube Exchanger', 'Plate and Frame Exchanger', 'Double Pipe Exchanger', 'Air Cooler / Fin Fan'];
+export const API510_EXTERNAL_DRUM_VESSEL_COMPONENT_PRESETS = ['Horizontal Drum', 'Vertical Drum', 'Separator / KO Drum', 'Accumulator / Receiver', 'Generic Pressure Vessel'];
+export const API510_EXTERNAL_TOWER_COLUMN_COMPONENT_PRESETS = ['Distillation Tower', 'Absorber / Stripper', 'Packed Column', 'Tray Column'];
 
 // Frontend catalog is the temporary source of truth for #276 external catalog review export.
 export const externalInspectionFieldSets: InspectionFieldSet[] = [
@@ -118,25 +149,15 @@ export const externalInspectionFieldSets: InspectionFieldSet[] = [
   },
   {
     id: 'api-510-external-exchanger', name: 'API 510 External Exchanger', standard: 'API 510', inspectionScope: 'External', equipmentFamily: 'Pressure Equipment', equipmentSubtype: 'Exchanger', componentPresets: API510_EXTERNAL_EXCHANGER_COMPONENT_PRESETS,
-    fields: buildApi510ExternalFields('Pressure Equipment', 'Exchanger', 'api510.external.exchanger', [
-      { key: 'shell-tube.shell', label: 'Shell and Tube Shell' },
-      { key: 'shell-tube.channel-head', label: 'Shell and Tube Channel Head' },
-      { key: 'plate-frame.plate-pack', label: 'Plate and Frame Plate Pack' },
-      { key: 'double-pipe.outer-pipe', label: 'Double Pipe Outer Pipe' },
-      { key: 'air-cooler.header-box', label: 'Air Cooler Header Box' }
-    ])
+    fields: buildApi510ExternalFields('Pressure Equipment', 'Exchanger', 'api510.external.exchanger', API510_EXTERNAL_COMPONENT_DEFINITIONS.filter((d) => d.equipmentSubtype.includes('Exchanger') || d.equipmentSubtype.includes('Air Cooler / Fin Fan')).map((d) => ({ key: d.fieldTagPrefix.replace('api510.external.exchanger.', ''), label: d.label })))
   },
   {
     id: 'api-510-external-drum-vessel', name: 'API 510 External Drums / Pressure Vessels', standard: 'API 510', inspectionScope: 'External', equipmentFamily: 'Pressure Equipment', equipmentSubtype: 'Drum / Vessel', componentPresets: API510_EXTERNAL_DRUM_VESSEL_COMPONENT_PRESETS,
-    fields: buildApi510ExternalFields('Pressure Equipment', 'Drum / Vessel', 'api510.external.drum-vessel', [
-      { key: 'shell', label: 'Shell' }, { key: 'heads', label: 'Heads' }, { key: 'nozzles', label: 'Nozzles' }, { key: 'supports', label: 'Supports' }
-    ])
+    fields: buildApi510ExternalFields('Pressure Equipment', 'Drum / Vessel', 'api510.external.drum-vessel', API510_EXTERNAL_COMPONENT_DEFINITIONS.filter((d) => d.equipmentSubtype.includes('Drum') || d.equipmentSubtype.includes('Vessel')).map((d) => ({ key: d.fieldTagPrefix.replace('api510.external.drum-vessel.', ''), label: d.label })))
   },
   {
     id: 'api-510-external-tower-column', name: 'API 510 External Towers / Columns', standard: 'API 510', inspectionScope: 'External', equipmentFamily: 'Pressure Equipment', equipmentSubtype: 'Tower / Column', componentPresets: API510_EXTERNAL_TOWER_COLUMN_COMPONENT_PRESETS,
-    fields: buildApi510ExternalFields('Pressure Equipment', 'Tower / Column', 'api510.external.tower-column', [
-      { key: 'shell-courses', label: 'Shell Courses' }, { key: 'platforms-ladders', label: 'Platforms / Ladders' }, { key: 'nozzles', label: 'Nozzles' }, { key: 'supports', label: 'Supports' }
-    ])
+    fields: buildApi510ExternalFields('Pressure Equipment', 'Tower / Column', 'api510.external.tower-column', API510_EXTERNAL_COMPONENT_DEFINITIONS.filter((d) => d.equipmentSubtype.includes('Tower') || d.equipmentSubtype.includes('Column')).map((d) => ({ key: d.fieldTagPrefix.replace('api510.external.tower-column.', ''), label: d.label })))
   }
 ];
 

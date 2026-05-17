@@ -9,6 +9,7 @@ import { assessApi570Thickness, buildApi570FindingDedupeKey, normalizeNpsValue, 
 import { API510_EXTERNAL_COMPONENT_PRESETS, API510_INTERNAL_COMPONENT_PRESETS, API570_COMPONENT_PRESETS, createAndAddComponentSection, createComponentSection, upsertFindingFromComponentSection } from '../../reporting/componentSections';
 import { FIELD_CATALOG_WORD_INTRO, FIELD_CATALOG_WORD_TITLE, buildFieldCatalogWordReviewDocument, exportFieldCatalogWordReview } from '../../reporting/fieldCatalogWordExport';
 import { API510_EXTERNAL_DRUM_VESSEL_COMPONENT_PRESETS, API510_EXTERNAL_EXCHANGER_COMPONENT_PRESETS, API510_EXTERNAL_TOWER_COLUMN_COMPONENT_PRESETS, API570_EXTERNAL_COMPONENT_PRESETS, externalInspectionFieldSets, futureOnlyApi510InternalFields, getMvpExternalInspectionFields } from '../../reporting/inspectionFieldCatalog';
+import { API510_EXTERNAL_COMPONENT_DEFINITIONS } from '../../reporting/inspectionComponentCatalog';
 
 describe('engineering calculations foundation', () => {
   const expectFoundationFields = (result: { calculationType: string; formulaVersion: string; displayName: string; calculatedAt: string; insertLabel: string; warnings: unknown[]; standardReferences: unknown[]; }) => {
@@ -544,14 +545,19 @@ describe('inspection field catalog', () => {
     const tags = getMvpExternalInspectionFields().map((f) => f.fieldTag);
     expect(tags).toEqual(expect.arrayContaining([
       'api510.external.exchanger.shell-tube.shell.condition',
-      'api510.external.exchanger.shell-tube.channel-head.condition',
-      'api510.external.exchanger.plate-frame.plate-pack.condition',
+      'api510.external.exchanger.shell-tube.channel-channel-head.condition',
+      'api510.external.exchanger.plate-frame.plate-pack-external.condition',
       'api510.external.exchanger.double-pipe.outer-pipe.condition',
       'api510.external.exchanger.air-cooler.header-box.condition',
-      'api510.external.drum-vessel.shell.condition',
-      'api510.external.drum-vessel.nozzles.condition',
-      'api510.external.tower-column.shell-courses.condition',
-      'api510.external.tower-column.platforms-ladders.condition'
+      'api510.external.exchanger.air-cooler.tube-bundle-external.condition',
+      'api510.external.exchanger.air-cooler.nozzles.condition',
+      'api510.external.exchanger.air-cooler.frame-supports.condition',
+      'api510.external.drum-vessel.horizontal-drum.shell.condition',
+      'api510.external.drum-vessel.vertical-drum.shell.condition',
+      'api510.external.drum-vessel.vertical-drum.nozzles.condition',
+      'api510.external.drum-vessel.horizontal-drum.nozzles.condition',
+      'api510.external.tower-column.distillation.shell-courses.condition',
+      'api510.external.tower-column.distillation.platforms-ladders-handrails.condition'
     ]));
   });
 
@@ -572,13 +578,72 @@ describe('inspection field catalog', () => {
     expect(doc).toContain(FIELD_CATALOG_WORD_INTRO);
     expect(doc).toContain('Component Presets:');
     expect(doc).toContain('Control Valve / Control Loop');
-    expect(doc).toContain('API 510 External Exchanger: Shell and Tube, Plate and Frame, Double Pipe, Air Cooler / Fin Fan');
+    expect(doc).toContain('API 510 External Exchanger: Shell and Tube Exchanger, Plate and Frame Exchanger, Double Pipe Exchanger, Air Cooler / Fin Fan');
     expect(doc).toContain('api510.external.exchanger.shell-tube.shell.condition');
-    expect(doc).toContain('api510.external.drum-vessel.nozzles.condition');
-    expect(doc).toContain('api510.external.tower-column.platforms-ladders.condition');
+    expect(doc).toContain('api510.external.drum-vessel.horizontal-drum.nozzles.condition');
+    expect(doc).toContain('api510.external.tower-column.distillation.platforms-ladders-handrails.condition');
     expect(doc).toContain('api570.external.piping.component.create-finding');
     expect(doc).toContain('api570.external.piping.component.repair-required');
     expect(doc).toContain('Review Notes');
+  });
+
+
+  it('api510 component availability includes exchanger minimum/optional sets and excludes internal', () => {
+    const fields = getMvpExternalInspectionFields().map((f) => f.fieldTag);
+    expect(fields).toEqual(expect.arrayContaining([
+      'api510.external.exchanger.shell-tube.shell.condition',
+      'api510.external.exchanger.shell-tube.channel-channel-head.condition',
+      'api510.external.exchanger.shell-tube.nozzles.condition',
+      'api510.external.exchanger.shell-tube.shell-cover.condition',
+      'api510.external.exchanger.shell-tube.bonnet-head.condition',
+      'api510.external.exchanger.shell-tube.tubesheet-area.condition',
+      'api510.external.exchanger.plate-frame.frame-head.condition',
+      'api510.external.exchanger.double-pipe.inner-pipe-external.condition',
+      'api510.external.exchanger.air-cooler.header-box.condition',
+      'api510.external.exchanger.air-cooler.tube-bundle-external.condition',
+      'api510.external.exchanger.air-cooler.nozzles.condition',
+      'api510.external.exchanger.air-cooler.frame-supports.condition',
+      'api510.external.drum-vessel.horizontal-drum.shell.condition',
+      'api510.external.drum-vessel.vertical-drum.shell.condition',
+      'api510.external.drum-vessel.vertical-drum.nozzles.condition',
+      'api510.external.drum-vessel.vertical-drum.shell.condition',
+      'api510.external.tower-column.distillation.shell-courses.condition',
+      'api510.external.tower-column.distillation.tray-manways.condition'
+    ]));
+    expect(fields.some((t) => t.includes('api510.internal'))).toBe(false);
+  });
+
+  it('word export includes component availability metadata columns', () => {
+    const doc = buildFieldCatalogWordReviewDocument();
+    expect(doc).toContain('Component Availability Metadata:');
+    expect(doc).toContain('Equipment Family|Equipment Subtype|Component|Requirement Level|Default Selected|Parent Component Required|Allowed Parent Components|Pressure Boundary Side|Design Pressure Field Tag|Design Temperature Field Tag|Supports Tmin Calculation|Tmin Calculation Method|Supports Nozzle UG-45|Supports Finding|Supports Recommendation|Supports Photo Tag|Supports NDE Request|Review Notes');
+    expect(doc).toContain('Pressure Equipment|Shell and Tube Exchanger|Shell|minimum|true');
+    expect(doc).toContain('Pressure Equipment|Shell and Tube Exchanger|Shell Cover|optional|false');
+  });
+
+
+  it('component definition model includes shell and tube minimum + optional + nozzle parent/ug45 metadata', () => {
+    const sAndT = API510_EXTERNAL_COMPONENT_DEFINITIONS.filter((d) => d.equipmentSubtype === 'Shell and Tube Exchanger');
+    const min = sAndT.filter((d) => d.requirementLevel === 'minimum').map((d) => d.label);
+    expect(min).toEqual(expect.arrayContaining(['Shell', 'Channel / Channel Head', 'Nozzles']));
+    const optional = sAndT.filter((d) => d.requirementLevel === 'optional').map((d) => d.label);
+    expect(optional).toEqual(expect.arrayContaining(['Shell Cover', 'Bonnet Head', 'Tubesheet Area']));
+    const nozzle = sAndT.find((d) => d.componentKey === 'nozzles');
+    expect(nozzle?.parentComponentRequired).toBe(true);
+    expect(nozzle?.allowedParentComponentKeys).toEqual(expect.arrayContaining(['shell', 'channel-channel-head']));
+    expect(nozzle?.supportsNozzleUg45).toBe(true);
+  });
+
+  it('shell and tube side-specific design pressure and temperature fields exist', () => {
+    const tags = getMvpExternalInspectionFields().map((f) => f.fieldTag);
+    expect(tags).toEqual(expect.arrayContaining([
+      'api510.external.exchanger.shell-tube.shell-side.design-pressure',
+      'api510.external.exchanger.shell-tube.shell-side.design-temperature',
+      'api510.external.exchanger.shell-tube.tube-side.design-pressure',
+      'api510.external.exchanger.shell-tube.tube-side.design-temperature',
+      'api510.external.exchanger.shell-tube.channel-side.design-pressure',
+      'api510.external.exchanger.shell-tube.channel-side.design-temperature'
+    ]));
   });
 });
 

@@ -561,6 +561,23 @@ describe('inspection field catalog', () => {
     ]));
   });
 
+
+  it('includes accumulator/receiver and absorber/stripper subtype condition tags', () => {
+    const tags = getMvpExternalInspectionFields().map((f) => f.fieldTag);
+    expect(tags).toEqual(expect.arrayContaining([
+      'api510.external.drum-vessel.accumulator-receiver.shell.condition',
+      'api510.external.drum-vessel.accumulator-receiver.heads.condition',
+      'api510.external.drum-vessel.accumulator-receiver.nozzles.condition',
+      'api510.external.drum-vessel.accumulator-receiver.supports.condition',
+      'api510.external.tower-column.absorber-stripper.shell-courses.condition',
+      'api510.external.tower-column.absorber-stripper.nozzles.condition',
+      'api510.external.tower-column.absorber-stripper.manways.condition',
+      'api510.external.tower-column.absorber-stripper.platforms-ladders-handrails.condition',
+      'api510.external.tower-column.absorber-stripper.distributor-nozzles.condition',
+      'api510.external.tower-column.absorber-stripper.reboiler-overhead-connections.condition'
+    ]));
+  });
+
   it('future API 510 internal fields are excluded from MVP export', () => {
     const tags = getMvpExternalInspectionFields().map((f) => f.fieldTag);
     expect(futureOnlyApi510InternalFields.every((f) => !tags.includes(f.fieldTag))).toBe(true);
@@ -619,6 +636,8 @@ describe('inspection field catalog', () => {
     expect(doc).toContain('Equipment Family|Equipment Subtype|Component|Requirement Level|Default Selected|Parent Component Required|Allowed Parent Components|Pressure Boundary Side|Design Pressure Field Tag|Design Temperature Field Tag|Supports Tmin Calculation|Tmin Calculation Method|Supports Nozzle UG-45|Supports Finding|Supports Recommendation|Supports Photo Tag|Supports NDE Request|Review Notes');
     expect(doc).toContain('Pressure Equipment|Shell and Tube Exchanger|Shell|minimum|true');
     expect(doc).toContain('Pressure Equipment|Shell and Tube Exchanger|Shell Cover|optional|false');
+    expect(doc).toContain('Pressure Equipment|Accumulator / Receiver|Shell|minimum|true');
+    expect(doc).toContain('Pressure Equipment|Absorber / Stripper|Shell Courses|minimum|true');
   });
 
 
@@ -632,6 +651,19 @@ describe('inspection field catalog', () => {
     expect(nozzle?.parentComponentRequired).toBe(true);
     expect(nozzle?.allowedParentComponentKeys).toEqual(expect.arrayContaining(['shell', 'channel-channel-head']));
     expect(nozzle?.supportsNozzleUg45).toBe(true);
+    expect(nozzle?.designPressureFieldTagsByPressureBoundarySide?.['tube-side']).toBe('api510.external.exchanger.shell-tube.tube-side.design-pressure');
+    expect(nozzle?.designTemperatureFieldTagsByPressureBoundarySide?.['channel-side']).toBe('api510.external.exchanger.shell-tube.channel-side.design-temperature');
+  });
+
+
+  it('every API 510 external component preset has at least one generated field tag', () => {
+    const tags = getMvpExternalInspectionFields().map((f) => f.fieldTag);
+    [...API510_EXTERNAL_EXCHANGER_COMPONENT_PRESETS, ...API510_EXTERNAL_DRUM_VESSEL_COMPONENT_PRESETS, ...API510_EXTERNAL_TOWER_COLUMN_COMPONENT_PRESETS]
+      .forEach((preset) => {
+        const defs = API510_EXTERNAL_COMPONENT_DEFINITIONS.filter((d) => d.equipmentSubtype === preset);
+        expect(defs.length).toBeGreaterThan(0);
+        expect(defs.some((d) => tags.includes(`${d.fieldTagPrefix}.condition`))).toBe(true);
+      });
   });
 
   it('shell and tube side-specific design pressure and temperature fields exist', () => {

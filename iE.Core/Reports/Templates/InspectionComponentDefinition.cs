@@ -11,6 +11,14 @@ public sealed class InspectionComponentDefinition
     public string RequirementLevel { get; init; } = "minimum";
     public bool DefaultSelected { get; init; }
     public string FieldTagPrefix { get; init; } = string.Empty;
+    public bool ParentComponentRequired { get; init; }
+    public IReadOnlyList<string> AllowedParentComponentKeys { get; init; } = [];
+    public string PressureBoundarySide { get; init; } = "unknown";
+    public string? DesignPressureFieldTag { get; init; }
+    public string? DesignTemperatureFieldTag { get; init; }
+    public bool SupportsTminCalculation { get; init; }
+    public string? TminCalculationMethod { get; init; }
+    public bool SupportsNozzleUg45 { get; init; }
     public bool SupportsFinding { get; init; }
     public bool SupportsRecommendation { get; init; }
     public bool SupportsRepairRequired { get; init; }

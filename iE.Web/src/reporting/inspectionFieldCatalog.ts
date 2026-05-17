@@ -149,15 +149,15 @@ export const externalInspectionFieldSets: InspectionFieldSet[] = [
   },
   {
     id: 'api-510-external-exchanger', name: 'API 510 External Exchanger', standard: 'API 510', inspectionScope: 'External', equipmentFamily: 'Pressure Equipment', equipmentSubtype: 'Exchanger', componentPresets: API510_EXTERNAL_EXCHANGER_COMPONENT_PRESETS,
-    fields: buildApi510ExternalFields('Pressure Equipment', 'Exchanger', 'api510.external.exchanger', API510_EXTERNAL_COMPONENT_DEFINITIONS.filter((d) => d.equipmentSubtype.includes('Exchanger') || d.equipmentSubtype.includes('Air Cooler / Fin Fan')).map((d) => ({ key: d.fieldTagPrefix.replace('api510.external.exchanger.', ''), label: d.label })))
+    fields: buildApi510ExternalFields('Pressure Equipment', 'Exchanger', 'api510.external.exchanger', API510_EXTERNAL_COMPONENT_DEFINITIONS.filter((d) => d.fieldTagPrefix.startsWith('api510.external.exchanger.')).map((d) => ({ key: d.fieldTagPrefix.replace('api510.external.exchanger.', ''), label: d.label })))
   },
   {
     id: 'api-510-external-drum-vessel', name: 'API 510 External Drums / Pressure Vessels', standard: 'API 510', inspectionScope: 'External', equipmentFamily: 'Pressure Equipment', equipmentSubtype: 'Drum / Vessel', componentPresets: API510_EXTERNAL_DRUM_VESSEL_COMPONENT_PRESETS,
-    fields: buildApi510ExternalFields('Pressure Equipment', 'Drum / Vessel', 'api510.external.drum-vessel', API510_EXTERNAL_COMPONENT_DEFINITIONS.filter((d) => d.equipmentSubtype.includes('Drum') || d.equipmentSubtype.includes('Vessel')).map((d) => ({ key: d.fieldTagPrefix.replace('api510.external.drum-vessel.', ''), label: d.label })))
+    fields: buildApi510ExternalFields('Pressure Equipment', 'Drum / Vessel', 'api510.external.drum-vessel', API510_EXTERNAL_COMPONENT_DEFINITIONS.filter((d) => d.fieldTagPrefix.startsWith('api510.external.drum-vessel.')).map((d) => ({ key: d.fieldTagPrefix.replace('api510.external.drum-vessel.', ''), label: d.label })))
   },
   {
     id: 'api-510-external-tower-column', name: 'API 510 External Towers / Columns', standard: 'API 510', inspectionScope: 'External', equipmentFamily: 'Pressure Equipment', equipmentSubtype: 'Tower / Column', componentPresets: API510_EXTERNAL_TOWER_COLUMN_COMPONENT_PRESETS,
-    fields: buildApi510ExternalFields('Pressure Equipment', 'Tower / Column', 'api510.external.tower-column', API510_EXTERNAL_COMPONENT_DEFINITIONS.filter((d) => d.equipmentSubtype.includes('Tower') || d.equipmentSubtype.includes('Column')).map((d) => ({ key: d.fieldTagPrefix.replace('api510.external.tower-column.', ''), label: d.label })))
+    fields: buildApi510ExternalFields('Pressure Equipment', 'Tower / Column', 'api510.external.tower-column', API510_EXTERNAL_COMPONENT_DEFINITIONS.filter((d) => d.fieldTagPrefix.startsWith('api510.external.tower-column.')).map((d) => ({ key: d.fieldTagPrefix.replace('api510.external.tower-column.', ''), label: d.label })))
   }
 ];
 

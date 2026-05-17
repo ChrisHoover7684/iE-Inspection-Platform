@@ -30,6 +30,14 @@ public class InspectionComponentCatalogTests
             .Single(d => d.EquipmentSubtype == "Shell and Tube Exchanger" && d.ComponentKey == "shell-cover");
         var channelHead = InspectionComponentCatalog.Api510ExternalComponentDefinitions
             .Single(d => d.EquipmentSubtype == "Shell and Tube Exchanger" && d.ComponentKey == "channel-channel-head");
+        var channelCover = InspectionComponentCatalog.Api510ExternalComponentDefinitions
+            .Single(d => d.EquipmentSubtype == "Shell and Tube Exchanger" && d.ComponentKey == "channel-cover");
+        var channelHeadDollarPlate = InspectionComponentCatalog.Api510ExternalComponentDefinitions
+            .Single(d => d.EquipmentSubtype == "Shell and Tube Exchanger" && d.ComponentKey == "channel-head-dollar-plate");
+        var bonnetHead = InspectionComponentCatalog.Api510ExternalComponentDefinitions
+            .Single(d => d.EquipmentSubtype == "Shell and Tube Exchanger" && d.ComponentKey == "bonnet-head");
+        var tubesheetArea = InspectionComponentCatalog.Api510ExternalComponentDefinitions
+            .Single(d => d.EquipmentSubtype == "Shell and Tube Exchanger" && d.ComponentKey == "tubesheet-area");
 
         Assert.True(shell.SupportsTminCalculation);
         Assert.Equal("UG-27 cylindrical shell", shell.TminCalculationMethod);
@@ -40,6 +48,22 @@ public class InspectionComponentCatalogTests
 
         Assert.True(channelHead.SupportsTminCalculation);
         Assert.Equal("tube-side", channelHead.PressureBoundarySide);
+
+        Assert.True(channelCover.SupportsTminCalculation);
+        Assert.Equal("flat cover / channel cover method placeholder", channelCover.TminCalculationMethod);
+        Assert.Equal("tube-side", channelCover.PressureBoundarySide);
+
+        Assert.True(channelHeadDollarPlate.SupportsTminCalculation);
+        Assert.Equal("flat cover / channel cover method placeholder", channelHeadDollarPlate.TminCalculationMethod);
+        Assert.Equal("tube-side", channelHeadDollarPlate.PressureBoundarySide);
+
+        Assert.True(bonnetHead.SupportsTminCalculation);
+        Assert.Equal("UG-32 formed head", bonnetHead.TminCalculationMethod);
+        Assert.Equal("tube-side", bonnetHead.PressureBoundarySide);
+
+        Assert.False(tubesheetArea.SupportsTminCalculation);
+        Assert.Equal("review only unless calculation method is selected", tubesheetArea.TminCalculationMethod);
+        Assert.Equal("shared", tubesheetArea.PressureBoundarySide);
     }
 
     [Theory]

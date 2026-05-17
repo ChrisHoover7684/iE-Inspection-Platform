@@ -6,7 +6,7 @@ import { calculateTankShellCorrosionMargin } from '../calculations/tankShell';
 import { toB31_3EngineeringSnapshot } from '../calculations/b31_3Piping';
 import { applyMaterialPreset, buildCircuitBatchSnapshot, formatCircuitBatchSummary, mapB313RowResult, resolveCircuitConditionsFromReport, toResultDisplayRows } from '../calculations/b31_3CircuitBatch';
 import { assessApi570Thickness, buildApi570FindingDedupeKey, normalizeNpsValue, toApi570FindingDraftsFromAssessment } from '../calculations/api570ThicknessAssessment';
-import { API510_COMPONENT_PRESETS, API570_COMPONENT_PRESETS, createAndAddComponentSection, createComponentSection, upsertFindingFromComponentSection } from '../../reporting/componentSections';
+import { API510_EXTERNAL_COMPONENT_PRESETS, API510_INTERNAL_COMPONENT_PRESETS, API570_COMPONENT_PRESETS, createAndAddComponentSection, createComponentSection, upsertFindingFromComponentSection } from '../../reporting/componentSections';
 
 describe('engineering calculations foundation', () => {
   const expectFoundationFields = (result: { calculationType: string; formulaVersion: string; displayName: string; calculatedAt: string; insertLabel: string; warnings: unknown[]; standardReferences: unknown[]; }) => {
@@ -430,9 +430,10 @@ describe('component section builder', () => {
     expect(API570_COMPONENT_PRESETS).toContain('CUI Area');
   });
 
-  it('API 510 component presets exist', () => {
-    expect(API510_COMPONENT_PRESETS).toContain('Shell');
-    expect(API510_COMPONENT_PRESETS).toContain('Demister / Internals');
+  it('API 510 presets are split external/internal and internal is not in external list', () => {
+    expect(API510_EXTERNAL_COMPONENT_PRESETS).toContain('Shell');
+    expect(API510_INTERNAL_COMPONENT_PRESETS).toContain('Demister / Internals');
+    expect(API510_EXTERNAL_COMPONENT_PRESETS).not.toContain('Demister / Internals');
   });
 
   it('creating component section adds repeatable section data', () => {
@@ -456,6 +457,25 @@ describe('component section builder', () => {
     expect(updated.findings[0].photoIds?.[0]).toBe('IMG-570-01');
     expect(updated.findings[0].addToSummary).toBe(true);
     expect(updated.findings[0].summaryText).toBe('Minor seepage');
+  });
+
+
+
+  it('component section field data types map to select/textarea/boolean controls', () => {
+    const section = createComponentSection(1, 'Valve');
+    expect(section.answers.find((a) => a.fieldId === 'component-type')?.dataType).toBe('select');
+    expect(section.answers.find((a) => a.fieldId === 'component-condition')?.dataType).toBe('select');
+    expect(section.answers.find((a) => a.fieldId === 'finding-notes')?.dataType).toBe('textarea');
+    expect(section.answers.find((a) => a.fieldId === 'recommendation-text')?.dataType).toBe('textarea');
+    expect(section.answers.find((a) => a.fieldId === 'create-finding')?.dataType).toBe('boolean');
+  });
+
+  it('create finding unchecked is a no-op', () => {
+    const section = createComponentSection(1, 'Valve');
+    section.answers.find((a) => a.fieldId === 'component-tag')!.value = 'XV-101';
+    const report: any = { id: 'r', clientOrganizationId: '', facilityId: '', templateId: '', status: '', createdAt: '', sections: [], findings: [], photos: [], calculations: [] };
+    const updated = upsertFindingFromComponentSection(report, section);
+    expect(updated.findings).toHaveLength(0);
   });
 
   it('duplicate component findings are prevented by upsert', () => {

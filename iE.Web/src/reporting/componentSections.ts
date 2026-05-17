@@ -1,7 +1,9 @@
 import type { InspectionFinding, InspectionReport, InspectionReportAnswer, InspectionReportSection } from '../types';
 
 export const API570_COMPONENT_PRESETS = ['Valve','Control Valve / Control Loop','Flange Pair','Bolting / Gasket','Support','Spring Can / Hanger','Guide / Anchor','Shoe / Saddle','Bellows / Expansion Joint','Small Bore Connection','Branch Connection','Deadleg','Injection Point / Mix Point','Insulation / Jacketing Area','CUI Area','Other Component'] as const;
-export const API510_COMPONENT_PRESETS = ['Shell','Shell Cover','Channel Head','Bonnet Head','Tube Bundle','Tubesheet','Nozzle','Manway','Saddle / Skirt / Leg','Platform / Ladder / Handrail','Internal Shell','Internal Head','Baffles','Impingement Plate','Demister / Internals','Other Component'] as const;
+export const API510_EXTERNAL_COMPONENT_PRESETS = ['Shell','Shell Cover','Channel Head','Bonnet Head','Tube Bundle','Tubesheet','Nozzle','Manway','Saddle / Skirt / Leg','Platform / Ladder / Handrail','Other Component'] as const;
+export const API510_INTERNAL_COMPONENT_PRESETS = ['Internal Shell','Internal Head','Baffles','Impingement Plate','Demister / Internals'] as const;
+export const API653_EXTERNAL_COMPONENT_PRESETS = ['Shell','Roof','Bottom','Nozzle','Manway','Stairs / Platforms','Other Component'] as const;
 
 const COMPONENT_SECTION_ID = 'component-section';
 const COMPONENT_SECTION_TITLE = 'Component Section';
@@ -35,6 +37,8 @@ export const upsertFindingFromComponentSection = (report: InspectionReport, sect
   if (idx >= 0) next.findings[idx] = finding; else next.findings = [...(next.findings ?? []), finding];
   return next;
 };
+
+export const canCreateFindingFromComponentSection = (section: InspectionReportSection) => checked(section, 'create-finding');
 
 export const createAndAddComponentSection = (report: InspectionReport, componentType: string): InspectionReport => {
   const next = structuredClone(report); const instances = next.sections.filter((s) => s.sectionId === COMPONENT_SECTION_ID).map((s) => s.instanceNumber ?? 0); const instanceNumber = (instances.length ? Math.max(...instances) : 0) + 1;

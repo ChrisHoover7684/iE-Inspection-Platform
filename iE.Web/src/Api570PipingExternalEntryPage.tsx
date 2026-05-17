@@ -7,7 +7,7 @@ import { calculatePipeDimensions } from './engineering/calculations/pipeLookup';
 import type { InspectionCalculationSnapshot } from './engineering/types';
 import { applyMaterialPreset, B31_MATERIAL_PRESETS, buildCircuitBatchSnapshot, formatCircuitBatchSummary, mapB313RowResult, NPS_OD_LOOKUP, resolveCircuitConditionsFromReport, toResultDisplayRows, type B31CircuitRowInput, type B31CircuitSourceMetadata } from './engineering/calculations/b31_3CircuitBatch';
 import { assessApi570Thickness, buildApi570FindingDedupeKey, formatApi570AssessmentSummary, toApi570FindingDraftsFromAssessment, type Api570CmlReadingInput } from './engineering/calculations/api570ThicknessAssessment';
-import { API570_COMPONENT_PRESETS, createAndAddComponentSection, upsertFindingFromComponentSection } from './reporting/componentSections';
+import { API570_COMPONENT_PRESETS, canCreateFindingFromComponentSection, createAndAddComponentSection, upsertFindingFromComponentSection } from './reporting/componentSections';
 
 const TEMPLATE_ID = 'api-570-piping-external';
 const ACTIVE_REPORT_ID_STORAGE_KEY = 'ie_api570_active_report_id';
@@ -90,6 +90,7 @@ export function Api570PipingExternalEntryPage() {
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [componentActionMessage, setComponentActionMessage] = useState('');
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeField, setActiveField] = useState<{ sectionIndex: number; answerIndex: number } | null>(null);
@@ -403,8 +404,6 @@ export function Api570PipingExternalEntryPage() {
       </div>
       <div className="toolbar-actions">
         <span className="muted">{isSaving ? 'Saving…' : isDirty ? 'Unsaved changes' : 'Saved'}</span>
-        <select value={componentPreset} onChange={(e) => setComponentPreset(e.target.value)}>{API570_COMPONENT_PRESETS.map((preset) => <option key={preset} value={preset}>{preset}</option>)}</select>
-        <button type="button" onClick={() => { if (!report) return; const next = createAndAddComponentSection(report, componentPreset); setReport(next); setIsDirty(true); }}>Add Component Section</button>
         <button type="button" onClick={() => void saveReport()} disabled={isSaving || !isDirty}>{isSaving ? 'Saving…' : 'Save'}</button>
       </div>
     </div>
@@ -420,6 +419,16 @@ export function Api570PipingExternalEntryPage() {
       </div>
     </div>
 
+
+    <div className="component-toolbar">
+      <label>
+        Add Component Section
+        <select value={componentPreset} onChange={(e) => setComponentPreset(e.target.value)}>{API570_COMPONENT_PRESETS.map((preset) => <option key={preset} value={preset}>{preset}</option>)}</select>
+      </label>
+      <button type="button" onClick={() => { if (!report) return; const next = createAndAddComponentSection(report, componentPreset); setReport(next); setIsDirty(true); setComponentActionMessage('Component section added.'); }}>Add</button>
+      {componentActionMessage && <span className="muted">{componentActionMessage}</span>}
+    </div>
+
     <div className="report-page-body">
       <div className="report-main-column">
         {sectionBuckets.map((bucket) => <div className="api570-accordion" key={bucket.name}>
@@ -431,12 +440,13 @@ export function Api570PipingExternalEntryPage() {
               const suggestions = [...localSuggestionsFor(answer), ...(fieldSuggestions[answer.fieldId] || [])];
               const isComponentSection = section.sectionId === 'component-section';
               const isCheckboxField = ['create-finding','recommendation-required','repair-required','photo-required','transfer-to-component-section','nde-required','add-to-summary'].includes(answer.fieldId);
+              const isTransferField = answer.fieldId === 'transfer-to-component-section';
               const condition = toCondition(answer);
               const showIssueDetails = condition === 'issue';
               const showMonitorDetails = condition === 'monitor';
               return <div className="inspection-row" key={`${section.sectionId}-${answer.fieldId}-${answerIndex}`}>
                 <div><label><strong>{answer.label}</strong></label></div>
-                <div>{isCheckboxField ? <input type="checkbox" checked={(answer.value ?? '').toLowerCase() === 'true'} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: String(e.target.checked) })} /> : isComponentSection ? <input type="text" value={answer.value ?? ''} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value })} /> : <select value={toCondition(answer)} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value === 'na' ? 'N/A' : e.target.value, recommendationRequired: e.target.value === 'issue' ? answer.recommendationRequired ?? false : false, photoRequired: e.target.value === 'issue' ? answer.photoRequired ?? false : false })}><option value="na">N/A</option><option value="acceptable">Acceptable</option><option value="monitor">Monitor</option><option value="issue">Issue</option></select>}</div>
+                <div>{isCheckboxField ? <input type="checkbox" disabled={isTransferField && isComponentSection} checked={(answer.value ?? '').toLowerCase() === 'true'} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: String(e.target.checked) })} /> : isComponentSection ? (answer.dataType === 'select' ? <select value={answer.value ?? ''} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value })}>{answer.fieldId === 'component-condition' ? <><option value="Acceptable">Acceptable</option><option value="Monitor">Monitor</option><option value="Issue">Issue</option><option value="N/A">N/A</option></> : API570_COMPONENT_PRESETS.map((preset) => <option key={preset} value={preset}>{preset}</option>)}</select> : answer.dataType === 'textarea' ? <textarea value={answer.value ?? ''} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value })} /> : <input type={answer.dataType === 'number' ? 'number' : answer.dataType === 'date' ? 'date' : 'text'} value={answer.value ?? ''} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value })} />) : <select value={toCondition(answer)} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { value: e.target.value === 'na' ? 'N/A' : e.target.value, recommendationRequired: e.target.value === 'issue' ? answer.recommendationRequired ?? false : false, photoRequired: e.target.value === 'issue' ? answer.photoRequired ?? false : false })}><option value="na">N/A</option><option value="acceptable">Acceptable</option><option value="monitor">Monitor</option><option value="issue">Issue</option></select>}</div>
                 <div>{isComponentSection ? null : <textarea placeholder="Notes" value={answer.comment ?? ''} onFocus={() => setActiveField({ sectionIndex, answerIndex })} onChange={(e) => void updateAnswer(sectionIndex, answerIndex, { comment: e.target.value })} />}
                 {suggestions.length > 0 && <ul className="suggestions">{suggestions.map((s, idx) => <li key={`${s.promptType}-${idx}`}><strong>{s.severity.toUpperCase()}:</strong> {s.suggestion}</li>)}</ul>}</div>
                 {(showIssueDetails || showMonitorDetails) && <div className="inspection-row-details">
@@ -447,7 +457,7 @@ export function Api570PipingExternalEntryPage() {
                 </div>}
               </div>;
             })}
-            {section.sectionId === 'component-section' && <button type="button" onClick={() => { if (!report) return; const updated = upsertFindingFromComponentSection(report, section); setReport(updated); setIsDirty(true); }}>Create Finding from Component</button>}
+            {section.sectionId === 'component-section' && <><div className="component-summary"><strong>Summary:</strong> {section.answers.find((a) => a.fieldId === 'component-type')?.value || 'N/A'} | {section.answers.find((a) => a.fieldId === 'component-tag')?.value || 'N/A'} | {section.answers.find((a) => a.fieldId === 'component-location')?.value || 'N/A'} | {section.answers.find((a) => a.fieldId === 'component-condition')?.value || 'N/A'} | {canCreateFindingFromComponentSection(section) ? 'Finding Enabled' : 'Finding Not Enabled'}</div><button type="button" onClick={() => { if (!report) return; if (!canCreateFindingFromComponentSection(section)) { setComponentActionMessage('Check "Create Finding" before creating a finding from this component section.'); return; } const before = report.findings?.length ?? 0; const updated = upsertFindingFromComponentSection(report, section); const after = updated.findings?.length ?? 0; setReport(updated); setIsDirty(true); setComponentActionMessage(after > before ? 'Finding created from component section.' : 'Finding updated from component section.'); }}>Create Finding from Component</button></>}
           </div>)}
         </div>)}
       </div>

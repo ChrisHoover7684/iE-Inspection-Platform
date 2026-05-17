@@ -801,13 +801,47 @@ describe('inspection field catalog', () => {
     expect(result.warnings.some((w) => w.includes('Material allowable stress input is missing'))).toBe(true);
   });
 
+  it('UG-27 blocks when inside/outside diameter is missing', async () => {
+    const prefill = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'shell', undefined, undefined, undefined, {
+      'api510.external.exchanger.shell-tube.shell-side.design-pressure': 250,
+      'api510.external.exchanger.shell-tube.shell-side.design-temperature': 450
+    });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-27-shell-tmin', manualInputs: { allowableStressPsi: 17500, jointEfficiency: 1, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 } });
+    expect(result.success).toBe(false);
+    expect(result.warnings.some((w) => w.includes('inside diameter or outside diameter'))).toBe(true);
+  });
+
+  it('UG-27 blocks when provided/original thickness is missing', async () => {
+    const prefill = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'shell', undefined, undefined, undefined, {
+      'api510.external.exchanger.shell-tube.shell-side.design-pressure': 250,
+      'api510.external.exchanger.shell-tube.shell-side.design-temperature': 450
+    });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-27-shell-tmin', manualInputs: { allowableStressPsi: 17500, jointEfficiency: 1, insideDiameterIn: 48, outsideDiameterIn: 48.5, corrosionAllowanceIn: 0 } });
+    expect(result.success).toBe(false);
+    expect(result.warnings.some((w) => w.includes('Original thickness is required'))).toBe(true);
+    expect(result.warnings.some((w) => w.includes('Provided/current thickness is required'))).toBe(true);
+  });
+
+  it('UG-27 blocks when corrosion allowance is omitted but allows zero when provided', async () => {
+    const prefill = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'shell', undefined, undefined, undefined, {
+      'api510.external.exchanger.shell-tube.shell-side.design-pressure': 250,
+      'api510.external.exchanger.shell-tube.shell-side.design-temperature': 450
+    });
+    const omitted = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-27-shell-tmin', manualInputs: { allowableStressPsi: 17500, jointEfficiency: 1, insideDiameterIn: 48, outsideDiameterIn: 48.5, originalThicknessIn: 0.5, providedThicknessIn: 0.5 } });
+    expect(omitted.success).toBe(false);
+    expect(omitted.warnings.some((w) => w.includes('Corrosion allowance is required'))).toBe(true);
+    vi.spyOn(pressureVesselApi, 'calculateCylindrical').mockResolvedValueOnce({ result: { radiusIn: 24, circumferentialRequiredThicknessIn: 0.2, longitudinalRequiredThicknessIn: 0.2, governingRequiredThicknessIn: 0.2, requiredWithCorrosionAllowanceIn: 0.2, marginIn: 0.3 }, resolvedAllowableStressPsi: 17500, materialMatched: null, temperatureUsed: 450, wasInterpolated: false, wasExtrapolated: false, stressSourceMessage: 'manual', warnings: [] });
+    const zeroAllowed = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-27-shell-tmin', manualInputs: { allowableStressPsi: 17500, jointEfficiency: 1, insideDiameterIn: 48, outsideDiameterIn: 48.5, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 } });
+    expect(zeroAllowed.success).toBe(true);
+  });
+
   it('shell execution returns snapshot-ready payload', async () => {
     const prefill = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'shell', undefined, undefined, undefined, {
       'api510.external.exchanger.shell-tube.shell-side.design-pressure': 250,
       'api510.external.exchanger.shell-tube.shell-side.design-temperature': 450
     });
     vi.spyOn(pressureVesselApi, 'calculateCylindrical').mockResolvedValueOnce({ result: { radiusIn: 24, circumferentialRequiredThicknessIn: 0.2, longitudinalRequiredThicknessIn: 0.2, governingRequiredThicknessIn: 0.2, requiredWithCorrosionAllowanceIn: 0.2, marginIn: 0.3 }, resolvedAllowableStressPsi: 17500, materialMatched: null, temperatureUsed: 450, wasInterpolated: false, wasExtrapolated: false, stressSourceMessage: 'manual', warnings: [] });
-    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-27-shell-tmin', manualInputs: { allowableStressPsi: 17500, jointEfficiency: 1, insideDiameterIn: 48, outsideDiameterIn: 48.5, originalThicknessIn: 0.5, providedThicknessIn: 0.5 } });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-27-shell-tmin', manualInputs: { allowableStressPsi: 17500, jointEfficiency: 1, insideDiameterIn: 48, outsideDiameterIn: 48.5, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 } });
     expect(result.success).toBe(true);
     expect(result.snapshotReadyPayload).toBeTruthy();
   });
@@ -828,11 +862,89 @@ describe('inspection field catalog', () => {
       'api510.external.exchanger.shell-tube.shell-side.design-temperature': 450
     });
     vi.spyOn(pressureVesselApi, 'calculateNozzle').mockResolvedValueOnce({ result: { isValid: true, errorMessage: '', jointEfficiencyUsed: 1, insideRadiusUsed: 1, taRequiredThicknessIn: 0.1, tb1RequiredThicknessIn: 0.1, tb2RequiredThicknessIn: 0.1, tb3TableThicknessIn: 0.1, tb3PlusCorrosionAllowanceIn: 0.1, tbRequiredThicknessIn: 0.1, pressureRequiredThicknessIn: 0.1, governingRequiredThicknessIn: 0.1, marginIn: 0.05, providedThicknessIn: 0.154, corrodedThicknessIn: 0.154, requiredThicknessPlusCorrosionAllowanceIn: 0.1, isAcceptable: true, warnings: [] }, resolvedAllowableStressPsi: 17500, materialMatched: null, temperatureUsed: 450, wasInterpolated: false, wasExtrapolated: false, stressSourceMessage: 'manual', warnings: [] });
-    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-45-nozzle-neck-tmin', manualInputs: { allowableStressPsi: 17500, parentThicknessSource: 'selected-parent' } });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-45-nozzle-neck-tmin', manualInputs: { allowableStressPsi: 17500, parentThicknessSource: 'selected-parent', jointEfficiency: 1, corrosionAllowanceIn: 0, shellOrHeadRequiredThicknessIn: 0.25, shellOrHeadExternalRequiredThicknessIn: 0.25, outsideDiameterIn: 2.375, insideDiameterIn: 2, nominalThicknessIn: 0.154, originalThicknessIn: 0.154, nominalPipeSize: 'NPS 2' } });
     expect(result.success).toBe(true);
     const meta = result.snapshotReadyPayload?.inputs as { metadata?: { parentComponent?: string; nozzleLocation?: string } };
     expect(meta.metadata?.parentComponent).toBe('shell');
     expect(meta.metadata?.nozzleLocation).toBe('shell');
+  });
+
+  it('UG-45 blocks when nozzle geometry and thickness inputs are missing', async () => {
+    const prefill = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'nozzles', 'shell-side', 'shell', 'shell', {
+      'api510.external.exchanger.shell-tube.shell-side.design-pressure': 250,
+      'api510.external.exchanger.shell-tube.shell-side.design-temperature': 450
+    });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-45-nozzle-neck-tmin', manualInputs: { allowableStressPsi: 17500, parentThicknessSource: 'selected-parent', jointEfficiency: 1, corrosionAllowanceIn: 0 } });
+    expect(result.success).toBe(false);
+    expect(result.warnings.some((w) => w.includes('Nozzle outside and inside diameter'))).toBe(true);
+    expect(result.warnings.some((w) => w.includes('nominal/original thickness'))).toBe(true);
+  });
+
+  it('UG-45 blocks when shell/head required thickness values are not provided', async () => {
+    const prefill = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'nozzles', 'shell-side', 'shell', 'shell', {
+      'api510.external.exchanger.shell-tube.shell-side.design-pressure': 250,
+      'api510.external.exchanger.shell-tube.shell-side.design-temperature': 450
+    });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-45-nozzle-neck-tmin', manualInputs: { allowableStressPsi: 17500, parentThicknessSource: 'selected-parent', jointEfficiency: 1, corrosionAllowanceIn: 0, outsideDiameterIn: 2.375, insideDiameterIn: 2, nominalThicknessIn: 0.154, originalThicknessIn: 0.154, nominalPipeSize: 'NPS 2' } });
+    expect(result.success).toBe(false);
+    expect(result.warnings.some((w) => w.includes('Shell/head required thickness is required'))).toBe(true);
+  });
+
+  it('UG-45 maps shell parent to shell attachment location', async () => {
+    const prefill = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'nozzles', 'shell-side', 'shell', 'shell', {
+      'api510.external.exchanger.shell-tube.shell-side.design-pressure': 250,
+      'api510.external.exchanger.shell-tube.shell-side.design-temperature': 450
+    });
+    const spy = vi.spyOn(pressureVesselApi, 'calculateNozzle').mockResolvedValueOnce({ result: { isValid: true, errorMessage: '', jointEfficiencyUsed: 1, insideRadiusUsed: 1, taRequiredThicknessIn: 0.1, tb1RequiredThicknessIn: 0.1, tb2RequiredThicknessIn: 0.1, tb3TableThicknessIn: 0.1, tb3PlusCorrosionAllowanceIn: 0.1, tbRequiredThicknessIn: 0.1, pressureRequiredThicknessIn: 0.1, governingRequiredThicknessIn: 0.1, marginIn: 0.05, providedThicknessIn: 0.154, corrodedThicknessIn: 0.154, requiredThicknessPlusCorrosionAllowanceIn: 0.1, isAcceptable: true, warnings: [] }, resolvedAllowableStressPsi: 17500, materialMatched: null, temperatureUsed: 450, wasInterpolated: false, wasExtrapolated: false, stressSourceMessage: 'manual', warnings: [] });
+    await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-45-nozzle-neck-tmin', manualInputs: { allowableStressPsi: 17500, parentThicknessSource: 'selected-parent', jointEfficiency: 1, corrosionAllowanceIn: 0, shellOrHeadRequiredThicknessIn: 0.25, shellOrHeadExternalRequiredThicknessIn: 0.25, outsideDiameterIn: 2.375, insideDiameterIn: 2, nominalThicknessIn: 0.154, originalThicknessIn: 0.154, nominalPipeSize: 'NPS 2' } });
+    const callArg = spy.mock.calls[0]?.[0] as any;
+    expect(callArg.input.attachmentLocation).toBe('Shell');
+  });
+
+  it('UG-45 blocks unsupported parent attachment location', async () => {
+    const prefill = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'nozzles', 'tube-side', 'channel-channel-head', 'channel-channel-head', {
+      'api510.external.exchanger.shell-tube.tube-side.design-pressure': 300,
+      'api510.external.exchanger.shell-tube.tube-side.design-temperature': 450
+    });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-45-nozzle-neck-tmin', manualInputs: { allowableStressPsi: 17500, parentThicknessSource: 'selected-parent', jointEfficiency: 1, corrosionAllowanceIn: 0, shellOrHeadRequiredThicknessIn: 0.25, shellOrHeadExternalRequiredThicknessIn: 0.25, outsideDiameterIn: 2.375, insideDiameterIn: 2, nominalThicknessIn: 0.154, originalThicknessIn: 0.154, nominalPipeSize: 'NPS 2' } });
+    expect(result.success).toBe(false);
+    expect(result.warnings.some((w) => w.includes('not supported'))).toBe(true);
+  });
+
+  it('API error is caught and returned as structured failure', async () => {
+    const prefill = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'shell', undefined, undefined, undefined, {
+      'api510.external.exchanger.shell-tube.shell-side.design-pressure': 250,
+      'api510.external.exchanger.shell-tube.shell-side.design-temperature': 450
+    });
+    vi.spyOn(pressureVesselApi, 'calculateCylindrical').mockRejectedValueOnce(new Error('boom'));
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-27-shell-tmin', manualInputs: { allowableStressPsi: 17500, jointEfficiency: 1, insideDiameterIn: 48, outsideDiameterIn: 48.5, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 } });
+    expect(result.success).toBe(false);
+    expect(result.resultSummary).toBe('API calculation failed');
+    expect(result.warnings.some((w) => w.includes('API calculation failed'))).toBe(true);
+  });
+
+  it('API invalid result returns success false and propagates warnings to snapshot', async () => {
+    const prefill = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'nozzles', 'shell-side', 'shell', 'shell', {
+      'api510.external.exchanger.shell-tube.shell-side.design-pressure': 250,
+      'api510.external.exchanger.shell-tube.shell-side.design-temperature': 450
+    });
+    vi.spyOn(pressureVesselApi, 'calculateNozzle').mockResolvedValueOnce({ result: { isValid: false, errorMessage: 'invalid per backend', jointEfficiencyUsed: 1, insideRadiusUsed: 1, taRequiredThicknessIn: 0.1, tb1RequiredThicknessIn: 0.1, tb2RequiredThicknessIn: 0.1, tb3TableThicknessIn: 0.1, tb3PlusCorrosionAllowanceIn: 0.1, tbRequiredThicknessIn: 0.1, pressureRequiredThicknessIn: 0.1, governingRequiredThicknessIn: 0.1, marginIn: 0.05, providedThicknessIn: 0.154, corrodedThicknessIn: 0.154, requiredThicknessPlusCorrosionAllowanceIn: 0.1, isAcceptable: false, warnings: ['backend result warn'] }, resolvedAllowableStressPsi: 17500, materialMatched: null, temperatureUsed: 450, wasInterpolated: false, wasExtrapolated: false, stressSourceMessage: 'manual', warnings: ['envelope warn'] });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-45-nozzle-neck-tmin', manualInputs: { allowableStressPsi: 17500, parentThicknessSource: 'selected-parent', jointEfficiency: 1, corrosionAllowanceIn: 0, shellOrHeadRequiredThicknessIn: 0.25, shellOrHeadExternalRequiredThicknessIn: 0.25, outsideDiameterIn: 2.375, insideDiameterIn: 2, nominalThicknessIn: 0.154, originalThicknessIn: 0.154, nominalPipeSize: 'NPS 2' } });
+    expect(result.success).toBe(false);
+    expect(result.warnings).toEqual(expect.arrayContaining(['envelope warn', 'backend result warn']));
+    expect(result.snapshotReadyPayload?.warnings.map((w: any) => w.message)).toEqual(expect.arrayContaining(['envelope warn', 'backend result warn']));
+  });
+
+  it('successful UG-27 snapshot includes source design field tags', async () => {
+    const prefill = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'shell', undefined, undefined, undefined, {
+      'api510.external.exchanger.shell-tube.shell-side.design-pressure': 250,
+      'api510.external.exchanger.shell-tube.shell-side.design-temperature': 450
+    });
+    vi.spyOn(pressureVesselApi, 'calculateCylindrical').mockResolvedValueOnce({ result: { radiusIn: 24, circumferentialRequiredThicknessIn: 0.2, longitudinalRequiredThicknessIn: 0.2, governingRequiredThicknessIn: 0.2, requiredWithCorrosionAllowanceIn: 0.2, marginIn: 0.3 }, resolvedAllowableStressPsi: 17500, materialMatched: null, temperatureUsed: 450, wasInterpolated: false, wasExtrapolated: false, stressSourceMessage: 'manual', warnings: [] });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-27-shell-tmin', manualInputs: { allowableStressPsi: 17500, jointEfficiency: 1, insideDiameterIn: 48, outsideDiameterIn: 48.5, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 } });
+    const tags = (result.snapshotReadyPayload?.inputs as any)?.sourceDesignFieldTags;
+    expect(tags?.pressure).toBe('api510.external.exchanger.shell-tube.shell-side.design-pressure');
+    expect(tags?.temperature).toBe('api510.external.exchanger.shell-tube.shell-side.design-temperature');
   });
 
   it('tubesheet area and channel cover remain non-executable/review-only', async () => {

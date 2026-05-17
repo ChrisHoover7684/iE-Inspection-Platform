@@ -641,6 +641,7 @@ describe('inspection field catalog', () => {
     expect(doc).toContain('Pressure Equipment|Absorber / Stripper|Shell Courses|minimum|true');
     expect(doc).toContain('shell-side:api510.external.exchanger.shell-tube.shell-side.design-pressure');
     expect(doc).toContain('Nozzles|minimum|true|true|shell,channel-channel-head');
+    expect(doc).not.toContain('channel-side:api510.external.exchanger.shell-tube.channel-side.design-pressure');
   });
 
 
@@ -651,11 +652,16 @@ describe('inspection field catalog', () => {
     const optional = sAndT.filter((d) => d.requirementLevel === 'optional').map((d) => d.label);
     expect(optional).toEqual(expect.arrayContaining(['Shell Cover', 'Bonnet Head', 'Tubesheet Area']));
     const nozzle = sAndT.find((d) => d.componentKey === 'nozzles');
+    expect(sAndT.find((d) => d.componentKey === 'channel-channel-head')?.pressureBoundarySide).toBe('tube-side');
+    expect(sAndT.find((d) => d.componentKey === 'channel-cover')?.pressureBoundarySide).toBe('tube-side');
+    expect(sAndT.find((d) => d.componentKey === 'channel-head-dollar-plate')?.pressureBoundarySide).toBe('tube-side');
+    expect(sAndT.find((d) => d.componentKey === 'bonnet-head')?.pressureBoundarySide).toBe('tube-side');
     expect(nozzle?.parentComponentRequired).toBe(true);
     expect(nozzle?.allowedParentComponentKeys).toEqual(expect.arrayContaining(['shell', 'channel-channel-head']));
+    expect(nozzle?.designConditionSourceOptions).toEqual(['shell-side', 'tube-side']);
     expect(nozzle?.supportsNozzleUg45).toBe(true);
     expect(nozzle?.designPressureFieldTagsByPressureBoundarySide?.['tube-side']).toBe('api510.external.exchanger.shell-tube.tube-side.design-pressure');
-    expect(nozzle?.designTemperatureFieldTagsByPressureBoundarySide?.['channel-side']).toBe('api510.external.exchanger.shell-tube.channel-side.design-temperature');
+    expect(nozzle?.designTemperatureFieldTagsByPressureBoundarySide?.['tube-side']).toBe('api510.external.exchanger.shell-tube.tube-side.design-temperature');
   });
 
 
@@ -676,6 +682,8 @@ describe('inspection field catalog', () => {
       'api510.external.exchanger.shell-tube.shell-side.design-temperature',
       'api510.external.exchanger.shell-tube.tube-side.design-pressure',
       'api510.external.exchanger.shell-tube.tube-side.design-temperature',
+    ]));
+    expect(tags).not.toEqual(expect.arrayContaining([
       'api510.external.exchanger.shell-tube.channel-side.design-pressure',
       'api510.external.exchanger.shell-tube.channel-side.design-temperature'
     ]));
@@ -704,7 +712,9 @@ describe('inspection field catalog', () => {
     const channel = resolveComponentCalculationContext(nozzle!, 'channel-side', 'channel-head', 'channel-head');
     expect(channel.selectedParentComponent).toBe('channel-channel-head');
     expect(channel.selectedNozzleLocation).toBe('channel-channel-head');
-    expect(channel.designPressureFieldTag).toBe('api510.external.exchanger.shell-tube.channel-side.design-pressure');
+    expect(channel.pressureBoundarySide).toBe('tube-side');
+    expect(channel.designPressureFieldTag).toBe('api510.external.exchanger.shell-tube.tube-side.design-pressure');
+    expect(channel.validationWarnings.some((w) => w.includes('deprecated'))).toBe(true);
 
     const missingParent = resolveComponentCalculationContext(nozzle!, 'shell-side', undefined, 'shell');
     expect(missingParent.validationWarnings.some((w) => w.includes('Parent component is required'))).toBe(true);

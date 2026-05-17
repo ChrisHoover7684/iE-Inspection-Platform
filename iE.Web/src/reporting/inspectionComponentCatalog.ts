@@ -48,8 +48,8 @@ const shellTubeNozzleParents = ['shell', 'channel-channel-head', 'shell-cover', 
 
 export const API510_EXTERNAL_COMPONENT_DEFINITIONS: InspectionComponentDefinition[] = [
   ...build('Shell and Tube Exchanger', shellTubePrefix, [
-    { key: 'shell', label: 'Shell', requirementLevel: 'minimum', side: 'shell-side' },{ key: 'channel-channel-head', label: 'Channel / Channel Head', requirementLevel: 'minimum', side: 'channel-side' },{ key: 'nozzles', label: 'Nozzles', requirementLevel: 'minimum', side: 'shared' },
-    { key: 'shell-cover', label: 'Shell Cover', requirementLevel: 'optional', side: 'shell-side' },{ key: 'channel-cover', label: 'Channel Cover', requirementLevel: 'optional', side: 'channel-side' },{ key: 'channel-head-dollar-plate', label: 'Channel Head / Dollar Plate', requirementLevel: 'optional', side: 'channel-side' },{ key: 'bonnet-head', label: 'Bonnet Head', requirementLevel: 'optional', side: 'channel-side' },{ key: 'tubesheet-area', label: 'Tubesheet Area', requirementLevel: 'optional', side: 'shared' },{ key: 'flanges-gaskets-bolting', label: 'Flanges / Gaskets / Bolting', requirementLevel: 'optional' },{ key: 'saddles-supports', label: 'Saddles / Supports', requirementLevel: 'optional' },{ key: 'expansion-joint', label: 'Expansion Joint', requirementLevel: 'optional' },{ key: 'vents-drains', label: 'Vents / Drains', requirementLevel: 'optional' },{ key: 'coating-insulation-area', label: 'Coating / Insulation Area', requirementLevel: 'optional' },{ key: 'platform-ladder-access', label: 'Platform / Ladder / Access', requirementLevel: 'optional' },{ key: 'nameplate-markings', label: 'Nameplate / Markings', requirementLevel: 'optional' },{ key: 'cml-locations', label: 'CML Locations', requirementLevel: 'optional' },{ key: 'other-component', label: 'Other Component', requirementLevel: 'optional' }
+    { key: 'shell', label: 'Shell', requirementLevel: 'minimum', side: 'shell-side' },{ key: 'channel-channel-head', label: 'Channel / Channel Head', requirementLevel: 'minimum', side: 'tube-side' },{ key: 'nozzles', label: 'Nozzles', requirementLevel: 'minimum', side: 'shared' },
+    { key: 'shell-cover', label: 'Shell Cover', requirementLevel: 'optional', side: 'shell-side' },{ key: 'channel-cover', label: 'Channel Cover', requirementLevel: 'optional', side: 'tube-side' },{ key: 'channel-head-dollar-plate', label: 'Channel Head / Dollar Plate', requirementLevel: 'optional', side: 'tube-side' },{ key: 'bonnet-head', label: 'Bonnet Head', requirementLevel: 'optional', side: 'tube-side' },{ key: 'tubesheet-area', label: 'Tubesheet Area', requirementLevel: 'optional', side: 'shared' },{ key: 'flanges-gaskets-bolting', label: 'Flanges / Gaskets / Bolting', requirementLevel: 'optional' },{ key: 'saddles-supports', label: 'Saddles / Supports', requirementLevel: 'optional' },{ key: 'expansion-joint', label: 'Expansion Joint', requirementLevel: 'optional' },{ key: 'vents-drains', label: 'Vents / Drains', requirementLevel: 'optional' },{ key: 'coating-insulation-area', label: 'Coating / Insulation Area', requirementLevel: 'optional' },{ key: 'platform-ladder-access', label: 'Platform / Ladder / Access', requirementLevel: 'optional' },{ key: 'nameplate-markings', label: 'Nameplate / Markings', requirementLevel: 'optional' },{ key: 'cml-locations', label: 'CML Locations', requirementLevel: 'optional' },{ key: 'other-component', label: 'Other Component', requirementLevel: 'optional' }
   ]),
   ...build('Plate and Frame Exchanger', 'api510.external.exchanger.plate-frame', [
     { key: 'frame-head', label: 'Frame Head', requirementLevel: 'minimum' },{ key: 'pressure-plate', label: 'Pressure Plate', requirementLevel: 'minimum' },{ key: 'plate-pack-external', label: 'Plate Pack External', requirementLevel: 'minimum' },{ key: 'ports-nozzles', label: 'Ports / Nozzles', requirementLevel: 'minimum', side: 'shared' },{ key: 'tie-bolts', label: 'Tie Bolts', requirementLevel: 'minimum' },
@@ -81,7 +81,7 @@ export const API510_EXTERNAL_COMPONENT_DEFINITIONS: InspectionComponentDefinitio
     allowedParentComponentKeys: shellTubeNozzleParents,
     nozzleLocationRequired: true,
     nozzleLocationOptions: ['shell', 'channel-channel-head', 'bonnet-head', 'tubesheet-area'],
-    designConditionSourceOptions: ['shell-side', 'tube-side', 'channel-side'],
+    designConditionSourceOptions: ['shell-side', 'tube-side'],
     parentThicknessSourceOptions: ['selected-parent', 'manual-entry'],
     supportsTminCalculation: true,
     tminCalculationMethod: 'UG-27/UG-32 with selected parent thickness',
@@ -90,15 +90,13 @@ export const API510_EXTERNAL_COMPONENT_DEFINITIONS: InspectionComponentDefinitio
     designTemperatureFieldTag: `${shellTubePrefix}.shell-side.design-temperature`,
     designPressureFieldTagsByPressureBoundarySide: {
       'shell-side': `${shellTubePrefix}.shell-side.design-pressure`,
-      'tube-side': `${shellTubePrefix}.tube-side.design-pressure`,
-      'channel-side': `${shellTubePrefix}.channel-side.design-pressure`
+      'tube-side': `${shellTubePrefix}.tube-side.design-pressure`
     },
     designTemperatureFieldTagsByPressureBoundarySide: {
       'shell-side': `${shellTubePrefix}.shell-side.design-temperature`,
-      'tube-side': `${shellTubePrefix}.tube-side.design-temperature`,
-      'channel-side': `${shellTubePrefix}.channel-side.design-temperature`
+      'tube-side': `${shellTubePrefix}.tube-side.design-temperature`
     },
-    reviewNotes: 'Nozzle can be assigned to shell-side/tube-side/channel-side parent. UG-45 metadata required.'
+    reviewNotes: 'Nozzle can be assigned to shell-side/tube-side parent. Channel / Channel Head is treated as tube-side for design pressure and temperature. UG-45 metadata required.'
   });
   if (d.fieldTagPrefix.startsWith('api510.external.drum-vessel.')) return ({ ...d, parentComponentRequired: true, allowedParentComponentKeys: ['shell', 'heads'], nozzleLocationRequired: true, nozzleLocationOptions: ['shell', 'heads'], designConditionSourceOptions: ['vessel-side'], designPressureFieldTag: 'api510.external.drum-vessel.design-pressure', designTemperatureFieldTag: 'api510.external.drum-vessel.design-temperature' });
   if (d.fieldTagPrefix.startsWith('api510.external.tower-column.')) return ({ ...d, parentComponentRequired: true, allowedParentComponentKeys: ['shell-courses', 'heads'], nozzleLocationRequired: true, nozzleLocationOptions: ['shell-courses', 'heads'], designConditionSourceOptions: ['tower-side'], designPressureFieldTag: 'api510.external.tower-column.design-pressure', designTemperatureFieldTag: 'api510.external.tower-column.design-temperature' });
@@ -109,7 +107,7 @@ export const API510_EXTERNAL_COMPONENT_DEFINITIONS: InspectionComponentDefinitio
 });
 
 export const API510_EXCHANGER_DESIGN_CONDITION_FIELDS = [
-  'api510.external.exchanger.shell-tube.shell-side.design-pressure','api510.external.exchanger.shell-tube.shell-side.design-temperature','api510.external.exchanger.shell-tube.tube-side.design-pressure','api510.external.exchanger.shell-tube.tube-side.design-temperature','api510.external.exchanger.shell-tube.channel-side.design-pressure','api510.external.exchanger.shell-tube.channel-side.design-temperature',
+  'api510.external.exchanger.shell-tube.shell-side.design-pressure','api510.external.exchanger.shell-tube.shell-side.design-temperature','api510.external.exchanger.shell-tube.tube-side.design-pressure','api510.external.exchanger.shell-tube.tube-side.design-temperature',
   'api510.external.exchanger.plate-frame.hot-side.design-pressure','api510.external.exchanger.plate-frame.hot-side.design-temperature','api510.external.exchanger.plate-frame.cold-side.design-pressure','api510.external.exchanger.plate-frame.cold-side.design-temperature',
   'api510.external.exchanger.double-pipe.inner-pipe-side.design-pressure','api510.external.exchanger.double-pipe.inner-pipe-side.design-temperature','api510.external.exchanger.double-pipe.annulus-side.design-pressure','api510.external.exchanger.double-pipe.annulus-side.design-temperature',
   'api510.external.exchanger.air-cooler.tube-side.design-pressure','api510.external.exchanger.air-cooler.tube-side.design-temperature','api510.external.exchanger.air-cooler.header-box.design-pressure','api510.external.exchanger.air-cooler.header-box.design-temperature'

@@ -44,16 +44,14 @@ public static class InspectionComponentCatalog
             DesignPressureFieldTagsByPressureBoundarySide = new Dictionary<string, string>
             {
                 ["shell-side"] = "api510.external.exchanger.shell-tube.shell-side.design-pressure",
-                ["tube-side"] = "api510.external.exchanger.shell-tube.tube-side.design-pressure",
-                ["channel-side"] = "api510.external.exchanger.shell-tube.channel-side.design-pressure"
+                ["tube-side"] = "api510.external.exchanger.shell-tube.tube-side.design-pressure"
             },
             DesignTemperatureFieldTagsByPressureBoundarySide = new Dictionary<string, string>
             {
                 ["shell-side"] = "api510.external.exchanger.shell-tube.shell-side.design-temperature",
-                ["tube-side"] = "api510.external.exchanger.shell-tube.tube-side.design-temperature",
-                ["channel-side"] = "api510.external.exchanger.shell-tube.channel-side.design-temperature"
+                ["tube-side"] = "api510.external.exchanger.shell-tube.tube-side.design-temperature"
             },
-            DesignConditionSourceOptions = ["shell-side", "tube-side", "channel-side"],
+            DesignConditionSourceOptions = ["shell-side", "tube-side"],
             ParentThicknessSourceOptions = ["selected-parent", "manual-entry"],
             NozzleLocationRequired = true,
             NozzleLocationOptions = ["shell", "channel-channel-head", "bonnet-head", "tubesheet-area"],

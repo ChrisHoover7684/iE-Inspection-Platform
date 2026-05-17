@@ -17,6 +17,10 @@ export type InspectionComponentDefinition = {
   designTemperatureFieldTag?: string;
   designPressureFieldTagsByPressureBoundarySide?: Partial<Record<PressureBoundarySide, string>>;
   designTemperatureFieldTagsByPressureBoundarySide?: Partial<Record<PressureBoundarySide, string>>;
+  designConditionSourceOptions?: string[];
+  parentThicknessSourceOptions?: string[];
+  nozzleLocationRequired?: boolean;
+  nozzleLocationOptions?: string[];
   supportsTminCalculation: boolean;
   tminCalculationMethod?: string;
   supportsNozzleUg45: boolean;
@@ -69,31 +73,49 @@ export const API510_EXTERNAL_COMPONENT_DEFINITIONS: InspectionComponentDefinitio
   ...build('Packed Column', 'api510.external.tower-column.packed-column', [{ key: 'shell-courses', label: 'Shell Courses', requirementLevel: 'minimum' },{ key: 'nozzles', label: 'Nozzles', requirementLevel: 'minimum' },{ key: 'manways', label: 'Manways', requirementLevel: 'minimum' },{ key: 'skirt', label: 'Skirt', requirementLevel: 'minimum' },{ key: 'base-ring-anchor-bolts', label: 'Base Ring / Anchor Bolts', requirementLevel: 'minimum' },{ key: 'platforms-ladders-handrails', label: 'Platforms / Ladders / Handrails', requirementLevel: 'minimum' },{ key: 'heads', label: 'Heads', requirementLevel: 'optional' },{ key: 'insulation-jacketing', label: 'Insulation / Jacketing', requirementLevel: 'optional' },{ key: 'coating', label: 'Coating', requirementLevel: 'optional' },{ key: 'supports-bracing', label: 'Supports / Bracing', requirementLevel: 'optional' },{ key: 'davits-lifting-attachments', label: 'Davits / Lifting Attachments', requirementLevel: 'optional' },{ key: 'external-piping-attachments', label: 'External Piping Attachments', requirementLevel: 'optional' },{ key: 'vents-drains', label: 'Vents / Drains', requirementLevel: 'optional' },{ key: 'nameplate-markings', label: 'Nameplate / Markings', requirementLevel: 'optional' },{ key: 'cml-locations', label: 'CML Locations', requirementLevel: 'optional' },{ key: 'other-component', label: 'Other Component', requirementLevel: 'optional' },{ key: 'packing-support-access', label: 'Packing Support Access', requirementLevel: 'optional' },{ key: 'distributor-access', label: 'Distributor Access', requirementLevel: 'optional' },{ key: 'mist-eliminator-access', label: 'Mist Eliminator Access', requirementLevel: 'optional' }]),
   ...build('Tray Column', 'api510.external.tower-column.tray-column', [{ key: 'shell-courses', label: 'Shell Courses', requirementLevel: 'minimum' },{ key: 'nozzles', label: 'Nozzles', requirementLevel: 'minimum' },{ key: 'manways', label: 'Manways', requirementLevel: 'minimum' },{ key: 'skirt', label: 'Skirt', requirementLevel: 'minimum' },{ key: 'base-ring-anchor-bolts', label: 'Base Ring / Anchor Bolts', requirementLevel: 'minimum' },{ key: 'platforms-ladders-handrails', label: 'Platforms / Ladders / Handrails', requirementLevel: 'minimum' },{ key: 'heads', label: 'Heads', requirementLevel: 'optional' },{ key: 'insulation-jacketing', label: 'Insulation / Jacketing', requirementLevel: 'optional' },{ key: 'coating', label: 'Coating', requirementLevel: 'optional' },{ key: 'supports-bracing', label: 'Supports / Bracing', requirementLevel: 'optional' },{ key: 'davits-lifting-attachments', label: 'Davits / Lifting Attachments', requirementLevel: 'optional' },{ key: 'external-piping-attachments', label: 'External Piping Attachments', requirementLevel: 'optional' },{ key: 'vents-drains', label: 'Vents / Drains', requirementLevel: 'optional' },{ key: 'nameplate-markings', label: 'Nameplate / Markings', requirementLevel: 'optional' },{ key: 'cml-locations', label: 'CML Locations', requirementLevel: 'optional' },{ key: 'other-component', label: 'Other Component', requirementLevel: 'optional' },{ key: 'tray-access-manways', label: 'Tray Access Manways', requirementLevel: 'optional' },{ key: 'downcomer-tray-access-locations', label: 'Downcomer / Tray Access Locations', requirementLevel: 'optional' },{ key: 'draw-pan-connections', label: 'Draw Pan Connections', requirementLevel: 'optional' }])
 
-].map((d) => d.componentKey === 'nozzles' && d.equipmentSubtype === 'Shell and Tube Exchanger' ? ({
-  ...d,
-  parentComponentRequired: true,
-  allowedParentComponentKeys: shellTubeNozzleParents,
-  supportsTminCalculation: true,
-  tminCalculationMethod: 'UG-27/UG-32 with selected parent thickness',
-  supportsNozzleUg45: true,
-  designPressureFieldTag: `${shellTubePrefix}.shell-side.design-pressure`,
-  designTemperatureFieldTag: `${shellTubePrefix}.shell-side.design-temperature`,
-  designPressureFieldTagsByPressureBoundarySide: {
-    'shell-side': `${shellTubePrefix}.shell-side.design-pressure`,
-    'tube-side': `${shellTubePrefix}.tube-side.design-pressure`,
-    'channel-side': `${shellTubePrefix}.channel-side.design-pressure`
-  },
-  designTemperatureFieldTagsByPressureBoundarySide: {
-    'shell-side': `${shellTubePrefix}.shell-side.design-temperature`,
-    'tube-side': `${shellTubePrefix}.tube-side.design-temperature`,
-    'channel-side': `${shellTubePrefix}.channel-side.design-temperature`
-  },
-  reviewNotes: 'Nozzle can be assigned to shell-side/tube-side/channel-side parent. UG-45 metadata required.'
-}) : d);
+].map((d) => {
+  if (d.componentKey !== 'nozzles') return d;
+  if (d.equipmentSubtype === 'Shell and Tube Exchanger') return ({
+    ...d,
+    parentComponentRequired: true,
+    allowedParentComponentKeys: shellTubeNozzleParents,
+    nozzleLocationRequired: true,
+    nozzleLocationOptions: ['shell', 'channel-channel-head', 'bonnet-head', 'tubesheet-area'],
+    designConditionSourceOptions: ['shell-side', 'tube-side', 'channel-side'],
+    parentThicknessSourceOptions: ['selected-parent', 'manual-entry'],
+    supportsTminCalculation: true,
+    tminCalculationMethod: 'UG-27/UG-32 with selected parent thickness',
+    supportsNozzleUg45: true,
+    designPressureFieldTag: `${shellTubePrefix}.shell-side.design-pressure`,
+    designTemperatureFieldTag: `${shellTubePrefix}.shell-side.design-temperature`,
+    designPressureFieldTagsByPressureBoundarySide: {
+      'shell-side': `${shellTubePrefix}.shell-side.design-pressure`,
+      'tube-side': `${shellTubePrefix}.tube-side.design-pressure`,
+      'channel-side': `${shellTubePrefix}.channel-side.design-pressure`
+    },
+    designTemperatureFieldTagsByPressureBoundarySide: {
+      'shell-side': `${shellTubePrefix}.shell-side.design-temperature`,
+      'tube-side': `${shellTubePrefix}.tube-side.design-temperature`,
+      'channel-side': `${shellTubePrefix}.channel-side.design-temperature`
+    },
+    reviewNotes: 'Nozzle can be assigned to shell-side/tube-side/channel-side parent. UG-45 metadata required.'
+  });
+  if (d.fieldTagPrefix.startsWith('api510.external.drum-vessel.')) return ({ ...d, parentComponentRequired: true, allowedParentComponentKeys: ['shell', 'heads'], nozzleLocationRequired: true, nozzleLocationOptions: ['shell', 'heads'], designConditionSourceOptions: ['vessel-side'], designPressureFieldTag: 'api510.external.drum-vessel.design-pressure', designTemperatureFieldTag: 'api510.external.drum-vessel.design-temperature' });
+  if (d.fieldTagPrefix.startsWith('api510.external.tower-column.')) return ({ ...d, parentComponentRequired: true, allowedParentComponentKeys: ['shell-courses', 'heads'], nozzleLocationRequired: true, nozzleLocationOptions: ['shell-courses', 'heads'], designConditionSourceOptions: ['tower-side'], designPressureFieldTag: 'api510.external.tower-column.design-pressure', designTemperatureFieldTag: 'api510.external.tower-column.design-temperature' });
+  if (d.equipmentSubtype === 'Air Cooler / Fin Fan') return ({ ...d, parentComponentRequired: true, allowedParentComponentKeys: ['header-box'], nozzleLocationRequired: true, nozzleLocationOptions: ['header-box'], designConditionSourceOptions: ['tube-side', 'header-box'] });
+  if (d.equipmentSubtype === 'Double Pipe Exchanger') return ({ ...d, parentComponentRequired: true, allowedParentComponentKeys: ['inner-pipe-external', 'outer-pipe', 'return-bends'], nozzleLocationRequired: true, nozzleLocationOptions: ['inner-pipe-external', 'outer-pipe', 'return-bends'], designConditionSourceOptions: ['inner-pipe-side', 'annulus-side'] });
+  if (d.equipmentSubtype === 'Plate and Frame Exchanger') return ({ ...d, parentComponentRequired: true, allowedParentComponentKeys: ['frame-head', 'pressure-plate', 'plate-pack-external'], nozzleLocationRequired: true, nozzleLocationOptions: ['frame-head', 'pressure-plate', 'plate-pack-external'], designConditionSourceOptions: ['hot-side', 'cold-side', 'shared'] });
+  return d;
+});
 
 export const API510_EXCHANGER_DESIGN_CONDITION_FIELDS = [
   'api510.external.exchanger.shell-tube.shell-side.design-pressure','api510.external.exchanger.shell-tube.shell-side.design-temperature','api510.external.exchanger.shell-tube.tube-side.design-pressure','api510.external.exchanger.shell-tube.tube-side.design-temperature','api510.external.exchanger.shell-tube.channel-side.design-pressure','api510.external.exchanger.shell-tube.channel-side.design-temperature',
   'api510.external.exchanger.plate-frame.hot-side.design-pressure','api510.external.exchanger.plate-frame.hot-side.design-temperature','api510.external.exchanger.plate-frame.cold-side.design-pressure','api510.external.exchanger.plate-frame.cold-side.design-temperature',
   'api510.external.exchanger.double-pipe.inner-pipe-side.design-pressure','api510.external.exchanger.double-pipe.inner-pipe-side.design-temperature','api510.external.exchanger.double-pipe.annulus-side.design-pressure','api510.external.exchanger.double-pipe.annulus-side.design-temperature',
   'api510.external.exchanger.air-cooler.tube-side.design-pressure','api510.external.exchanger.air-cooler.tube-side.design-temperature','api510.external.exchanger.air-cooler.header-box.design-pressure','api510.external.exchanger.air-cooler.header-box.design-temperature'
+] as const;
+
+export const API510_VESSEL_TOWER_DESIGN_CONDITION_FIELDS = [
+  'api510.external.drum-vessel.design-pressure','api510.external.drum-vessel.design-temperature',
+  'api510.external.tower-column.design-pressure','api510.external.tower-column.design-temperature'
 ] as const;

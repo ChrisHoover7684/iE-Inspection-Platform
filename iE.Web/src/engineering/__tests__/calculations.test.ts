@@ -633,11 +633,13 @@ describe('inspection field catalog', () => {
   it('word export includes component availability metadata columns', () => {
     const doc = buildFieldCatalogWordReviewDocument();
     expect(doc).toContain('Component Availability Metadata:');
-    expect(doc).toContain('Equipment Family|Equipment Subtype|Component|Requirement Level|Default Selected|Parent Component Required|Allowed Parent Components|Pressure Boundary Side|Design Pressure Field Tag|Design Temperature Field Tag|Supports Tmin Calculation|Tmin Calculation Method|Supports Nozzle UG-45|Supports Finding|Supports Recommendation|Supports Photo Tag|Supports NDE Request|Review Notes');
+    expect(doc).toContain('Equipment Family|Equipment Subtype|Component|Requirement Level|Default Selected|Parent Component Required|Allowed Parent Components|Pressure Boundary Side|Design Pressure Field Tag|Design Temperature Field Tag|Design Pressure Tags By Side|Design Temperature Tags By Side|Design Condition Source Options|Parent Thickness Source Options|Nozzle Location Required|Nozzle Location Options|Supports Tmin Calculation|Tmin Calculation Method|Supports Nozzle UG-45|Supports Finding|Supports Recommendation|Supports Photo Tag|Supports NDE Request|Calculator Attachment Notes');
     expect(doc).toContain('Pressure Equipment|Shell and Tube Exchanger|Shell|minimum|true');
     expect(doc).toContain('Pressure Equipment|Shell and Tube Exchanger|Shell Cover|optional|false');
     expect(doc).toContain('Pressure Equipment|Accumulator / Receiver|Shell|minimum|true');
     expect(doc).toContain('Pressure Equipment|Absorber / Stripper|Shell Courses|minimum|true');
+    expect(doc).toContain('shell-side:api510.external.exchanger.shell-tube.shell-side.design-pressure');
+    expect(doc).toContain('Nozzles|minimum|true|true|shell,channel-channel-head');
   });
 
 
@@ -677,5 +679,14 @@ describe('inspection field catalog', () => {
       'api510.external.exchanger.shell-tube.channel-side.design-temperature'
     ]));
   });
-});
 
+  it('adds api510 vessel and tower generic design condition tags', () => {
+    const tags = getMvpExternalInspectionFields().map((f) => f.fieldTag);
+    expect(tags).toEqual(expect.arrayContaining([
+      'api510.external.drum-vessel.design-pressure',
+      'api510.external.drum-vessel.design-temperature',
+      'api510.external.tower-column.design-pressure',
+      'api510.external.tower-column.design-temperature'
+    ]));
+  });
+});

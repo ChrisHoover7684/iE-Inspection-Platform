@@ -1,4 +1,4 @@
-import { getMvpExternalInspectionFields } from './inspectionFieldCatalog';
+import { externalInspectionFieldSets, getMvpExternalInspectionFields } from './inspectionFieldCatalog';
 
 export const FIELD_CATALOG_WORD_TITLE = 'External Inspection Field Catalog Review';
 export const FIELD_CATALOG_WORD_INTRO = 'This document is a field catalog review document. It is not a final report template. Use it to review field names, tags, grouping, options, and layout order before generating report templates.';
@@ -10,6 +10,7 @@ const textCell = (text: string) => `<w:tc><w:p><w:r><w:t xml:space="preserve">${
 
 const buildDocumentXml = () => {
   const fields = [...getMvpExternalInspectionFields()].sort((a, b) => groupKey(a).localeCompare(groupKey(b)) || a.defaultLayoutOrder - b.defaultLayoutOrder || a.fieldTag.localeCompare(b.fieldTag));
+  const componentPresetMetadata = externalInspectionFieldSets.map((set) => `${set.name}: ${set.componentPresets.join(', ')}`).join('\n');
   const headers = ['Field Tag', 'Label', 'Section Group', 'Component Type', 'Data Type', 'Options', 'Required', 'Supports Finding', 'Supports Recommendation', 'Supports Repair Required', 'Supports Photo Tag', 'Supports Summary', 'Supports NDE Request', 'Default Layout Order', 'Review Notes'];
   const headerRow = `<w:tr>${headers.map((h) => textCell(h)).join('')}</w:tr>`;
   const rows = fields.map((f) => `<w:tr>${[
@@ -20,6 +21,7 @@ const buildDocumentXml = () => {
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>
 <w:p><w:r><w:t>${esc(FIELD_CATALOG_WORD_TITLE)}</w:t></w:r></w:p>
 <w:p><w:r><w:t xml:space="preserve">${esc(FIELD_CATALOG_WORD_INTRO)}</w:t></w:r></w:p>
+<w:p><w:r><w:t xml:space="preserve">${esc(`Component Presets:\n${componentPresetMetadata}`)}</w:t></w:r></w:p>
 <w:tbl>${headerRow}${rows}</w:tbl>
 <w:sectPr/></w:body></w:document>`;
 };

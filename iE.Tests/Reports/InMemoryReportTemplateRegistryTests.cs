@@ -6,7 +6,6 @@ public class InMemoryReportTemplateRegistryTests
 {
     private static readonly string[] RequiredExternalInspectionTemplates =
     [
-        "api-510-vessel-external",
         "api-570-piping-external",
         "api-570-piping-cui-external",
         "sti-sp001-tank-external"
@@ -27,12 +26,22 @@ public class InMemoryReportTemplateRegistryTests
     {
         var templates = registry.GetTemplates();
 
-        Assert.Equal(8, templates.Count);
+        Assert.Equal(7, templates.Count);
 
         foreach (var templateId in RequiredExternalInspectionTemplates.Concat(RequiredRepairRecommendationTemplates))
         {
             Assert.Contains(templates, template => template.Id == templateId);
         }
+    }
+
+
+    [Fact]
+    public void GetTemplates_DoesNotExposeApi510ExternalInspectionTemplate()
+    {
+        var templates = registry.GetTemplates();
+
+        Assert.DoesNotContain(templates, t => t.Id == "api-510-vessel-external");
+        Assert.Contains(templates, t => t.Id == "repair-recommendation-api-510-vessel");
     }
 
     [Fact]
@@ -110,9 +119,9 @@ public class InMemoryReportTemplateRegistryTests
     [Fact]
     public void GetTemplateById_IsCaseInsensitive()
     {
-        var template = registry.GetTemplateById("API-510-VESSEL-EXTERNAL");
+        var template = registry.GetTemplateById("API-570-PIPING-EXTERNAL");
 
         Assert.NotNull(template);
-        Assert.Equal("api-510-vessel-external", template!.Id);
+        Assert.Equal("api-570-piping-external", template!.Id);
     }
 }

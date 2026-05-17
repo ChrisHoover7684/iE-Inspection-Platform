@@ -15,7 +15,8 @@ public class InspectionComponentCatalogTests
         Assert.Contains("channel-channel-head", nozzle.NozzleLocationOptions);
         Assert.DoesNotContain("channel-head", nozzle.NozzleLocationOptions);
         Assert.Equal("api510.external.exchanger.shell-tube.tube-side.design-pressure", nozzle.DesignPressureFieldTagsByPressureBoundarySide["tube-side"]);
-        Assert.Equal("api510.external.exchanger.shell-tube.channel-side.design-temperature", nozzle.DesignTemperatureFieldTagsByPressureBoundarySide["channel-side"]);
+        Assert.Equal("api510.external.exchanger.shell-tube.tube-side.design-temperature", nozzle.DesignTemperatureFieldTagsByPressureBoundarySide["tube-side"]);
+        Assert.DoesNotContain("channel-side", nozzle.DesignConditionSourceOptions);
         Assert.True(nozzle.SupportsNozzleUg45);
     }
 

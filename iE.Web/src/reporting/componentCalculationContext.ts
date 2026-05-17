@@ -28,10 +28,14 @@ export const resolveComponentCalculationContext = (
   selectedParentComponent?: string,
   selectedNozzleLocation?: string
 ): ComponentCalculationContext => {
-  const side = selectedPressureBoundarySide ?? componentDefinition.pressureBoundarySide;
+  let side = selectedPressureBoundarySide ?? componentDefinition.pressureBoundarySide;
   const normalizedParent = normalizeKey(selectedParentComponent);
   const normalizedLocation = normalizeKey(selectedNozzleLocation);
   const warnings: string[] = [];
+  if (componentDefinition.equipmentSubtype === 'Shell and Tube Exchanger' && side === 'channel-side') {
+    side = 'tube-side';
+    warnings.push('channel-side is deprecated for shell-and-tube exchangers; tube-side was used.');
+  }
 
   if (componentDefinition.parentComponentRequired && !normalizedParent) {
     warnings.push('Parent component is required but was not selected.');

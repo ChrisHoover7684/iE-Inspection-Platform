@@ -105,6 +105,20 @@ describe('ApiInspectionReportStartWizard', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Draft setup prepared. Full report creation will be connected next.');
   });
 
+
+  it('enables calculation workspace for supported API 510 setup types and disables it for unsupported types', async () => {
+    await renderReportsPage();
+    fireEvent.click(screen.getByLabelText('Shell and Tube Exchanger External'));
+    expect(await screen.findByRole('button', { name: 'Open Calculation Workspace' })).toBeEnabled();
+
+    fireEvent.click(screen.getByLabelText('Horizontal Drum External'));
+    expect(screen.getByRole('button', { name: 'Open Calculation Workspace' })).toBeEnabled();
+
+    fireEvent.click(screen.getByLabelText('Distillation Tower External'));
+    expect(screen.getByRole('button', { name: 'Open Calculation Workspace' })).toBeDisabled();
+    expect(screen.getByText('Calculation workspace coming soon')).toBeInTheDocument();
+  });
+
   it('Allowable Stress is not present as a normal input', async () => {
     await renderReportsPage();
     fireEvent.click(screen.getByLabelText('Shell and Tube Exchanger External'));

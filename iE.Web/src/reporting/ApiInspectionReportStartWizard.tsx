@@ -11,6 +11,13 @@ type FieldConfig = {
 
 type ComponentConfig = { minimum: string[]; optional: string[] };
 
+type DraftSetup = {
+  reportTypeId: string;
+  reportTypeLabel?: string;
+  header: Record<string, string>;
+  components: string[];
+};
+
 const commonFields: FieldConfig[] = [
   { key: 'inspectionDate', label: 'Inspection Date', type: 'date' },
   { key: 'inspector', label: 'Inspector' },
@@ -159,6 +166,7 @@ export function ApiInspectionReportStartWizard() {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [selectedOptionalComponents, setSelectedOptionalComponents] = useState<string[]>([]);
   const [draftMessage, setDraftMessage] = useState('');
+  const [draftSetup, setDraftSetup] = useState<DraftSetup | null>(null);
   const selected = useMemo(() => allApiInspectionReportOptions.find((option) => option.id === selectedTypeId), [selectedTypeId]);
 
   const designFields = useMemo(() => getDesignFields(selectedTypeId), [selectedTypeId]);
@@ -169,6 +177,7 @@ export function ApiInspectionReportStartWizard() {
   useEffect(() => {
     setSelectedOptionalComponents([]);
     setDraftMessage('');
+    setDraftSetup(null);
   }, [selectedTypeId]);
 
   const updateField = (key: string, value: string) => {
@@ -189,6 +198,7 @@ export function ApiInspectionReportStartWizard() {
       header: formValues,
       components: [...componentConfig.minimum, ...selectedOptionalComponents]
     };
+    setDraftSetup(draftSetup);
     window.localStorage.setItem('apiInspectionDraftSetup', JSON.stringify(draftSetup));
     setDraftMessage('Draft setup prepared. Full report creation will be connected next.');
   };
@@ -266,6 +276,7 @@ export function ApiInspectionReportStartWizard() {
         <h4>Actions</h4>
         <button type="button" onClick={startDraftReport}>Start Draft Report</button>
         {draftMessage && <p role="status" className="wizard-success-message">{draftMessage}</p>}
+        {draftSetup && <p className="wizard-note">Prepared draft: {draftSetup.reportTypeLabel} with {draftSetup.components.length} components selected.</p>}
         <Api510ExternalReportShell reportTypeId={selectedTypeId} />
       </section>
     </div>

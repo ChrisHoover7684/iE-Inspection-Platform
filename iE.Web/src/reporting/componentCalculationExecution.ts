@@ -59,7 +59,7 @@ const toApiErrorMessage = (error: unknown): string => {
 const resolveAttachmentLocation = (parent?: string, location?: string): { value?: AttachmentLocation; warning?: string } => {
   const key = location ?? parent;
   if (key === 'shell') return { value: 'Shell' };
-  if (key === 'shell-cover' || key === 'bonnet-head') return { value: 'Head' };
+  if (key === 'shell-cover' || key === 'bonnet-head' || key === 'heads') return { value: 'Head' };
   if (key === 'channel-channel-head') return { warning: 'Nozzle attachment location for channel/channel-head is not supported by current backend attachment enum.' };
   if (key === 'tubesheet-area') return { warning: 'Tubesheet-area nozzle attachment is review-only and not executable in this bridge.' };
   return { warning: `Nozzle attachment location is unsupported for parent/location "${key ?? 'unspecified'}".` };

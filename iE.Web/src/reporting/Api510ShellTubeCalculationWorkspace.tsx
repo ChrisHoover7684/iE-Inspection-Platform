@@ -9,6 +9,7 @@ import {
 import { executeApi510ComponentCalculation, type Api510CalculationType, type ComponentCalculationExecutionResult } from './componentCalculationExecution';
 import { buildApi510FindingDraft, type Api510FindingDraft } from './api510CalculationFindings';
 import type { InspectionCalculationSnapshot } from '../engineering/types';
+import { pressureVesselApi } from '../api';
 
 type Props = {
   fieldValues?: CalculationFieldValuesMap;
@@ -52,7 +53,8 @@ const fieldLabels: Record<string, string> = {
   ug45TableMinimumThicknessIn: 'UG-45 Table Minimum Thickness (in.)'
 };
 
-const materialFields = ['designCode', 'stressEra', 'materialSpec', 'materialGrade', 'productForm', 'alloyUNS', 'classConditionTemper', 'resolvedAllowableStressPsi'];
+const sharedMaterialFields = ['designCode', 'stressEra'];
+const materialIdentityFields = ['materialSpec', 'materialGrade', 'productForm', 'alloyUNS', 'classConditionTemper'];
 const ug27Fields = ['jointEfficiency', 'insideDiameterIn', 'outsideDiameterIn', 'originalThicknessIn', 'providedThicknessIn', 'corrosionAllowanceIn'];
 const ug45Fields = ['shellOrHeadRequiredThicknessIn', 'shellOrHeadExternalRequiredThicknessIn', 'outsideDiameterIn', 'insideDiameterIn', 'nominalThicknessIn', 'originalThicknessIn', 'nominalPipeSize', 'corrosionAllowanceIn', 'jointEfficiency', 'externalPressurePsi', 'ug16MinimumThicknessIn', 'ug45TableMinimumThicknessIn'];
 
@@ -66,6 +68,38 @@ const parentThicknessSourceOptions = [
   { value: 'selected-parent', label: 'Selected Parent' },
   { value: 'manual-entry', label: 'Manual Entry' }
 ] as const;
+
+
+const toNumber = (value: unknown): number | undefined => {
+  if (value === undefined || value === null || value === '') return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+};
+
+const materialKey = (basis: 'shell'|'tube', field: string) => `${basis}${field.charAt(0).toUpperCase()}${field.slice(1)}`;
+
+const getBasisMaterialValue = (inputs: Record<string, unknown>, basis: 'shell'|'tube', field: string) =>
+  inputs[materialKey(basis, field)] ?? inputs[field] ?? '';
+
+const buildStressInput = (inputs: Record<string, unknown>, basis: 'shell'|'tube', designTemperatureF: number) => ({
+  designCode: String(inputs.designCode ?? 'ASME_VIII_DIV1'),
+  stressEra: String(inputs.stressEra ?? 'From1999Onward'),
+  designTemperatureF,
+  materialSpec: String(getBasisMaterialValue(inputs, basis, 'materialSpec')),
+  materialGrade: String(getBasisMaterialValue(inputs, basis, 'materialGrade')),
+  productForm: String(getBasisMaterialValue(inputs, basis, 'productForm')),
+  alloyUNS: String(getBasisMaterialValue(inputs, basis, 'alloyUNS')),
+  classConditionTemper: String(getBasisMaterialValue(inputs, basis, 'classConditionTemper')),
+  manualAllowableStress: false,
+  allowableStressPsi: null,
+  calculationFamily: 'PressureVessel' as const
+});
+
+function materialInputLabel(basis: 'shell'|'tube', key: string, inputs: Record<string, unknown>, setInputs: Dispatch<SetStateAction<Record<string, unknown>>>) {
+  const label = `${basis === 'shell' ? 'Shell' : 'Tube/Channel'} ${fieldLabels[key] ?? key}`;
+  const stateKey = materialKey(basis, key);
+  return <label key={stateKey}>{label}<input aria-label={label} value={String(inputs[stateKey] ?? '')} onChange={(e) => setInputs((p) => ({ ...p, [stateKey]: e.target.value }))} /></label>;
+}
 
 function inputLabel(key: string, inputs: Record<string, unknown>, setInputs: Dispatch<SetStateAction<Record<string, unknown>>>) {
   const label = fieldLabels[key] ?? key;
@@ -111,7 +145,33 @@ export function Api510ShellTubeCalculationWorkspace({ fieldValues = {}, hasRepor
     }
   ), [componentKey, pressureSide, parentComponent, nozzleLocation, workspaceFieldValues, hasReportContext, designConditions]);
 
-  const canExecute = calculationType !== 'review-only';
+  const materialBasis = pressureSide === 'tube-side' ? 'tube' : 'shell';
+  const manualOverrideEnabled = Boolean(inputs.useManualAllowableStressOverride);
+  const hasResolvedStress = toNumber(inputs.resolvedAllowableStressPsi) !== undefined;
+  const hasManualStress = toNumber(inputs.allowableStressPsi) !== undefined;
+  const hasManualReason = String(inputs.overrideReason ?? '').trim().length > 0;
+  const canExecute = calculationType !== 'review-only' && (hasResolvedStress || (manualOverrideEnabled && hasManualStress && hasManualReason));
+
+  const handleResolveAllowableStress = async () => {
+    if (!prefill) return;
+    const designTemperatureF = toNumber(prefill.designTemperatureValue);
+    if (designTemperatureF === undefined) {
+      setInputs((prev) => ({ ...prev, resolvedAllowableStressPsi: '', materialResolutionMessage: 'Design temperature is required before resolving allowable stress.', materialResolutionWarnings: ['Design temperature is required.'] }));
+      return;
+    }
+    const request = buildStressInput(inputs, materialBasis, designTemperatureF);
+    const response = await pressureVesselApi.resolveMaterialStress(request);
+    setInputs((prev) => ({
+      ...prev,
+      resolvedAllowableStressPsi: response.isValid && response.allowableStressPsi !== null ? response.allowableStressPsi : '',
+      materialMatched: response.materialMatched ?? '',
+      materialTemperatureUsed: response.temperatureUsed,
+      materialWasInterpolated: response.wasInterpolated,
+      materialWasExtrapolated: response.wasExtrapolated,
+      materialResolutionMessage: response.message,
+      materialResolutionWarnings: response.warnings
+    }));
+  };
 
   const onRun = async () => {
     if (!prefill || !canExecute) return;
@@ -204,8 +264,19 @@ export function Api510ShellTubeCalculationWorkspace({ fieldValues = {}, hasRepor
     <fieldset>
       <legend>Material / Allowable Stress</legend>
       <p>Allowable stress should be resolved from material tables. Manual override requires a reason.</p>
-      {materialFields.map((k) => inputLabel(k, inputs, setInputs))}
-      <div>Source/Warnings: {String(inputs.materialResolutionMessage ?? '')}</div>
+      {sharedMaterialFields.map((k) => inputLabel(k, inputs, setInputs))}
+      <fieldset><legend>Shell Material</legend>{materialIdentityFields.map((k) => materialInputLabel('shell', k, inputs, setInputs))}</fieldset>
+      <fieldset><legend>Tube/Channel Material</legend>{materialIdentityFields.map((k) => materialInputLabel('tube', k, inputs, setInputs))}</fieldset>
+      <div aria-label="Allowable Stress Resolution Status">
+        <div>Material basis: {materialBasis === 'shell' ? 'Shell material / shell-side temperature' : 'Tube/channel material / tube-side temperature'}</div>
+        <div>Material matched: {String(inputs.materialMatched ?? 'Unresolved')}</div>
+        <div aria-label="Resolved Allowable Stress (psi)">Resolved Allowable Stress (psi): {String(inputs.resolvedAllowableStressPsi ?? 'Unresolved')}</div>
+        <div>Temperature used: {String(inputs.materialTemperatureUsed ?? 'Unresolved')}</div>
+        <div>Interpolated: {String(inputs.materialWasInterpolated ?? false)} / Extrapolated: {String(inputs.materialWasExtrapolated ?? false)}</div>
+        <div>Source/Warnings: {String(inputs.materialResolutionMessage ?? '')}</div>
+        {Array.isArray(inputs.materialResolutionWarnings) && inputs.materialResolutionWarnings.map((w) => <div key={String(w)}>warning: {String(w)}</div>)}
+      </div>
+      <button type="button" onClick={handleResolveAllowableStress}>Resolve Allowable Stress</button>
       <label><input type="checkbox" aria-label="Use manual allowable stress override" checked={Boolean(inputs.useManualAllowableStressOverride)} onChange={(e)=>setInputs((p)=>({...p,useManualAllowableStressOverride:e.target.checked}))} />Use manual allowable stress override</label>
       {Boolean(inputs.useManualAllowableStressOverride) && <>
         {inputLabel('allowableStressPsi', inputs, setInputs)}
@@ -231,7 +302,7 @@ export function Api510ShellTubeCalculationWorkspace({ fieldValues = {}, hasRepor
       <h3>Results / Snapshot</h3>
       <p>Save Snapshot is enabled only when this workspace is opened from a report context.</p>
       <button disabled={!canExecute} onClick={onRun}>Run Calculation</button>
-      {!canExecute && <div>Review-only component. Calculation execution is disabled.</div>}
+      {!canExecute && <div>{calculationType === 'review-only' ? 'Review-only component. Calculation execution is disabled.' : 'Resolve allowable stress or enable manual override with a reason before running.'}</div>}
       <button disabled={!canSaveSnapshot} onClick={handleSaveSnapshot}>Save Calculation Snapshot</button>
       <button disabled={!execution?.snapshotReadyPayload && !execution} onClick={() => handleCreateFinding(false)}>Create Finding from Calculation</button>
       <button disabled={!execution} onClick={() => handleCreateFinding(true)}>Create Recommendation</button>

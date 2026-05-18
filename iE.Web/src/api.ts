@@ -34,7 +34,9 @@ import type {
   NdeLogItem,
   NdeLogStatus,
   NdeLogTransitionEvent,
-  NdeReportDraft
+  NdeReportDraft,
+  PressureVesselMaterialStressInput,
+  PressureVesselMaterialStressResolveResult
 } from './types';
 import type { InspectionCalculationSnapshot } from './engineering/types';
 
@@ -170,6 +172,7 @@ export const b313Api = {
 
 
 export const pressureVesselApi = {
+  resolveMaterialStress: (input: PressureVesselMaterialStressInput) => apiFetch<PressureVesselMaterialStressResolveResult>('/api/mechanical/pressure-vessels/material-stress/resolve', { method: 'POST', body: JSON.stringify({ ...input, calculationFamily: 'PressureVessel' }) }),
   calculateCylindrical: (input: CylindricalShellCalculationRequest) => apiFetch<CalculationEnvelope<CylindricalShellResult>>('/api/mechanical/pressure-vessels/shells/cylindrical/calculate', { method: 'POST', body: JSON.stringify(input) }),
   calculateSpherical: (input: SphericalShellCalculationRequest) => apiFetch<CalculationEnvelope<SphericalShellResult>>('/api/mechanical/pressure-vessels/shells/spherical/calculate', { method: 'POST', body: JSON.stringify(input) }),
   calculateConical: (input: ConicalShellCalculationRequest) => apiFetch<CalculationEnvelope<ConicalShellResult>>('/api/mechanical/pressure-vessels/shells/conical/calculate', { method: 'POST', body: JSON.stringify(input) }),

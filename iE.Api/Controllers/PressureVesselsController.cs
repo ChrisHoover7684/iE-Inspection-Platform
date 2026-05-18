@@ -22,8 +22,32 @@ public sealed class PressureVesselsController : ControllerBase
     public sealed record ConicalShellCalculationRequest(ConicalShellInput Input, PressureVesselMaterialStressInput? MaterialStress);
     public sealed record HeadCalculationRequest(HeadThicknessInput Input, PressureVesselMaterialStressInput? MaterialStress);
     public sealed record NozzleCalculationRequest(NozzleThicknessInput Input);
+    public sealed record MaterialStressResolveRequest(string DesignCode, string StressEra, string MaterialSpec, string MaterialGrade, string ProductForm, string AlloyUNS, string ClassConditionTemper, double DesignTemperatureF, string CalculationFamily);
+    public sealed record MaterialStressResolveResponse(bool IsValid, double? AllowableStressPsi, string? MaterialMatched, double TemperatureUsed, bool WasInterpolated, bool WasExtrapolated, string Message, IReadOnlyList<string> Warnings);
 
     public sealed record CalculationEnvelope<T>(double ResolvedAllowableStressPsi, string? MaterialMatched, double TemperatureUsed, bool WasInterpolated, bool WasExtrapolated, string StressSourceMessage, T Result, IReadOnlyList<string> Warnings);
+
+    [HttpPost("material-stress/resolve")]
+    public ActionResult<MaterialStressResolveResponse> ResolveMaterialStress([FromBody] MaterialStressResolveRequest request)
+        => Execute(() =>
+        {
+            if (!string.Equals(request.CalculationFamily, "PressureVessel", StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("CalculationFamily must be PressureVessel.");
+
+            var resolved = _stressResolver.Resolve(new PressureVesselMaterialStressInput(
+                request.DesignCode,
+                request.StressEra,
+                request.DesignTemperatureF,
+                request.MaterialSpec,
+                request.MaterialGrade,
+                request.ProductForm,
+                request.AlloyUNS,
+                request.ClassConditionTemper,
+                ManualAllowableStress: false,
+                AllowableStressPsi: null));
+
+            return new MaterialStressResolveResponse(resolved.IsValid, resolved.AllowableStressPsi, resolved.MaterialMatched, resolved.TemperatureUsed, resolved.WasInterpolated, resolved.WasExtrapolated, resolved.Message, resolved.Warnings);
+        });
 
     [HttpPost("shells/cylindrical/calculate")]
     public ActionResult<CalculationEnvelope<CylindricalShellResult>> CalculateCylindrical([FromBody] CylindricalShellCalculationRequest request)

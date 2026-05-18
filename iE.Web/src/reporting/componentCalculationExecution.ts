@@ -106,11 +106,12 @@ export async function executeApi510ComponentCalculation({ prefill, calculationTy
 
     if (jointEfficiency === undefined) warnings.push('Joint efficiency is required for UG-27 shell calculation.');
     if (insideDiameter === undefined || outsideDiameter === undefined) warnings.push('UG-27 requires both inside diameter and outside diameter for this bridge.');
-    if (diameterBasis && !['inside-diameter-basis', 'outside-diameter-basis', 'both-known'].includes(diameterBasis)) warnings.push('UG-27 diameter basis must be inside-diameter-basis, outside-diameter-basis, or both-known when provided.');
+    const isInvalidDiameterBasis = diameterBasis !== undefined && !['inside-diameter-basis', 'outside-diameter-basis', 'both-known'].includes(diameterBasis);
+    if (isInvalidDiameterBasis) warnings.push('UG-27 diameter basis must be inside-diameter-basis, outside-diameter-basis, or both-known when provided.');
     if (originalThickness === undefined) warnings.push('Original thickness is required for UG-27 shell calculation.');
     if (providedThickness === undefined) warnings.push('Provided/current thickness is required for UG-27 shell calculation.');
     if (!corrosionAllowanceProvided || corrosionAllowance === undefined) warnings.push('Corrosion allowance is required for UG-27 shell calculation (zero allowed when explicitly provided).');
-    if (warnings.some((w) => w.includes('required') || w.includes('missing'))) return fail('UG-27 execution blocked by missing required inputs.');
+    if (warnings.some((w) => w.includes('required') || w.includes('missing')) || isInvalidDiameterBasis) return fail('UG-27 execution blocked by missing or invalid required inputs.');
 
     const input = {
       designPressurePsi: pressure,

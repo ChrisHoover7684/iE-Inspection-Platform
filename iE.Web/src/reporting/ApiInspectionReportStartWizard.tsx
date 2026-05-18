@@ -271,7 +271,7 @@ export function ApiInspectionReportStartWizard() {
         <button type="button" onClick={startDraftReport}>Start Draft Report</button>
         {draftMessage && <p role="status" className="wizard-success-message">{draftMessage}</p>}
         {draftSetup && <p className="wizard-note">Prepared draft: {draftSetup.reportTypeLabel} with {draftSetup.components.length} components selected.</p>}
-        <Api510ExternalReportShell reportTypeId={selectedTypeId} />
+        <Api510ExternalReportShell reportTypeId={selectedTypeId} draftPrepared={Boolean(draftSetup)} />
       </section>
     </div>
   </section>;

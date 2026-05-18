@@ -1,6 +1,6 @@
 import { pressureVesselApi } from '../api';
 import type { EngineeringCalculationWarning, InspectionCalculationSnapshot } from '../engineering/types';
-import type { AttachmentLocation, NozzleCalculationRequest } from '../types';
+import type { AttachmentLocation, HeadType, NozzleCalculationRequest } from '../types';
 import type { ComponentCalculationPrefill } from './componentCalculationPrefill';
 
 export type Api510CalculationType = 'ug-27-shell-tmin' | 'ug-32-formed-head-tmin' | 'ug-45-nozzle-neck-tmin' | 'review-only';
@@ -18,6 +18,7 @@ export type ComponentCalculationExecutionResult = {
   calculationType: Api510CalculationType;
   componentKey: string;
   componentLabel: string;
+  equipmentSubtype: string;
   pressureSide: string;
   designPressureUsed?: number;
   designTemperatureUsed?: number;
@@ -71,7 +72,7 @@ export async function executeApi510ComponentCalculation({ prefill, calculationTy
   const temperature = toNumber(prefill.designTemperatureValue);
 
   if (!prefill.supportsTminCalculation) {
-    return { success: false, calculationType, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, pressureSide: prefill.resolvedPressureSide, inputsUsed: manualInputs ?? {}, resultSummary: 'Component is not Tmin-calculation eligible.', warnings: [...warnings, 'Component is not Tmin-calculation eligible.'] };
+    return { success: false, calculationType, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, equipmentSubtype: prefill.equipmentSubtype, pressureSide: prefill.resolvedPressureSide, inputsUsed: manualInputs ?? {}, resultSummary: 'Component is not Tmin-calculation eligible.', warnings: [...warnings, 'Component is not Tmin-calculation eligible.'] };
   }
 
   if (pressure === undefined) warnings.push('Design pressure is missing.');
@@ -82,6 +83,7 @@ export async function executeApi510ComponentCalculation({ prefill, calculationTy
     calculationType,
     componentKey: prefill.componentKey,
     componentLabel: prefill.componentLabel,
+    equipmentSubtype: prefill.equipmentSubtype,
     pressureSide: prefill.resolvedPressureSide,
     designPressureUsed: pressure,
     designTemperatureUsed: temperature,
@@ -140,10 +142,78 @@ export async function executeApi510ComponentCalculation({ prefill, calculationTy
         outputs: { response, metadata: { equipmentSubtype: prefill.equipmentSubtype, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, pressureSide: prefill.resolvedPressureSide, calculationType, diameterBasisUsed: diameterBasis ?? 'both-known', diameterRequirement: 'both-required', manualInputsUsed: input } },
         ...snapshotContext
       };
-      return { success: true, calculationType, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, pressureSide: prefill.resolvedPressureSide, designPressureUsed: pressure, designTemperatureUsed: temperature, inputsUsed: input, resultSummary: 'UG-27 calculation executed.', warnings, snapshotReadyPayload };
+      return { success: true, calculationType, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, equipmentSubtype: prefill.equipmentSubtype, pressureSide: prefill.resolvedPressureSide, designPressureUsed: pressure, designTemperatureUsed: temperature, inputsUsed: input, resultSummary: 'UG-27 calculation executed.', warnings, snapshotReadyPayload };
     } catch (error) {
       const warningList = [...warnings, `API calculation failed: ${toApiErrorMessage(error)}`];
-      return buildApiFailure({ calculationType, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, pressureSide: prefill.resolvedPressureSide, designPressureUsed: pressure, designTemperatureUsed: temperature, inputsUsed: input }, warningList);
+      return buildApiFailure({ calculationType, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, equipmentSubtype: prefill.equipmentSubtype, pressureSide: prefill.resolvedPressureSide, designPressureUsed: pressure, designTemperatureUsed: temperature, inputsUsed: input }, warningList);
+    }
+  }
+
+
+  if (calculationType === 'ug-32-formed-head-tmin') {
+    const headType = typeof manualInputs?.headType === 'string' ? manualInputs.headType : undefined;
+    const jointEfficiency = toNumber(manualInputs?.jointEfficiency);
+    const effectiveInsideDiameter = toNumber(manualInputs?.effectiveInsideDiameterIn);
+    const effectiveInsideRadius = toNumber(manualInputs?.effectiveInsideRadiusIn);
+    const crownRadius = toNumber(manualInputs?.crownRadiusIn);
+    const halfApexAngle = toNumber(manualInputs?.halfApexAngleDeg);
+    const flatHeadCFactor = toNumber(manualInputs?.flatHeadCFactor);
+    const originalThickness = toNumber(manualInputs?.originalThicknessIn);
+    const providedThickness = toNumber(manualInputs?.providedThicknessIn);
+    const corrosionAllowanceProvided = hasValue(manualInputs?.corrosionAllowanceIn);
+    const corrosionAllowance = toNumber(manualInputs?.corrosionAllowanceIn);
+    const supportedHeadTypes = ['Ellipsoidal2To1', 'Hemispherical', 'TorisphericalAsmeFd', 'Conical', 'Toriconical', 'FlatUg34'] as const;
+
+    if (!headType) warnings.push('Head type is required for UG-32 head calculation.');
+    if (headType && !supportedHeadTypes.includes(headType as (typeof supportedHeadTypes)[number])) warnings.push(`Head type "${headType}" is unsupported by current head API.`);
+    if (jointEfficiency === undefined) warnings.push('Joint efficiency is required for UG-32 head calculation.');
+    if (originalThickness === undefined) warnings.push('Original thickness is required for UG-32 head calculation.');
+    if (providedThickness === undefined) warnings.push('Provided/current thickness is required for UG-32 head calculation.');
+    if (!corrosionAllowanceProvided || corrosionAllowance === undefined) warnings.push('Corrosion allowance is required for UG-32 head calculation (zero allowed when explicitly provided).');
+    if (effectiveInsideDiameter === undefined) warnings.push('Effective inside diameter is required for UG-32 head calculation.');
+    if (effectiveInsideRadius === undefined) warnings.push('Effective inside radius is required for UG-32 head calculation.');
+    if (crownRadius === undefined) warnings.push('Crown radius is required for UG-32 head calculation.');
+    if (halfApexAngle === undefined) warnings.push('Half apex angle is required for UG-32 head calculation.');
+    if (flatHeadCFactor === undefined) warnings.push('Flat head C factor is required for UG-32 head calculation.');
+    if (warnings.some((w) => w.includes('required') || w.includes('missing') || w.includes('unsupported'))) return fail('UG-32 execution blocked by missing or unsupported required inputs.');
+
+    const input = {
+      headType: headType as HeadType,
+      designPressurePsi: pressure,
+      allowableStressPsi: materialStress!,
+      jointEfficiency: jointEfficiency!,
+      effectiveInsideDiameterIn: effectiveInsideDiameter!,
+      effectiveInsideRadiusIn: effectiveInsideRadius!,
+      crownRadiusIn: crownRadius!,
+      halfApexAngleDeg: halfApexAngle!,
+      flatHeadCFactor: flatHeadCFactor!,
+      corrosionAllowanceIn: corrosionAllowance!,
+      providedThicknessIn: providedThickness!
+    };
+
+    try {
+      const response = await pressureVesselApi.calculateHead({
+        input,
+        materialStress: {
+          designCode: 'ASME_VIII_DIV1',
+          stressEra: 'From1999Onward',
+          designTemperatureF: temperature,
+          materialSpec: '', materialGrade: '', productForm: '', alloyUNS: '', classConditionTemper: '', manualAllowableStress: true, allowableStressPsi: materialStress!
+        }
+      });
+      warnings.push(...(response.warnings ?? []), ...(response.result?.warnings ?? []));
+      const snapshotReadyPayload: InspectionCalculationSnapshot = {
+        id: crypto.randomUUID(), calculationType, displayName: 'API 510 External Tmin Bridge', formulaVersion: 'api510-bridge-v1', calculatedAt: new Date().toISOString(), insertLabel: `${prefill.componentLabel} UG-32 Tmin`,
+        standardReferences: [{ standard: 'ASME Section VIII Div 1', paragraph: 'UG-32', note: 'API 510 external bridge execution' }],
+        warnings: toSnapshotWarnings(warnings),
+        inputs: { prefill, manualInputs, metadata: { equipmentSubtype: prefill.equipmentSubtype, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, pressureSide: prefill.resolvedPressureSide, vesselSide: 'vessel-side', calculationType, sourceDesignFieldTags: { pressure: prefill.designPressureFieldTag, temperature: prefill.designTemperatureFieldTag }, headType, manualInputsUsed: { ...input, originalThicknessIn: originalThickness } } },
+        outputs: { response, metadata: { equipmentSubtype: prefill.equipmentSubtype, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, pressureSide: prefill.resolvedPressureSide, vesselSide: 'vessel-side', calculationType, headType, manualInputsUsed: { ...input, originalThicknessIn: originalThickness } } },
+        ...snapshotContext
+      };
+      return { success: true, calculationType, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, equipmentSubtype: prefill.equipmentSubtype, pressureSide: prefill.resolvedPressureSide, designPressureUsed: pressure, designTemperatureUsed: temperature, inputsUsed: { ...input, originalThicknessIn: originalThickness }, resultSummary: 'UG-32 calculation executed.', warnings, snapshotReadyPayload };
+    } catch (error) {
+      const warningList = [...warnings, `API calculation failed: ${toApiErrorMessage(error)}`];
+      return buildApiFailure({ calculationType, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, equipmentSubtype: prefill.equipmentSubtype, pressureSide: prefill.resolvedPressureSide, designPressureUsed: pressure, designTemperatureUsed: temperature, inputsUsed: manualInputs ?? {} }, warningList);
     }
   }
 
@@ -212,6 +282,7 @@ export async function executeApi510ComponentCalculation({ prefill, calculationTy
           calculationType,
           componentKey: prefill.componentKey,
           componentLabel: prefill.componentLabel,
+          equipmentSubtype: prefill.equipmentSubtype,
           pressureSide: prefill.resolvedPressureSide,
           designPressureUsed: pressure,
           designTemperatureUsed: temperature,
@@ -232,10 +303,10 @@ export async function executeApi510ComponentCalculation({ prefill, calculationTy
         inputs: { prefill, manualInputs, metadata: { equipmentSubtype: prefill.equipmentSubtype, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, parentComponent: prefill.selectedParentComponent, nozzleLocation: prefill.selectedNozzleLocation, pressureSide: prefill.resolvedPressureSide, calculationType, sourceDesignFieldTags: { pressure: prefill.designPressureFieldTag, temperature: prefill.designTemperatureFieldTag }, defaultDecisions: { externalPressure: externalPressureMarkedNotApplicable ? 'explicit-not-applicable' : 'explicit-value', ug16MinimumThickness: ug16MinimumThicknessNotApplicable ? 'explicit-not-applicable' : 'explicit-value', ug45TableMinimumThickness: ug45TableMinimumThicknessProvided ? 'explicit-value-or-null' : 'omitted-as-null' }, manualInputsUsed: input } },
         outputs: { response }, ...snapshotContext
       };
-      return { success: true, calculationType, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, pressureSide: prefill.resolvedPressureSide, designPressureUsed: pressure, designTemperatureUsed: temperature, inputsUsed: input as unknown as Record<string, unknown>, resultSummary: 'UG-45 calculation executed.', warnings, snapshotReadyPayload };
+      return { success: true, calculationType, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, equipmentSubtype: prefill.equipmentSubtype, pressureSide: prefill.resolvedPressureSide, designPressureUsed: pressure, designTemperatureUsed: temperature, inputsUsed: input as unknown as Record<string, unknown>, resultSummary: 'UG-45 calculation executed.', warnings, snapshotReadyPayload };
     } catch (error) {
       const warningList = [...warnings, `API calculation failed: ${toApiErrorMessage(error)}`];
-      return buildApiFailure({ calculationType, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, pressureSide: prefill.resolvedPressureSide, designPressureUsed: pressure, designTemperatureUsed: temperature, inputsUsed: manualInputs ?? {} }, warningList);
+      return buildApiFailure({ calculationType, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, equipmentSubtype: prefill.equipmentSubtype, pressureSide: prefill.resolvedPressureSide, designPressureUsed: pressure, designTemperatureUsed: temperature, inputsUsed: manualInputs ?? {} }, warningList);
     }
   }
 

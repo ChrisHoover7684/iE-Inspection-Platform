@@ -61,7 +61,12 @@ export function Api510ShellTubeCalculationWorkspace({ fieldValues = {}, hasRepor
 
   const handleCreateFinding = (forceRecommendation: boolean) => {
     if (!execution) return;
-    const draft = buildApi510FindingDraft(execution, execution.snapshotReadyPayload, forceRecommendation);
+    const snapshot = execution.snapshotReadyPayload;
+    const hasSavedSnapshot = Boolean(
+      snapshot && (savedSnapshotIds.has(snapshot.id) || reportCalculations.some((calculation) => calculation.id === snapshot.id))
+    );
+    const linkedSnapshot = hasSavedSnapshot ? snapshot : undefined;
+    const draft = buildApi510FindingDraft(execution, linkedSnapshot, forceRecommendation);
     onCreateFindingDraft?.(draft);
     setActionMessage(forceRecommendation ? 'Finding and recommendation draft created.' : 'Finding draft created.');
   };

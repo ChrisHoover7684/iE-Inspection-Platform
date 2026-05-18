@@ -31,7 +31,8 @@ export function buildApi510FindingDraft(
   snapshot: InspectionCalculationSnapshot | undefined,
   forceRecommendation: boolean
 ): Api510FindingDraft {
-  const prefill = (snapshot?.inputs as { prefill?: { equipmentSubtype?: string; selectedParentComponent?: string; selectedNozzleLocation?: string } } | undefined)?.prefill;
+  const snapshotForPrefill = snapshot ?? execution.snapshotReadyPayload;
+  const prefill = (snapshotForPrefill?.inputs as { prefill?: { equipmentSubtype?: string; selectedParentComponent?: string; selectedNozzleLocation?: string } } | undefined)?.prefill;
   const pending = !snapshot;
   const recommendationRequired = shouldCreateRecommendation(execution, forceRecommendation);
   return {

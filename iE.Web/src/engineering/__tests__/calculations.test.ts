@@ -946,12 +946,12 @@ describe('inspection field catalog', () => {
       'api510.external.drum-vessel.design-pressure': 250,
       'api510.external.drum-vessel.design-temperature': 450
     });
-    const omitted = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, headType: 'Ellipsoidal2To1', jointEfficiency: 1, effectiveInsideDiameterIn: 48, effectiveInsideRadiusIn: 24, crownRadiusIn: 48, halfApexAngleDeg: 0, flatHeadCFactor: 0, originalThicknessIn: 0.5, providedThicknessIn: 0.5 } });
+    const omitted = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, headType: 'Ellipsoidal2To1', jointEfficiency: 1, effectiveInsideDiameterIn: 48, originalThicknessIn: 0.5, providedThicknessIn: 0.5 } });
     expect(omitted.success).toBe(false);
     expect(omitted.warnings.some((w) => w.includes('Corrosion allowance is required'))).toBe(true);
 
     const spy = vi.spyOn(pressureVesselApi, 'calculateHead').mockResolvedValueOnce({ result: { governingRequiredThicknessIn: 0.2, requiredWithCorrosionAllowanceIn: 0.2, marginIn: 0.3, warnings: [] }, resolvedAllowableStressPsi: 17500, materialMatched: null, temperatureUsed: 450, wasInterpolated: false, wasExtrapolated: false, stressSourceMessage: 'manual', warnings: [] });
-    const zero = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, headType: 'Ellipsoidal2To1', jointEfficiency: 1, effectiveInsideDiameterIn: 48, effectiveInsideRadiusIn: 24, crownRadiusIn: 48, halfApexAngleDeg: 0, flatHeadCFactor: 0, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 } });
+    const zero = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, headType: 'Ellipsoidal2To1', jointEfficiency: 1, effectiveInsideDiameterIn: 48, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 } });
     expect(zero.success).toBe(true);
     expect((spy.mock.calls[0]?.[0] as any).input.corrosionAllowanceIn).toBe(0);
   });
@@ -962,7 +962,7 @@ describe('inspection field catalog', () => {
       'api510.external.drum-vessel.design-temperature': 460
     });
     const spy = vi.spyOn(pressureVesselApi, 'calculateHead').mockResolvedValueOnce({ result: { governingRequiredThicknessIn: 0.21, requiredWithCorrosionAllowanceIn: 0.24, marginIn: 0.26, warnings: [] }, resolvedAllowableStressPsi: 17500, materialMatched: null, temperatureUsed: 460, wasInterpolated: false, wasExtrapolated: false, stressSourceMessage: 'manual', warnings: [] });
-    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, headType: 'Ellipsoidal2To1', jointEfficiency: 0.9, effectiveInsideDiameterIn: 48, effectiveInsideRadiusIn: 24, crownRadiusIn: 48, halfApexAngleDeg: 0, flatHeadCFactor: 0, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0.03 } });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, headType: 'Ellipsoidal2To1', jointEfficiency: 0.9, effectiveInsideDiameterIn: 48, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0.03 } });
     expect(result.success).toBe(true);
     const call = (spy.mock.calls[0]?.[0] as any).input;
     expect(call.designPressurePsi).toBe(260);
@@ -972,6 +972,71 @@ describe('inspection field catalog', () => {
     expect(meta?.equipmentSubtype).toBe('Horizontal Drum');
     expect(meta?.componentKey).toBe('heads');
     expect(meta?.sourceDesignFieldTags?.pressure).toBe('api510.external.drum-vessel.design-pressure');
+    expect(meta?.headType).toBe('Ellipsoidal2To1');
+    expect(meta?.requiredGeometryFields).toEqual(['effectiveInsideDiameterIn']);
+    expect(meta?.manualInputsUsed).toBeTruthy();
+  });
+
+  it('UG-32 Ellipsoidal2To1 blocks without effectiveInsideDiameterIn but does not require crownRadiusIn', async () => {
+    const prefill = buildComponentCalculationPrefill('Horizontal Drum', 'heads', undefined, undefined, undefined, {
+      'api510.external.drum-vessel.design-pressure': 250,
+      'api510.external.drum-vessel.design-temperature': 450
+    });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, headType: 'Ellipsoidal2To1', jointEfficiency: 1, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 } });
+    expect(result.success).toBe(false);
+    expect(result.warnings.some((w) => w.includes('Effective inside diameter is required'))).toBe(true);
+    expect(result.warnings.some((w) => w.includes('Crown radius is required'))).toBe(false);
+  });
+
+  it('UG-32 Hemispherical blocks when effectiveInsideRadiusIn is missing', async () => {
+    const prefill = buildComponentCalculationPrefill('Horizontal Drum', 'heads', undefined, undefined, undefined, {
+      'api510.external.drum-vessel.design-pressure': 250,
+      'api510.external.drum-vessel.design-temperature': 450
+    });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, headType: 'Hemispherical', jointEfficiency: 1, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 } });
+    expect(result.success).toBe(false);
+    expect(result.warnings.some((w) => w.includes('Effective inside radius is required'))).toBe(true);
+  });
+
+  it('UG-32 TorisphericalAsmeFd blocks when crownRadiusIn is missing', async () => {
+    const prefill = buildComponentCalculationPrefill('Horizontal Drum', 'heads', undefined, undefined, undefined, {
+      'api510.external.drum-vessel.design-pressure': 250,
+      'api510.external.drum-vessel.design-temperature': 450
+    });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, headType: 'TorisphericalAsmeFd', jointEfficiency: 1, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 } });
+    expect(result.success).toBe(false);
+    expect(result.warnings.some((w) => w.includes('Crown radius is required'))).toBe(true);
+  });
+
+  it('UG-32 Conical blocks when halfApexAngleDeg is missing', async () => {
+    const prefill = buildComponentCalculationPrefill('Horizontal Drum', 'heads', undefined, undefined, undefined, {
+      'api510.external.drum-vessel.design-pressure': 250,
+      'api510.external.drum-vessel.design-temperature': 450
+    });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, headType: 'Conical', jointEfficiency: 1, effectiveInsideDiameterIn: 48, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 } });
+    expect(result.success).toBe(false);
+    expect(result.warnings.some((w) => w.includes('Half apex angle is required'))).toBe(true);
+  });
+
+  it('UG-32 FlatUg34 blocks when flatHeadCFactor is missing', async () => {
+    const prefill = buildComponentCalculationPrefill('Horizontal Drum', 'heads', undefined, undefined, undefined, {
+      'api510.external.drum-vessel.design-pressure': 250,
+      'api510.external.drum-vessel.design-temperature': 450
+    });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, headType: 'FlatUg34', jointEfficiency: 1, effectiveInsideDiameterIn: 48, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 } });
+    expect(result.success).toBe(false);
+    expect(result.warnings.some((w) => w.includes('Flat head C factor is required'))).toBe(true);
+  });
+
+  it('UG-32 valid FlatUg34 calls calculateHead successfully', async () => {
+    const prefill = buildComponentCalculationPrefill('Horizontal Drum', 'heads', undefined, undefined, undefined, {
+      'api510.external.drum-vessel.design-pressure': 250,
+      'api510.external.drum-vessel.design-temperature': 450
+    });
+    const spy = vi.spyOn(pressureVesselApi, 'calculateHead').mockResolvedValueOnce({ result: { governingRequiredThicknessIn: 0.2, requiredWithCorrosionAllowanceIn: 0.21, marginIn: 0.29, warnings: [] }, resolvedAllowableStressPsi: 17500, materialMatched: null, temperatureUsed: 450, wasInterpolated: false, wasExtrapolated: false, stressSourceMessage: 'manual', warnings: [] });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, headType: 'FlatUg34', jointEfficiency: 1, effectiveInsideDiameterIn: 48, flatHeadCFactor: 0.3, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 } });
+    expect(result.success).toBe(true);
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 
   it('nozzle UG-45 execution warns when parent thickness source is missing', async () => {

@@ -1,5 +1,10 @@
 import { useMemo, useState } from 'react';
-import { buildComponentCalculationPrefill, type CalculationFieldValuesMap } from './componentCalculationPrefill';
+import {
+  buildComponentCalculationPrefill,
+  buildDrumVesselDraftWorkspaceContext,
+  readApiInspectionDraftSetup,
+  type CalculationFieldValuesMap
+} from './componentCalculationPrefill';
 import { executeApi510ComponentCalculation, type Api510CalculationType, type ComponentCalculationExecutionResult } from './componentCalculationExecution';
 import { buildApi510FindingDraft, type Api510FindingDraft } from './api510CalculationFindings';
 import type { InspectionCalculationSnapshot } from '../engineering/types';
@@ -30,18 +35,24 @@ const headTypeOptions = [
 ] as const;
 
 export function Api510DrumVesselCalculationWorkspace({ fieldValues = {}, hasReportContext = false, reportCalculations = [], onSaveSnapshot, onCreateFindingDraft }: Props) {
-  const [equipmentSubtype, setEquipmentSubtype] = useState<(typeof equipmentSubtypes)[number]>('Horizontal Drum');
+  const draftContext = useMemo(() => {
+    if (hasReportContext || Object.keys(fieldValues).length > 0) return undefined;
+    return buildDrumVesselDraftWorkspaceContext(readApiInspectionDraftSetup());
+  }, [fieldValues, hasReportContext]);
+  const workspaceFieldValues = useMemo(() => ({ ...draftContext?.fieldValues, ...fieldValues }), [draftContext, fieldValues]);
+  const draftEquipmentSubtype = equipmentSubtypes.find((subtype) => subtype === draftContext?.equipmentSubtype) ?? 'Horizontal Drum';
+  const [equipmentSubtype, setEquipmentSubtype] = useState<(typeof equipmentSubtypes)[number]>(draftEquipmentSubtype);
   const [componentKey, setComponentKey] = useState('shell');
   const [parentComponent, setParentComponent] = useState('shell');
   const [nozzleLocation, setNozzleLocation] = useState('shell');
   const [calculationType, setCalculationType] = useState<Api510CalculationType>('ug-27-shell-tmin');
   const [designConditions, setDesignConditions] = useState<CalculationFieldValuesMap>({});
-  const [inputs, setInputs] = useState<Record<string, unknown>>({ headType: 'Ellipsoidal2To1', designCode: 'ASME_VIII_DIV1', stressEra: 'From1999Onward' });
+  const [inputs, setInputs] = useState<Record<string, unknown>>({ headType: draftContext?.headType || 'Ellipsoidal2To1', designCode: 'ASME_VIII_DIV1', stressEra: 'From1999Onward' });
   const [execution, setExecution] = useState<ComponentCalculationExecutionResult | null>(null);
   const [savedSnapshotIds, setSavedSnapshotIds] = useState<Set<string>>(new Set());
   const [actionMessage, setActionMessage] = useState('');
 
-  const prefill = useMemo(() => buildComponentCalculationPrefill(equipmentSubtype, componentKey, 'shared', componentKey === 'nozzles' ? parentComponent : undefined, componentKey === 'nozzles' ? nozzleLocation : undefined, { ...fieldValues, ...(hasReportContext ? {} : { 'api510.external.drum-vessel.design-pressure': designConditions.vesselDesignPressure, 'api510.external.drum-vessel.design-temperature': designConditions.vesselDesignTemperature }) }), [equipmentSubtype, componentKey, parentComponent, nozzleLocation, fieldValues, hasReportContext, designConditions]);
+  const prefill = useMemo(() => buildComponentCalculationPrefill(equipmentSubtype, componentKey, 'shared', componentKey === 'nozzles' ? parentComponent : undefined, componentKey === 'nozzles' ? nozzleLocation : undefined, { ...(hasReportContext ? {} : { 'api510.external.drum-vessel.design-pressure': designConditions.vesselDesignPressure, 'api510.external.drum-vessel.design-temperature': designConditions.vesselDesignTemperature }), ...workspaceFieldValues }), [equipmentSubtype, componentKey, parentComponent, nozzleLocation, workspaceFieldValues, hasReportContext, designConditions]);
   const canExecute = calculationType !== 'review-only';
   const onRun = async () => {
     if (!prefill || !canExecute) return;
@@ -76,6 +87,11 @@ export function Api510DrumVesselCalculationWorkspace({ fieldValues = {}, hasRepo
 
   return <section>
     <h2>API 510 Drum/Vessel Calculation Workspace</h2>
+    {draftContext && <div role="status">Using draft setup from Start Wizard</div>}
+    {draftContext && <section aria-label="Draft Selected Components">
+      <h3>Draft Selected Components</h3>
+      <ul>{draftContext.selectedComponents.map((component) => <li key={component}>{component}</li>)}</ul>
+    </section>}
     <label>Equipment Subtype<select aria-label="Equipment Subtype" value={equipmentSubtype} onChange={(e) => setEquipmentSubtype(e.target.value as (typeof equipmentSubtypes)[number])}>{equipmentSubtypes.map((s) => <option key={s} value={s}>{s}</option>)}</select></label>
     <label>Component<select aria-label="Component" value={componentKey} onChange={(e) => {
       const next = e.target.value;
@@ -95,6 +111,8 @@ export function Api510DrumVesselCalculationWorkspace({ fieldValues = {}, hasRepo
       <option value="review-only">Review Only</option>
     </select></label>
 
+    <div>Design Pressure: {prefill?.designPressureFieldTag ?? 'n/a'} = {String(prefill?.designPressureValue ?? 'n/a')}</div>
+    <div>Design Temperature: {prefill?.designTemperatureFieldTag ?? 'n/a'} = {String(prefill?.designTemperatureValue ?? 'n/a')}</div>
 
     {!hasReportContext && <fieldset><legend>Design Conditions</legend><label>Vessel Design Pressure<input aria-label="Vessel Design Pressure" value={String(designConditions.vesselDesignPressure ?? '')} onChange={(e)=>setDesignConditions((p)=>({...p,vesselDesignPressure:e.target.value}))} /></label><label>Vessel Design Temperature<input aria-label="Vessel Design Temperature" value={String(designConditions.vesselDesignTemperature ?? '')} onChange={(e)=>setDesignConditions((p)=>({...p,vesselDesignTemperature:e.target.value}))} /></label></fieldset>}
 

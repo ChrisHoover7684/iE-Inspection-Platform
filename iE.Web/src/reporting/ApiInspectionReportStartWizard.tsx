@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Api510ExternalReportShell } from './Api510ExternalReportShell';
 import { allApiInspectionReportOptions, apiInspectionReportHierarchy } from './apiInspectionReportHierarchy';
+import { API_INSPECTION_DRAFT_SETUP_STORAGE_KEY, type ApiInspectionDraftSetup } from './componentCalculationPrefill';
 
 type FieldConfig = {
   key: string;
@@ -10,13 +11,6 @@ type FieldConfig = {
 };
 
 type ComponentConfig = { minimum: string[]; optional: string[] };
-
-type DraftSetup = {
-  reportTypeId: string;
-  reportTypeLabel?: string;
-  header: Record<string, string>;
-  components: string[];
-};
 
 const commonFields: FieldConfig[] = [
   { key: 'inspectionDate', label: 'Inspection Date', type: 'date' },
@@ -166,7 +160,7 @@ export function ApiInspectionReportStartWizard() {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [selectedOptionalComponents, setSelectedOptionalComponents] = useState<string[]>([]);
   const [draftMessage, setDraftMessage] = useState('');
-  const [draftSetup, setDraftSetup] = useState<DraftSetup | null>(null);
+  const [draftSetup, setDraftSetup] = useState<ApiInspectionDraftSetup | null>(null);
   const selected = useMemo(() => allApiInspectionReportOptions.find((option) => option.id === selectedTypeId), [selectedTypeId]);
 
   const designFields = useMemo(() => getDesignFields(selectedTypeId), [selectedTypeId]);
@@ -192,14 +186,14 @@ export function ApiInspectionReportStartWizard() {
   };
 
   const startDraftReport = () => {
-    const draftSetup = {
+    const draftSetup: ApiInspectionDraftSetup = {
       reportTypeId: selectedTypeId,
       reportTypeLabel: selected?.label,
       header: formValues,
       components: [...componentConfig.minimum, ...selectedOptionalComponents]
     };
     setDraftSetup(draftSetup);
-    window.localStorage.setItem('apiInspectionDraftSetup', JSON.stringify(draftSetup));
+    window.localStorage.setItem(API_INSPECTION_DRAFT_SETUP_STORAGE_KEY, JSON.stringify(draftSetup));
     setDraftMessage('Draft setup prepared. Full report creation will be connected next.');
   };
 

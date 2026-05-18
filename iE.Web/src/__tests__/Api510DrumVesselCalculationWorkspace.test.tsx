@@ -1,17 +1,46 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Api510DrumVesselCalculationWorkspace } from '../reporting/Api510DrumVesselCalculationWorkspace';
 import { executeApi510ComponentCalculation } from '../reporting/componentCalculationExecution';
+import { API_INSPECTION_DRAFT_SETUP_STORAGE_KEY } from '../reporting/componentCalculationPrefill';
 
 vi.mock('../reporting/componentCalculationExecution', async () => {
   const actual = await vi.importActual<typeof import('../reporting/componentCalculationExecution')>('../reporting/componentCalculationExecution');
   return { ...actual, executeApi510ComponentCalculation: vi.fn() };
 });
 
+afterEach(() => {
+  window.localStorage.removeItem(API_INSPECTION_DRAFT_SETUP_STORAGE_KEY);
+});
+
 describe('Api510DrumVesselCalculationWorkspace', () => {
   it('workspace renders subtype selector', () => {
     render(<Api510DrumVesselCalculationWorkspace />);
     expect(screen.getByLabelText('Equipment Subtype')).toBeInTheDocument();
+  });
+
+  it('reads draft vessel design conditions, subtype, selected components, and head type', () => {
+    window.localStorage.setItem(API_INSPECTION_DRAFT_SETUP_STORAGE_KEY, JSON.stringify({
+      reportTypeId: 'api510.external.drum-vessel.vertical-drum',
+      reportTypeLabel: 'Vertical Drum External',
+      header: {
+        vesselDesignPressure: '300',
+        vesselDesignTemperature: '650',
+        headType: 'Hemispherical'
+      },
+      components: ['Shell', 'Heads', 'Nozzles', 'Supports', 'Insulation']
+    }));
+
+    render(<Api510DrumVesselCalculationWorkspace />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('Using draft setup from Start Wizard');
+    expect(screen.getByLabelText('Equipment Subtype')).toHaveValue('Vertical Drum');
+    expect(screen.getByText('Design Pressure: api510.external.drum-vessel.design-pressure = 300')).toBeInTheDocument();
+    expect(screen.getByText('Design Temperature: api510.external.drum-vessel.design-temperature = 650')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Draft Selected Components' })).toHaveTextContent('Insulation');
+    fireEvent.change(screen.getByLabelText('Component'), { target: { value: 'heads' } });
+    expect(screen.getByLabelText('Head Type')).toHaveValue('Hemispherical');
+    expect(screen.getByLabelText('effectiveInsideRadiusIn')).toBeInTheDocument();
   });
 
   it('Shell shows UG-27 inputs', () => {
@@ -50,6 +79,12 @@ describe('Api510DrumVesselCalculationWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Run Calculation' }));
     expect(await screen.findByText(/Snapshot Preview: available/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save Calculation Snapshot' })).toBeDisabled();
+  });
+
+  it('standalone workspace does not show draft banner without draft setup', () => {
+    render(<Api510DrumVesselCalculationWorkspace />);
+    expect(screen.queryByText('Using draft setup from Start Wizard')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Vessel Design Pressure')).toBeInTheDocument();
   });
 
   it('finding draft includes equipment subtype/component context', async () => {

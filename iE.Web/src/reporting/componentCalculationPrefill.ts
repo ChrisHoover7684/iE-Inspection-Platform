@@ -3,6 +3,89 @@ import { resolveComponentCalculationContext } from './componentCalculationContex
 
 export type CalculationFieldValuesMap = Record<string, string | number | null | undefined>;
 
+export const API_INSPECTION_DRAFT_SETUP_STORAGE_KEY = 'apiInspectionDraftSetup';
+
+export type ApiInspectionDraftSetup = {
+  reportTypeId: string;
+  reportTypeLabel?: string;
+  header: Record<string, string>;
+  components: string[];
+};
+
+export type DraftCalculationWorkspaceContext = {
+  fieldValues: CalculationFieldValuesMap;
+  selectedComponents: string[];
+  reportTypeId: string;
+  reportTypeLabel?: string;
+  equipmentSubtype?: string;
+  headType?: string;
+};
+
+const drumVesselSubtypeByReportTypeId: Record<string, string> = {
+  'api510.external.drum-vessel.horizontal-drum': 'Horizontal Drum',
+  'api510.external.drum-vessel.vertical-drum': 'Vertical Drum',
+  'api510.external.drum-vessel.separator-ko-drum': 'Separator / KO Drum',
+  'api510.external.drum-vessel.accumulator-receiver': 'Accumulator / Receiver',
+  'api510.external.drum-vessel.generic-pressure-vessel': 'Generic Pressure Vessel'
+};
+
+export const readApiInspectionDraftSetup = (): ApiInspectionDraftSetup | undefined => {
+  if (typeof window === 'undefined') return undefined;
+
+  const storedDraft = window.localStorage.getItem(API_INSPECTION_DRAFT_SETUP_STORAGE_KEY);
+  if (!storedDraft) return undefined;
+
+  try {
+    const draft = JSON.parse(storedDraft) as Partial<ApiInspectionDraftSetup>;
+    if (!draft.reportTypeId || !draft.header || !Array.isArray(draft.components)) return undefined;
+    return {
+      reportTypeId: draft.reportTypeId,
+      reportTypeLabel: draft.reportTypeLabel,
+      header: draft.header,
+      components: draft.components
+    };
+  } catch {
+    return undefined;
+  }
+};
+
+export const buildShellTubeDraftWorkspaceContext = (
+  draft: ApiInspectionDraftSetup | undefined
+): DraftCalculationWorkspaceContext | undefined => {
+  if (draft?.reportTypeId !== 'api510.external.exchanger.shell-tube') return undefined;
+
+  return {
+    reportTypeId: draft.reportTypeId,
+    reportTypeLabel: draft.reportTypeLabel,
+    selectedComponents: draft.components,
+    equipmentSubtype: 'Shell and Tube Exchanger',
+    fieldValues: {
+      'api510.external.exchanger.shell-tube.shell-side.design-pressure': draft.header.shellSideDesignPressure,
+      'api510.external.exchanger.shell-tube.shell-side.design-temperature': draft.header.shellSideDesignTemperature,
+      'api510.external.exchanger.shell-tube.tube-side.design-pressure': draft.header.tubeSideDesignPressure,
+      'api510.external.exchanger.shell-tube.tube-side.design-temperature': draft.header.tubeSideDesignTemperature
+    }
+  };
+};
+
+export const buildDrumVesselDraftWorkspaceContext = (
+  draft: ApiInspectionDraftSetup | undefined
+): DraftCalculationWorkspaceContext | undefined => {
+  if (!draft?.reportTypeId.startsWith('api510.external.drum-vessel.')) return undefined;
+
+  return {
+    reportTypeId: draft.reportTypeId,
+    reportTypeLabel: draft.reportTypeLabel,
+    selectedComponents: draft.components,
+    equipmentSubtype: drumVesselSubtypeByReportTypeId[draft.reportTypeId],
+    headType: draft.header.headType,
+    fieldValues: {
+      'api510.external.drum-vessel.design-pressure': draft.header.vesselDesignPressure,
+      'api510.external.drum-vessel.design-temperature': draft.header.vesselDesignTemperature
+    }
+  };
+};
+
 export type ComponentCalculationPrefill = {
   equipmentSubtype: string;
   componentKey: string;

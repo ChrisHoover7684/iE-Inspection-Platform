@@ -19,7 +19,7 @@ export function Api510ExternalReportShell({ reportTypeId }: Props) {
 
   return (
     <div className="wizard-calculation-action" aria-label="Calculations">
-      <p>Open the existing calculation workspace. Report field-value handoff will follow in a subsequent update.</p>
+      <p>Open the calculation workspace with any saved Start Wizard draft setup applied.</p>
       <button
         type="button"
         disabled={!workspaceRoute}

@@ -39,14 +39,36 @@ describe('Api510ShellTubeCalculationWorkspace', () => {
     expect(onSave).toHaveBeenCalledTimes(1);
   });
 
-  it('Create Finding from successful calculation creates finding draft', async () => {
+  it('finding before saving marks linkedSnapshotPendingSave true', async () => {
     const onCreate = vi.fn();
     vi.mocked(executeApi510ComponentCalculation).mockResolvedValueOnce({ success: true, calculationType: 'ug-27-shell-tmin', componentKey: 'shell', componentLabel: 'Shell', pressureSide: 'shell-side', designPressureUsed: 150, designTemperatureUsed: 400, inputsUsed: {}, resultSummary: 'UG-27 calculation executed.', warnings: [], snapshotReadyPayload: { id: 's1', inputs: { prefill: { equipmentSubtype: 'Shell and Tube Exchanger' } } } } as any);
     render(<Api510ShellTubeCalculationWorkspace hasReportContext onCreateFindingDraft={onCreate} fieldValues={{ 'api510.external.exchanger.shell-tube.shell-side.design-pressure': 100, 'api510.external.exchanger.shell-tube.shell-side.design-temperature': 100 }} />);
     fireEvent.click(screen.getByRole('button', { name: 'Run Calculation' }));
     await screen.findByText(/Execution: success/i);
     fireEvent.click(screen.getByRole('button', { name: 'Create Finding from Calculation' }));
-    expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ componentKey: 'shell', linkedCalculationSnapshotId: 's1' }));
+    expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ componentKey: 'shell', linkedCalculationSnapshotId: undefined, linkedSnapshotPendingSave: true }));
+  });
+
+  it('finding after saving includes linkedCalculationSnapshotId', async () => {
+    const onCreate = vi.fn();
+    const onSave = vi.fn();
+    vi.mocked(executeApi510ComponentCalculation).mockResolvedValueOnce({ success: true, calculationType: 'ug-27-shell-tmin', componentKey: 'shell', componentLabel: 'Shell', pressureSide: 'shell-side', designPressureUsed: 150, designTemperatureUsed: 400, inputsUsed: {}, resultSummary: 'UG-27 calculation executed.', warnings: [], snapshotReadyPayload: { id: 's-saved', inputs: { prefill: { equipmentSubtype: 'Shell and Tube Exchanger' } } } } as any);
+    render(<Api510ShellTubeCalculationWorkspace hasReportContext onSaveSnapshot={onSave} onCreateFindingDraft={onCreate} fieldValues={{ 'api510.external.exchanger.shell-tube.shell-side.design-pressure': 100, 'api510.external.exchanger.shell-tube.shell-side.design-temperature': 100 }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Run Calculation' }));
+    await screen.findByText(/Execution: success/i);
+    fireEvent.click(screen.getByRole('button', { name: 'Save Calculation Snapshot' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create Finding from Calculation' }));
+    expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ linkedCalculationSnapshotId: 's-saved', linkedSnapshotPendingSave: false }));
+  });
+
+  it('finding with existing reportCalculations snapshot includes linkedCalculationSnapshotId', async () => {
+    const onCreate = vi.fn();
+    vi.mocked(executeApi510ComponentCalculation).mockResolvedValueOnce({ success: true, calculationType: 'ug-27-shell-tmin', componentKey: 'shell', componentLabel: 'Shell', pressureSide: 'shell-side', designPressureUsed: 150, designTemperatureUsed: 400, inputsUsed: {}, resultSummary: 'UG-27 calculation executed.', warnings: [], snapshotReadyPayload: { id: 's-existing', inputs: { prefill: { equipmentSubtype: 'Shell and Tube Exchanger' } } } } as any);
+    render(<Api510ShellTubeCalculationWorkspace hasReportContext reportCalculations={[{ id: 's-existing' } as any]} onCreateFindingDraft={onCreate} fieldValues={{ 'api510.external.exchanger.shell-tube.shell-side.design-pressure': 100, 'api510.external.exchanger.shell-tube.shell-side.design-temperature': 100 }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Run Calculation' }));
+    await screen.findByText(/Execution: success/i);
+    fireEvent.click(screen.getByRole('button', { name: 'Create Finding from Calculation' }));
+    expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ linkedCalculationSnapshotId: 's-existing', linkedSnapshotPendingSave: false }));
   });
 
   it('UG-45 finding includes parent component and nozzle location', async () => {

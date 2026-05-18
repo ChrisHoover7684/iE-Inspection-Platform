@@ -835,6 +835,38 @@ describe('inspection field catalog', () => {
     expect(zeroAllowed.success).toBe(true);
   });
 
+  it('UG-27 blocks execution for invalid diameterBasis and does not call cylindrical API', async () => {
+    const prefill = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'shell', undefined, undefined, undefined, {
+      'api510.external.exchanger.shell-tube.shell-side.design-pressure': 250,
+      'api510.external.exchanger.shell-tube.shell-side.design-temperature': 450
+    });
+    const calculateCylindricalSpy = vi.spyOn(pressureVesselApi, 'calculateCylindrical');
+    const result = await executeApi510ComponentCalculation({
+      prefill: prefill!,
+      calculationType: 'ug-27-shell-tmin',
+      manualInputs: { allowableStressPsi: 17500, jointEfficiency: 1, insideDiameterIn: 48, outsideDiameterIn: 48.5, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0, diameterBasis: 'invalid-basis' }
+    });
+    expect(result.success).toBe(false);
+    expect(result.warnings.some((w) => w.includes('UG-27 diameter basis must be inside-diameter-basis, outside-diameter-basis, or both-known'))).toBe(true);
+    expect(calculateCylindricalSpy).not.toHaveBeenCalled();
+  });
+
+  it('UG-27 defaults snapshot metadata diameterBasisUsed to both-known when diameterBasis is omitted', async () => {
+    const prefill = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'shell', undefined, undefined, undefined, {
+      'api510.external.exchanger.shell-tube.shell-side.design-pressure': 250,
+      'api510.external.exchanger.shell-tube.shell-side.design-temperature': 450
+    });
+    vi.spyOn(pressureVesselApi, 'calculateCylindrical').mockResolvedValueOnce({ result: { radiusIn: 24, circumferentialRequiredThicknessIn: 0.2, longitudinalRequiredThicknessIn: 0.2, governingRequiredThicknessIn: 0.2, requiredWithCorrosionAllowanceIn: 0.2, marginIn: 0.3 }, resolvedAllowableStressPsi: 17500, materialMatched: null, temperatureUsed: 450, wasInterpolated: false, wasExtrapolated: false, stressSourceMessage: 'manual', warnings: [] });
+    const result = await executeApi510ComponentCalculation({
+      prefill: prefill!,
+      calculationType: 'ug-27-shell-tmin',
+      manualInputs: { allowableStressPsi: 17500, jointEfficiency: 1, insideDiameterIn: 48, outsideDiameterIn: 48.5, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 }
+    });
+    expect(result.success).toBe(true);
+    const metadata = (result.snapshotReadyPayload?.outputs as any)?.metadata as { diameterBasisUsed?: string };
+    expect(metadata.diameterBasisUsed).toBe('both-known');
+  });
+
   it('shell execution returns snapshot-ready payload', async () => {
     const prefill = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'shell', undefined, undefined, undefined, {
       'api510.external.exchanger.shell-tube.shell-side.design-pressure': 250,

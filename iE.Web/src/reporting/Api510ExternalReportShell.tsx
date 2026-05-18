@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 
-type Props = { reportTypeId?: string };
+type Props = { reportTypeId?: string; draftPrepared?: boolean };
 
-export function Api510ExternalReportShell({ reportTypeId }: Props) {
+export function Api510ExternalReportShell({ reportTypeId, draftPrepared = false }: Props) {
   const navigate = useNavigate();
   const isApi510External = reportTypeId?.startsWith('api510.external.');
   const isShellTube = reportTypeId === 'api510.external.exchanger.shell-tube';
@@ -20,6 +20,7 @@ export function Api510ExternalReportShell({ reportTypeId }: Props) {
   return (
     <div className="wizard-calculation-action" aria-label="Calculations">
       <p>Open the calculation workspace with any saved Start Wizard draft setup applied.</p>
+      {isShellTube && draftPrepared && <button type="button" onClick={() => navigate('/reports/api-510-shell-tube-external')}>Open Shell-and-Tube External Report</button>}
       <button
         type="button"
         disabled={!workspaceRoute}

@@ -324,6 +324,9 @@ export function ApiInspectionReportsPage() {
           <button type="button" className="new-report-btn" onClick={() => navigate('/reports/api-510-shell-tube-workspace')}>
             API 510 Shell-and-Tube Calculation Workspace
           </button>
+          <button type="button" className="new-report-btn" onClick={() => navigate('/reports/api-510-drum-vessel-workspace')}>
+            API 510 Drum/Vessel Calculation Workspace
+          </button>
           <div className="profile-pill">Inspector User</div>
         </header>
 

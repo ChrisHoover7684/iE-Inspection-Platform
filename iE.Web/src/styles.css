@@ -1423,3 +1423,171 @@ html, body, #root {
     margin-top: 12px;
     padding-top: 12px;
 }
+
+/* ===== API 510 SHELL-AND-TUBE EXTERNAL REPORT ===== */
+.page.report-page.api510-shell-tube-external-report {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0 20px 24px;
+}
+
+.api510-shell-tube-external-report .api510-report-header-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    margin: 0 -20px 12px;
+    padding: 12px 20px;
+    background: var(--color-bg-page);
+    border-bottom: 1px solid var(--color-border-medium);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+
+.api510-shell-tube-external-report .api510-report-header-sticky h2,
+.api510-shell-tube-external-report .api510-report-header-sticky p,
+.api510-shell-tube-external-report .api510-section-heading-row h3 {
+    margin: 0;
+}
+
+.api510-shell-tube-external-report .api510-header-actions,
+.api510-shell-tube-external-report .api510-component-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.api510-shell-tube-external-report .api510-report-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 16px;
+    align-items: start;
+}
+
+.api510-shell-tube-external-report .api510-report-main {
+    min-width: 0;
+}
+
+.api510-shell-tube-external-report .api510-report-sidebar {
+    position: sticky;
+    top: 86px;
+    align-self: start;
+}
+
+.api510-shell-tube-external-report .api510-report-sidebar .card + .card {
+    margin-top: 12px;
+}
+
+.api510-shell-tube-external-report .api510-report-sidebar button + button,
+.api510-shell-tube-external-report .api510-report-sidebar button + p {
+    margin-top: 8px;
+}
+
+.api510-shell-tube-external-report .api510-section-nav {
+    margin-top: 0;
+}
+
+.api510-shell-tube-external-report .api510-section-nav ul,
+.api510-shell-tube-external-report .api510-component-links {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0;
+}
+
+.api510-shell-tube-external-report .api510-section-nav ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 6px 12px;
+}
+
+.api510-shell-tube-external-report .api510-field-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+    margin: 0;
+}
+
+.api510-shell-tube-external-report .api510-compact-field {
+    border: 1px solid #e6ebf2;
+    border-radius: 8px;
+    padding: 8px;
+    background: #fbfcfe;
+}
+
+.api510-shell-tube-external-report .api510-compact-field dt {
+    color: #25364d;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.api510-shell-tube-external-report .api510-compact-field dd {
+    margin: 0;
+    font-weight: 600;
+}
+
+.api510-shell-tube-external-report .api510-section-heading-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr);
+    gap: 12px;
+    align-items: start;
+}
+
+.api510-shell-tube-external-report .api510-component-grid {
+    margin-top: 12px;
+}
+
+.api510-shell-tube-external-report .api510-component-card {
+    border-width: 2px;
+}
+
+.api510-shell-tube-external-report .api510-component-card summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.api510-shell-tube-external-report .api510-component-card-default {
+    border-color: #9db8d8;
+    background: #f8fbff;
+}
+
+.api510-shell-tube-external-report .api510-component-card-optional {
+    border-color: #d7dde7;
+}
+
+.api510-shell-tube-external-report .api510-summary-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 12px;
+    margin: 0;
+}
+
+.api510-shell-tube-external-report .api510-summary-list dt {
+    color: #25364d;
+    font-weight: 700;
+}
+
+.api510-shell-tube-external-report .api510-summary-list dd {
+    margin: 0;
+}
+
+@media (max-width: 1100px) {
+    .api510-shell-tube-external-report .api510-report-header-sticky,
+    .api510-shell-tube-external-report .api510-report-layout,
+    .api510-shell-tube-external-report .api510-section-heading-row {
+        grid-template-columns: 1fr;
+    }
+
+    .api510-shell-tube-external-report .api510-report-sidebar {
+        position: static;
+    }
+}

@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../App';
+import { API510_SHELL_TUBE_EXTERNAL_REPORT_LOCAL_STORAGE_KEY } from '../reporting/Api510ShellTubeExternalReportPage';
 import { API_INSPECTION_DRAFT_SETUP_STORAGE_KEY } from '../reporting/componentCalculationPrefill';
 
 vi.mock('../api', async () => {
@@ -78,6 +79,76 @@ describe('Api510ShellTubeExternalReportPage', () => {
 
     expect(screen.getByRole('heading', { name: 'API 510 Shell-and-Tube External Report' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Report Header' })).toBeInTheDocument();
+  });
+
+  it('renders sticky header layout elements, report actions, and summary sidebar', () => {
+    storeDraft();
+    renderRoute();
+
+    expect(screen.getByLabelText('Sticky report header')).toBeInTheDocument();
+    expect(screen.getByLabelText('Report sidebar')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Report Actions' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'iE Assist' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Summary Warnings' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Save Draft Locally' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Export Word Report' })[0]).toBeDisabled();
+    expect(screen.getByText('Word export will be connected after report persistence is finalized.')).toBeInTheDocument();
+  });
+
+  it('section navigation and component quick links appear', () => {
+    storeDraft();
+    renderRoute();
+
+    const sectionNav = screen.getByLabelText('Report sections');
+    expect(within(sectionNav).getByText('Section navigation')).toBeInTheDocument();
+    expect(within(sectionNav).getByRole('link', { name: 'Report Header' })).toHaveAttribute('href', '#report-header');
+    expect(within(sectionNav).getByRole('link', { name: 'Calculations' })).toHaveAttribute('href', '#calculations');
+
+    const componentLinks = screen.getByLabelText('Component quick links');
+    expect(within(componentLinks).getByRole('link', { name: 'Shell' })).toHaveAttribute('href', '#component-shell');
+    expect(within(componentLinks).getByRole('link', { name: 'Shell Cover' })).toHaveAttribute('href', '#component-shell-cover');
+  });
+
+  it('local save button stores state and shows timestamp', () => {
+    storeDraft();
+    vi.setSystemTime(new Date('2026-05-18T12:34:56.000Z'));
+    renderRoute();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Save Draft Locally' })[0]);
+
+    const saved = window.localStorage.getItem(API510_SHELL_TUBE_EXTERNAL_REPORT_LOCAL_STORAGE_KEY);
+    expect(saved).not.toBeNull();
+    expect(JSON.parse(saved as string)).toMatchObject({
+      reportTypeId: 'api510.external.exchanger.shell-tube',
+      savedAt: '2026-05-18T12:34:56.000Z',
+      calculationSnapshotCount: 0,
+      findingDraftCount: 0
+    });
+    expect(screen.getByText(/Last Saved:/)).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it('summary preview counts components, calculations, findings, and checklist fields', () => {
+    storeDraft();
+    renderRoute();
+
+    const summary = screen.getByLabelText('Report Summary Preview');
+    expect(within(summary).getByText('Selected Components')).toBeInTheDocument();
+    expect(within(summary).getByText('Calculation Snapshots')).toBeInTheDocument();
+    expect(within(summary).getByText('Finding Drafts')).toBeInTheDocument();
+    expect(within(summary).getAllByText('0').length).toBeGreaterThanOrEqual(7);
+    expect(within(summary).getAllByText('Shell').length).toBeGreaterThanOrEqual(1);
+    expect(within(summary).getByText('Shell Cover')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Shell Repair Required'));
+    fireEvent.click(screen.getByLabelText('Shell Photo Required'));
+
+    expect(JSON.parse(window.localStorage.getItem(API510_SHELL_TUBE_EXTERNAL_REPORT_LOCAL_STORAGE_KEY) ?? 'null')).toBeNull();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Save Draft Locally' })[0]);
+    const saved = JSON.parse(window.localStorage.getItem(API510_SHELL_TUBE_EXTERNAL_REPORT_LOCAL_STORAGE_KEY) as string);
+    expect(saved.checklistCounts['Repair Required']).toBe(1);
+    expect(saved.checklistCounts['Photo Required']).toBe(1);
+    expect(saved.components).toHaveLength(5);
   });
 
   it('Draft setup fields appear in header, design, and material sections', () => {

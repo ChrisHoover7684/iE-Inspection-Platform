@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ApiError, reportingApi } from './api';
 import { exportFieldCatalogWordReview } from './reporting/fieldCatalogWordExport';
 import type { InspectionReport } from './types';
+import { ApiInspectionReportStartWizard } from './reporting/ApiInspectionReportStartWizard';
 
 type SortColumn =
   | 'reportNumber'
@@ -319,7 +320,7 @@ export function ApiInspectionReportsPage() {
             onChange={(event) => setSearchTerm(event.target.value)}
           />
           <button type="button" className="new-report-btn" onClick={() => navigate('/reports/api-570-piping-external')}>
-            New Report
+            Open API 570 Piping External
           </button>
           <button type="button" className="new-report-btn" onClick={() => navigate('/reports/api-510-shell-tube-workspace')}>
             API 510 Shell-and-Tube Calculation Workspace
@@ -341,6 +342,9 @@ export function ApiInspectionReportsPage() {
             <article className="card"><h3>Recommendations</h3><p>{statusCounts.recommendations}</p></article>
             </div>
           </section>
+
+
+          <ApiInspectionReportStartWizard />
 
           <section className="card reports-panel dashboard-reports-section">
             <div className="reports-filters">
@@ -374,7 +378,7 @@ export function ApiInspectionReportsPage() {
               <button type="button" disabled={selectedReportIds.length === 0}>Change Status</button>
             </div>
 
-            {error && <p className="error">{error}</p>}
+            {error && <p className="error">Report list error: {error}</p>}
             {isLoading ? <p>Loading reports...</p> : (
               <div className="reports-table-wrap">
                 <table>

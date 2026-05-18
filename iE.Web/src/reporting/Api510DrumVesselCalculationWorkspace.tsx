@@ -35,12 +35,13 @@ export function Api510DrumVesselCalculationWorkspace({ fieldValues = {}, hasRepo
   const [parentComponent, setParentComponent] = useState('shell');
   const [nozzleLocation, setNozzleLocation] = useState('shell');
   const [calculationType, setCalculationType] = useState<Api510CalculationType>('ug-27-shell-tmin');
-  const [inputs, setInputs] = useState<Record<string, unknown>>({ headType: 'Ellipsoidal2To1' });
+  const [designConditions, setDesignConditions] = useState<CalculationFieldValuesMap>({});
+  const [inputs, setInputs] = useState<Record<string, unknown>>({ headType: 'Ellipsoidal2To1', designCode: 'ASME_VIII_DIV1', stressEra: 'From1999Onward' });
   const [execution, setExecution] = useState<ComponentCalculationExecutionResult | null>(null);
   const [savedSnapshotIds, setSavedSnapshotIds] = useState<Set<string>>(new Set());
   const [actionMessage, setActionMessage] = useState('');
 
-  const prefill = useMemo(() => buildComponentCalculationPrefill(equipmentSubtype, componentKey, 'shared', componentKey === 'nozzles' ? parentComponent : undefined, componentKey === 'nozzles' ? nozzleLocation : undefined, fieldValues), [equipmentSubtype, componentKey, parentComponent, nozzleLocation, fieldValues]);
+  const prefill = useMemo(() => buildComponentCalculationPrefill(equipmentSubtype, componentKey, 'shared', componentKey === 'nozzles' ? parentComponent : undefined, componentKey === 'nozzles' ? nozzleLocation : undefined, { ...fieldValues, ...(hasReportContext ? {} : { 'api510.external.drum-vessel.design-pressure': designConditions.vesselDesignPressure, 'api510.external.drum-vessel.design-temperature': designConditions.vesselDesignTemperature }) }), [equipmentSubtype, componentKey, parentComponent, nozzleLocation, fieldValues, hasReportContext, designConditions]);
   const canExecute = calculationType !== 'review-only';
   const onRun = async () => {
     if (!prefill || !canExecute) return;
@@ -94,16 +95,28 @@ export function Api510DrumVesselCalculationWorkspace({ fieldValues = {}, hasRepo
       <option value="review-only">Review Only</option>
     </select></label>
 
-    {calculationType === 'ug-27-shell-tmin' && ['allowableStressPsi','jointEfficiency','insideDiameterIn','outsideDiameterIn','originalThicknessIn','providedThicknessIn','corrosionAllowanceIn'].map((k) => <label key={k}>{k}<input aria-label={k} value={String(inputs[k] ?? '')} onChange={(e) => setInputs((p) => ({...p,[k]: e.target.value}))} /></label>)}
+
+    {!hasReportContext && <fieldset><legend>Design Conditions</legend><label>Vessel Design Pressure<input aria-label="Vessel Design Pressure" value={String(designConditions.vesselDesignPressure ?? '')} onChange={(e)=>setDesignConditions((p)=>({...p,vesselDesignPressure:e.target.value}))} /></label><label>Vessel Design Temperature<input aria-label="Vessel Design Temperature" value={String(designConditions.vesselDesignTemperature ?? '')} onChange={(e)=>setDesignConditions((p)=>({...p,vesselDesignTemperature:e.target.value}))} /></label></fieldset>}
+
+    <fieldset><legend>Material Allowable Stress Resolution</legend>
+      {['designCode','stressEra','materialSpec','materialGrade','productForm','alloyUNS','classConditionTemper','resolvedAllowableStressPsi'].map((k) => <label key={k}>{k === 'materialSpec' ? 'Material Specification' : k === 'materialGrade' ? 'Grade' : k === 'productForm' ? 'Product Form' : k === 'resolvedAllowableStressPsi' ? 'Resolved Allowable Stress' : k}<input aria-label={k === 'resolvedAllowableStressPsi' ? 'Resolved Allowable Stress' : k} value={String(inputs[k] ?? '')} onChange={(e) => setInputs((p) => ({...p,[k]: e.target.value}))} /></label>)}
+      <label><input type="checkbox" aria-label="Use manual allowable stress override" checked={Boolean(inputs.useManualAllowableStressOverride)} onChange={(e)=>setInputs((p)=>({...p,useManualAllowableStressOverride:e.target.checked}))} />Use manual allowable stress override</label>
+      {Boolean(inputs.useManualAllowableStressOverride) && <>
+        <label>allowableStressPsi<input aria-label="allowableStressPsi" value={String(inputs.allowableStressPsi ?? '')} onChange={(e)=>setInputs((p)=>({...p,allowableStressPsi:e.target.value}))} /></label>
+        <label>overrideReason<input aria-label="overrideReason" value={String(inputs.overrideReason ?? '')} onChange={(e)=>setInputs((p)=>({...p,overrideReason:e.target.value}))} /></label>
+      </>}
+    </fieldset>
+
+    {calculationType === 'ug-27-shell-tmin' && ['jointEfficiency','insideDiameterIn','outsideDiameterIn','originalThicknessIn','providedThicknessIn','corrosionAllowanceIn'].map((k) => <label key={k}>{k}<input aria-label={k} value={String(inputs[k] ?? '')} onChange={(e) => setInputs((p) => ({...p,[k]: e.target.value}))} /></label>)}
 
     {calculationType === 'ug-32-formed-head-tmin' && <>
       <label>Head Type<select aria-label="Head Type" value={String(inputs.headType ?? 'Ellipsoidal2To1')} onChange={(e) => setInputs((p) => ({ ...p, headType: e.target.value }))}>{headTypeOptions.map((h) => <option key={h.value} value={h.value}>{h.label}</option>)}</select></label>
-      {['allowableStressPsi','jointEfficiency','originalThicknessIn','providedThicknessIn','corrosionAllowanceIn'].map((k) => <label key={k}>{k}<input aria-label={k} value={String(inputs[k] ?? '')} onChange={(e) => setInputs((p) => ({...p,[k]: e.target.value}))} /></label>)}
+      {['jointEfficiency','originalThicknessIn','providedThicknessIn','corrosionAllowanceIn'].map((k) => <label key={k}>{k}<input aria-label={k} value={String(inputs[k] ?? '')} onChange={(e) => setInputs((p) => ({...p,[k]: e.target.value}))} /></label>)}
       {visibleHeadGeometryFields.map((k) => <label key={k}>{k}<input aria-label={k} value={String(inputs[k] ?? '')} onChange={(e) => setInputs((p) => ({...p,[k]: e.target.value}))} /></label>)}
     </>}
 
     {calculationType === 'ug-45-nozzle-neck-tmin' && <>
-      {['allowableStressPsi','parentThicknessSource','shellOrHeadRequiredThicknessIn','shellOrHeadExternalRequiredThicknessIn','outsideDiameterIn','insideDiameterIn','nominalThicknessIn','originalThicknessIn','nominalPipeSize','corrosionAllowanceIn','jointEfficiency','externalPressurePsi','ug16MinimumThicknessIn','ug45TableMinimumThicknessIn'].map((k) => <label key={k}>{k}<input aria-label={k} value={String(inputs[k] ?? '')} onChange={(e) => setInputs((p) => ({...p,[k]: e.target.value}))} /></label>)}
+      {['parentThicknessSource','shellOrHeadRequiredThicknessIn','shellOrHeadExternalRequiredThicknessIn','outsideDiameterIn','insideDiameterIn','nominalThicknessIn','originalThicknessIn','nominalPipeSize','corrosionAllowanceIn','jointEfficiency','externalPressurePsi','ug16MinimumThicknessIn','ug45TableMinimumThicknessIn'].map((k) => <label key={k}>{k}<input aria-label={k} value={String(inputs[k] ?? '')} onChange={(e) => setInputs((p) => ({...p,[k]: e.target.value}))} /></label>)}
     </>}
 
     {!canExecute && <div>Review-only component. Calculation execution is disabled.</div>}

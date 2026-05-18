@@ -24,7 +24,11 @@ export function Api510ShellTubeCalculationWorkspace({ fieldValues = {}, hasRepor
   const [parentComponent, setParentComponent] = useState('shell');
   const [nozzleLocation, setNozzleLocation] = useState('shell');
   const [calculationType, setCalculationType] = useState<Api510CalculationType>('ug-27-shell-tmin');
-  const [inputs, setInputs] = useState<Record<string, unknown>>({});
+  const [designConditions, setDesignConditions] = useState<CalculationFieldValuesMap>({});
+  const [inputs, setInputs] = useState<Record<string, unknown>>({
+    designCode: 'ASME_VIII_DIV1',
+    stressEra: 'From1999Onward'
+  });
   const [execution, setExecution] = useState<ComponentCalculationExecutionResult | null>(null);
   const [savedSnapshotIds, setSavedSnapshotIds] = useState<Set<string>>(new Set());
   const [actionMessage, setActionMessage] = useState('');
@@ -35,8 +39,16 @@ export function Api510ShellTubeCalculationWorkspace({ fieldValues = {}, hasRepor
     pressureSide,
     componentKey === 'nozzles' ? parentComponent : undefined,
     componentKey === 'nozzles' ? nozzleLocation : undefined,
-    fieldValues
-  ), [componentKey, pressureSide, parentComponent, nozzleLocation, fieldValues]);
+    {
+      ...fieldValues,
+      ...(hasReportContext ? {} : {
+        'api510.external.exchanger.shell-tube.shell-side.design-pressure': designConditions.shellSideDesignPressure,
+        'api510.external.exchanger.shell-tube.shell-side.design-temperature': designConditions.shellSideDesignTemperature,
+        'api510.external.exchanger.shell-tube.tube-side.design-pressure': designConditions.tubeSideDesignPressure,
+        'api510.external.exchanger.shell-tube.tube-side.design-temperature': designConditions.tubeSideDesignTemperature
+      })
+    }
+  ), [componentKey, pressureSide, parentComponent, nozzleLocation, fieldValues, hasReportContext, designConditions]);
 
   const onRun = async () => {
     if (!prefill) return;
@@ -104,11 +116,28 @@ export function Api510ShellTubeCalculationWorkspace({ fieldValues = {}, hasRepor
     {[...(prefill?.missingRequiredInputWarnings ?? []), ...(prefill?.designPressureValue === undefined ? ['Design pressure value is not available from selected source.'] : []), ...(prefill?.designTemperatureValue === undefined ? ['Design temperature value is not available from selected source.'] : [])].map((w) => <div key={w}>warning: {w}</div>)}
     {prefill?.notes.map((n) => <div key={n}>note: {n}</div>)}
 
+    {!hasReportContext && <fieldset><legend>Design Conditions</legend>
+      <label>Shell-Side Design Pressure<input aria-label="Shell-Side Design Pressure" value={String(designConditions.shellSideDesignPressure ?? '')} onChange={(e)=>setDesignConditions((p)=>({...p,shellSideDesignPressure:e.target.value}))} /></label>
+      <label>Shell-Side Design Temperature<input aria-label="Shell-Side Design Temperature" value={String(designConditions.shellSideDesignTemperature ?? '')} onChange={(e)=>setDesignConditions((p)=>({...p,shellSideDesignTemperature:e.target.value}))} /></label>
+      <label>Tube-Side Design Pressure<input aria-label="Tube-Side Design Pressure" value={String(designConditions.tubeSideDesignPressure ?? '')} onChange={(e)=>setDesignConditions((p)=>({...p,tubeSideDesignPressure:e.target.value}))} /></label>
+      <label>Tube-Side Design Temperature<input aria-label="Tube-Side Design Temperature" value={String(designConditions.tubeSideDesignTemperature ?? '')} onChange={(e)=>setDesignConditions((p)=>({...p,tubeSideDesignTemperature:e.target.value}))} /></label>
+    </fieldset>}
+
+    <fieldset><legend>Material Allowable Stress Resolution</legend>
+      {['designCode','stressEra','materialSpec','materialGrade','productForm','alloyUNS','classConditionTemper','resolvedAllowableStressPsi'].map((k) => <label key={k}>{k === 'materialSpec' ? 'Material Specification' : k === 'materialGrade' ? 'Grade' : k === 'productForm' ? 'Product Form' : k === 'resolvedAllowableStressPsi' ? 'Resolved Allowable Stress' : k}<input aria-label={k === 'resolvedAllowableStressPsi' ? 'Resolved Allowable Stress' : k} value={String(inputs[k] ?? '')} onChange={(e) => setInputs((p) => ({...p,[k]: e.target.value}))} /></label>)}
+      <div>Source/Warnings: {String(inputs.materialResolutionMessage ?? '')}</div>
+      <label><input type="checkbox" aria-label="Use manual allowable stress override" checked={Boolean(inputs.useManualAllowableStressOverride)} onChange={(e)=>setInputs((p)=>({...p,useManualAllowableStressOverride:e.target.checked}))} />Use manual allowable stress override</label>
+      {Boolean(inputs.useManualAllowableStressOverride) && <>
+        <label>allowableStressPsi<input aria-label="allowableStressPsi" value={String(inputs.allowableStressPsi ?? '')} onChange={(e)=>setInputs((p)=>({...p,allowableStressPsi:e.target.value}))} /></label>
+        <label>overrideReason<input aria-label="overrideReason" value={String(inputs.overrideReason ?? '')} onChange={(e)=>setInputs((p)=>({...p,overrideReason:e.target.value}))} /></label>
+      </>}
+    </fieldset>
+
     {showUg27 && <>
-      {['allowableStressPsi','jointEfficiency','insideDiameterIn','outsideDiameterIn','originalThicknessIn','providedThicknessIn','corrosionAllowanceIn','diameterBasis'].map((k) => <label key={k}>{k}<input aria-label={k} value={String(inputs[k] ?? '')} onChange={(e) => setInputs((p) => ({...p,[k]: e.target.value}))} /></label>)}
+      {['jointEfficiency','insideDiameterIn','outsideDiameterIn','originalThicknessIn','providedThicknessIn','corrosionAllowanceIn','diameterBasis'].map((k) => <label key={k}>{k}<input aria-label={k} value={String(inputs[k] ?? '')} onChange={(e) => setInputs((p) => ({...p,[k]: e.target.value}))} /></label>)}
     </>}
     {showUg45 && <>
-      {['allowableStressPsi','parentThicknessSource','shellOrHeadRequiredThicknessIn','shellOrHeadExternalRequiredThicknessIn','outsideDiameterIn','insideDiameterIn','nominalThicknessIn','originalThicknessIn','nominalPipeSize','corrosionAllowanceIn','jointEfficiency','externalPressurePsi','ug16MinimumThicknessIn','ug45TableMinimumThicknessIn'].map((k) => <label key={k}>{k}<input aria-label={k} value={String(inputs[k] ?? '')} onChange={(e) => setInputs((p) => ({...p,[k]: e.target.value}))} /></label>)}
+      {['parentThicknessSource','shellOrHeadRequiredThicknessIn','shellOrHeadExternalRequiredThicknessIn','outsideDiameterIn','insideDiameterIn','nominalThicknessIn','originalThicknessIn','nominalPipeSize','corrosionAllowanceIn','jointEfficiency','externalPressurePsi','ug16MinimumThicknessIn','ug45TableMinimumThicknessIn'].map((k) => <label key={k}>{k}<input aria-label={k} value={String(inputs[k] ?? '')} onChange={(e) => setInputs((p) => ({...p,[k]: e.target.value}))} /></label>)}
       <label><input aria-label="externalPressureNotApplicable" type="checkbox" onChange={(e) => setInputs((p) => ({...p,externalPressureApplicable: !e.target.checked}))} />External pressure not applicable</label>
       <label><input aria-label="ug16NotApplicable" type="checkbox" onChange={(e) => setInputs((p) => ({...p,ug16MinimumThicknessApplicable: !e.target.checked}))} />UG-16 minimum not applicable</label>
     </>}

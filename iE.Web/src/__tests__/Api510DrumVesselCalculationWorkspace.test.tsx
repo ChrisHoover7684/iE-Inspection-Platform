@@ -63,3 +63,20 @@ describe('Api510DrumVesselCalculationWorkspace', () => {
     expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ equipmentSubtype: 'Vertical Drum', componentKey: 'shell' }));
   });
 });
+
+
+it('standalone vessel design conditions are passed via panel', async () => {
+  vi.mocked(executeApi510ComponentCalculation).mockResolvedValueOnce({ success: true, calculationType: 'ug-27-shell-tmin', componentKey: 'shell', componentLabel: 'Shell', pressureSide: 'shared', inputsUsed: {}, resultSummary: 'ok', warnings: [] } as any);
+  render(<Api510DrumVesselCalculationWorkspace hasReportContext={false} />);
+  fireEvent.change(screen.getByLabelText('Vessel Design Pressure'), { target: { value: '200' } });
+  fireEvent.change(screen.getByLabelText('Vessel Design Temperature'), { target: { value: '600' } });
+  fireEvent.change(screen.getByLabelText('Resolved Allowable Stress'), { target: { value: '16000' } });
+  fireEvent.change(screen.getByLabelText('jointEfficiency'), { target: { value: '1' } });
+  fireEvent.change(screen.getByLabelText('insideDiameterIn'), { target: { value: '48' } });
+  fireEvent.change(screen.getByLabelText('outsideDiameterIn'), { target: { value: '48.5' } });
+  fireEvent.change(screen.getByLabelText('originalThicknessIn'), { target: { value: '0.5' } });
+  fireEvent.change(screen.getByLabelText('providedThicknessIn'), { target: { value: '0.5' } });
+  fireEvent.change(screen.getByLabelText('corrosionAllowanceIn'), { target: { value: '0' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Run Calculation' }));
+  expect(vi.mocked(executeApi510ComponentCalculation)).toHaveBeenCalledWith(expect.objectContaining({ prefill: expect.objectContaining({ designPressureValue: '200', designTemperatureValue: '600' }) }));
+});

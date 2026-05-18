@@ -1,0 +1,93 @@
+import { useMemo, useState } from 'react';
+import { buildComponentCalculationPrefill, type CalculationFieldValuesMap } from './componentCalculationPrefill';
+import { executeApi510ComponentCalculation, type Api510CalculationType, type ComponentCalculationExecutionResult } from './componentCalculationExecution';
+
+type Props = {
+  fieldValues?: CalculationFieldValuesMap;
+  hasReportContext?: boolean;
+  onSaveSnapshot?: (snapshot: unknown) => void;
+};
+
+const shellTubeComponents = [
+  { key: 'shell', label: 'Shell' },
+  { key: 'nozzles', label: 'Nozzles' }
+] as const;
+
+export function Api510ShellTubeCalculationWorkspace({ fieldValues = {}, hasReportContext = false, onSaveSnapshot }: Props) {
+  const [componentKey, setComponentKey] = useState('shell');
+  const [pressureSide, setPressureSide] = useState<'shell-side'|'tube-side'>('shell-side');
+  const [parentComponent, setParentComponent] = useState('shell');
+  const [nozzleLocation, setNozzleLocation] = useState('shell');
+  const [calculationType, setCalculationType] = useState<Api510CalculationType>('ug-27-shell-tmin');
+  const [inputs, setInputs] = useState<Record<string, unknown>>({});
+  const [execution, setExecution] = useState<ComponentCalculationExecutionResult | null>(null);
+
+  const prefill = useMemo(() => buildComponentCalculationPrefill(
+    'Shell and Tube Exchanger',
+    componentKey,
+    pressureSide,
+    componentKey === 'nozzles' ? parentComponent : undefined,
+    componentKey === 'nozzles' ? nozzleLocation : undefined,
+    fieldValues
+  ), [componentKey, pressureSide, parentComponent, nozzleLocation, fieldValues]);
+
+  const onRun = async () => {
+    if (!prefill) return;
+    const result = await executeApi510ComponentCalculation({ prefill, calculationType, manualInputs: inputs });
+    setExecution(result);
+  };
+
+  const showUg27 = calculationType === 'ug-27-shell-tmin';
+  const showUg45 = calculationType === 'ug-45-nozzle-neck-tmin';
+
+  return <section>
+    <h2>API 510 Shell-and-Tube Calculation Workspace</h2>
+    <label>Component
+      <select aria-label="Component" value={componentKey} onChange={(e) => {
+        const next = e.target.value;
+        setComponentKey(next);
+        setCalculationType(next === 'nozzles' ? 'ug-45-nozzle-neck-tmin' : 'ug-27-shell-tmin');
+      }}>
+        {shellTubeComponents.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
+      </select>
+    </label>
+    <label>Pressure Side<select aria-label="Pressure Side" value={pressureSide} onChange={(e) => setPressureSide(e.target.value as 'shell-side'|'tube-side')}><option value="shell-side">shell-side</option><option value="tube-side">tube-side</option></select></label>
+    {componentKey === 'nozzles' && <>
+      <label>Parent Component<select aria-label="Parent Component" value={parentComponent} onChange={(e) => setParentComponent(e.target.value)}><option value="shell">shell</option><option value="channel-channel-head">channel-channel-head</option><option value="shell-cover">shell-cover</option><option value="bonnet-head">bonnet-head</option></select></label>
+      <label>Nozzle Location<select aria-label="Nozzle Location" value={nozzleLocation} onChange={(e) => setNozzleLocation(e.target.value)}><option value="shell">shell</option><option value="channel-channel-head">channel-channel-head</option><option value="bonnet-head">bonnet-head</option><option value="tubesheet-area">tubesheet-area</option></select></label>
+    </>}
+    <label>Calculation Type<select aria-label="Calculation Type" value={calculationType} onChange={(e) => setCalculationType(e.target.value as Api510CalculationType)}>
+      <option value="ug-27-shell-tmin">UG-27 Shell Tmin</option>
+      <option value="ug-45-nozzle-neck-tmin">UG-45 Nozzle Neck Tmin</option>
+      <option value="review-only">Review Only</option>
+    </select></label>
+
+    <div>Resolved Pressure Side: {prefill?.resolvedPressureSide ?? 'n/a'}</div>
+    <div>Design Pressure: {prefill?.designPressureFieldTag ?? 'n/a'} = {String(prefill?.designPressureValue ?? 'n/a')}</div>
+    <div>Design Temperature: {prefill?.designTemperatureFieldTag ?? 'n/a'} = {String(prefill?.designTemperatureValue ?? 'n/a')}</div>
+    <div>Tmin supported: {String(prefill?.supportsTminCalculation ?? false)}</div>
+    <div>UG-45 supported: {String(prefill?.supportsUg45 ?? false)}</div>
+    {[...(prefill?.missingRequiredInputWarnings ?? []), ...(prefill?.designPressureValue === undefined ? ['Design pressure value is not available from selected source.'] : []), ...(prefill?.designTemperatureValue === undefined ? ['Design temperature value is not available from selected source.'] : [])].map((w) => <div key={w}>warning: {w}</div>)}
+    {prefill?.notes.map((n) => <div key={n}>note: {n}</div>)}
+
+    {showUg27 && <>
+      {['allowableStressPsi','jointEfficiency','insideDiameterIn','outsideDiameterIn','originalThicknessIn','providedThicknessIn','corrosionAllowanceIn','diameterBasis'].map((k) => <label key={k}>{k}<input aria-label={k} value={String(inputs[k] ?? '')} onChange={(e) => setInputs((p) => ({...p,[k]: e.target.value}))} /></label>)}
+    </>}
+    {showUg45 && <>
+      {['allowableStressPsi','parentThicknessSource','shellOrHeadRequiredThicknessIn','shellOrHeadExternalRequiredThicknessIn','outsideDiameterIn','insideDiameterIn','nominalThicknessIn','originalThicknessIn','nominalPipeSize','corrosionAllowanceIn','jointEfficiency','externalPressurePsi','ug16MinimumThicknessIn','ug45TableMinimumThicknessIn'].map((k) => <label key={k}>{k}<input aria-label={k} value={String(inputs[k] ?? '')} onChange={(e) => setInputs((p) => ({...p,[k]: e.target.value}))} /></label>)}
+      <label><input aria-label="externalPressureNotApplicable" type="checkbox" onChange={(e) => setInputs((p) => ({...p,externalPressureApplicable: !e.target.checked}))} />External pressure not applicable</label>
+      <label><input aria-label="ug16NotApplicable" type="checkbox" onChange={(e) => setInputs((p) => ({...p,ug16MinimumThicknessApplicable: !e.target.checked}))} />UG-16 minimum not applicable</label>
+    </>}
+
+    <button onClick={onRun}>Run Calculation</button>
+    <button disabled={!hasReportContext || !execution?.snapshotReadyPayload} onClick={() => execution?.snapshotReadyPayload && onSaveSnapshot?.(execution.snapshotReadyPayload)}>Save Calculation Snapshot</button>
+
+    {execution && <>
+      <div>Execution: {execution.success ? 'success' : 'failure'}</div>
+      <div>Summary: {execution.resultSummary}</div>
+      {execution.warnings.map((w) => <div key={w}>exec warning: {w}</div>)}
+      <div>Snapshot Preview: {execution.snapshotReadyPayload ? 'available' : 'none'}</div>
+      <div>Source Tags: {prefill?.designPressureFieldTag} / {prefill?.designTemperatureFieldTag}</div>
+    </>}
+  </section>;
+}

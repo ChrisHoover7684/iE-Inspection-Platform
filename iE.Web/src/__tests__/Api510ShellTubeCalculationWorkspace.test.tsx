@@ -1,17 +1,48 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Api510ShellTubeCalculationWorkspace } from '../reporting/Api510ShellTubeCalculationWorkspace';
 import { executeApi510ComponentCalculation } from '../reporting/componentCalculationExecution';
+import { API_INSPECTION_DRAFT_SETUP_STORAGE_KEY } from '../reporting/componentCalculationPrefill';
 
 vi.mock('../reporting/componentCalculationExecution', async () => {
   const actual = await vi.importActual<typeof import('../reporting/componentCalculationExecution')>('../reporting/componentCalculationExecution');
   return { ...actual, executeApi510ComponentCalculation: vi.fn() };
 });
 
+afterEach(() => {
+  window.localStorage.removeItem(API_INSPECTION_DRAFT_SETUP_STORAGE_KEY);
+});
+
 describe('Api510ShellTubeCalculationWorkspace', () => {
   it('workspace renders component selector', () => {
     render(<Api510ShellTubeCalculationWorkspace />);
     expect(screen.getByLabelText('Component')).toBeInTheDocument();
+  });
+
+  it('reads draft shell and tube design conditions and selected components', () => {
+    window.localStorage.setItem(API_INSPECTION_DRAFT_SETUP_STORAGE_KEY, JSON.stringify({
+      reportTypeId: 'api510.external.exchanger.shell-tube',
+      reportTypeLabel: 'Shell and Tube Exchanger External',
+      header: {
+        shellSideDesignPressure: '150',
+        shellSideDesignTemperature: '450',
+        tubeSideDesignPressure: '275',
+        tubeSideDesignTemperature: '625'
+      },
+      components: ['Shell', 'Channel / Channel Head', 'Nozzles', 'Shell Cover']
+    }));
+
+    render(<Api510ShellTubeCalculationWorkspace />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('Using draft setup from Start Wizard');
+    expect(screen.getByText('Design Pressure: api510.external.exchanger.shell-tube.shell-side.design-pressure = 150')).toBeInTheDocument();
+    expect(screen.getByText('Design Temperature: api510.external.exchanger.shell-tube.shell-side.design-temperature = 450')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Component'), { target: { value: 'nozzles' } });
+    fireEvent.change(screen.getByLabelText('Parent Component'), { target: { value: 'channel-channel-head' } });
+    fireEvent.change(screen.getByLabelText('Pressure Side'), { target: { value: 'tube-side' } });
+    expect(screen.getByText('Design Pressure: api510.external.exchanger.shell-tube.tube-side.design-pressure = 275')).toBeInTheDocument();
+    expect(screen.getByText('Design Temperature: api510.external.exchanger.shell-tube.tube-side.design-temperature = 625')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Draft Selected Components' })).toHaveTextContent('Shell Cover');
   });
 
   it('Save Snapshot enabled only with report context and snapshot payload; callback receives snapshot', async () => {
@@ -98,6 +129,12 @@ describe('Api510ShellTubeCalculationWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Run Calculation' }));
     expect(await screen.findByText(/Snapshot Preview: available/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save Calculation Snapshot' })).toBeDisabled();
+  });
+
+  it('standalone workspace does not show draft banner without draft setup', () => {
+    render(<Api510ShellTubeCalculationWorkspace />);
+    expect(screen.queryByText('Using draft setup from Start Wizard')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Shell-Side Design Pressure')).toBeInTheDocument();
   });
 });
 

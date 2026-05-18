@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../App';
+import { API_INSPECTION_DRAFT_SETUP_STORAGE_KEY } from '../reporting/componentCalculationPrefill';
 
 vi.mock('../api', async () => {
   const actual = await vi.importActual<typeof import('../api')>('../api');
@@ -18,6 +19,10 @@ const renderReportsPage = async () => {
   render(<MemoryRouter initialEntries={['/reports']}><App /></MemoryRouter>);
   expect(await screen.findByRole('heading', { name: 'Start New API Inspection Report' })).toBeInTheDocument();
 };
+
+afterEach(() => {
+  window.localStorage.removeItem(API_INSPECTION_DRAFT_SETUP_STORAGE_KEY);
+});
 
 describe('ApiInspectionReportStartWizard', () => {
   it('renders hierarchy on /reports including API 510 external groups and no internal options', async () => {
@@ -103,6 +108,30 @@ describe('ApiInspectionReportStartWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start Draft Report' }));
 
     expect(await screen.findByRole('status')).toHaveTextContent('Draft setup prepared. Full report creation will be connected next.');
+  });
+
+  it('Start Draft Report stores shell-and-tube draft setup for calculation workspace prefill', async () => {
+    await renderReportsPage();
+    fireEvent.click(screen.getByLabelText('Shell and Tube Exchanger External'));
+    fireEvent.change(screen.getByLabelText('Shell Side Design Pressure'), { target: { value: '150' } });
+    fireEvent.change(screen.getByLabelText('Shell Side Design Temperature'), { target: { value: '450' } });
+    fireEvent.change(screen.getByLabelText('Tube Side Design Pressure'), { target: { value: '275' } });
+    fireEvent.change(screen.getByLabelText('Tube Side Design Temperature'), { target: { value: '625' } });
+    fireEvent.click(screen.getByLabelText('Shell Cover'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Draft Report' }));
+
+    const storedDraft = JSON.parse(window.localStorage.getItem(API_INSPECTION_DRAFT_SETUP_STORAGE_KEY) ?? '{}');
+    expect(storedDraft).toMatchObject({
+      reportTypeId: 'api510.external.exchanger.shell-tube',
+      header: {
+        shellSideDesignPressure: '150',
+        shellSideDesignTemperature: '450',
+        tubeSideDesignPressure: '275',
+        tubeSideDesignTemperature: '625'
+      },
+      components: expect.arrayContaining(['Shell', 'Channel / Channel Head', 'Nozzles', 'Shell Cover'])
+    });
   });
 
 

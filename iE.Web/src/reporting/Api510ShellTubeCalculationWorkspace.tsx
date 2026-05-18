@@ -1,5 +1,10 @@
 import { useMemo, useState } from 'react';
-import { buildComponentCalculationPrefill, type CalculationFieldValuesMap } from './componentCalculationPrefill';
+import {
+  buildComponentCalculationPrefill,
+  buildShellTubeDraftWorkspaceContext,
+  readApiInspectionDraftSetup,
+  type CalculationFieldValuesMap
+} from './componentCalculationPrefill';
 import { executeApi510ComponentCalculation, type Api510CalculationType, type ComponentCalculationExecutionResult } from './componentCalculationExecution';
 import { buildApi510FindingDraft, type Api510FindingDraft } from './api510CalculationFindings';
 import type { InspectionCalculationSnapshot } from '../engineering/types';
@@ -19,6 +24,11 @@ const shellTubeComponents = [
 ] as const;
 
 export function Api510ShellTubeCalculationWorkspace({ fieldValues = {}, hasReportContext = false, reportCalculations = [], onSaveSnapshot, onCreateFindingDraft }: Props) {
+  const draftContext = useMemo(() => {
+    if (hasReportContext || Object.keys(fieldValues).length > 0) return undefined;
+    return buildShellTubeDraftWorkspaceContext(readApiInspectionDraftSetup());
+  }, [fieldValues, hasReportContext]);
+  const workspaceFieldValues = useMemo(() => ({ ...draftContext?.fieldValues, ...fieldValues }), [draftContext, fieldValues]);
   const [componentKey, setComponentKey] = useState('shell');
   const [pressureSide, setPressureSide] = useState<'shell-side'|'tube-side'>('shell-side');
   const [parentComponent, setParentComponent] = useState('shell');
@@ -40,15 +50,15 @@ export function Api510ShellTubeCalculationWorkspace({ fieldValues = {}, hasRepor
     componentKey === 'nozzles' ? parentComponent : undefined,
     componentKey === 'nozzles' ? nozzleLocation : undefined,
     {
-      ...fieldValues,
       ...(hasReportContext ? {} : {
         'api510.external.exchanger.shell-tube.shell-side.design-pressure': designConditions.shellSideDesignPressure,
         'api510.external.exchanger.shell-tube.shell-side.design-temperature': designConditions.shellSideDesignTemperature,
         'api510.external.exchanger.shell-tube.tube-side.design-pressure': designConditions.tubeSideDesignPressure,
         'api510.external.exchanger.shell-tube.tube-side.design-temperature': designConditions.tubeSideDesignTemperature
-      })
+      }),
+      ...workspaceFieldValues
     }
-  ), [componentKey, pressureSide, parentComponent, nozzleLocation, fieldValues, hasReportContext, designConditions]);
+  ), [componentKey, pressureSide, parentComponent, nozzleLocation, workspaceFieldValues, hasReportContext, designConditions]);
 
   const onRun = async () => {
     if (!prefill) return;
@@ -88,6 +98,11 @@ export function Api510ShellTubeCalculationWorkspace({ fieldValues = {}, hasRepor
 
   return <section>
     <h2>API 510 Shell-and-Tube Calculation Workspace</h2>
+    {draftContext && <div role="status">Using draft setup from Start Wizard</div>}
+    {draftContext && <section aria-label="Draft Selected Components">
+      <h3>Draft Selected Components</h3>
+      <ul>{draftContext.selectedComponents.map((component) => <li key={component}>{component}</li>)}</ul>
+    </section>}
     <label>Component
       <select aria-label="Component" value={componentKey} onChange={(e) => {
         const next = e.target.value;

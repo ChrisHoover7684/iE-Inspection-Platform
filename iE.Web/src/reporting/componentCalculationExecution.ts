@@ -163,6 +163,14 @@ export async function executeApi510ComponentCalculation({ prefill, calculationTy
     const corrosionAllowanceProvided = hasValue(manualInputs?.corrosionAllowanceIn);
     const corrosionAllowance = toNumber(manualInputs?.corrosionAllowanceIn);
     const supportedHeadTypes = ['Ellipsoidal2To1', 'Hemispherical', 'TorisphericalAsmeFd', 'Conical', 'Toriconical', 'FlatUg34'] as const;
+    const requiredGeometryFieldsByHeadType: Record<(typeof supportedHeadTypes)[number], Array<'effectiveInsideDiameterIn' | 'effectiveInsideRadiusIn' | 'crownRadiusIn' | 'halfApexAngleDeg' | 'flatHeadCFactor'>> = {
+      Ellipsoidal2To1: ['effectiveInsideDiameterIn'],
+      Hemispherical: ['effectiveInsideRadiusIn'],
+      TorisphericalAsmeFd: ['crownRadiusIn'],
+      Conical: ['effectiveInsideDiameterIn', 'halfApexAngleDeg'],
+      Toriconical: ['effectiveInsideDiameterIn', 'halfApexAngleDeg'],
+      FlatUg34: ['effectiveInsideDiameterIn', 'flatHeadCFactor']
+    };
 
     if (!headType) warnings.push('Head type is required for UG-32 head calculation.');
     if (headType && !supportedHeadTypes.includes(headType as (typeof supportedHeadTypes)[number])) warnings.push(`Head type "${headType}" is unsupported by current head API.`);
@@ -170,11 +178,15 @@ export async function executeApi510ComponentCalculation({ prefill, calculationTy
     if (originalThickness === undefined) warnings.push('Original thickness is required for UG-32 head calculation.');
     if (providedThickness === undefined) warnings.push('Provided/current thickness is required for UG-32 head calculation.');
     if (!corrosionAllowanceProvided || corrosionAllowance === undefined) warnings.push('Corrosion allowance is required for UG-32 head calculation (zero allowed when explicitly provided).');
-    if (effectiveInsideDiameter === undefined) warnings.push('Effective inside diameter is required for UG-32 head calculation.');
-    if (effectiveInsideRadius === undefined) warnings.push('Effective inside radius is required for UG-32 head calculation.');
-    if (crownRadius === undefined) warnings.push('Crown radius is required for UG-32 head calculation.');
-    if (halfApexAngle === undefined) warnings.push('Half apex angle is required for UG-32 head calculation.');
-    if (flatHeadCFactor === undefined) warnings.push('Flat head C factor is required for UG-32 head calculation.');
+    const requiredGeometryFields =
+      headType && supportedHeadTypes.includes(headType as (typeof supportedHeadTypes)[number])
+        ? requiredGeometryFieldsByHeadType[headType as (typeof supportedHeadTypes)[number]]
+        : [];
+    if (requiredGeometryFields.includes('effectiveInsideDiameterIn') && effectiveInsideDiameter === undefined) warnings.push('Effective inside diameter is required for UG-32 head calculation.');
+    if (requiredGeometryFields.includes('effectiveInsideRadiusIn') && effectiveInsideRadius === undefined) warnings.push('Effective inside radius is required for UG-32 head calculation.');
+    if (requiredGeometryFields.includes('crownRadiusIn') && crownRadius === undefined) warnings.push('Crown radius is required for UG-32 head calculation.');
+    if (requiredGeometryFields.includes('halfApexAngleDeg') && halfApexAngle === undefined) warnings.push('Half apex angle is required for UG-32 head calculation.');
+    if (requiredGeometryFields.includes('flatHeadCFactor') && flatHeadCFactor === undefined) warnings.push('Flat head C factor is required for UG-32 head calculation.');
     if (warnings.some((w) => w.includes('required') || w.includes('missing') || w.includes('unsupported'))) return fail('UG-32 execution blocked by missing or unsupported required inputs.');
 
     const input = {
@@ -206,8 +218,8 @@ export async function executeApi510ComponentCalculation({ prefill, calculationTy
         id: crypto.randomUUID(), calculationType, displayName: 'API 510 External Tmin Bridge', formulaVersion: 'api510-bridge-v1', calculatedAt: new Date().toISOString(), insertLabel: `${prefill.componentLabel} UG-32 Tmin`,
         standardReferences: [{ standard: 'ASME Section VIII Div 1', paragraph: 'UG-32', note: 'API 510 external bridge execution' }],
         warnings: toSnapshotWarnings(warnings),
-        inputs: { prefill, manualInputs, metadata: { equipmentSubtype: prefill.equipmentSubtype, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, pressureSide: prefill.resolvedPressureSide, vesselSide: 'vessel-side', calculationType, sourceDesignFieldTags: { pressure: prefill.designPressureFieldTag, temperature: prefill.designTemperatureFieldTag }, headType, manualInputsUsed: { ...input, originalThicknessIn: originalThickness } } },
-        outputs: { response, metadata: { equipmentSubtype: prefill.equipmentSubtype, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, pressureSide: prefill.resolvedPressureSide, vesselSide: 'vessel-side', calculationType, headType, manualInputsUsed: { ...input, originalThicknessIn: originalThickness } } },
+        inputs: { prefill, manualInputs, metadata: { equipmentSubtype: prefill.equipmentSubtype, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, pressureSide: prefill.resolvedPressureSide, vesselSide: 'vessel-side', calculationType, sourceDesignFieldTags: { pressure: prefill.designPressureFieldTag, temperature: prefill.designTemperatureFieldTag }, headType, requiredGeometryFields, manualInputsUsed: { ...input, originalThicknessIn: originalThickness } } },
+        outputs: { response, metadata: { equipmentSubtype: prefill.equipmentSubtype, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, pressureSide: prefill.resolvedPressureSide, vesselSide: 'vessel-side', calculationType, headType, requiredGeometryFields, manualInputsUsed: { ...input, originalThicknessIn: originalThickness } } },
         ...snapshotContext
       };
       return { success: true, calculationType, componentKey: prefill.componentKey, componentLabel: prefill.componentLabel, equipmentSubtype: prefill.equipmentSubtype, pressureSide: prefill.resolvedPressureSide, designPressureUsed: pressure, designTemperatureUsed: temperature, inputsUsed: { ...input, originalThicknessIn: originalThickness }, resultSummary: 'UG-32 calculation executed.', warnings, snapshotReadyPayload };

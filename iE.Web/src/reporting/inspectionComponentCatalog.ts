@@ -125,6 +125,15 @@ export const API510_EXTERNAL_COMPONENT_DEFINITIONS: InspectionComponentDefinitio
       reviewNotes: 'Shared/interface region; review only unless a specific calculation method is selected.'
     });
   }
+
+  if (d.fieldTagPrefix.startsWith('api510.external.drum-vessel.')) {
+    if (d.componentKey === 'shell') return ({ ...d, pressureBoundarySide: 'shared', supportsTminCalculation: true, tminCalculationMethod: 'UG-27 cylindrical shell', designPressureFieldTag: 'api510.external.drum-vessel.design-pressure', designTemperatureFieldTag: 'api510.external.drum-vessel.design-temperature' });
+    if (d.componentKey === 'heads') return ({ ...d, pressureBoundarySide: 'shared', supportsTminCalculation: true, tminCalculationMethod: 'UG-32 formed head', designPressureFieldTag: 'api510.external.drum-vessel.design-pressure', designTemperatureFieldTag: 'api510.external.drum-vessel.design-temperature' });
+    if (d.componentKey === 'nozzles') return ({ ...d, pressureBoundarySide: 'shared', parentComponentRequired: true, allowedParentComponentKeys: ['shell', 'heads'], nozzleLocationRequired: true, nozzleLocationOptions: ['shell', 'heads'], designConditionSourceOptions: ['vessel-side'], parentThicknessSourceOptions: ['selected-parent', 'manual-entry'], supportsTminCalculation: true, tminCalculationMethod: 'UG-45 nozzle neck minimum thickness', supportsNozzleUg45: true, designPressureFieldTag: 'api510.external.drum-vessel.design-pressure', designTemperatureFieldTag: 'api510.external.drum-vessel.design-temperature' });
+    if (['saddles-supports','skirt-legs-supports','supports','manway'].includes(d.componentKey)) return ({ ...d, pressureBoundarySide: 'shared', supportsTminCalculation: false, tminCalculationMethod: 'review only for first-pass drum/vessel workflow', reviewNotes: 'Review-only component for first-pass API 510 external drum/vessel workflow.' });
+    return ({ ...d, pressureBoundarySide: 'shared', designPressureFieldTag: 'api510.external.drum-vessel.design-pressure', designTemperatureFieldTag: 'api510.external.drum-vessel.design-temperature' });
+  }
+
   if (d.componentKey !== 'nozzles') return d;
   if (d.equipmentSubtype === 'Shell and Tube Exchanger') return ({
     ...d,

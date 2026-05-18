@@ -792,6 +792,38 @@ describe('inspection field catalog', () => {
     expect(values['api570.external.piping.component.condition']).toBe('Acceptable');
   });
 
+  it('api510 drum/vessel shell prefill resolves shared design tags for horizontal and vertical drums', () => {
+    const values = {
+      'api510.external.drum-vessel.design-pressure': 175,
+      'api510.external.drum-vessel.design-temperature': 325
+    };
+    const horizontal = buildComponentCalculationPrefill('Horizontal Drum', 'shell', undefined, undefined, undefined, values);
+    const vertical = buildComponentCalculationPrefill('Vertical Drum', 'shell', undefined, undefined, undefined, values);
+    expect(horizontal?.designPressureFieldTag).toBe('api510.external.drum-vessel.design-pressure');
+    expect(horizontal?.designTemperatureFieldTag).toBe('api510.external.drum-vessel.design-temperature');
+    expect(horizontal?.designPressureValue).toBe(175);
+    expect(horizontal?.designTemperatureValue).toBe(325);
+    expect(vertical?.designPressureValue).toBe(175);
+    expect(vertical?.designTemperatureValue).toBe(325);
+  });
+
+  it('api510 drum/vessel heads and supports expose expected executability metadata', () => {
+    const heads = buildComponentCalculationPrefill('Horizontal Drum', 'heads', undefined, undefined, undefined, {});
+    const supports = buildComponentCalculationPrefill('Horizontal Drum', 'saddles-supports', undefined, undefined, undefined, {});
+    expect(heads?.supportsTminCalculation).toBe(true);
+    expect(heads?.calculationMethodLabel).toBe('UG-32 formed head');
+    expect(supports?.supportsTminCalculation).toBe(false);
+  });
+
+  it('api510 drum/vessel nozzle requires parent and location and exposes shell/head options', () => {
+    const nozzle = API510_EXTERNAL_COMPONENT_DEFINITIONS.find((d) => d.equipmentSubtype === 'Horizontal Drum' && d.componentKey === 'nozzles');
+    expect(nozzle?.allowedParentComponentKeys).toEqual(['shell', 'heads']);
+    expect(nozzle?.nozzleLocationOptions).toEqual(['shell', 'heads']);
+    const missing = buildComponentCalculationPrefill('Horizontal Drum', 'nozzles', undefined, undefined, undefined, {});
+    expect(missing?.missingRequiredInputWarnings.some((w) => w.includes('Parent component is required'))).toBe(true);
+    expect(missing?.missingRequiredInputWarnings.some((w) => w.includes('Nozzle location is required'))).toBe(true);
+  });
+
 
   it('shell UG-27 execution requires design pressure/temp and material inputs', async () => {
     const prefill = buildComponentCalculationPrefill('Shell and Tube Exchanger', 'shell', undefined, undefined, undefined, {});
@@ -936,6 +968,17 @@ describe('inspection field catalog', () => {
     await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-45-nozzle-neck-tmin', manualInputs: { allowableStressPsi: 17500, parentThicknessSource: 'selected-parent', jointEfficiency: 1, corrosionAllowanceIn: 0, shellOrHeadRequiredThicknessIn: 0.25, shellOrHeadExternalRequiredThicknessIn: 0.25, outsideDiameterIn: 2.375, insideDiameterIn: 2, nominalThicknessIn: 0.154, originalThicknessIn: 0.154, nominalPipeSize: 'NPS 2', externalPressureApplicable: false, ug16MinimumThicknessApplicable: false } });
     const callArg = spy.mock.calls[0]?.[0] as any;
     expect(callArg.input.attachmentLocation).toBe('Shell');
+  });
+
+  it('UG-45 supports drum/vessel head parent attachment mapping', async () => {
+    const prefill = buildComponentCalculationPrefill('Horizontal Drum', 'nozzles', undefined, 'heads', 'heads', {
+      'api510.external.drum-vessel.design-pressure': 250,
+      'api510.external.drum-vessel.design-temperature': 450
+    });
+    const spy = vi.spyOn(pressureVesselApi, 'calculateNozzle').mockResolvedValueOnce({ result: { isValid: true, errorMessage: '', jointEfficiencyUsed: 1, insideRadiusUsed: 1, taRequiredThicknessIn: 0.1, tb1RequiredThicknessIn: 0.1, tb2RequiredThicknessIn: 0.1, tb3TableThicknessIn: 0.1, tb3PlusCorrosionAllowanceIn: 0.1, tbRequiredThicknessIn: 0.1, pressureRequiredThicknessIn: 0.1, governingRequiredThicknessIn: 0.1, marginIn: 0.05, providedThicknessIn: 0.154, corrodedThicknessIn: 0.154, requiredThicknessPlusCorrosionAllowanceIn: 0.1, isAcceptable: true, warnings: [] }, resolvedAllowableStressPsi: 17500, materialMatched: null, temperatureUsed: 450, wasInterpolated: false, wasExtrapolated: false, stressSourceMessage: 'manual', warnings: [] });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-45-nozzle-neck-tmin', manualInputs: { allowableStressPsi: 17500, parentThicknessSource: 'selected-parent', jointEfficiency: 1, corrosionAllowanceIn: 0, shellOrHeadRequiredThicknessIn: 0.25, shellOrHeadExternalRequiredThicknessIn: 0.25, outsideDiameterIn: 2.375, insideDiameterIn: 2, nominalThicknessIn: 0.154, originalThicknessIn: 0.154, nominalPipeSize: 'NPS 2', externalPressureApplicable: false, ug16MinimumThicknessApplicable: false } });
+    expect(result.success).toBe(true);
+    expect((spy.mock.calls[0]?.[0] as any).input.attachmentLocation).toBe('Head');
   });
 
   it('UG-45 blocks unsupported parent attachment location', async () => {

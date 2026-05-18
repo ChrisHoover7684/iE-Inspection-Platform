@@ -792,7 +792,7 @@ describe('inspection field catalog', () => {
     expect(values['api570.external.piping.component.condition']).toBe('Acceptable');
   });
 
-  it('api510 drum/vessel shell prefill resolves shared design tags for horizontal and vertical drums', () => {
+  it('api510 drum/vessel shell/head prefill resolves shared design tags for horizontal and vertical drums', () => {
     const values = {
       'api510.external.drum-vessel.design-pressure': 175,
       'api510.external.drum-vessel.design-temperature': 325
@@ -805,6 +805,13 @@ describe('inspection field catalog', () => {
     expect(horizontal?.designTemperatureValue).toBe(325);
     expect(vertical?.designPressureValue).toBe(175);
     expect(vertical?.designTemperatureValue).toBe(325);
+
+    const horizontalHead = buildComponentCalculationPrefill('Horizontal Drum', 'heads', undefined, undefined, undefined, values);
+    const verticalHead = buildComponentCalculationPrefill('Vertical Drum', 'heads', undefined, undefined, undefined, values);
+    expect(horizontalHead?.designPressureValue).toBe(175);
+    expect(horizontalHead?.designTemperatureValue).toBe(325);
+    expect(verticalHead?.designPressureValue).toBe(175);
+    expect(verticalHead?.designTemperatureValue).toBe(325);
   });
 
   it('api510 drum/vessel heads and supports expose expected executability metadata', () => {
@@ -911,6 +918,60 @@ describe('inspection field catalog', () => {
     const metadata = (result.snapshotReadyPayload?.outputs as any)?.metadata as { diameterBasisUsed?: string; diameterRequirement?: string };
     expect(metadata.diameterBasisUsed).toBe('both-known');
     expect(metadata.diameterRequirement).toBe('both-required');
+  });
+
+
+  it('UG-32 head execution blocks missing head type', async () => {
+    const prefill = buildComponentCalculationPrefill('Horizontal Drum', 'heads', undefined, undefined, undefined, {
+      'api510.external.drum-vessel.design-pressure': 250,
+      'api510.external.drum-vessel.design-temperature': 450
+    });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, jointEfficiency: 1, effectiveInsideDiameterIn: 48, effectiveInsideRadiusIn: 24, crownRadiusIn: 48, halfApexAngleDeg: 0, flatHeadCFactor: 0, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 } });
+    expect(result.success).toBe(false);
+    expect(result.warnings.some((w) => w.includes('Head type is required'))).toBe(true);
+  });
+
+  it('UG-32 head execution blocks missing joint efficiency', async () => {
+    const prefill = buildComponentCalculationPrefill('Horizontal Drum', 'heads', undefined, undefined, undefined, {
+      'api510.external.drum-vessel.design-pressure': 250,
+      'api510.external.drum-vessel.design-temperature': 450
+    });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, headType: 'Ellipsoidal2To1', effectiveInsideDiameterIn: 48, effectiveInsideRadiusIn: 24, crownRadiusIn: 48, halfApexAngleDeg: 0, flatHeadCFactor: 0, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 } });
+    expect(result.success).toBe(false);
+    expect(result.warnings.some((w) => w.includes('Joint efficiency is required'))).toBe(true);
+  });
+
+  it('UG-32 blocks when corrosion allowance is omitted but allows explicit zero', async () => {
+    const prefill = buildComponentCalculationPrefill('Vertical Drum', 'heads', undefined, undefined, undefined, {
+      'api510.external.drum-vessel.design-pressure': 250,
+      'api510.external.drum-vessel.design-temperature': 450
+    });
+    const omitted = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, headType: 'Ellipsoidal2To1', jointEfficiency: 1, effectiveInsideDiameterIn: 48, effectiveInsideRadiusIn: 24, crownRadiusIn: 48, halfApexAngleDeg: 0, flatHeadCFactor: 0, originalThicknessIn: 0.5, providedThicknessIn: 0.5 } });
+    expect(omitted.success).toBe(false);
+    expect(omitted.warnings.some((w) => w.includes('Corrosion allowance is required'))).toBe(true);
+
+    const spy = vi.spyOn(pressureVesselApi, 'calculateHead').mockResolvedValueOnce({ result: { governingRequiredThicknessIn: 0.2, requiredWithCorrosionAllowanceIn: 0.2, marginIn: 0.3, warnings: [] }, resolvedAllowableStressPsi: 17500, materialMatched: null, temperatureUsed: 450, wasInterpolated: false, wasExtrapolated: false, stressSourceMessage: 'manual', warnings: [] });
+    const zero = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, headType: 'Ellipsoidal2To1', jointEfficiency: 1, effectiveInsideDiameterIn: 48, effectiveInsideRadiusIn: 24, crownRadiusIn: 48, halfApexAngleDeg: 0, flatHeadCFactor: 0, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0 } });
+    expect(zero.success).toBe(true);
+    expect((spy.mock.calls[0]?.[0] as any).input.corrosionAllowanceIn).toBe(0);
+  });
+
+  it('UG-32 execution calls calculateHead with expected inputs and snapshot metadata', async () => {
+    const prefill = buildComponentCalculationPrefill('Horizontal Drum', 'heads', undefined, undefined, undefined, {
+      'api510.external.drum-vessel.design-pressure': 260,
+      'api510.external.drum-vessel.design-temperature': 460
+    });
+    const spy = vi.spyOn(pressureVesselApi, 'calculateHead').mockResolvedValueOnce({ result: { governingRequiredThicknessIn: 0.21, requiredWithCorrosionAllowanceIn: 0.24, marginIn: 0.26, warnings: [] }, resolvedAllowableStressPsi: 17500, materialMatched: null, temperatureUsed: 460, wasInterpolated: false, wasExtrapolated: false, stressSourceMessage: 'manual', warnings: [] });
+    const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-32-formed-head-tmin', manualInputs: { allowableStressPsi: 17500, headType: 'Ellipsoidal2To1', jointEfficiency: 0.9, effectiveInsideDiameterIn: 48, effectiveInsideRadiusIn: 24, crownRadiusIn: 48, halfApexAngleDeg: 0, flatHeadCFactor: 0, originalThicknessIn: 0.5, providedThicknessIn: 0.5, corrosionAllowanceIn: 0.03 } });
+    expect(result.success).toBe(true);
+    const call = (spy.mock.calls[0]?.[0] as any).input;
+    expect(call.designPressurePsi).toBe(260);
+    expect(call.jointEfficiency).toBe(0.9);
+    expect(result.equipmentSubtype).toBe('Horizontal Drum');
+    const meta = (result.snapshotReadyPayload?.inputs as any)?.metadata;
+    expect(meta?.equipmentSubtype).toBe('Horizontal Drum');
+    expect(meta?.componentKey).toBe('heads');
+    expect(meta?.sourceDesignFieldTags?.pressure).toBe('api510.external.drum-vessel.design-pressure');
   });
 
   it('nozzle UG-45 execution warns when parent thickness source is missing', async () => {
@@ -1048,6 +1109,21 @@ describe('inspection field catalog', () => {
     const tags = (result.snapshotReadyPayload?.inputs as any)?.sourceDesignFieldTags;
     expect(tags?.pressure).toBe('api510.external.exchanger.shell-tube.shell-side.design-pressure');
     expect(tags?.temperature).toBe('api510.external.exchanger.shell-tube.shell-side.design-temperature');
+  });
+
+  it('supports/manway components remain review-only for drum/vessel workflow', async () => {
+    const supports = buildComponentCalculationPrefill('Horizontal Drum', 'saddles-supports', undefined, undefined, undefined, {
+      'api510.external.drum-vessel.design-pressure': 250,
+      'api510.external.drum-vessel.design-temperature': 450
+    });
+    const manway = buildComponentCalculationPrefill('Vertical Drum', 'manway', undefined, undefined, undefined, {
+      'api510.external.drum-vessel.design-pressure': 250,
+      'api510.external.drum-vessel.design-temperature': 450
+    });
+    const supportsResult = await executeApi510ComponentCalculation({ prefill: supports!, calculationType: 'review-only' });
+    const manwayResult = await executeApi510ComponentCalculation({ prefill: manway!, calculationType: 'review-only' });
+    expect(supportsResult.success).toBe(false);
+    expect(manwayResult.success).toBe(false);
   });
 
   it('tubesheet area and channel cover remain non-executable/review-only', async () => {

@@ -2,27 +2,31 @@ import { Fragment, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Api510ShellTubeCalculationWorkspace } from './Api510ShellTubeCalculationWorkspace';
 import {
+  API510_SHELL_TUBE_EXTERNAL_REPORT_LOCAL_STORAGE_KEY,
+  API510_SHELL_TUBE_EXTERNAL_REPORT_TYPE_ID,
+  buildApi510ShellTubeExternalDraftPayload,
+  readApi510ShellTubeExternalDraftPayload
+} from './api510ShellTubeReportDraft';
+import {
   API_INSPECTION_DRAFT_SETUP_STORAGE_KEY,
   readApiInspectionDraftSetup,
   type CalculationFieldValuesMap
 } from './componentCalculationPrefill';
 import type { Api510FindingDraft } from './api510CalculationFindings';
 import type { InspectionCalculationSnapshot } from '../engineering/types';
+import type {
+  Api510ShellTubeExternalChecklistField,
+  Api510ShellTubeExternalComponentState,
+  Api510ShellTubeExternalDraftPayload,
+  Api510ShellTubeExternalSummaryFieldsDraft
+} from '../types';
 
-const reportTypeId = 'api510.external.exchanger.shell-tube';
+const reportTypeId = API510_SHELL_TUBE_EXTERNAL_REPORT_TYPE_ID;
 const defaultComponents = ['Shell', 'Channel / Channel Head', 'Nozzles'];
-export const API510_SHELL_TUBE_EXTERNAL_REPORT_LOCAL_STORAGE_KEY = 'ie.api510.shellTubeExternal.reportDraft.v1';
+export { API510_SHELL_TUBE_EXTERNAL_REPORT_LOCAL_STORAGE_KEY };
 
-type ChecklistField = typeof checklistFields[number];
-
-type ComponentReportState = {
-  condition: string;
-  location: string;
-  findingNotes: string;
-  recommendationText: string;
-  photoTag: string;
-  checklist: Record<ChecklistField, boolean>;
-};
+type ChecklistField = Api510ShellTubeExternalChecklistField;
+type ComponentReportState = Api510ShellTubeExternalComponentState;
 
 const reportSections = [
   'Report Header',
@@ -112,11 +116,11 @@ function DraftFieldList({ fields, values }: { fields: readonly (readonly [string
   );
 }
 
-function TextAreaField({ label }: { label: string }) {
+function TextAreaField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="wizard-field">
       <span>{label}</span>
-      <textarea rows={3} placeholder={`Enter ${label.toLowerCase()}`} />
+      <textarea rows={3} value={value} onChange={(event) => onChange(event.target.value)} placeholder={`Enter ${label.toLowerCase()}`} />
     </label>
   );
 }
@@ -192,22 +196,32 @@ export function Api510ShellTubeExternalReportPage() {
   const draft = useMemo(safeDraft, []);
   const [calculations, setCalculations] = useState<InspectionCalculationSnapshot[]>([]);
   const [findingDrafts, setFindingDrafts] = useState<Api510FindingDraft[]>([]);
-  const [lastSavedAt, setLastSavedAt] = useState(() => {
-    const saved = window.localStorage.getItem(API510_SHELL_TUBE_EXTERNAL_REPORT_LOCAL_STORAGE_KEY);
-    if (!saved) return '';
-    try {
-      return String((JSON.parse(saved) as { savedAt?: string }).savedAt ?? '');
-    } catch {
-      return '';
-    }
-  });
+  const [savedDraftPayload, setSavedDraftPayload] = useState<Api510ShellTubeExternalDraftPayload | undefined>(() => readApi510ShellTubeExternalDraftPayload());
+  const [lastSavedAt, setLastSavedAt] = useState(() => savedDraftPayload?.savedAt ?? '');
 
   const components = useMemo(() => {
     const selected = draft?.reportTypeId === reportTypeId ? draft.components : [];
     return Array.from(new Set([...defaultComponents, ...selected]));
   }, [draft]);
 
-  const [componentStates, setComponentStates] = useState<Record<string, ComponentReportState>>(() => Object.fromEntries(components.map((component) => [component, emptyComponentState()])));
+  const [componentStates, setComponentStates] = useState<Record<string, ComponentReportState>>(() => Object.fromEntries(components.map((component) => [component, savedDraftPayload?.componentStates[component] ?? emptyComponentState()])));
+  const [summaryFields, setSummaryFields] = useState<Api510ShellTubeExternalSummaryFieldsDraft>(() => savedDraftPayload?.summaryFields ?? {
+    generalExternalCondition: '',
+    coatingInsulationNotes: '',
+    leakageStainingNotes: '',
+    supportsAttachmentsNotes: '',
+    cmlThicknessReviewNotes: '',
+    coatingInsulationDetails: '',
+    leakageStainingDetails: '',
+    supportsAttachmentsDetails: '',
+    cmlThicknessReviewDetails: '',
+    findingSummary: ''
+  });
+  const [photoLog, setPhotoLog] = useState(() => savedDraftPayload?.photos.photoLog ?? '');
+  const [ndeTesting, setNdeTesting] = useState(() => savedDraftPayload?.ndeTesting.requirementsAndResults ?? '');
+  const [recommendationSummary, setRecommendationSummary] = useState(() => savedDraftPayload?.recommendations.summary ?? '');
+  const [returnToServiceStatus, setReturnToServiceStatus] = useState(() => savedDraftPayload?.returnToService.status ?? '');
+  const [returnToServiceNotes, setReturnToServiceNotes] = useState(() => savedDraftPayload?.returnToService.notes ?? '');
   const fieldValues = useMemo(() => calculationFieldValues(draft?.header), [draft]);
 
   const checklistCounts = useMemo(() => Object.fromEntries(summaryChecklistFields.map((field) => [
@@ -217,22 +231,43 @@ export function Api510ShellTubeExternalReportPage() {
 
   const selectedSummaryComponents = components;
 
+  const draftPayloadPreview = useMemo(() => buildApi510ShellTubeExternalDraftPayload({
+    sourceStartWizardDraft: draft,
+    sourceStartWizardDraftStorageKey: API_INSPECTION_DRAFT_SETUP_STORAGE_KEY,
+    components,
+    componentStates,
+    checklistFields,
+    calculationSnapshots: calculations,
+    findingDrafts,
+    summaryFields,
+    photos: { photoLog },
+    ndeTesting: { requirementsAndResults: ndeTesting },
+    recommendations: { summary: recommendationSummary },
+    returnToService: { status: returnToServiceStatus, notes: returnToServiceNotes },
+    savedAt: lastSavedAt || 'Not saved locally'
+  }), [calculations, componentStates, components, draft, findingDrafts, lastSavedAt, ndeTesting, photoLog, recommendationSummary, returnToServiceNotes, returnToServiceStatus, summaryFields]);
+
   const handleComponentChange = (component: string, next: ComponentReportState) => setComponentStates((current) => ({ ...current, [component]: next }));
 
   const handleSaveLocalDraft = () => {
     const savedAt = new Date().toISOString();
-    const localSaveModel = {
-      reportTypeId,
-      savedAt,
-      sourceDraftStorageKey: API_INSPECTION_DRAFT_SETUP_STORAGE_KEY,
-      sourceDraft: draft,
+    const payload = buildApi510ShellTubeExternalDraftPayload({
+      sourceStartWizardDraft: draft,
+      sourceStartWizardDraftStorageKey: API_INSPECTION_DRAFT_SETUP_STORAGE_KEY,
       components,
       componentStates,
-      calculationSnapshotCount: calculations.length,
-      findingDraftCount: findingDrafts.length,
-      checklistCounts
-    };
-    window.localStorage.setItem(API510_SHELL_TUBE_EXTERNAL_REPORT_LOCAL_STORAGE_KEY, JSON.stringify(localSaveModel));
+      checklistFields,
+      calculationSnapshots: calculations,
+      findingDrafts,
+      summaryFields,
+      photos: { photoLog },
+      ndeTesting: { requirementsAndResults: ndeTesting },
+      recommendations: { summary: recommendationSummary },
+      returnToService: { status: returnToServiceStatus, notes: returnToServiceNotes },
+      savedAt
+    });
+    window.localStorage.setItem(API510_SHELL_TUBE_EXTERNAL_REPORT_LOCAL_STORAGE_KEY, JSON.stringify(payload));
+    setSavedDraftPayload(payload);
     setLastSavedAt(savedAt);
   };
 
@@ -313,13 +348,13 @@ export function Api510ShellTubeExternalReportPage() {
 
           <section id="external-condition" className="card wizard-setup-card" aria-label="External Condition">
             <h3>External Condition</h3>
-            <div className="wizard-field-grid">{conditionFields.map(([, label]) => <TextAreaField key={label} label={label} />)}</div>
+            <div className="wizard-field-grid">{conditionFields.map(([key, label]) => <TextAreaField key={key} label={label} value={summaryFields[key]} onChange={(value) => setSummaryFields((current) => ({ ...current, [key]: value }))} />)}</div>
           </section>
 
-          <section id="coating-insulation" className="card wizard-setup-card" aria-label="Coating / Insulation"><h3>Coating / Insulation</h3><TextAreaField label="Coating / Insulation Details" /></section>
-          <section id="leakage-staining" className="card wizard-setup-card" aria-label="Leakage / Staining"><h3>Leakage / Staining</h3><TextAreaField label="Leakage / Staining Details" /></section>
-          <section id="supports-attachments" className="card wizard-setup-card" aria-label="Supports / Attachments"><h3>Supports / Attachments</h3><TextAreaField label="Supports / Attachments Details" /></section>
-          <section id="cml-thickness-review" className="card wizard-setup-card" aria-label="CML / Thickness Review"><h3>CML / Thickness Review</h3><TextAreaField label="CML / Thickness Review Details" /></section>
+          <section id="coating-insulation" className="card wizard-setup-card" aria-label="Coating / Insulation"><h3>Coating / Insulation</h3><TextAreaField label="Coating / Insulation Details" value={summaryFields.coatingInsulationDetails} onChange={(value) => setSummaryFields((current) => ({ ...current, coatingInsulationDetails: value }))} /></section>
+          <section id="leakage-staining" className="card wizard-setup-card" aria-label="Leakage / Staining"><h3>Leakage / Staining</h3><TextAreaField label="Leakage / Staining Details" value={summaryFields.leakageStainingDetails} onChange={(value) => setSummaryFields((current) => ({ ...current, leakageStainingDetails: value }))} /></section>
+          <section id="supports-attachments" className="card wizard-setup-card" aria-label="Supports / Attachments"><h3>Supports / Attachments</h3><TextAreaField label="Supports / Attachments Details" value={summaryFields.supportsAttachmentsDetails} onChange={(value) => setSummaryFields((current) => ({ ...current, supportsAttachmentsDetails: value }))} /></section>
+          <section id="cml-thickness-review" className="card wizard-setup-card" aria-label="CML / Thickness Review"><h3>CML / Thickness Review</h3><TextAreaField label="CML / Thickness Review Details" value={summaryFields.cmlThicknessReviewDetails} onChange={(value) => setSummaryFields((current) => ({ ...current, cmlThicknessReviewDetails: value }))} /></section>
 
           <section id="calculations" className="card wizard-setup-card" aria-label="Calculations">
             <h3>Calculations</h3>
@@ -336,18 +371,18 @@ export function Api510ShellTubeExternalReportPage() {
 
           <section id="findings" className="card wizard-setup-card" aria-label="Findings">
             <h3>Findings</h3>
-            <TextAreaField label="Finding Summary" />
+            <TextAreaField label="Finding Summary" value={summaryFields.findingSummary} onChange={(value) => setSummaryFields((current) => ({ ...current, findingSummary: value }))} />
             {findingDrafts.length > 0 && <p>{findingDrafts.length} calculation finding draft(s) created.</p>}
           </section>
 
-          <section id="recommendations" className="card wizard-setup-card" aria-label="Recommendations"><h3>Recommendations</h3><TextAreaField label="Recommendation Summary" /></section>
-          <section id="photos" className="card wizard-setup-card" aria-label="Photos"><h3>Photos</h3><label className="wizard-field"><span>Photo Log</span><textarea rows={3} placeholder="Photo tags and descriptions" /></label></section>
-          <section id="nde-testing" className="card wizard-setup-card" aria-label="NDE / Testing"><h3>NDE / Testing</h3><TextAreaField label="NDE / Testing Requirements and Results" /></section>
+          <section id="recommendations" className="card wizard-setup-card" aria-label="Recommendations"><h3>Recommendations</h3><TextAreaField label="Recommendation Summary" value={recommendationSummary} onChange={setRecommendationSummary} /></section>
+          <section id="photos" className="card wizard-setup-card" aria-label="Photos"><h3>Photos</h3><label className="wizard-field"><span>Photo Log</span><textarea rows={3} value={photoLog} onChange={(event) => setPhotoLog(event.target.value)} placeholder="Photo tags and descriptions" /></label></section>
+          <section id="nde-testing" className="card wizard-setup-card" aria-label="NDE / Testing"><h3>NDE / Testing</h3><TextAreaField label="NDE / Testing Requirements and Results" value={ndeTesting} onChange={setNdeTesting} /></section>
           <section id="return-to-service" className="card wizard-setup-card" aria-label="Return to Service">
             <h3>Return to Service</h3>
             <div className="wizard-field-grid">
-              <label className="wizard-field"><span>Return to Service Status</span><select aria-label="Return to Service Status" defaultValue=""><option value="" disabled>Select status</option><option>Acceptable for continued service</option><option>Acceptable with recommendations</option><option>Hold for repair / engineering review</option></select></label>
-              <TextAreaField label="Return to Service Notes" />
+              <label className="wizard-field"><span>Return to Service Status</span><select aria-label="Return to Service Status" value={returnToServiceStatus} onChange={(event) => setReturnToServiceStatus(event.target.value)}><option value="" disabled>Select status</option><option>Acceptable for continued service</option><option>Acceptable with recommendations</option><option>Hold for repair / engineering review</option></select></label>
+              <TextAreaField label="Return to Service Notes" value={returnToServiceNotes} onChange={setReturnToServiceNotes} />
             </div>
           </section>
         </main>
@@ -377,6 +412,13 @@ export function Api510ShellTubeExternalReportPage() {
             <ul aria-label="Selected component preview">
               {selectedSummaryComponents.map((component) => <li key={component}>{component}</li>)}
             </ul>
+          </section>
+
+          <section className="card" aria-label="Draft Payload Debug">
+            <details>
+              <summary>View Draft Payload</summary>
+              <pre aria-label="API 510 Shell-and-Tube draft payload">{JSON.stringify(draftPayloadPreview, null, 2)}</pre>
+            </details>
           </section>
 
           <section className="card" aria-label="Summary warnings">

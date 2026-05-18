@@ -87,6 +87,102 @@ export type NdeLogTransitionCommand = {
   comment?: string;
   actor?: string;
 };
+export type Api510ShellTubeExternalReportTypeId = 'api510.external.exchanger.shell-tube';
+
+export type Api510ShellTubeExternalChecklistField =
+  | 'Create Finding'
+  | 'Recommendation Required'
+  | 'Repair Required'
+  | 'Photo Required'
+  | 'NDE Required'
+  | 'Add to Summary';
+
+export type Api510ShellTubeExternalComponentState = {
+  condition: string;
+  location: string;
+  findingNotes: string;
+  recommendationText: string;
+  photoTag: string;
+  checklist: Record<Api510ShellTubeExternalChecklistField, boolean>;
+};
+
+export type Api510ShellTubeExternalReportHeaderDraft = {
+  inspectionDate: string;
+  inspector: string;
+  clientFacility: string;
+  unitArea: string;
+  equipmentIdentifier: string;
+  service: string;
+  inspectionReason: string;
+  operatingStatus: string;
+  inspectionScope: string;
+};
+
+export type Api510ShellTubeExternalDesignConditionsDraft = {
+  shellSideDesignPressure: string;
+  shellSideDesignTemperature: string;
+  tubeSideDesignPressure: string;
+  tubeSideDesignTemperature: string;
+};
+
+export type Api510ShellTubeExternalMaterialsDraft = {
+  shellMaterialSpec: string;
+  shellMaterialGrade: string;
+  shellProductForm: string;
+  tubeChannelMaterialSpec: string;
+  tubeChannelMaterialGrade: string;
+  tubeChannelProductForm: string;
+};
+
+export type Api510ShellTubeExternalSummaryFieldsDraft = {
+  generalExternalCondition: string;
+  coatingInsulationNotes: string;
+  leakageStainingNotes: string;
+  supportsAttachmentsNotes: string;
+  cmlThicknessReviewNotes: string;
+  coatingInsulationDetails: string;
+  leakageStainingDetails: string;
+  supportsAttachmentsDetails: string;
+  cmlThicknessReviewDetails: string;
+  findingSummary: string;
+};
+
+export type Api510ShellTubeExternalDraftPayload = {
+  reportTypeId: Api510ShellTubeExternalReportTypeId;
+  reportTypeLabel: string;
+  sourceStartWizardDraft: {
+    storageKey: string;
+    draft?: {
+      reportTypeId: string;
+      reportTypeLabel?: string;
+      header: Record<string, string>;
+      components: string[];
+    };
+  };
+  reportHeader: Api510ShellTubeExternalReportHeaderDraft;
+  designConditions: Api510ShellTubeExternalDesignConditionsDraft;
+  materials: Api510ShellTubeExternalMaterialsDraft;
+  componentStates: Record<string, Api510ShellTubeExternalComponentState | undefined>;
+  checklistCounts: Record<Api510ShellTubeExternalChecklistField, number>;
+  calculationSnapshots: import('./engineering/types').InspectionCalculationSnapshot[];
+  findingDrafts: import('./reporting/api510CalculationFindings').Api510FindingDraft[];
+  summaryFields: Api510ShellTubeExternalSummaryFieldsDraft;
+  photos: {
+    photoLog: string;
+  };
+  ndeTesting: {
+    requirementsAndResults: string;
+  };
+  recommendations: {
+    summary: string;
+  };
+  returnToService: {
+    status: string;
+    notes: string;
+  };
+  savedAt: string;
+};
+
 export type ReportTemplate = {
   id: string;
   name: string;

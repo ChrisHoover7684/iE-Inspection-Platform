@@ -1,11 +1,16 @@
 import { useMemo, useState } from 'react';
 import { buildComponentCalculationPrefill, type CalculationFieldValuesMap } from './componentCalculationPrefill';
 import { executeApi510ComponentCalculation, type Api510CalculationType, type ComponentCalculationExecutionResult } from './componentCalculationExecution';
+import { buildApi510FindingDraft, type Api510FindingDraft } from './api510CalculationFindings';
+import type { InspectionCalculationSnapshot } from '../engineering/types';
 
 type Props = {
   fieldValues?: CalculationFieldValuesMap;
   hasReportContext?: boolean;
-  onSaveSnapshot?: (snapshot: unknown) => void;
+  reportId?: string;
+  reportCalculations?: InspectionCalculationSnapshot[];
+  onSaveSnapshot?: (snapshot: InspectionCalculationSnapshot) => void;
+  onCreateFindingDraft?: (draft: Api510FindingDraft) => void;
 };
 
 const shellTubeComponents = [
@@ -13,7 +18,7 @@ const shellTubeComponents = [
   { key: 'nozzles', label: 'Nozzles' }
 ] as const;
 
-export function Api510ShellTubeCalculationWorkspace({ fieldValues = {}, hasReportContext = false, onSaveSnapshot }: Props) {
+export function Api510ShellTubeCalculationWorkspace({ fieldValues = {}, hasReportContext = false, reportCalculations = [], onSaveSnapshot, onCreateFindingDraft }: Props) {
   const [componentKey, setComponentKey] = useState('shell');
   const [pressureSide, setPressureSide] = useState<'shell-side'|'tube-side'>('shell-side');
   const [parentComponent, setParentComponent] = useState('shell');
@@ -21,6 +26,8 @@ export function Api510ShellTubeCalculationWorkspace({ fieldValues = {}, hasRepor
   const [calculationType, setCalculationType] = useState<Api510CalculationType>('ug-27-shell-tmin');
   const [inputs, setInputs] = useState<Record<string, unknown>>({});
   const [execution, setExecution] = useState<ComponentCalculationExecutionResult | null>(null);
+  const [savedSnapshotIds, setSavedSnapshotIds] = useState<Set<string>>(new Set());
+  const [actionMessage, setActionMessage] = useState('');
 
   const prefill = useMemo(() => buildComponentCalculationPrefill(
     'Shell and Tube Exchanger',
@@ -33,8 +40,30 @@ export function Api510ShellTubeCalculationWorkspace({ fieldValues = {}, hasRepor
 
   const onRun = async () => {
     if (!prefill) return;
+    setActionMessage('');
     const result = await executeApi510ComponentCalculation({ prefill, calculationType, manualInputs: inputs });
     setExecution(result);
+  };
+
+  const canSaveSnapshot = hasReportContext && Boolean(execution?.snapshotReadyPayload);
+  const handleSaveSnapshot = () => {
+    if (!execution?.snapshotReadyPayload || !canSaveSnapshot) return;
+    const snapshot = execution.snapshotReadyPayload;
+    const alreadySaved = savedSnapshotIds.has(snapshot.id) || reportCalculations.some((c) => c.id === snapshot.id);
+    if (alreadySaved) {
+      setActionMessage('Snapshot already saved for this calculation result.');
+      return;
+    }
+    onSaveSnapshot?.(snapshot);
+    setSavedSnapshotIds((prev) => new Set([...prev, snapshot.id]));
+    setActionMessage('Calculation snapshot saved.');
+  };
+
+  const handleCreateFinding = (forceRecommendation: boolean) => {
+    if (!execution) return;
+    const draft = buildApi510FindingDraft(execution, execution.snapshotReadyPayload, forceRecommendation);
+    onCreateFindingDraft?.(draft);
+    setActionMessage(forceRecommendation ? 'Finding and recommendation draft created.' : 'Finding draft created.');
   };
 
   const showUg27 = calculationType === 'ug-27-shell-tmin';
@@ -80,7 +109,11 @@ export function Api510ShellTubeCalculationWorkspace({ fieldValues = {}, hasRepor
     </>}
 
     <button onClick={onRun}>Run Calculation</button>
-    <button disabled={!hasReportContext || !execution?.snapshotReadyPayload} onClick={() => execution?.snapshotReadyPayload && onSaveSnapshot?.(execution.snapshotReadyPayload)}>Save Calculation Snapshot</button>
+    <button disabled={!canSaveSnapshot} onClick={handleSaveSnapshot}>Save Calculation Snapshot</button>
+    <button disabled={!execution?.snapshotReadyPayload && !execution} onClick={() => handleCreateFinding(false)}>Create Finding from Calculation</button>
+    <button disabled={!execution} onClick={() => handleCreateFinding(true)}>Create Recommendation</button>
+
+    {actionMessage && <div>{actionMessage}</div>}
 
     {execution && <>
       <div>Execution: {execution.success ? 'success' : 'failure'}</div>

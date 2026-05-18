@@ -1341,3 +1341,85 @@ html, body, #root {
     white-space: normal;
     text-align: center;
 }
+
+.start-wizard h3,
+.start-wizard h4,
+.start-wizard h5 {
+    margin-top: 0;
+}
+
+.wizard-hierarchy,
+.wizard-card-grid,
+.wizard-field-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.wizard-hierarchy {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    align-items: start;
+}
+
+.wizard-hierarchy-group {
+    border: 1px solid var(--color-border-medium);
+    border-radius: 8px;
+    padding: 10px;
+    background: #fbfcfe;
+}
+
+.wizard-hierarchy label,
+.wizard-component-list label {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 6px 0;
+}
+
+.wizard-hierarchy input[type='radio'],
+.wizard-component-list input[type='checkbox'] {
+    width: auto;
+}
+
+.wizard-card-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.wizard-setup-card {
+    margin: 0;
+}
+
+.wizard-field-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.wizard-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-weight: 600;
+}
+
+.wizard-field span {
+    color: #25364d;
+}
+
+.wizard-field textarea {
+    min-height: 84px;
+    resize: vertical;
+}
+
+.wizard-note {
+    color: var(--color-muted);
+    font-size: 0.95rem;
+}
+
+.wizard-success-message {
+    color: var(--color-success);
+    font-weight: 700;
+}
+
+.wizard-calculation-action {
+    border-top: 1px solid var(--color-border-light);
+    margin-top: 12px;
+    padding-top: 12px;
+}

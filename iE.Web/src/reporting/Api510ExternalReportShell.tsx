@@ -25,8 +25,9 @@ export function Api510ExternalReportShell({ reportTypeId }: Props) {
         disabled={!workspaceRoute}
         onClick={() => workspaceRoute && navigate(workspaceRoute)}
       >
-        {workspaceRoute ? 'Open Calculation Workspace' : 'Calculation workspace coming soon'}
+        Open Calculation Workspace
       </button>
+      {!workspaceRoute && <p className="wizard-note">Calculation workspace coming soon</p>}
     </div>
   );
 }

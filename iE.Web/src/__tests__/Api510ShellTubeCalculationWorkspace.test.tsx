@@ -100,3 +100,21 @@ describe('Api510ShellTubeCalculationWorkspace', () => {
     expect(screen.getByRole('button', { name: 'Save Calculation Snapshot' })).toBeDisabled();
   });
 });
+
+
+it('standalone shell-side design conditions are passed via panel and manual override is hidden by default', async () => {
+  vi.mocked(executeApi510ComponentCalculation).mockResolvedValueOnce({ success: true, calculationType: 'ug-27-shell-tmin', componentKey: 'shell', componentLabel: 'Shell', pressureSide: 'shell-side', inputsUsed: {}, resultSummary: 'ok', warnings: [] } as any);
+  render(<Api510ShellTubeCalculationWorkspace hasReportContext={false} />);
+  expect(screen.queryByLabelText('allowableStressPsi')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Shell-Side Design Pressure'), { target: { value: '155' } });
+  fireEvent.change(screen.getByLabelText('Shell-Side Design Temperature'), { target: { value: '450' } });
+  fireEvent.change(screen.getByLabelText('Resolved Allowable Stress'), { target: { value: '17500' } });
+  fireEvent.change(screen.getByLabelText('jointEfficiency'), { target: { value: '1' } });
+  fireEvent.change(screen.getByLabelText('insideDiameterIn'), { target: { value: '48' } });
+  fireEvent.change(screen.getByLabelText('outsideDiameterIn'), { target: { value: '48.5' } });
+  fireEvent.change(screen.getByLabelText('originalThicknessIn'), { target: { value: '0.5' } });
+  fireEvent.change(screen.getByLabelText('providedThicknessIn'), { target: { value: '0.5' } });
+  fireEvent.change(screen.getByLabelText('corrosionAllowanceIn'), { target: { value: '0' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Run Calculation' }));
+  expect(vi.mocked(executeApi510ComponentCalculation)).toHaveBeenCalledWith(expect.objectContaining({ prefill: expect.objectContaining({ designPressureValue: '155', designTemperatureValue: '450' }) }));
+});

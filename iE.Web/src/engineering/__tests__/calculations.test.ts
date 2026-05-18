@@ -837,7 +837,7 @@ describe('inspection field catalog', () => {
     const result = await executeApi510ComponentCalculation({ prefill: prefill!, calculationType: 'ug-27-shell-tmin', manualInputs: { jointEfficiency: 1 } });
     expect(result.success).toBe(false);
     expect(result.warnings.some((w) => w.includes('Design pressure is missing'))).toBe(true);
-    expect(result.warnings.some((w) => w.includes('Material allowable stress input is missing'))).toBe(true);
+    expect(result.warnings.some((w) => w.includes('Resolved allowable stress is required unless manual override is used'))).toBe(true);
   });
 
   it('UG-27 blocks when either inside or outside diameter is missing', async () => {

@@ -92,8 +92,10 @@ export async function executeApi510ComponentCalculation({ prefill, calculationTy
     warnings
   });
 
-  const materialStress = toNumber(manualInputs?.allowableStressPsi);
-  if (materialStress === undefined) warnings.push('Material allowable stress input is missing.');
+  const manualOverrideEnabled = manualInputs?.useManualAllowableStressOverride === true;
+  const materialStress = toNumber(manualOverrideEnabled ? manualInputs?.allowableStressPsi : (manualInputs?.resolvedAllowableStressPsi ?? manualInputs?.allowableStressPsi));
+  if (materialStress === undefined) warnings.push('Resolved allowable stress is required unless manual override is used.');
+  if (manualOverrideEnabled && !hasValue(manualInputs?.overrideReason)) warnings.push('Manual allowable stress override reason is required.');
   if (pressure === undefined || temperature === undefined) return fail('Calculation blocked: missing required design condition inputs.');
 
   if (calculationType === 'ug-27-shell-tmin') {
@@ -131,7 +133,7 @@ export async function executeApi510ComponentCalculation({ prefill, calculationTy
         designCode: 'ASME_VIII_DIV1',
         stressEra: 'From1999Onward',
         designTemperatureF: temperature,
-        materialSpec: '', materialGrade: '', productForm: '', alloyUNS: '', classConditionTemper: '', manualAllowableStress: true, allowableStressPsi: materialStress!
+        materialSpec: String(manualInputs?.materialSpec ?? ''), materialGrade: String(manualInputs?.materialGrade ?? ''), productForm: String(manualInputs?.productForm ?? ''), alloyUNS: String(manualInputs?.alloyUNS ?? ''), classConditionTemper: String(manualInputs?.classConditionTemper ?? ''), manualAllowableStress: manualOverrideEnabled, allowableStressPsi: materialStress!
       }});
       warnings.push(...(response.warnings ?? []));
       const snapshotReadyPayload: InspectionCalculationSnapshot = {
@@ -210,7 +212,7 @@ export async function executeApi510ComponentCalculation({ prefill, calculationTy
           designCode: 'ASME_VIII_DIV1',
           stressEra: 'From1999Onward',
           designTemperatureF: temperature,
-          materialSpec: '', materialGrade: '', productForm: '', alloyUNS: '', classConditionTemper: '', manualAllowableStress: true, allowableStressPsi: materialStress!
+          materialSpec: String(manualInputs?.materialSpec ?? ''), materialGrade: String(manualInputs?.materialGrade ?? ''), productForm: String(manualInputs?.productForm ?? ''), alloyUNS: String(manualInputs?.alloyUNS ?? ''), classConditionTemper: String(manualInputs?.classConditionTemper ?? ''), manualAllowableStress: manualOverrideEnabled, allowableStressPsi: materialStress!
         }
       });
       warnings.push(...(response.warnings ?? []), ...(response.result?.warnings ?? []));
@@ -276,7 +278,7 @@ export async function executeApi510ComponentCalculation({ prefill, calculationTy
     const input: NozzleCalculationRequest['input'] = {
       designCode: 'ASME_VIII_DIV1', designPressurePsi: pressure, externalPressurePsi: resolvedExternalPressure!, designTemperatureF: temperature,
       jointEfficiency: jointEfficiency!, corrosionAllowanceIn: corrosionAllowance!,
-      manualAllowableStress: true, allowableStressPsi: materialStress!, materialSpec: '', materialGrade: '', materialProductForm: '', codeEra: 'Post1999',
+      manualAllowableStress: manualOverrideEnabled, allowableStressPsi: materialStress!, materialSpec: String(manualInputs?.materialSpec ?? ''), materialGrade: String(manualInputs?.materialGrade ?? ''), materialProductForm: String(manualInputs?.productForm ?? ''), codeEra: 'Post1999',
       attachmentLocation: attachment.value!, shellOrHeadRequiredThicknessIn: shellOrHeadRequiredThickness!, shellOrHeadExternalRequiredThicknessIn: shellOrHeadExternalRequiredThickness!,
       ug16MinimumThicknessIn: resolvedUg16MinimumThickness!, nozzleType: 'PipeNozzle', useOdForTa: false, useIdForTa: true,
       outsideDiameterIn: nozzleOutsideDiameter!, insideDiameterIn: nozzleInsideDiameter!, nominalThicknessIn: nominalThickness!,

@@ -414,11 +414,11 @@ export function Api510ShellTubeExternalReportPage() {
             <h3>iE Assist</h3>
             <p className="wizard-note">Assistant review hooks use local deterministic rules and do not call external AI services.</p>
             <dl className="api510-summary-list">
-              <dt>Total assist warnings</dt><dd>{assistSummary.totalAssistWarnings}</dd>
-              <dt>Components needing attention</dt><dd>{assistSummary.componentsNeedingAttention}</dd>
-              <dt>Missing photo tags</dt><dd>{assistSummary.missingPhotoTags}</dd>
-              <dt>Missing recommendations</dt><dd>{assistSummary.missingRecommendations}</dd>
-              <dt>NDE flags needing method/location</dt><dd>{assistSummary.ndeNeedingMethodLocation}</dd>
+              <dt>Total assist warnings</dt><dd data-testid="total-assist-warnings-count">{assistSummary.totalAssistWarnings}</dd>
+              <dt>Components needing attention</dt><dd data-testid="components-needing-attention-count">{assistSummary.componentsNeedingAttention}</dd>
+              <dt>Missing photo tags</dt><dd data-testid="missing-photo-tags-count">{assistSummary.missingPhotoTags}</dd>
+              <dt>Missing recommendations</dt><dd data-testid="missing-recommendations-count">{assistSummary.missingRecommendations}</dd>
+              <dt>NDE flags needing method/location</dt><dd data-testid="nde-needing-method-location-count">{assistSummary.ndeNeedingMethodLocation}</dd>
             </dl>
           </section>
 

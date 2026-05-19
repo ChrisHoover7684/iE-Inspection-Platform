@@ -334,15 +334,17 @@ describe('Api510ShellTubeExternalReportPage', () => {
 
     const assistCard = screen.getByLabelText('iE Assist');
     expect(within(assistCard).getByText('Total assist warnings')).toBeInTheDocument();
-    expect(within(assistCard).getByText('0')).toBeInTheDocument();
+    expect(within(assistCard).getByTestId('total-assist-warnings-count')).toHaveTextContent('0');
+    expect(within(assistCard).getByTestId('missing-photo-tags-count')).toHaveTextContent('0');
 
     fireEvent.click(screen.getByLabelText('Shell Photo Required'));
-    fireEvent.click(screen.getByLabelText('Shell Recommendation Required'));
 
-    expect(within(assistCard).getByText('2')).toBeInTheDocument();
-    expect(within(assistCard).getAllByText('1').length).toBeGreaterThanOrEqual(2);
+    expect(within(assistCard).getByTestId('total-assist-warnings-count')).toHaveTextContent('1');
+    expect(within(assistCard).getByTestId('missing-photo-tags-count')).toHaveTextContent('1');
+    expect(screen.getByLabelText('Shell iE Assist')).toHaveTextContent('Photo tag missing');
   });
-it('API 510 Internal does not appear', () => {
+
+  it('API 510 Internal does not appear', () => {
     storeDraft();
     renderRoute();
 

@@ -183,6 +183,145 @@ export type Api510ShellTubeExternalDraftPayload = {
   savedAt: string;
 };
 
+
+export type Api510RemainingExchangerExternalReportTypeId =
+  | 'api510.external.exchanger.plate-frame'
+  | 'api510.external.exchanger.double-pipe'
+  | 'api510.external.exchanger.air-cooler';
+
+export type Api510RemainingExchangerExternalChecklistField = Api510ShellTubeExternalChecklistField;
+
+export type Api510RemainingExchangerExternalComponentState = Api510ShellTubeExternalComponentState;
+
+export type Api510RemainingExchangerExternalReportHeaderDraft = Api510ShellTubeExternalReportHeaderDraft;
+
+export type Api510RemainingExchangerExternalDesignConditionsDraft =
+  | {
+    hotSideDesignPressure: string;
+    hotSideDesignTemperature: string;
+    coldSideDesignPressure: string;
+    coldSideDesignTemperature: string;
+  }
+  | {
+    innerPipeSideDesignPressure: string;
+    innerPipeSideDesignTemperature: string;
+    annulusOuterPipeSideDesignPressure: string;
+    annulusOuterPipeSideDesignTemperature: string;
+  }
+  | {
+    tubeSideDesignPressure: string;
+    tubeSideDesignTemperature: string;
+    headerBoxDesignPressure: string;
+    headerBoxDesignTemperature: string;
+  };
+
+export type Api510RemainingExchangerExternalMaterialsDraft = {
+  primaryMaterialSpec: string;
+  primaryMaterialGrade: string;
+  primaryProductForm: string;
+  secondaryMaterialSpec: string;
+  secondaryMaterialGrade: string;
+  secondaryProductForm: string;
+};
+
+export type Api510RemainingExchangerExternalSummaryFieldsDraft = {
+  generalExternalCondition: string;
+  coatingCorrosionNotes: string;
+  leakageStainingNotes: string;
+  supportsAttachmentsNotes: string;
+  cmlThicknessReviewNotes: string;
+  coatingCorrosionDetails: string;
+  leakageStainingDetails: string;
+  supportsAttachmentsDetails: string;
+  cmlThicknessReviewDetails: string;
+  calculationReviewNotes: string;
+  findingSummary: string;
+};
+
+export type Api510RemainingExchangerExternalDraftPayload = {
+  reportTypeId: Api510RemainingExchangerExternalReportTypeId;
+  reportTypeLabel: string;
+  sourceStartWizardDraft: Api510ShellTubeExternalDraftPayload['sourceStartWizardDraft'];
+  reportHeader: Api510RemainingExchangerExternalReportHeaderDraft;
+  designConditions: Api510RemainingExchangerExternalDesignConditionsDraft;
+  materials: Api510RemainingExchangerExternalMaterialsDraft;
+  componentStates: Record<string, Api510RemainingExchangerExternalComponentState | undefined>;
+  checklistCounts: Record<Api510RemainingExchangerExternalChecklistField, number>;
+  calculationReview: {
+    status: 'review-only';
+    notes: string;
+  };
+  summaryFields: Api510RemainingExchangerExternalSummaryFieldsDraft;
+  photos: {
+    photoLog: string;
+  };
+  ndeTesting: {
+    requirementsAndResults: string;
+  };
+  recommendations: {
+    summary: string;
+  };
+  returnToService: {
+    status: string;
+    notes: string;
+  };
+  savedAt: string;
+};
+
+export type StiApi653TankExternalChecklistField = Api510ShellTubeExternalChecklistField;
+
+export type StiApi653TankExternalComponentState = Api510ShellTubeExternalComponentState;
+
+export type StiApi653TankExternalReportHeaderDraft = Api510ShellTubeExternalReportHeaderDraft;
+
+export type StiApi653TankExternalDetailsDraft = {
+  tankId: string;
+  tankService: string;
+  tankConstruction: string;
+};
+
+export type StiApi653TankExternalSummaryFieldsDraft = {
+  foundationNotes: string;
+  shellNotes: string;
+  roofNotes: string;
+  chimeAreaNotes: string;
+  nozzlesAppurtenancesNotes: string;
+  ventsNotes: string;
+  coatingNotes: string;
+  containmentReleasePreventionNotes: string;
+  overfillSpillPreventionNotes: string;
+  anchorBoltsGroundingNotes: string;
+  stairsPlatformsLaddersNotes: string;
+  externalLeaksStainingNotes: string;
+  findingSummary: string;
+};
+
+export type StiApi653TankExternalDraftPayload = {
+  reportTypeId: 'sti653.external.tank';
+  reportTypeLabel: string;
+  sourceStartWizardDraft: Api510ShellTubeExternalDraftPayload['sourceStartWizardDraft'];
+  reportHeader: StiApi653TankExternalReportHeaderDraft;
+  tankDetails: StiApi653TankExternalDetailsDraft;
+  sections: string[];
+  componentStates: Record<string, StiApi653TankExternalComponentState | undefined>;
+  checklistCounts: Record<StiApi653TankExternalChecklistField, number>;
+  summaryFields: StiApi653TankExternalSummaryFieldsDraft;
+  photos: {
+    photoLog: string;
+  };
+  ndeTesting: {
+    requirementsAndResults: string;
+  };
+  recommendations: {
+    summary: string;
+  };
+  returnToService: {
+    status: string;
+    notes: string;
+  };
+  savedAt: string;
+};
+
 export type ReportTemplate = {
   id: string;
   name: string;

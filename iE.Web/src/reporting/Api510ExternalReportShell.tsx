@@ -21,6 +21,7 @@ export function Api510ExternalReportShell({ reportTypeId, draftPrepared = false 
     <div className="wizard-calculation-action" aria-label="Calculations">
       <p>Open the calculation workspace with any saved Start Wizard draft setup applied.</p>
       {isShellTube && draftPrepared && <button type="button" onClick={() => navigate('/reports/api-510-shell-tube-external')}>Open Shell-and-Tube External Report</button>}
+      {isDrumVessel && draftPrepared && <button type="button" onClick={() => navigate('/reports/api-510-drum-vessel-external')}>Open Drum/Vessel External Report</button>}
       <button
         type="button"
         disabled={!workspaceRoute}

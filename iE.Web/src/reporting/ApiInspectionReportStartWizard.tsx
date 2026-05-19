@@ -49,6 +49,36 @@ const shellTubeMaterialFields: FieldConfig[] = [
   { key: 'tubeChannelProductForm', label: 'Tube/Channel Product Form' }
 ];
 
+const plateFrameDesignFields: FieldConfig[] = [
+  { key: 'hotSideDesignPressure', label: 'Hot Side Design Pressure', type: 'number' },
+  { key: 'hotSideDesignTemperature', label: 'Hot Side Design Temperature', type: 'number' },
+  { key: 'coldSideDesignPressure', label: 'Cold Side Design Pressure', type: 'number' },
+  { key: 'coldSideDesignTemperature', label: 'Cold Side Design Temperature', type: 'number' }
+];
+
+const doublePipeDesignFields: FieldConfig[] = [
+  { key: 'innerPipeSideDesignPressure', label: 'Inner Pipe Side Design Pressure', type: 'number' },
+  { key: 'innerPipeSideDesignTemperature', label: 'Inner Pipe Side Design Temperature', type: 'number' },
+  { key: 'annulusOuterPipeSideDesignPressure', label: 'Annulus / Outer Pipe Side Design Pressure', type: 'number' },
+  { key: 'annulusOuterPipeSideDesignTemperature', label: 'Annulus / Outer Pipe Side Design Temperature', type: 'number' }
+];
+
+const airCoolerDesignFields: FieldConfig[] = [
+  { key: 'tubeSideDesignPressure', label: 'Tube Side Design Pressure', type: 'number' },
+  { key: 'tubeSideDesignTemperature', label: 'Tube Side Design Temperature', type: 'number' },
+  { key: 'headerBoxDesignPressure', label: 'Header Box Design Pressure', type: 'number' },
+  { key: 'headerBoxDesignTemperature', label: 'Header Box Design Temperature', type: 'number' }
+];
+
+const remainingExchangerMaterialFields: FieldConfig[] = [
+  { key: 'primaryMaterialSpec', label: 'Primary Material Spec' },
+  { key: 'primaryMaterialGrade', label: 'Primary Material Grade' },
+  { key: 'primaryProductForm', label: 'Primary Product Form' },
+  { key: 'secondaryMaterialSpec', label: 'Secondary Material Spec' },
+  { key: 'secondaryMaterialGrade', label: 'Secondary Material Grade' },
+  { key: 'secondaryProductForm', label: 'Secondary Product Form' }
+];
+
 const drumVesselDesignFields: FieldConfig[] = [
   { key: 'vesselDesignPressure', label: 'Vessel Design Pressure', type: 'number' },
   { key: 'vesselDesignTemperature', label: 'Vessel Design Temperature', type: 'number' }
@@ -94,6 +124,18 @@ const componentsByType: Record<string, ComponentConfig> = {
     minimum: ['Shell', 'Channel / Channel Head', 'Nozzles'],
     optional: ['Shell Cover', 'Channel Cover', 'Channel Head / Dollar Plate', 'Bonnet Head', 'Tubesheet Area', 'Saddles / Supports', 'Expansion Joint', 'Coating / Insulation Area']
   },
+  'api510.external.exchanger.plate-frame': {
+    minimum: ['Frame Head', 'Pressure Plate', 'Plate Pack External', 'Ports / Nozzles', 'Tie Bolts'],
+    optional: ['Carrying Bar', 'Guide Bar', 'Gaskets / Seals', 'Supports', 'Leakage / Staining Areas', 'Coating / Corrosion Areas', 'Nameplate / Markings', 'CML Locations', 'Other Component']
+  },
+  'api510.external.exchanger.double-pipe': {
+    minimum: ['Inner Pipe External', 'Outer Pipe', 'Return Bends', 'Nozzles'],
+    optional: ['Flanges / Gaskets / Bolting', 'Supports', 'Expansion Joint', 'Insulation / Coating Area', 'Vents / Drains', 'CML Locations', 'Other Component']
+  },
+  'api510.external.exchanger.air-cooler': {
+    minimum: ['Header Box', 'Tube Bundle External', 'Nozzles', 'Frame / Supports'],
+    optional: ['Tubes', 'Fins', 'Tube Supports', 'Plugs / Covers', 'Fan / Guard Area', 'Louvers', 'Access Platforms', 'Coating / Corrosion Areas', 'Nameplate / Markings', 'CML Locations', 'Other Component']
+  },
   'sti653.external.tank': {
     minimum: ['Tank Shell', 'Roof', 'Nozzles / Appurtenances'],
     optional: ['Foundation', 'Stairs / Platforms', 'External Coating', 'Insulation']
@@ -135,6 +177,9 @@ const isSti653Report = (typeId: string) => typeId.startsWith('sti653.');
 function getDesignFields(typeId: string) {
   if (isApi570Report(typeId)) return api570DesignFields;
   if (typeId === 'api510.external.exchanger.shell-tube') return shellTubeDesignFields;
+  if (typeId === 'api510.external.exchanger.plate-frame') return plateFrameDesignFields;
+  if (typeId === 'api510.external.exchanger.double-pipe') return doublePipeDesignFields;
+  if (typeId === 'api510.external.exchanger.air-cooler') return airCoolerDesignFields;
   if (isDrumVesselReport(typeId)) return drumVesselDesignFields;
   if (isTowerReport(typeId)) return towerDesignFields;
   if (isSti653Report(typeId)) return sti653DesignFields;
@@ -143,6 +188,7 @@ function getDesignFields(typeId: string) {
 
 function getMaterialFields(typeId: string) {
   if (typeId === 'api510.external.exchanger.shell-tube') return shellTubeMaterialFields;
+  if (['api510.external.exchanger.plate-frame', 'api510.external.exchanger.double-pipe', 'api510.external.exchanger.air-cooler'].includes(typeId)) return remainingExchangerMaterialFields;
   if (isDrumVesselReport(typeId)) return drumVesselMaterialFields;
   if (isTowerReport(typeId)) return towerMaterialFields;
   return [];

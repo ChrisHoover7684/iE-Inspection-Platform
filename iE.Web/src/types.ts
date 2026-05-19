@@ -431,3 +431,77 @@ export type HeadCalculationRequest = { input:HeadThicknessInput; materialStress:
 export type NozzleCalculationRequest = { input:NozzleThicknessInput; };
 export type CalculationEnvelope<T> = { resolvedAllowableStressPsi:number; materialMatched:string|null; temperatureUsed:number; wasInterpolated:boolean; wasExtrapolated:boolean; stressSourceMessage:string; result:T; warnings:string[]; };
 import type { InspectionCalculationSnapshot } from './engineering/types';
+
+export type Api510DrumVesselExternalReportTypeId =
+  | 'api510.external.drum-vessel.horizontal-drum'
+  | 'api510.external.drum-vessel.vertical-drum'
+  | 'api510.external.drum-vessel.separator-ko-drum'
+  | 'api510.external.drum-vessel.accumulator-receiver'
+  | 'api510.external.drum-vessel.generic-pressure-vessel';
+
+export type Api510DrumVesselExternalChecklistField = Api510ShellTubeExternalChecklistField;
+
+export type Api510DrumVesselExternalComponentState = {
+  condition: string;
+  location: string;
+  findingNotes: string;
+  recommendationText: string;
+  photoTag: string;
+  checklist: Record<Api510DrumVesselExternalChecklistField, boolean>;
+};
+
+export type Api510DrumVesselExternalReportHeaderDraft = Api510ShellTubeExternalReportHeaderDraft;
+
+export type Api510DrumVesselExternalDesignConditionsDraft = {
+  vesselDesignPressure: string;
+  vesselDesignTemperature: string;
+};
+
+export type Api510DrumVesselExternalMaterialsDraft = {
+  shellMaterialSpec: string;
+  shellMaterialGrade: string;
+  shellProductForm: string;
+  headMaterialSpec: string;
+  headMaterialGrade: string;
+  headProductForm: string;
+  headType: string;
+};
+
+export type Api510DrumVesselExternalSummaryFieldsDraft = Api510ShellTubeExternalSummaryFieldsDraft;
+
+export type Api510DrumVesselExternalDraftPayload = {
+  reportTypeId: Api510DrumVesselExternalReportTypeId;
+  reportTypeLabel: string;
+  equipmentSubtype: string;
+  sourceStartWizardDraft: {
+    storageKey: string;
+    draft?: {
+      reportTypeId: string;
+      reportTypeLabel?: string;
+      header: Record<string, string>;
+      components: string[];
+    };
+  };
+  reportHeader: Api510DrumVesselExternalReportHeaderDraft;
+  designConditions: Api510DrumVesselExternalDesignConditionsDraft;
+  materials: Api510DrumVesselExternalMaterialsDraft;
+  componentStates: Record<string, Api510DrumVesselExternalComponentState | undefined>;
+  checklistCounts: Record<Api510DrumVesselExternalChecklistField, number>;
+  calculationSnapshots: import('./engineering/types').InspectionCalculationSnapshot[];
+  findingDrafts: import('./reporting/api510CalculationFindings').Api510FindingDraft[];
+  summaryFields: Api510DrumVesselExternalSummaryFieldsDraft;
+  photos: {
+    photoLog: string;
+  };
+  ndeTesting: {
+    requirementsAndResults: string;
+  };
+  recommendations: {
+    summary: string;
+  };
+  returnToService: {
+    status: string;
+    notes: string;
+  };
+  savedAt: string;
+};

@@ -11,15 +11,18 @@ import { buildApi510FindingDraft, type Api510FindingDraft } from './api510Calcul
 import type { InspectionCalculationSnapshot } from '../engineering/types';
 import { pressureVesselApi } from '../api';
 
+const equipmentSubtypes = ['Horizontal Drum', 'Vertical Drum', 'Separator / KO Drum', 'Accumulator / Receiver', 'Generic Pressure Vessel'] as const;
 type Props = {
   fieldValues?: CalculationFieldValuesMap;
   hasReportContext?: boolean;
+  reportId?: string;
+  initialEquipmentSubtype?: (typeof equipmentSubtypes)[number];
+  initialHeadType?: string;
   reportCalculations?: InspectionCalculationSnapshot[];
   onSaveSnapshot?: (snapshot: InspectionCalculationSnapshot) => void;
   onCreateFindingDraft?: (draft: Api510FindingDraft) => void;
 };
 
-const equipmentSubtypes = ['Horizontal Drum', 'Vertical Drum', 'Separator / KO Drum', 'Accumulator / Receiver', 'Generic Pressure Vessel'] as const;
 const components = [
   { key: 'shell', label: 'Shell', defaultCalculationType: 'ug-27-shell-tmin' as const },
   { key: 'heads', label: 'Heads', defaultCalculationType: 'ug-32-formed-head-tmin' as const },
@@ -116,20 +119,21 @@ function inputLabel(key: string, inputs: Record<string, unknown>, setInputs: Dis
   return <label key={key}>{label}<input aria-label={label} value={String(inputs[key] ?? '')} onChange={(e) => setInputs((p) => ({ ...p, [key]: e.target.value }))} /></label>;
 }
 
-export function Api510DrumVesselCalculationWorkspace({ fieldValues = {}, hasReportContext = false, reportCalculations = [], onSaveSnapshot, onCreateFindingDraft }: Props) {
+export function Api510DrumVesselCalculationWorkspace({ fieldValues = {}, hasReportContext = false, initialEquipmentSubtype, initialHeadType, reportCalculations = [], onSaveSnapshot, onCreateFindingDraft }: Props) {
   const draftContext = useMemo(() => {
     if (hasReportContext || Object.keys(fieldValues).length > 0) return undefined;
     return buildDrumVesselDraftWorkspaceContext(readApiInspectionDraftSetup());
   }, [fieldValues, hasReportContext]);
   const workspaceFieldValues = useMemo(() => ({ ...draftContext?.fieldValues, ...fieldValues }), [draftContext, fieldValues]);
   const draftEquipmentSubtype = equipmentSubtypes.find((subtype) => subtype === draftContext?.equipmentSubtype) ?? 'Horizontal Drum';
-  const [equipmentSubtype, setEquipmentSubtype] = useState<(typeof equipmentSubtypes)[number]>(draftEquipmentSubtype);
+  const reportEquipmentSubtype = equipmentSubtypes.find((subtype) => subtype === initialEquipmentSubtype);
+  const [equipmentSubtype, setEquipmentSubtype] = useState<(typeof equipmentSubtypes)[number]>(reportEquipmentSubtype ?? draftEquipmentSubtype);
   const [componentKey, setComponentKey] = useState('shell');
   const [parentComponent, setParentComponent] = useState('shell');
   const [nozzleLocation, setNozzleLocation] = useState('shell');
   const [calculationType, setCalculationType] = useState<Api510CalculationType>('ug-27-shell-tmin');
   const [designConditions, setDesignConditions] = useState<CalculationFieldValuesMap>({});
-  const [inputs, setInputs] = useState<Record<string, unknown>>({ headType: draftContext?.headType || 'Ellipsoidal2To1', designCode: 'ASME_VIII_DIV1', stressEra: 'From1999Onward', parentThicknessSource: 'selected-parent' });
+  const [inputs, setInputs] = useState<Record<string, unknown>>({ headType: initialHeadType || draftContext?.headType || 'Ellipsoidal2To1', designCode: 'ASME_VIII_DIV1', stressEra: 'From1999Onward', parentThicknessSource: 'selected-parent' });
   const [execution, setExecution] = useState<ComponentCalculationExecutionResult | null>(null);
   const [savedSnapshotIds, setSavedSnapshotIds] = useState<Set<string>>(new Set());
   const [actionMessage, setActionMessage] = useState('');

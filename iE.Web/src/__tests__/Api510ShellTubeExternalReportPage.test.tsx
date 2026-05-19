@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../App';
 import { API510_SHELL_TUBE_EXTERNAL_REPORT_LOCAL_STORAGE_KEY } from '../reporting/Api510ShellTubeExternalReportPage';
+import { readApi510ShellTubeExternalDraftPayload } from '../reporting/api510ShellTubeReportDraft';
 import { API_INSPECTION_DRAFT_SETUP_STORAGE_KEY } from '../reporting/componentCalculationPrefill';
 
 vi.mock('../api', async () => {
@@ -120,9 +121,22 @@ describe('Api510ShellTubeExternalReportPage', () => {
     expect(saved).not.toBeNull();
     expect(JSON.parse(saved as string)).toMatchObject({
       reportTypeId: 'api510.external.exchanger.shell-tube',
+      reportTypeLabel: 'Shell and Tube Exchanger External',
       savedAt: '2026-05-18T12:34:56.000Z',
-      calculationSnapshotCount: 0,
-      findingDraftCount: 0
+      reportHeader: {
+        inspector: 'A. Inspector',
+        equipmentIdentifier: 'E-101'
+      },
+      designConditions: {
+        shellSideDesignPressure: '150',
+        tubeSideDesignPressure: '200'
+      },
+      materials: {
+        shellMaterialSpec: 'SA-516',
+        tubeChannelMaterialSpec: 'SA-106'
+      },
+      calculationSnapshots: [],
+      findingDrafts: []
     });
     expect(screen.getByText(/Last Saved:/)).toBeInTheDocument();
     vi.useRealTimers();
@@ -148,7 +162,77 @@ describe('Api510ShellTubeExternalReportPage', () => {
     const saved = JSON.parse(window.localStorage.getItem(API510_SHELL_TUBE_EXTERNAL_REPORT_LOCAL_STORAGE_KEY) as string);
     expect(saved.checklistCounts['Repair Required']).toBe(1);
     expect(saved.checklistCounts['Photo Required']).toBe(1);
-    expect(saved.components).toHaveLength(5);
+    expect(Object.keys(saved.componentStates)).toHaveLength(5);
+    expect(saved.componentStates.Shell.checklist['Repair Required']).toBe(true);
+    expect(saved.componentStates.Shell.checklist['Photo Required']).toBe(true);
+  });
+
+  it('local save stores structured API 510 Shell-and-Tube draft payload sections', () => {
+    storeDraft();
+    renderRoute();
+
+    fireEvent.change(screen.getByLabelText('Shell Condition'), { target: { value: 'Requires Evaluation' } });
+    fireEvent.change(screen.getByLabelText('Shell Location'), { target: { value: '6 o’clock shell band' } });
+    fireEvent.change(screen.getByText('General External Condition').closest('label')!.querySelector('textarea')!, { target: { value: 'Coating weathered but intact.' } });
+    fireEvent.change(screen.getByText('Photo Log').closest('label')!.querySelector('textarea')!, { target: { value: 'P-1 Shell overview' } });
+    fireEvent.change(screen.getByLabelText('Return to Service Status'), { target: { value: 'Acceptable with recommendations' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Save Draft Locally' })[0]);
+
+    const saved = JSON.parse(window.localStorage.getItem(API510_SHELL_TUBE_EXTERNAL_REPORT_LOCAL_STORAGE_KEY) as string);
+    expect(saved.sourceStartWizardDraft.storageKey).toBe(API_INSPECTION_DRAFT_SETUP_STORAGE_KEY);
+    expect(saved.reportHeader).toMatchObject({
+      inspectionDate: '2026-05-18',
+      inspector: 'A. Inspector',
+      clientFacility: 'Demo Refinery',
+      equipmentIdentifier: 'E-101'
+    });
+    expect(saved.designConditions).toMatchObject({
+      shellSideDesignPressure: '150',
+      shellSideDesignTemperature: '450',
+      tubeSideDesignPressure: '200',
+      tubeSideDesignTemperature: '350'
+    });
+    expect(saved.materials).toMatchObject({
+      shellMaterialSpec: 'SA-516',
+      shellMaterialGrade: '70',
+      shellProductForm: 'Plate',
+      tubeChannelMaterialSpec: 'SA-106'
+    });
+    expect(saved.componentStates.Shell).toMatchObject({
+      condition: 'Requires Evaluation',
+      location: '6 o’clock shell band'
+    });
+    expect(saved.calculationSnapshots).toHaveLength(0);
+    expect(saved.findingDrafts).toHaveLength(0);
+    expect(saved.summaryFields.generalExternalCondition).toBe('Coating weathered but intact.');
+    expect(saved.photos.photoLog).toBe('P-1 Shell overview');
+    expect(saved.returnToService.status).toBe('Acceptable with recommendations');
+  });
+
+  it('draft payload can be read back from localStorage', () => {
+    storeDraft();
+    renderRoute();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Save Draft Locally' })[0]);
+
+    const saved = readApi510ShellTubeExternalDraftPayload();
+    expect(saved).toBeDefined();
+    expect(saved?.reportTypeId).toBe('api510.external.exchanger.shell-tube');
+    expect(saved?.reportHeader.equipmentIdentifier).toBe('E-101');
+    expect(saved?.componentStates['Shell Cover']).toBeDefined();
+    expect(saved?.calculationSnapshots).toHaveLength(0);
+    expect(saved?.findingDrafts).toHaveLength(0);
+  });
+
+  it('View Draft Payload panel exposes the draft payload shape', () => {
+    storeDraft();
+    renderRoute();
+
+    expect(screen.getByText('View Draft Payload')).toBeInTheDocument();
+    const debugPayload = screen.getByLabelText('API 510 Shell-and-Tube draft payload');
+    expect(debugPayload).toHaveTextContent('reportHeader');
+    expect(debugPayload).toHaveTextContent('designConditions');
+    expect(debugPayload).toHaveTextContent('componentStates');
   });
 
   it('Draft setup fields appear in header, design, and material sections', () => {

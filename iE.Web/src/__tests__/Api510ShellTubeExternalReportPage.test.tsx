@@ -318,6 +318,32 @@ describe('Api510ShellTubeExternalReportPage', () => {
     expect(await screen.findByRole('heading', { name: /API 570 Piping External/i })).toBeInTheDocument();
   });
 
+  
+
+  it('Shell-and-Tube page displays assist panel per component', () => {
+    storeDraft();
+    renderRoute();
+
+    const assistPanels = screen.getAllByText('iE Assist (Rule-Based)');
+    expect(assistPanels).toHaveLength(5);
+  });
+
+  it('summary warning count updates from assist rules', () => {
+    storeDraft();
+    renderRoute();
+
+    const assistCard = screen.getByLabelText('iE Assist');
+    expect(within(assistCard).getByText('Total assist warnings')).toBeInTheDocument();
+    expect(within(assistCard).getByTestId('total-assist-warnings-count')).toHaveTextContent('0');
+    expect(within(assistCard).getByTestId('missing-photo-tags-count')).toHaveTextContent('0');
+
+    fireEvent.click(screen.getByLabelText('Shell Photo Required'));
+
+    expect(within(assistCard).getByTestId('total-assist-warnings-count')).toHaveTextContent('1');
+    expect(within(assistCard).getByTestId('missing-photo-tags-count')).toHaveTextContent('1');
+    expect(screen.getByLabelText('Shell iE Assist')).toHaveTextContent('Photo tag missing');
+  });
+
   it('API 510 Internal does not appear', () => {
     storeDraft();
     renderRoute();

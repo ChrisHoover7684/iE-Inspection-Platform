@@ -1,6 +1,8 @@
 import { Fragment, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Api510ShellTubeCalculationWorkspace } from './Api510ShellTubeCalculationWorkspace';
+import { InlineReportAssistPanel } from './InlineReportAssistPanel';
+import { evaluateInlineAssistRules } from './ieAssistRules';
 import {
   API510_SHELL_TUBE_EXTERNAL_REPORT_LOCAL_STORAGE_KEY,
   API510_SHELL_TUBE_EXTERNAL_REPORT_TYPE_ID,
@@ -181,6 +183,7 @@ function ComponentSection({
           </label>
         ))}
       </div>
+      <InlineReportAssistPanel component={component} state={state} onChange={onChange} />
     </details>
   );
 }
@@ -230,6 +233,17 @@ export function Api510ShellTubeExternalReportPage() {
   ])) as Record<(typeof summaryChecklistFields)[number], number>, [componentStates, components]);
 
   const selectedSummaryComponents = components;
+
+
+  const assistByComponent = useMemo(() => Object.fromEntries(components.map((component) => [component, evaluateInlineAssistRules(componentStates[component] ?? emptyComponentState())])), [componentStates, components]);
+
+  const assistSummary = useMemo(() => ({
+    totalAssistWarnings: components.reduce((count, component) => count + assistByComponent[component].suggestions.filter((suggestion) => suggestion.severity !== 'info').length, 0),
+    componentsNeedingAttention: components.filter((component) => assistByComponent[component].suggestions.some((suggestion) => suggestion.severity !== 'info')).length,
+    missingPhotoTags: components.filter((component) => (componentStates[component]?.checklist['Photo Required']) && !componentStates[component]?.photoTag.trim()).length,
+    missingRecommendations: components.filter((component) => (componentStates[component]?.checklist['Recommendation Required']) && !componentStates[component]?.recommendationText.trim()).length,
+    ndeNeedingMethodLocation: components.filter((component) => (componentStates[component]?.checklist['NDE Required']) && !componentStates[component]?.location.trim()).length
+  }), [assistByComponent, componentStates, components]);
 
   const draftPayloadPreview = useMemo(() => buildApi510ShellTubeExternalDraftPayload({
     sourceStartWizardDraft: draft,
@@ -398,7 +412,14 @@ export function Api510ShellTubeExternalReportPage() {
 
           <section className="card" aria-label="iE Assist">
             <h3>iE Assist</h3>
-            <p className="wizard-note">Assistant review hooks will use the local report draft until backend report persistence is finalized.</p>
+            <p className="wizard-note">Assistant review hooks use local deterministic rules and do not call external AI services.</p>
+            <dl className="api510-summary-list">
+              <dt>Total assist warnings</dt><dd data-testid="total-assist-warnings-count">{assistSummary.totalAssistWarnings}</dd>
+              <dt>Components needing attention</dt><dd data-testid="components-needing-attention-count">{assistSummary.componentsNeedingAttention}</dd>
+              <dt>Missing photo tags</dt><dd data-testid="missing-photo-tags-count">{assistSummary.missingPhotoTags}</dd>
+              <dt>Missing recommendations</dt><dd data-testid="missing-recommendations-count">{assistSummary.missingRecommendations}</dd>
+              <dt>NDE flags needing method/location</dt><dd data-testid="nde-needing-method-location-count">{assistSummary.ndeNeedingMethodLocation}</dd>
+            </dl>
           </section>
 
           <section className="card" aria-label="Report Summary Preview">

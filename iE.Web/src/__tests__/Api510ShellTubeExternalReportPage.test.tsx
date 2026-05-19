@@ -318,7 +318,31 @@ describe('Api510ShellTubeExternalReportPage', () => {
     expect(await screen.findByRole('heading', { name: /API 570 Piping External/i })).toBeInTheDocument();
   });
 
-  it('API 510 Internal does not appear', () => {
+  
+
+  it('Shell-and-Tube page displays assist panel per component', () => {
+    storeDraft();
+    renderRoute();
+
+    const assistPanels = screen.getAllByText('iE Assist (Rule-Based)');
+    expect(assistPanels).toHaveLength(5);
+  });
+
+  it('summary warning count updates from assist rules', () => {
+    storeDraft();
+    renderRoute();
+
+    const assistCard = screen.getByLabelText('iE Assist');
+    expect(within(assistCard).getByText('Total assist warnings')).toBeInTheDocument();
+    expect(within(assistCard).getByText('0')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Shell Photo Required'));
+    fireEvent.click(screen.getByLabelText('Shell Recommendation Required'));
+
+    expect(within(assistCard).getByText('2')).toBeInTheDocument();
+    expect(within(assistCard).getAllByText('1').length).toBeGreaterThanOrEqual(2);
+  });
+it('API 510 Internal does not appear', () => {
     storeDraft();
     renderRoute();
 

@@ -1591,3 +1591,33 @@ html, body, #root {
         position: static;
     }
 }
+
+.api510-shell-tube-external-report .ie-assist-panel {
+    margin-top: 12px;
+    border: 1px solid #dce4ef;
+    border-radius: 8px;
+    padding: 10px;
+    background: #fff;
+}
+
+.api510-shell-tube-external-report .ie-assist-header-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: center;
+}
+
+.api510-shell-tube-external-report .ie-assist-suggestion-list {
+    margin: 8px 0;
+    padding-left: 18px;
+}
+
+.api510-shell-tube-external-report .ie-assist-severity-warning strong { color: #8a4b00; }
+.api510-shell-tube-external-report .ie-assist-severity-critical strong { color: #9a1d1d; }
+.api510-shell-tube-external-report .ie-assist-severity-info strong { color: #1e4d8b; }
+
+.api510-shell-tube-external-report .ie-assist-wording-box {
+    margin-top: 8px;
+    border-top: 1px dashed #d0d9e6;
+    padding-top: 8px;
+}

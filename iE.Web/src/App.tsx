@@ -19,6 +19,7 @@ import { Api510ShellTubeCalculationWorkspace } from './reporting/Api510ShellTube
 import { Api510DrumVesselCalculationWorkspace } from './reporting/Api510DrumVesselCalculationWorkspace';
 import { Api510ShellTubeExternalReportPage } from './reporting/Api510ShellTubeExternalReportPage';
 import { Api510DrumVesselExternalReportPage } from './reporting/Api510DrumVesselExternalReportPage';
+import { Api510TowerColumnExternalReportPage } from './reporting/Api510TowerColumnExternalReportPage';
 
 function ShellRoute({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>;
@@ -42,6 +43,7 @@ export default function App() {
       <Route path="/reports" element={<ShellRoute><ApiInspectionReportsPage /></ShellRoute>} />
       <Route path="/reports/api-510-shell-tube-external" element={<ShellRoute><Api510ShellTubeExternalReportPage /></ShellRoute>} />
       <Route path="/reports/api-510-drum-vessel-external" element={<ShellRoute><Api510DrumVesselExternalReportPage /></ShellRoute>} />
+      <Route path="/reports/api-510-tower-column-external" element={<ShellRoute><Api510TowerColumnExternalReportPage /></ShellRoute>} />
       <Route path="/reports/api-510-shell-tube-workspace" element={<ShellRoute><Api510ShellTubeCalculationWorkspace /></ShellRoute>} />
       <Route path="/reports/api-510-drum-vessel-workspace" element={<ShellRoute><Api510DrumVesselCalculationWorkspace /></ShellRoute>} />
       <Route path="/downloads" element={placeholder('Downloads', 'Coming soon: downloadable report and file library.')} />

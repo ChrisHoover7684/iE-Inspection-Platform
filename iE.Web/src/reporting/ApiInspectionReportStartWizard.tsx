@@ -105,9 +105,26 @@ const drumVesselComponents: ComponentConfig = {
   optional: ['Saddles', 'Skirt', 'Lifting Lugs', 'External Coating', 'Insulation']
 };
 
-const towerComponents: ComponentConfig = {
-  minimum: ['Shell Courses', 'Nozzles', 'Manways', 'Skirt', 'Base Ring / Anchor Bolts', 'Platforms / Ladders / Handrails'],
-  optional: ['Tray Access Areas', 'Reboiler / Overhead Connections', 'External Coating', 'Insulation']
+const commonTowerComponents = ['Shell Courses', 'Nozzles', 'Manways', 'Skirt', 'Base Ring / Anchor Bolts', 'Platforms / Ladders / Handrails'];
+const sharedTowerOptionalComponents = ['Heads', 'Insulation / Jacketing', 'Coating', 'Supports / Bracing', 'Davits / Lifting Attachments', 'External Piping Attachments', 'Vents / Drains', 'Nameplate / Markings', 'CML Locations'];
+
+const towerComponentsByType: Record<string, ComponentConfig> = {
+  'api510.external.tower-column.distillation': {
+    minimum: commonTowerComponents,
+    optional: [...sharedTowerOptionalComponents, 'Tray Manways', 'Draw Nozzles', 'Reboiler / Condenser Connections', 'Other Component']
+  },
+  'api510.external.tower-column.absorber-stripper': {
+    minimum: commonTowerComponents,
+    optional: [...sharedTowerOptionalComponents, 'Packing Access Manways', 'Distributor Nozzles', 'Reboiler / Overhead Connections', 'Other Component']
+  },
+  'api510.external.tower-column.packed-column': {
+    minimum: commonTowerComponents,
+    optional: [...sharedTowerOptionalComponents, 'Packing Support Access', 'Distributor Access', 'Mist Eliminator Access', 'Other Component']
+  },
+  'api510.external.tower-column.tray-column': {
+    minimum: commonTowerComponents,
+    optional: [...sharedTowerOptionalComponents, 'Tray Access Manways', 'Downcomer / Tray Access Locations', 'Draw Pan Connections', 'Other Component']
+  }
 };
 
 const isDrumVesselReport = (typeId: string) => typeId.includes('api510.external.drum-vessel.');
@@ -133,7 +150,7 @@ function getMaterialFields(typeId: string) {
 
 function getComponentConfig(typeId: string): ComponentConfig {
   if (isDrumVesselReport(typeId)) return drumVesselComponents;
-  if (isTowerReport(typeId)) return towerComponents;
+  if (isTowerReport(typeId)) return towerComponentsByType[typeId] ?? { minimum: commonTowerComponents, optional: sharedTowerOptionalComponents };
   return componentsByType[typeId] || { minimum: ['External visual inspection'], optional: ['Insulation / coating areas', 'Supports'] };
 }
 

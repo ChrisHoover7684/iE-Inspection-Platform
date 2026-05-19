@@ -505,3 +505,87 @@ export type Api510DrumVesselExternalDraftPayload = {
   };
   savedAt: string;
 };
+
+export type Api510TowerColumnExternalReportTypeId =
+  | 'api510.external.tower-column.distillation'
+  | 'api510.external.tower-column.absorber-stripper'
+  | 'api510.external.tower-column.packed-column'
+  | 'api510.external.tower-column.tray-column';
+
+export type Api510TowerColumnExternalChecklistField = Api510ShellTubeExternalChecklistField;
+
+export type Api510TowerColumnExternalComponentState = {
+  condition: string;
+  location: string;
+  findingNotes: string;
+  recommendationText: string;
+  photoTag: string;
+  checklist: Record<Api510TowerColumnExternalChecklistField, boolean>;
+};
+
+export type Api510TowerColumnExternalReportHeaderDraft = Api510ShellTubeExternalReportHeaderDraft;
+
+export type Api510TowerColumnExternalDesignConditionsDraft = {
+  vesselDesignPressure: string;
+  vesselDesignTemperature: string;
+};
+
+export type Api510TowerColumnExternalMaterialsDraft = {
+  shellCourseMaterialSpec: string;
+  shellCourseMaterialGrade: string;
+  shellCourseProductForm: string;
+};
+
+export type Api510TowerColumnExternalSummaryFieldsDraft = {
+  shellCourseCorrosionCoatingCondition: string;
+  nozzleExternalCondition: string;
+  manwayExternalCondition: string;
+  skirtCondition: string;
+  baseRingAnchorBoltCondition: string;
+  platformLadderHandrailCondition: string;
+  insulationJacketingCondition: string;
+  leakageStaining: string;
+  externalDeformationBulgingMechanicalDamage: string;
+  cmlThicknessReviewNotes: string;
+  externalSummary: string;
+  coatingInsulationDetails: string;
+  leakageStainingDetails: string;
+  supportsAttachmentsDetails: string;
+  cmlThicknessReviewDetails: string;
+  findingSummary: string;
+};
+
+export type Api510TowerColumnExternalDraftPayload = {
+  reportTypeId: Api510TowerColumnExternalReportTypeId;
+  reportTypeLabel: string;
+  equipmentSubtype: string;
+  sourceStartWizardDraft: {
+    storageKey: string;
+    draft?: {
+      reportTypeId: string;
+      reportTypeLabel?: string;
+      header: Record<string, string>;
+      components: string[];
+    };
+  };
+  reportHeader: Api510TowerColumnExternalReportHeaderDraft;
+  designConditions: Api510TowerColumnExternalDesignConditionsDraft;
+  materials: Api510TowerColumnExternalMaterialsDraft;
+  componentStates: Record<string, Api510TowerColumnExternalComponentState | undefined>;
+  checklistCounts: Record<Api510TowerColumnExternalChecklistField, number>;
+  summaryFields: Api510TowerColumnExternalSummaryFieldsDraft;
+  photos: {
+    photoLog: string;
+  };
+  ndeTesting: {
+    requirementsAndResults: string;
+  };
+  recommendations: {
+    summary: string;
+  };
+  returnToService: {
+    status: string;
+    notes: string;
+  };
+  savedAt: string;
+};

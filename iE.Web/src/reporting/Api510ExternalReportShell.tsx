@@ -10,6 +10,7 @@ export function Api510ExternalReportShell({ reportTypeId, draftPrepared = false 
   const isTowerColumn = reportTypeId?.includes('api510.external.tower-column.');
   const isRemainingExchanger = ['api510.external.exchanger.plate-frame', 'api510.external.exchanger.double-pipe', 'api510.external.exchanger.air-cooler'].includes(reportTypeId ?? '');
   const isTankExternal = reportTypeId === 'sti653.external.tank';
+  const isApi570External = reportTypeId === 'api570.piping-external' || reportTypeId === 'api570.piping-cui-external';
   const workspaceRoute = isShellTube
     ? '/reports/api-510-shell-tube-workspace'
     : isDrumVessel
@@ -18,6 +19,7 @@ export function Api510ExternalReportShell({ reportTypeId, draftPrepared = false 
 
   if (!isApi510External) {
     return <div className="wizard-calculation-action" aria-label="Calculations">
+      {isApi570External && draftPrepared && <button type="button" onClick={() => navigate('/reports/api-570-piping-external')}>Open Piping External Inspection Report</button>}
       {isTankExternal && draftPrepared && <button type="button" onClick={() => navigate('/reports/sti-api-653-tank-external')}>Open External Inspection Report</button>}
       <button type="button" disabled>Open Engineering Tools</button>
       <p className="wizard-note">Engineering tools are review-only for this report type.</p>

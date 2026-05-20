@@ -89,7 +89,7 @@ describe('StiApi653TankExternalReportPage', () => {
     fireEvent.click(screen.getByLabelText('Tank External'));
     fireEvent.click(screen.getByRole('button', { name: 'Start Draft Report' }));
 
-    expect(screen.getByRole('button', { name: 'Open Tank External Report' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open External Inspection Report' })).toBeInTheDocument();
     expect(screen.queryByText(/API 510 Internal/i)).not.toBeInTheDocument();
   });
 

@@ -113,4 +113,13 @@ describe('Api510RemainingExchangerExternalReportPage', () => {
     render(<MemoryRouter initialEntries={['/reports']}><App /></MemoryRouter>);
     expect(screen.queryByText(/API 510 Internal/i)).not.toBeInTheDocument();
   });
+
+  it('warning count updates for remaining exchanger assist panel', () => {
+    storeDraft('api510.external.exchanger.plate-frame', 'Plate and Frame Exchanger External', { hotSideDesignPressure: '150' }, ['Frame Head']);
+    renderRoute();
+    expect(screen.getAllByText('iE Assist (Rule-Based)').length).toBeGreaterThan(0);
+    const assistCard = screen.getByLabelText('iE Assist');
+    fireEvent.click(screen.getByLabelText('Frame Head Photo Required'));
+    expect(within(assistCard).getByTestId('total-assist-warnings-count')).toHaveTextContent('1');
+  });
 });

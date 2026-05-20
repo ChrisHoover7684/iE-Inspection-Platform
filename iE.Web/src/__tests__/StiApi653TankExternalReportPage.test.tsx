@@ -85,7 +85,7 @@ describe('StiApi653TankExternalReportPage', () => {
   });
 
   it('Start Wizard opens Tank External route and does not expose API 510 Internal', () => {
-    renderRoute('/reports');
+    renderRoute('/reports/new');
     fireEvent.click(screen.getByLabelText('Tank External'));
     fireEvent.click(screen.getByRole('button', { name: 'Start Draft Report' }));
 

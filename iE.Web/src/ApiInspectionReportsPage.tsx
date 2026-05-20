@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { ApiError, reportingApi } from './api';
 import { exportFieldCatalogWordReview } from './reporting/fieldCatalogWordExport';
 import type { InspectionReport } from './types';
-import { ApiInspectionReportStartWizard } from './reporting/ApiInspectionReportStartWizard';
 
 type SortColumn =
   | 'reportNumber'
@@ -319,6 +318,9 @@ export function ApiInspectionReportsPage() {
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
           />
+          <button type="button" className="new-report-btn" onClick={() => navigate('/reports/new')}>
+            Create Report
+          </button>
           <button type="button" className="new-report-btn" onClick={() => navigate('/reports/api-570-piping-external')}>
             Open API 570 Piping External
           </button>
@@ -343,8 +345,6 @@ export function ApiInspectionReportsPage() {
             </div>
           </section>
 
-
-          <ApiInspectionReportStartWizard />
 
           <section className="card reports-panel dashboard-reports-section">
             <div className="reports-filters">

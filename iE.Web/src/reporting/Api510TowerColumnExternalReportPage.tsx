@@ -10,7 +10,8 @@ import {
 import {
   API_INSPECTION_DRAFT_SETUP_STORAGE_KEY,
   readApiInspectionDraftSetup
-} from './componentCalculationPrefill';
+} from './componentCalculationPrefill'
+import { buildChecklistCounts } from './externalReportChecklistUtils';
 import type {
   Api510TowerColumnExternalChecklistField,
   Api510TowerColumnExternalComponentState,
@@ -222,10 +223,7 @@ export function Api510TowerColumnExternalReportPage() {
   const [returnToServiceStatus, setReturnToServiceStatus] = useState(() => savedDraftPayload?.returnToService.status ?? '');
   const [returnToServiceNotes, setReturnToServiceNotes] = useState(() => savedDraftPayload?.returnToService.notes ?? '');
 
-  const checklistCounts = useMemo(() => Object.fromEntries(summaryChecklistFields.map((field) => [
-    field,
-    components.filter((component) => componentStates[component]?.checklist[field]).length
-  ])) as Record<(typeof summaryChecklistFields)[number], number>, [componentStates, components]);
+  const checklistCounts = useMemo(() => buildChecklistCounts(summaryChecklistFields, components, (component, field) => Boolean(componentStates[component]?.checklist[field])), [componentStates, components]);
 
   const draftPayloadPreview = useMemo(() => buildApi510TowerColumnExternalDraftPayload({
     sourceStartWizardDraft: draft,

@@ -233,11 +233,11 @@ describe('Api510TowerColumnExternalReportPage', () => {
     renderRoute('/reports/new');
     expect(await screen.findByRole('heading', { name: 'Step 1: Select Report Type' })).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Tray Column External'));
-    expect(screen.queryByRole('button', { name: 'Open Tower/Column External Report' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Open External Inspection Report' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Draft Report' }));
 
-    expect(await screen.findByRole('button', { name: 'Open Tower/Column External Report' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Open External Inspection Report' })).toBeInTheDocument();
   });
 
   it('API 570 route still works', async () => {

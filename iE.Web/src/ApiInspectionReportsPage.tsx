@@ -115,7 +115,10 @@ export function ApiInspectionReportsPage() {
         const instances = await reportingApi.getInstances();
         setReports(instances);
       } catch (loadError) {
-        setError(getErrorMessage(loadError, 'Unable to load reports.'));
+        const isUnavailable = loadError instanceof ApiError && (loadError.status === 403 || loadError.status === 500 || loadError.status === 503);
+        setError(isUnavailable
+          ? 'Report database is unavailable. Showing local/demo report workspace only.'
+          : getErrorMessage(loadError, 'Unable to load reports.'));
       } finally {
         setIsLoading(false);
       }
@@ -320,15 +323,6 @@ export function ApiInspectionReportsPage() {
           />
           <button type="button" className="new-report-btn" onClick={() => navigate('/reports/new')}>
             Create Report
-          </button>
-          <button type="button" className="new-report-btn" onClick={() => navigate('/reports/api-570-piping-external')}>
-            Open API 570 Piping External
-          </button>
-          <button type="button" className="new-report-btn" onClick={() => navigate('/reports/api-510-shell-tube-workspace')}>
-            API 510 Shell-and-Tube Calculation Workspace
-          </button>
-          <button type="button" className="new-report-btn" onClick={() => navigate('/reports/api-510-drum-vessel-workspace')}>
-            API 510 Drum/Vessel Calculation Workspace
           </button>
           <div className="profile-pill">Inspector User</div>
         </header>

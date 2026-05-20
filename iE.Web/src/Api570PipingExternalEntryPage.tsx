@@ -11,6 +11,8 @@ import { API570_COMPONENT_PRESETS, canCreateFindingFromComponentSection, createA
 
 const TEMPLATE_ID = 'api-570-piping-external';
 const ACTIVE_REPORT_ID_STORAGE_KEY = 'ie_api570_active_report_id';
+const API570_LOCAL_DRAFT_STORAGE_KEY = 'ie_api570_local_draft';
+const API570_LOCAL_DRAFT_SAVED_AT_STORAGE_KEY = 'ie_api570_local_draft_saved_at';
 const IE_ASSIST_STORAGE_KEY = 'ie_dashboard_ie_assist_enabled';
 
 const HEADER_GRID_COLUMNS = [
@@ -79,6 +81,36 @@ const toCondition = (answer: InspectionReportAnswer): 'acceptable' | 'issue' | '
   return 'acceptable';
 };
 
+const buildLocalApi570Draft = (template: ReportTemplate): InspectionReport => ({
+  id: `local-api570-${crypto.randomUUID()}`,
+  clientOrganizationId: 'local-demo-client',
+  facilityId: 'local-demo-facility',
+  templateId: template.id,
+  status: 'Draft (Local)',
+  createdAt: new Date().toISOString(),
+  sections: template.sections.map((section) => ({
+    sectionId: section.id,
+    sectionTitle: section.title,
+    order: section.order,
+    isRepeatable: section.isRepeatable,
+    answers: (section.fields ?? []).map((field) => ({
+      fieldId: field.id,
+      label: field.label,
+      dataType: field.dataType,
+      value: field.defaultValue ?? '',
+      values: [],
+      comment: '',
+      photoRequired: false,
+      recommendationRequired: false,
+      transferToComponentSection: false,
+      repairRequired: false
+    }))
+  })),
+  findings: [],
+  photos: [],
+  calculations: []
+});
+
 export function Api570PipingExternalEntryPage() {
   const location = useLocation();
   const [report, setReport] = useState<InspectionReport | null>(null);
@@ -117,6 +149,8 @@ export function Api570PipingExternalEntryPage() {
   const [lastApi570FindingsSnapshotId, setLastApi570FindingsSnapshotId] = useState('');
 
   const [componentPreset, setComponentPreset] = useState<string>(API570_COMPONENT_PRESETS[0]);
+  const [localModeBanner, setLocalModeBanner] = useState('');
+  const [lastLocalSavedAt, setLastLocalSavedAt] = useState(localStorage.getItem(API570_LOCAL_DRAFT_SAVED_AT_STORAGE_KEY) || '');
 
   useEffect(() => { void (async () => { /* unchanged init */
     try {
@@ -127,7 +161,16 @@ export function Api570PipingExternalEntryPage() {
       if (routeReport?.id) { setReport(routeReport); localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, routeReport.id); return; }
       const existingId = routeReportId || storedId;
       if (existingId) { try { const existing = await reportingApi.getInstanceById(existingId); setReport(existing); localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, existing.id); return; } catch { localStorage.removeItem(ACTIVE_REPORT_ID_STORAGE_KEY); } }
-      const created = await reportingApi.createInstanceFromTemplate(TEMPLATE_ID); setReport(created); localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, created.id);
+      try {
+        const created = await reportingApi.createInstanceFromTemplate(TEMPLATE_ID);
+        setReport(created);
+        localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, created.id);
+      } catch {
+        const localDraft = buildLocalApi570Draft(loadedTemplate);
+        setReport(localDraft);
+        localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, localDraft.id);
+        setLocalModeBanner('Backend save unavailable. Draft opened in local mode.');
+      }
     } catch (e) { setError(getErrorMessage(e, 'Failed to initialize report.')); }
   })(); }, [location.state]);
 
@@ -395,7 +438,8 @@ export function Api570PipingExternalEntryPage() {
   if (!report) return <div className="page">{error || 'Loading API 570 Piping External report...'}</div>;
 
   return <div className="page report-page api570-report">
-    <h1 className="report-page-title">API 570 Piping External - Report Entry</h1>
+    <h1 className="report-page-title">API 570 Piping External Inspection Report</h1>
+    {localModeBanner && <div className="card" role="status">{localModeBanner}</div>}
     <div className="api570-toolbar" ref={toolbarRef}>
       <div className="toolbar-title"><strong>API 570 Piping External - Report Entry</strong></div>
       <div className="toolbar-metrics">
@@ -405,8 +449,15 @@ export function Api570PipingExternalEntryPage() {
       <div className="toolbar-actions">
         <span className="muted">{isSaving ? 'Saving…' : isDirty ? 'Unsaved changes' : 'Saved'}</span>
         <button type="button" onClick={() => void saveReport()} disabled={isSaving || !isDirty}>{isSaving ? 'Saving…' : 'Save'}</button>
+        <button type="button" onClick={() => {
+          localStorage.setItem(API570_LOCAL_DRAFT_STORAGE_KEY, JSON.stringify(report));
+          const now = new Date().toISOString();
+          localStorage.setItem(API570_LOCAL_DRAFT_SAVED_AT_STORAGE_KEY, now);
+          setLastLocalSavedAt(now);
+        }}>Save Draft Locally</button>
       </div>
     </div>
+    {lastLocalSavedAt && <p className="muted">Last Saved: {new Date(lastLocalSavedAt).toLocaleString()}</p>}
 
     <div className="report-header-sticky" key="report-header" ref={headerRef}>
       <div className="report-header-shell">
@@ -543,6 +594,10 @@ export function Api570PipingExternalEntryPage() {
           <h4>Saved Calculations</h4>
           {(report.calculations ?? []).length === 0 ? <p className="muted">No saved calculations.</p> : <ul>{(report.calculations ?? []).map((c) => <li key={c.id}><strong>{c.displayName}</strong><br />{new Date(c.calculatedAt).toLocaleString()} · {c.insertLabel} · warnings: {c.warnings.length}</li>)}</ul>}
         </div>
+        <details className="sidebar-section">
+          <summary>View Draft Payload</summary>
+          <pre>{JSON.stringify(report, null, 2)}</pre>
+        </details>
       </aside>
     </div>
     {isToolWorkspaceOpen && ['b31-3-piping', 'api-570-thickness-assessment'].includes(selectedTool) && <div className="tool-workspace-backdrop" onClick={() => setIsToolWorkspaceOpen(false)}>

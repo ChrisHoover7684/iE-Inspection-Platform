@@ -257,7 +257,7 @@ export function ApiInspectionReportStartWizard() {
     };
     setDraftSetup(draftSetup);
     window.localStorage.setItem(API_INSPECTION_DRAFT_SETUP_STORAGE_KEY, JSON.stringify(draftSetup));
-    setDraftMessage('Draft setup prepared. Full report creation will be connected next.');
+    setDraftMessage('Backend save unavailable. Draft started locally.');
   };
 
   return <section className="card start-wizard" aria-label="API Inspection Report Start Wizard">

@@ -10,6 +10,7 @@ export function Api510ExternalReportShell({ reportTypeId, draftPrepared = false 
   const isTowerColumn = reportTypeId?.includes('api510.external.tower-column.');
   const isRemainingExchanger = ['api510.external.exchanger.plate-frame', 'api510.external.exchanger.double-pipe', 'api510.external.exchanger.air-cooler'].includes(reportTypeId ?? '');
   const isTankExternal = reportTypeId === 'sti653.external.tank';
+  const isApi570External = reportTypeId === 'api570.piping-external' || reportTypeId === 'api570.piping-cui-external';
   const workspaceRoute = isShellTube
     ? '/reports/api-510-shell-tube-workspace'
     : isDrumVessel
@@ -18,26 +19,28 @@ export function Api510ExternalReportShell({ reportTypeId, draftPrepared = false 
 
   if (!isApi510External) {
     return <div className="wizard-calculation-action" aria-label="Calculations">
-      {isTankExternal && draftPrepared && <button type="button" onClick={() => navigate('/reports/sti-api-653-tank-external')}>Open Tank External Report</button>}
-      <p className="wizard-note">Calculation workspace is available for supported API 510 External report types.</p>
+      {isApi570External && draftPrepared && <button type="button" onClick={() => navigate('/reports/api-570-piping-external')}>Open Piping External Inspection Report</button>}
+      {isTankExternal && draftPrepared && <button type="button" onClick={() => navigate('/reports/sti-api-653-tank-external')}>Open External Inspection Report</button>}
+      <button type="button" disabled>Open Engineering Tools</button>
+      <p className="wizard-note">Engineering tools are review-only for this report type.</p>
     </div>;
   }
 
   return (
     <div className="wizard-calculation-action" aria-label="Calculations">
-      <p>Open the calculation workspace with any saved Start Wizard draft setup applied.</p>
-      {isShellTube && draftPrepared && <button type="button" onClick={() => navigate('/reports/api-510-shell-tube-external')}>Open Shell-and-Tube External Report</button>}
-      {isDrumVessel && draftPrepared && <button type="button" onClick={() => navigate('/reports/api-510-drum-vessel-external')}>Open Drum/Vessel External Report</button>}
-      {isTowerColumn && draftPrepared && <button type="button" onClick={() => navigate('/reports/api-510-tower-column-external')}>Open Tower/Column External Report</button>}
-      {isRemainingExchanger && draftPrepared && <button type="button" onClick={() => navigate('/reports/api-510-exchanger-external')}>Open Exchanger External Report</button>}
+      <p>Open inspection-first report workflows first. Engineering calculations remain optional tools.</p>
+      {isShellTube && draftPrepared && <button type="button" onClick={() => navigate('/reports/api-510-shell-tube-external')}>Open Shell-and-Tube External Inspection Report</button>}
+      {isDrumVessel && draftPrepared && <button type="button" onClick={() => navigate('/reports/api-510-drum-vessel-external')}>Open Drum/Vessel External Inspection Report</button>}
+      {isTowerColumn && draftPrepared && <button type="button" onClick={() => navigate('/reports/api-510-tower-column-external')}>Open External Inspection Report</button>}
+      {isRemainingExchanger && draftPrepared && <button type="button" onClick={() => navigate('/reports/api-510-exchanger-external')}>Open External Inspection Report</button>}
       <button
         type="button"
         disabled={!workspaceRoute}
         onClick={() => workspaceRoute && navigate(workspaceRoute)}
       >
-        Open Calculation Workspace
+        Open Engineering Tools
       </button>
-      {!workspaceRoute && <p className="wizard-note">Calculation workspace coming soon</p>}
+      {!workspaceRoute && <p className="wizard-note">Engineering tools coming soon</p>}
     </div>
   );
 }

@@ -251,8 +251,8 @@ describe('Api510DrumVesselExternalReportPage', () => {
   });
 
   it('Start Wizard exposes the Drum/Vessel External Report action after starting any Drum/Vessel draft', async () => {
-    renderRoute('/reports');
-    expect(await screen.findByRole('heading', { name: 'Start New API Inspection Report' })).toBeInTheDocument();
+    renderRoute('/reports/new');
+    expect(await screen.findByRole('heading', { name: 'Step 1: Select Report Type' })).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Vertical Drum External'));
     expect(screen.queryByRole('button', { name: 'Open Drum/Vessel External Report' })).not.toBeInTheDocument();
 

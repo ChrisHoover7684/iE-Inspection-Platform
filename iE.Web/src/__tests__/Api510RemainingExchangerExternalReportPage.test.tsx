@@ -88,7 +88,7 @@ describe('Api510RemainingExchangerExternalReportPage', () => {
 
   it('Start Wizard opens remaining exchanger report route for Plate and Frame, Double Pipe, and Air Cooler', () => {
     for (const label of ['Plate and Frame Exchanger External', 'Double Pipe Exchanger External', 'Air Cooler / Fin Fan External']) {
-      render(<MemoryRouter initialEntries={['/reports']}><App /></MemoryRouter>);
+      render(<MemoryRouter initialEntries={['/reports/new']}><App /></MemoryRouter>);
       fireEvent.click(screen.getByLabelText(label));
       fireEvent.click(screen.getByRole('button', { name: 'Start Draft Report' }));
 
@@ -110,7 +110,7 @@ describe('Api510RemainingExchangerExternalReportPage', () => {
       cleanup();
     }
 
-    render(<MemoryRouter initialEntries={['/reports']}><App /></MemoryRouter>);
+    render(<MemoryRouter initialEntries={['/reports/new']}><App /></MemoryRouter>);
     expect(screen.queryByText(/API 510 Internal/i)).not.toBeInTheDocument();
   });
 

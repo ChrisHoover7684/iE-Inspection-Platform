@@ -260,9 +260,9 @@ export function ApiInspectionReportStartWizard() {
     setDraftMessage('Draft setup prepared. Full report creation will be connected next.');
   };
 
-  return <section className="card start-wizard" aria-label="Start New API Inspection Report">
-    <h3>Start New API Inspection Report</h3>
-    <div className="wizard-hierarchy" aria-label="Report type hierarchy">
+  return <section className="card start-wizard" aria-label="API Inspection Report Start Wizard">
+    <h3>Step 1: Select Report Type</h3>
+    <div className="wizard-hierarchy wizard-step-layout" aria-label="Report type hierarchy">
       <div className="wizard-hierarchy-group">
         <h4>{apiInspectionReportHierarchy.api570.label}</h4>
         {apiInspectionReportHierarchy.api570.options.map((option) => <label key={option.id}><input type="radio" name="report-type" checked={selectedTypeId === option.id} onChange={() => setSelectedTypeId(option.id)} />{option.label}</label>)}
@@ -279,7 +279,8 @@ export function ApiInspectionReportStartWizard() {
 
     <p><strong>Selected Report:</strong> {selected?.label}</p>
 
-    <div className="wizard-card-grid">
+    <h3>Step 2: Report Setup</h3>
+    <div className="wizard-card-grid wizard-step-layout">
       <section className="card wizard-setup-card" aria-label="Report Header">
         <h4>Report Header</h4>
         <div className="wizard-field-grid">
@@ -329,8 +330,8 @@ export function ApiInspectionReportStartWizard() {
         </div>
       </section>
 
-      <section className="card wizard-setup-card" aria-label="Actions">
-        <h4>Actions</h4>
+      <section className="card wizard-setup-card wizard-actions-card" aria-label="Actions">
+        <h4>Step 3: Actions</h4>
         <button type="button" onClick={startDraftReport}>Start Draft Report</button>
         {draftMessage && <p role="status" className="wizard-success-message">{draftMessage}</p>}
         {draftSetup && <p className="wizard-note">Prepared draft: {draftSetup.reportTypeLabel} with {draftSetup.components.length} components selected.</p>}

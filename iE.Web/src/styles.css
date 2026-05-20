@@ -286,7 +286,7 @@ label {
 
 .dashboard-topbar {
     display: grid;
-    grid-template-columns: auto minmax(240px, 1fr) auto auto;
+    grid-template-columns: auto minmax(220px, 1fr) auto auto auto auto;
     gap: 10px;
     align-items: center;
 }
@@ -1620,4 +1620,30 @@ html, body, #root {
     margin-top: 8px;
     border-top: 1px dashed #d0d9e6;
     padding-top: 8px;
+}
+
+
+.create-report-page {
+    max-width: 1300px;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 8px;
+}
+
+.create-report-header h2 { margin: 0 0 6px; }
+
+.wizard-step-layout {
+    grid-template-columns: minmax(280px, 1fr) minmax(380px, 2fr);
+}
+
+.wizard-actions-card {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 1100px) {
+    .wizard-step-layout {
+        grid-template-columns: 1fr;
+    }
 }

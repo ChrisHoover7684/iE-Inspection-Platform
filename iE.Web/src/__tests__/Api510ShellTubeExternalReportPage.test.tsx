@@ -302,8 +302,8 @@ describe('Api510ShellTubeExternalReportPage', () => {
   });
 
   it('Start Wizard exposes the Shell-and-Tube External Report action after starting a Shell-and-Tube draft', async () => {
-    renderRoute('/reports');
-    expect(await screen.findByRole('heading', { name: 'Start New API Inspection Report' })).toBeInTheDocument();
+    renderRoute('/reports/new');
+    expect(await screen.findByRole('heading', { name: 'Step 1: Select Report Type' })).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Shell and Tube Exchanger External'));
     expect(screen.queryByRole('button', { name: 'Open Shell-and-Tube External Report' })).not.toBeInTheDocument();
 

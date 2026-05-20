@@ -22,6 +22,7 @@ import { Api510DrumVesselExternalReportPage } from './reporting/Api510DrumVessel
 import { Api510TowerColumnExternalReportPage } from './reporting/Api510TowerColumnExternalReportPage';
 import { Api510RemainingExchangerExternalReportPage } from './reporting/Api510RemainingExchangerExternalReportPage';
 import { StiApi653TankExternalReportPage } from './reporting/StiApi653TankExternalReportPage';
+import { ApiInspectionReportCreatePage } from './reporting/ApiInspectionReportCreatePage';
 
 function ShellRoute({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>;
@@ -43,6 +44,7 @@ export default function App() {
 
       <Route path="/nde-requests" element={<ShellRoute><NdeWorkspacePage title="NDE Requests" initialStatuses={['Draft', 'Requested', 'Scheduled', 'In Progress', 'Results Received', 'Reviewed', 'Overdue']} /></ShellRoute>} />
       <Route path="/reports" element={<ShellRoute><ApiInspectionReportsPage /></ShellRoute>} />
+      <Route path="/reports/new" element={<ShellRoute><ApiInspectionReportCreatePage /></ShellRoute>} />
       <Route path="/reports/api-510-shell-tube-external" element={<ShellRoute><Api510ShellTubeExternalReportPage /></ShellRoute>} />
       <Route path="/reports/api-510-drum-vessel-external" element={<ShellRoute><Api510DrumVesselExternalReportPage /></ShellRoute>} />
       <Route path="/reports/api-510-tower-column-external" element={<ShellRoute><Api510TowerColumnExternalReportPage /></ShellRoute>} />

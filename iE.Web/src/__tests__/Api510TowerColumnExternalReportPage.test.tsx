@@ -230,8 +230,8 @@ describe('Api510TowerColumnExternalReportPage', () => {
   });
 
   it('Start Wizard exposes the Tower/Column External Report action after starting any Tower/Column draft', async () => {
-    renderRoute('/reports');
-    expect(await screen.findByRole('heading', { name: 'Start New API Inspection Report' })).toBeInTheDocument();
+    renderRoute('/reports/new');
+    expect(await screen.findByRole('heading', { name: 'Step 1: Select Report Type' })).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Tray Column External'));
     expect(screen.queryByRole('button', { name: 'Open Tower/Column External Report' })).not.toBeInTheDocument();
 

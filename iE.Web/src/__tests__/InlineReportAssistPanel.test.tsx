@@ -61,4 +61,20 @@ describe('InlineReportAssistPanel', () => {
     expect(onChange).toHaveBeenCalled();
     expect(onChange.mock.calls[0][0].checklist['Add to Summary']).toBe(true);
   });
+
+  it('Apply Suggested Flags updates checkboxes only and does not overwrite text fields', () => {
+    const state = baseState();
+    state.findingNotes = 'Observed pitting on lower shell course';
+    state.recommendationText = 'Existing recommendation';
+    state.photoTag = 'P-1';
+    state.checklist['Recommendation Required'] = true;
+    const onChange = vi.fn();
+    render(<InlineReportAssistPanel component="Shell" state={state} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Apply Suggested Flags' }));
+    const next = onChange.mock.calls[0][0];
+    expect(next.checklist['Add to Summary']).toBe(true);
+    expect(next.findingNotes).toBe('Observed pitting on lower shell course');
+    expect(next.recommendationText).toBe('Existing recommendation');
+    expect(next.photoTag).toBe('P-1');
+  });
 });

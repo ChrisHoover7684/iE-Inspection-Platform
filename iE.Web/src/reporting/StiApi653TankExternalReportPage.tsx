@@ -1,5 +1,7 @@
 import { Fragment, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { InlineReportAssistPanel } from './InlineReportAssistPanel';
+import { evaluateInlineAssistRules } from './ieAssistRules';
 import {
   STI_API653_TANK_EXTERNAL_REPORT_LOCAL_STORAGE_KEY,
   STI_API653_TANK_EXTERNAL_REPORT_TYPE_ID,
@@ -114,6 +116,7 @@ function ChecklistSection({ section, state, notes, onNotesChange, onChange }: { 
       <div className="wizard-component-list" aria-label={`${section} Checklist`}>
         {checklistFields.map((field) => <label key={field}><input type="checkbox" aria-label={`${section} ${field}`} checked={state.checklist[field]} onChange={(event) => setChecklist(field, event.target.checked)} />{field}</label>)}
       </div>
+      <InlineReportAssistPanel component={section} state={state} onChange={onChange} />
     </section>
   );
 }
@@ -132,6 +135,17 @@ export function StiApi653TankExternalReportPage() {
   const [returnToServiceStatus, setReturnToServiceStatus] = useState(() => savedDraftPayload?.returnToService.status ?? '');
   const [returnToServiceNotes, setReturnToServiceNotes] = useState(() => savedDraftPayload?.returnToService.notes ?? '');
   const checklistCounts = useMemo(() => buildChecklistCounts(summaryChecklistFields, checklistSections, (section, field) => Boolean(componentStates[section]?.checklist[field])), [componentStates]);
+
+  const assistByComponent = useMemo(() => Object.fromEntries(checklistSections.map((component) => [component, evaluateInlineAssistRules(componentStates[component] ?? emptyComponentState())])), [componentStates]);
+
+  const assistSummary = useMemo(() => ({
+    totalAssistWarnings: checklistSections.reduce((count, component) => count + assistByComponent[component].suggestions.filter((suggestion) => suggestion.severity !== 'info').length, 0),
+    componentsNeedingAttention: checklistSections.filter((component) => assistByComponent[component].suggestions.some((suggestion) => suggestion.severity !== 'info')).length,
+    missingPhotoTags: checklistSections.filter((component) => (componentStates[component]?.checklist['Photo Required']) && !componentStates[component]?.photoTag.trim()).length,
+    missingRecommendations: checklistSections.filter((component) => (componentStates[component]?.checklist['Recommendation Required']) && !componentStates[component]?.recommendationText.trim()).length,
+    ndeNeedingMethodLocation: checklistSections.filter((component) => (componentStates[component]?.checklist['NDE Required']) && !componentStates[component]?.location.trim()).length
+  }), [assistByComponent, componentStates]);
+
   const draftPayloadPreview = useMemo(() => buildStiApi653TankExternalDraftPayload({ sourceStartWizardDraft: draft, sourceStartWizardDraftStorageKey: API_INSPECTION_DRAFT_SETUP_STORAGE_KEY, sections: [...checklistSections], componentStates, checklistFields, summaryFields, photos: { photoLog }, ndeTesting: { requirementsAndResults: ndeTesting }, recommendations: { summary: recommendationSummary }, returnToService: { status: returnToServiceStatus, notes: returnToServiceNotes }, savedAt: lastSavedAt || 'Not saved locally' }), [componentStates, draft, lastSavedAt, ndeTesting, photoLog, recommendationSummary, returnToServiceNotes, returnToServiceStatus, summaryFields]);
 
   const handleSaveLocalDraft = () => {
@@ -167,7 +181,7 @@ export function StiApi653TankExternalReportPage() {
         </main>
         <aside className="api510-report-sidebar" aria-label="Report sidebar">
           <section className="card" aria-label="Report Actions"><h3>Report Actions</h3><button type="button" onClick={handleSaveLocalDraft}>Save Draft Locally</button><button type="button" disabled>Export Word Report</button><p className="wizard-note">Word export will be connected after report persistence is finalized.</p><p role="status">Last Saved: {lastSavedAt ? new Date(lastSavedAt).toLocaleString() : 'Not saved locally'}</p></section>
-          <section className="card" aria-label="iE Assist"><h3>iE Assist</h3><p className="wizard-note">Assistant review hooks will use the local report draft until backend report persistence is finalized.</p></section>
+          <section className="card" aria-label="iE Assist"><h3>iE Assist</h3><p className="wizard-note">Assistant review hooks use local deterministic rules and do not call external AI services.</p><dl className="api510-summary-list"><dt>Total assist warnings</dt><dd data-testid="total-assist-warnings-count">{assistSummary.totalAssistWarnings}</dd><dt>Components needing attention</dt><dd data-testid="components-needing-attention-count">{assistSummary.componentsNeedingAttention}</dd><dt>Missing photo tags</dt><dd data-testid="missing-photo-tags-count">{assistSummary.missingPhotoTags}</dd><dt>Missing recommendations</dt><dd data-testid="missing-recommendations-count">{assistSummary.missingRecommendations}</dd><dt>NDE flags needing method/location</dt><dd data-testid="nde-needing-method-location-count">{assistSummary.ndeNeedingMethodLocation}</dd></dl></section>
           <section className="card" aria-label="Report Summary Preview"><h3>Report Summary Preview</h3><dl className="api510-summary-list"><dt>Tank Checklist Sections</dt><dd>{checklistSections.length}</dd>{summaryChecklistFields.map((field) => <Fragment key={field}><dt>{field}</dt><dd>{checklistCounts[field]}</dd></Fragment>)}</dl><ul aria-label="Selected component preview">{checklistSections.map((section) => <li key={section}>{section}</li>)}</ul></section>
           <section className="card" aria-label="Draft Payload Debug"><details><summary>View Draft Payload</summary><pre aria-label="STI API 653 tank draft payload">{JSON.stringify(draftPayloadPreview, null, 2)}</pre></details></section>
           <section className="card" aria-label="Summary warnings"><h3>Summary Warnings</h3><ul>{!lastSavedAt && <li>Local report draft has not been saved.</li>}</ul></section>

@@ -45,11 +45,7 @@ export function InlineReportAssistPanel({ component, state, onChange }: Props) {
         <div className="ie-assist-wording-box">
           <strong>Suggested Finding Wording</strong>
           <p>{assist.suggestedFindingWording}</p>
-          {!state.findingNotes.trim() ? (
-            <button type="button" onClick={() => onChange({ ...state, findingNotes: assist.suggestedFindingWording ?? '' })}>Insert into Finding Notes</button>
-          ) : (
-            <button type="button" onClick={() => window.navigator.clipboard?.writeText(assist.suggestedFindingWording ?? '')}>Copy</button>
-          )}
+          <button type="button" onClick={() => window.navigator.clipboard?.writeText(assist.suggestedFindingWording ?? '')}>Copy</button>
         </div>
       )}
     </section>

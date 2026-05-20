@@ -1,5 +1,7 @@
 import { Fragment, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { InlineReportAssistPanel } from './InlineReportAssistPanel';
+import { evaluateInlineAssistRules } from './ieAssistRules';
 import {
   API510_TOWER_COLUMN_EXTERNAL_REPORT_LOCAL_STORAGE_KEY,
   buildApi510TowerColumnExternalDraftPayload,
@@ -183,6 +185,7 @@ function ComponentSection({
           </label>
         ))}
       </div>
+      <InlineReportAssistPanel component={component} state={state} onChange={onChange} />
     </details>
   );
 }
@@ -224,6 +227,17 @@ export function Api510TowerColumnExternalReportPage() {
   const [returnToServiceNotes, setReturnToServiceNotes] = useState(() => savedDraftPayload?.returnToService.notes ?? '');
 
   const checklistCounts = useMemo(() => buildChecklistCounts(summaryChecklistFields, components, (component, field) => Boolean(componentStates[component]?.checklist[field])), [componentStates, components]);
+
+
+  const assistByComponent = useMemo(() => Object.fromEntries(components.map((component) => [component, evaluateInlineAssistRules(componentStates[component] ?? emptyComponentState())])), [componentStates, components]);
+
+  const assistSummary = useMemo(() => ({
+    totalAssistWarnings: components.reduce((count, component) => count + assistByComponent[component].suggestions.filter((suggestion) => suggestion.severity !== 'info').length, 0),
+    componentsNeedingAttention: components.filter((component) => assistByComponent[component].suggestions.some((suggestion) => suggestion.severity !== 'info')).length,
+    missingPhotoTags: components.filter((component) => (componentStates[component]?.checklist['Photo Required']) && !componentStates[component]?.photoTag.trim()).length,
+    missingRecommendations: components.filter((component) => (componentStates[component]?.checklist['Recommendation Required']) && !componentStates[component]?.recommendationText.trim()).length,
+    ndeNeedingMethodLocation: components.filter((component) => (componentStates[component]?.checklist['NDE Required']) && !componentStates[component]?.location.trim()).length
+  }), [assistByComponent, componentStates, components]);
 
   const draftPayloadPreview = useMemo(() => buildApi510TowerColumnExternalDraftPayload({
     sourceStartWizardDraft: draft,
@@ -329,7 +343,7 @@ export function Api510TowerColumnExternalReportPage() {
 
         <aside className="api510-report-sidebar" aria-label="Report sidebar">
           <section className="card" aria-label="Report Actions"><h3>Report Actions</h3><button type="button" onClick={handleSaveLocalDraft}>Save Draft Locally</button><button type="button" disabled>Export Word Report</button><p className="wizard-note">Word export will be connected after report persistence is finalized.</p><p role="status">Last Saved: {lastSavedAt ? new Date(lastSavedAt).toLocaleString() : 'Not saved locally'}</p></section>
-          <section className="card" aria-label="iE Assist"><h3>iE Assist</h3><p className="wizard-note">Assistant review hooks will use the local report draft until backend report persistence is finalized.</p></section>
+          <section className="card" aria-label="iE Assist"><h3>iE Assist</h3><p className="wizard-note">Assistant review hooks use local deterministic rules and do not call external AI services.</p><dl className="api510-summary-list"><dt>Total assist warnings</dt><dd data-testid="total-assist-warnings-count">{assistSummary.totalAssistWarnings}</dd><dt>Components needing attention</dt><dd data-testid="components-needing-attention-count">{assistSummary.componentsNeedingAttention}</dd><dt>Missing photo tags</dt><dd data-testid="missing-photo-tags-count">{assistSummary.missingPhotoTags}</dd><dt>Missing recommendations</dt><dd data-testid="missing-recommendations-count">{assistSummary.missingRecommendations}</dd><dt>NDE flags needing method/location</dt><dd data-testid="nde-needing-method-location-count">{assistSummary.ndeNeedingMethodLocation}</dd></dl></section>
           <section className="card" aria-label="Report Summary Preview"><h3>Report Summary Preview</h3><dl className="api510-summary-list"><dt>Selected Components</dt><dd>{components.length}</dd>{summaryChecklistFields.map((field) => <Fragment key={field}><dt>{field}</dt><dd>{checklistCounts[field]}</dd></Fragment>)}</dl><ul aria-label="Selected component preview">{components.map((component) => <li key={component}>{component}</li>)}</ul></section>
           <section className="card" aria-label="Draft Payload Debug"><details><summary>View Draft Payload</summary><pre aria-label="API 510 Tower/Column draft payload">{JSON.stringify(draftPayloadPreview, null, 2)}</pre></details></section>
           <section className="card" aria-label="Summary warnings"><h3>Summary Warnings</h3><ul>{!lastSavedAt && <li>Local report draft has not been saved.</li>}<li>Tower/Column calculations are review-only placeholders for this draft.</li></ul></section>

@@ -92,4 +92,13 @@ describe('StiApi653TankExternalReportPage', () => {
     expect(screen.getByRole('button', { name: 'Open Tank External Report' })).toBeInTheDocument();
     expect(screen.queryByText(/API 510 Internal/i)).not.toBeInTheDocument();
   });
+
+  it('warning count updates for tank assist panel', () => {
+    storeDraft();
+    renderRoute();
+    expect(screen.getAllByText('iE Assist (Rule-Based)').length).toBeGreaterThan(0);
+    const assistCard = screen.getByLabelText('iE Assist');
+    fireEvent.click(screen.getByLabelText('Foundation Photo Required'));
+    expect(within(assistCard).getByTestId('total-assist-warnings-count')).toHaveTextContent('1');
+  });
 });

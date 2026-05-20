@@ -264,4 +264,15 @@ describe('Api510TowerColumnExternalReportPage', () => {
     expect(screen.queryByText(/API 510 Internal/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Internal Report/i)).not.toBeInTheDocument();
   });
+
+  it('assist panel and warning counts update', () => {
+    storeDraft();
+    renderRoute();
+    expect(screen.getAllByText('iE Assist (Rule-Based)').length).toBeGreaterThan(0);
+    const assistCard = screen.getByLabelText('iE Assist');
+    expect(within(assistCard).getByTestId('total-assist-warnings-count')).toHaveTextContent('0');
+    fireEvent.click(screen.getByLabelText('Shell Courses Photo Required'));
+    expect(within(assistCard).getByTestId('total-assist-warnings-count')).toHaveTextContent('1');
+    expect(within(assistCard).getByTestId('missing-photo-tags-count')).toHaveTextContent('1');
+  });
 });

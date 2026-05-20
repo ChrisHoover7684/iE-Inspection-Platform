@@ -6,7 +6,8 @@ import {
   isApi510RemainingExchangerExternalReportTypeId,
   readApi510RemainingExchangerExternalDraftPayload
 } from './api510RemainingExchangerReportDraft';
-import { API_INSPECTION_DRAFT_SETUP_STORAGE_KEY, readApiInspectionDraftSetup } from './componentCalculationPrefill';
+import { API_INSPECTION_DRAFT_SETUP_STORAGE_KEY, readApiInspectionDraftSetup } from './componentCalculationPrefill'
+import { buildChecklistCounts } from './externalReportChecklistUtils';
 import type {
   Api510RemainingExchangerExternalChecklistField,
   Api510RemainingExchangerExternalComponentState,
@@ -166,7 +167,7 @@ export function Api510RemainingExchangerExternalReportPage() {
   const [returnToServiceStatus, setReturnToServiceStatus] = useState(() => savedDraftPayload?.returnToService.status ?? '');
   const [returnToServiceNotes, setReturnToServiceNotes] = useState(() => savedDraftPayload?.returnToService.notes ?? '');
 
-  const checklistCounts = useMemo(() => Object.fromEntries(summaryChecklistFields.map((field) => [field, components.filter((component) => componentStates[component]?.checklist[field]).length])) as Record<(typeof summaryChecklistFields)[number], number>, [componentStates, components]);
+  const checklistCounts = useMemo(() => buildChecklistCounts(summaryChecklistFields, components, (component, field) => Boolean(componentStates[component]?.checklist[field])), [componentStates, components]);
   const draftPayloadPreview = useMemo(() => buildApi510RemainingExchangerExternalDraftPayload({ reportTypeId: currentReportTypeId, sourceStartWizardDraft: draft, sourceStartWizardDraftStorageKey: API_INSPECTION_DRAFT_SETUP_STORAGE_KEY, components, componentStates, checklistFields, summaryFields, photos: { photoLog }, ndeTesting: { requirementsAndResults: ndeTesting }, recommendations: { summary: recommendationSummary }, returnToService: { status: returnToServiceStatus, notes: returnToServiceNotes }, savedAt: lastSavedAt || 'Not saved locally' }), [componentStates, components, currentReportTypeId, draft, lastSavedAt, ndeTesting, photoLog, recommendationSummary, returnToServiceNotes, returnToServiceStatus, summaryFields]);
 
   const handleComponentChange = (component: string, next: ComponentReportState) => setComponentStates((current) => ({ ...current, [component]: next }));

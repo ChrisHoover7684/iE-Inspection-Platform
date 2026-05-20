@@ -12,7 +12,8 @@ import {
   API_INSPECTION_DRAFT_SETUP_STORAGE_KEY,
   readApiInspectionDraftSetup,
   type CalculationFieldValuesMap
-} from './componentCalculationPrefill';
+} from './componentCalculationPrefill'
+import { buildChecklistCounts } from './externalReportChecklistUtils';
 import type { Api510FindingDraft } from './api510CalculationFindings';
 import type { InspectionCalculationSnapshot } from '../engineering/types';
 import type {
@@ -233,10 +234,7 @@ export function Api510DrumVesselExternalReportPage() {
   const [returnToServiceNotes, setReturnToServiceNotes] = useState(() => savedDraftPayload?.returnToService.notes ?? '');
   const fieldValues = useMemo(() => calculationFieldValues(draft?.header), [draft]);
 
-  const checklistCounts = useMemo(() => Object.fromEntries(summaryChecklistFields.map((field) => [
-    field,
-    components.filter((component) => componentStates[component]?.checklist[field]).length
-  ])) as Record<(typeof summaryChecklistFields)[number], number>, [componentStates, components]);
+  const checklistCounts = useMemo(() => buildChecklistCounts(summaryChecklistFields, components, (component, field) => Boolean(componentStates[component]?.checklist[field])), [componentStates, components]);
 
   const draftPayloadPreview = useMemo(() => buildApi510DrumVesselExternalDraftPayload({
     sourceStartWizardDraft: draft,

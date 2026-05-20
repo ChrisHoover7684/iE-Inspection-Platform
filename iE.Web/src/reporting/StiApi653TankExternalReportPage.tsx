@@ -6,7 +6,8 @@ import {
   buildStiApi653TankExternalDraftPayload,
   readStiApi653TankExternalDraftPayload
 } from './stiApi653TankReportDraft';
-import { API_INSPECTION_DRAFT_SETUP_STORAGE_KEY, readApiInspectionDraftSetup } from './componentCalculationPrefill';
+import { API_INSPECTION_DRAFT_SETUP_STORAGE_KEY, readApiInspectionDraftSetup } from './componentCalculationPrefill'
+import { buildChecklistCounts } from './externalReportChecklistUtils';
 import type {
   StiApi653TankExternalChecklistField,
   StiApi653TankExternalComponentState,
@@ -130,7 +131,7 @@ export function StiApi653TankExternalReportPage() {
   const [recommendationSummary, setRecommendationSummary] = useState(() => savedDraftPayload?.recommendations.summary ?? '');
   const [returnToServiceStatus, setReturnToServiceStatus] = useState(() => savedDraftPayload?.returnToService.status ?? '');
   const [returnToServiceNotes, setReturnToServiceNotes] = useState(() => savedDraftPayload?.returnToService.notes ?? '');
-  const checklistCounts = useMemo(() => Object.fromEntries(summaryChecklistFields.map((field) => [field, checklistSections.filter((section) => componentStates[section]?.checklist[field]).length])) as Record<(typeof summaryChecklistFields)[number], number>, [componentStates]);
+  const checklistCounts = useMemo(() => buildChecklistCounts(summaryChecklistFields, checklistSections, (section, field) => Boolean(componentStates[section]?.checklist[field])), [componentStates]);
   const draftPayloadPreview = useMemo(() => buildStiApi653TankExternalDraftPayload({ sourceStartWizardDraft: draft, sourceStartWizardDraftStorageKey: API_INSPECTION_DRAFT_SETUP_STORAGE_KEY, sections: [...checklistSections], componentStates, checklistFields, summaryFields, photos: { photoLog }, ndeTesting: { requirementsAndResults: ndeTesting }, recommendations: { summary: recommendationSummary }, returnToService: { status: returnToServiceStatus, notes: returnToServiceNotes }, savedAt: lastSavedAt || 'Not saved locally' }), [componentStates, draft, lastSavedAt, ndeTesting, photoLog, recommendationSummary, returnToServiceNotes, returnToServiceStatus, summaryFields]);
 
   const handleSaveLocalDraft = () => {

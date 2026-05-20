@@ -17,6 +17,7 @@ export function AppShell({ children }: AppShellProps) {
   const isApi570ReportRoute = location.pathname === '/reports/api-570-piping-external';
 
   const currentItem = getNavigationItemForRoute(location.pathname);
+  const pageTitle = location.pathname === '/reports/new' ? 'Create Inspection Report' : (currentItem?.label ?? 'Coming soon');
 
   return (
     <div className="app-shell">
@@ -30,7 +31,7 @@ export function AppShell({ children }: AppShellProps) {
         <main className="app-shell-main">
           {!isApi570ReportRoute && (
             <header className="page-header">
-              <h1>{currentItem?.label ?? 'Coming soon'}</h1>
+              <h1>{pageTitle}</h1>
               <p className="muted">Role-based visibility in navigation is a UI convenience only.</p>
             </header>
           )}

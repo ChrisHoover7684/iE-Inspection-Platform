@@ -305,11 +305,11 @@ describe('Api510ShellTubeExternalReportPage', () => {
     renderRoute('/reports/new');
     expect(await screen.findByRole('heading', { name: 'Step 1: Select Report Type' })).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Shell and Tube Exchanger External'));
-    expect(screen.queryByRole('button', { name: 'Open Shell-and-Tube External Report' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Open Shell-and-Tube External Inspection Report' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Draft Report' }));
 
-    expect(await screen.findByRole('button', { name: 'Open Shell-and-Tube External Report' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Open Shell-and-Tube External Inspection Report' })).toBeInTheDocument();
   });
 
   it('API 570 route still works', async () => {

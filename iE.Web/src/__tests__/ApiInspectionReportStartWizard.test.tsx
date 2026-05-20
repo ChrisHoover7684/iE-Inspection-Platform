@@ -107,7 +107,7 @@ describe('ApiInspectionReportStartWizard', () => {
     fireEvent.change(screen.getByLabelText('Inspector'), { target: { value: 'A. Inspector' } });
     fireEvent.click(screen.getByRole('button', { name: 'Start Draft Report' }));
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Draft setup prepared. Full report creation will be connected next.');
+    expect(await screen.findByRole('status')).toHaveTextContent('Backend save unavailable. Draft started locally.');
   });
 
   it('Start Draft Report stores shell-and-tube draft setup for calculation workspace prefill', async () => {
@@ -138,14 +138,14 @@ describe('ApiInspectionReportStartWizard', () => {
   it('enables calculation workspace for supported API 510 setup types and disables it for unsupported types', async () => {
     await renderCreatePage();
     fireEvent.click(screen.getByLabelText('Shell and Tube Exchanger External'));
-    expect(await screen.findByRole('button', { name: 'Open Calculation Workspace' })).toBeEnabled();
+    expect(await screen.findByRole('button', { name: 'Open Engineering Tools' })).toBeEnabled();
 
     fireEvent.click(screen.getByLabelText('Horizontal Drum External'));
-    expect(screen.getByRole('button', { name: 'Open Calculation Workspace' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Open Engineering Tools' })).toBeEnabled();
 
     fireEvent.click(screen.getByLabelText('Distillation Tower External'));
-    expect(screen.getByRole('button', { name: 'Open Calculation Workspace' })).toBeDisabled();
-    expect(screen.getByText('Calculation workspace coming soon')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open Engineering Tools' })).toBeDisabled();
+    expect(screen.getByText('Engineering tools coming soon')).toBeInTheDocument();
   });
 
   it('Allowable Stress is not present as a normal input', async () => {

@@ -115,7 +115,10 @@ export function ApiInspectionReportsPage() {
         const instances = await reportingApi.getInstances();
         setReports(instances);
       } catch (loadError) {
-        setError(getErrorMessage(loadError, 'Unable to load reports.'));
+        const isUnavailable = loadError instanceof ApiError && (loadError.status === 403 || loadError.status === 500 || loadError.status === 503);
+        setError(isUnavailable
+          ? 'Report database is unavailable. Showing local/demo report workspace only.'
+          : getErrorMessage(loadError, 'Unable to load reports.'));
       } finally {
         setIsLoading(false);
       }

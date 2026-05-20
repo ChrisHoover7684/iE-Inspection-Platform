@@ -79,6 +79,36 @@ const toCondition = (answer: InspectionReportAnswer): 'acceptable' | 'issue' | '
   return 'acceptable';
 };
 
+const buildLocalApi570Draft = (template: ReportTemplate): InspectionReport => ({
+  id: `local-api570-${crypto.randomUUID()}`,
+  clientOrganizationId: 'local-demo-client',
+  facilityId: 'local-demo-facility',
+  templateId: template.id,
+  status: 'Draft (Local)',
+  createdAt: new Date().toISOString(),
+  sections: template.sections.map((section) => ({
+    sectionId: section.id,
+    sectionTitle: section.title,
+    order: section.order,
+    isRepeatable: section.isRepeatable,
+    answers: (section.fields ?? []).map((field) => ({
+      fieldId: field.id,
+      label: field.label,
+      dataType: field.dataType,
+      value: field.defaultValue ?? '',
+      values: [],
+      comment: '',
+      photoRequired: false,
+      recommendationRequired: false,
+      transferToComponentSection: false,
+      repairRequired: false
+    }))
+  })),
+  findings: [],
+  photos: [],
+  calculations: []
+});
+
 export function Api570PipingExternalEntryPage() {
   const location = useLocation();
   const [report, setReport] = useState<InspectionReport | null>(null);
@@ -127,7 +157,16 @@ export function Api570PipingExternalEntryPage() {
       if (routeReport?.id) { setReport(routeReport); localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, routeReport.id); return; }
       const existingId = routeReportId || storedId;
       if (existingId) { try { const existing = await reportingApi.getInstanceById(existingId); setReport(existing); localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, existing.id); return; } catch { localStorage.removeItem(ACTIVE_REPORT_ID_STORAGE_KEY); } }
-      const created = await reportingApi.createInstanceFromTemplate(TEMPLATE_ID); setReport(created); localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, created.id);
+      try {
+        const created = await reportingApi.createInstanceFromTemplate(TEMPLATE_ID);
+        setReport(created);
+        localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, created.id);
+      } catch {
+        const localDraft = buildLocalApi570Draft(loadedTemplate);
+        setReport(localDraft);
+        localStorage.setItem(ACTIVE_REPORT_ID_STORAGE_KEY, localDraft.id);
+        setMessage('Backend save unavailable. Draft started locally.');
+      }
     } catch (e) { setError(getErrorMessage(e, 'Failed to initialize report.')); }
   })(); }, [location.state]);
 

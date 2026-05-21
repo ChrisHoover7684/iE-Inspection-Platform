@@ -1,8 +1,7 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import App from '../App';
-import { API_INSPECTION_DRAFT_SETUP_STORAGE_KEY } from '../reporting/componentCalculationPrefill';
 
 vi.mock('../api', async () => {
   const actual = await vi.importActual<typeof import('../api')>('../api');
@@ -15,185 +14,64 @@ vi.mock('../api', async () => {
   };
 });
 
-const renderCreatePage = async () => {
-  render(<MemoryRouter initialEntries={['/reports/new']}><App /></MemoryRouter>);
-  expect(await screen.findByRole('heading', { name: 'Create New API Inspection Report' })).toBeInTheDocument();
-};
-
-afterEach(() => {
-  window.localStorage.removeItem(API_INSPECTION_DRAFT_SETUP_STORAGE_KEY);
-});
-
-describe('ApiInspectionReportStartWizard', () => {
-  it('renders hierarchy on /reports including API 510 external groups and no internal options', async () => {
-    await renderCreatePage();
-    expect(screen.getByRole('heading', { name: 'Exchangers' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Shell and Tube Exchanger External')).toBeInTheDocument();
-    expect(screen.getByLabelText('Plate and Frame Exchanger External')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Drums / Pressure Vessels' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Towers / Columns' })).toBeInTheDocument();
-    expect(screen.queryByText(/Internal/i)).not.toBeInTheDocument();
-  });
-
-  it('renders hierarchy when report instance fetch fails', async () => {
-    const { reportingApi } = await import('../api');
-    vi.mocked(reportingApi.getInstances).mockRejectedValueOnce(new Error('403 Forbidden'));
+describe('ApiInspectionReportStartWizard launcher', () => {
+  it('/reports renders dashboard content', async () => {
     render(<MemoryRouter initialEntries={['/reports']}><App /></MemoryRouter>);
-    expect(await screen.findByRole('button', { name: 'Create Report' })).toBeInTheDocument();
-    expect(await screen.findByText(/Report list error:/i)).toBeInTheDocument();
-  });
 
-  it('selecting Shell and Tube shows editable shell/tube fields', async () => {
-    await renderCreatePage();
-    fireEvent.click(screen.getByLabelText('Shell and Tube Exchanger External'));
-
-    expect(await screen.findByLabelText('Shell Side Design Pressure')).toBeInTheDocument();
-    expect(screen.getByLabelText('Shell Side Design Temperature')).toBeInTheDocument();
-    expect(screen.getByLabelText('Tube Side Design Pressure')).toBeInTheDocument();
-    expect(screen.getByLabelText('Tube Side Design Temperature')).toBeInTheDocument();
-    expect(screen.getByLabelText('Shell Material Spec')).toBeInTheDocument();
-    expect(screen.getByLabelText('Shell Material Grade')).toBeInTheDocument();
-    expect(screen.getByLabelText('Shell Product Form')).toBeInTheDocument();
-    expect(screen.getByLabelText('Tube/Channel Material Spec')).toBeInTheDocument();
-    expect(screen.getByLabelText('Tube/Channel Material Grade')).toBeInTheDocument();
-    expect(screen.getByLabelText('Tube/Channel Product Form')).toBeInTheDocument();
-  });
-
-  it('selecting Horizontal Drum shows editable vessel/head fields', async () => {
-    await renderCreatePage();
-    fireEvent.click(screen.getByLabelText('Horizontal Drum External'));
-
-    expect(await screen.findByLabelText('Vessel Design Pressure')).toBeInTheDocument();
-    expect(screen.getByLabelText('Vessel Design Temperature')).toBeInTheDocument();
-    expect(screen.getByLabelText('Shell Material Spec')).toBeInTheDocument();
-    expect(screen.getByLabelText('Shell Material Grade')).toBeInTheDocument();
-    expect(screen.getByLabelText('Shell Product Form')).toBeInTheDocument();
-    expect(screen.getByLabelText('Head Material Spec')).toBeInTheDocument();
-    expect(screen.getByLabelText('Head Material Grade')).toBeInTheDocument();
-    expect(screen.getByLabelText('Head Product Form')).toBeInTheDocument();
-    expect(screen.getByLabelText('Head Type')).toBeInTheDocument();
-  });
-
-  it('selecting Tower shows editable tower fields', async () => {
-    await renderCreatePage();
-    fireEvent.click(screen.getByLabelText('Distillation Tower External'));
-
-    expect(await screen.findByLabelText('Vessel Design Pressure')).toBeInTheDocument();
-    expect(screen.getByLabelText('Vessel Design Temperature')).toBeInTheDocument();
-    expect(screen.getByLabelText('Shell Course Material Spec')).toBeInTheDocument();
-    expect(screen.getByLabelText('Shell Course Material Grade')).toBeInTheDocument();
-    expect(screen.getByLabelText('Shell Course Product Form')).toBeInTheDocument();
-  });
-
-  it('optional components are checkboxes and default components are selected', async () => {
-    await renderCreatePage();
-    fireEvent.click(screen.getByLabelText('Shell and Tube Exchanger External'));
-
-    const defaultComponent = await screen.findByLabelText('Shell') as HTMLInputElement;
-    const optionalComponent = screen.getByLabelText('Shell Cover') as HTMLInputElement;
-    expect(defaultComponent.type).toBe('checkbox');
-    expect(defaultComponent.checked).toBe(true);
-    expect(defaultComponent.disabled).toBe(true);
-    expect(optionalComponent.type).toBe('checkbox');
-    expect(optionalComponent.checked).toBe(false);
-
-    fireEvent.click(optionalComponent);
-    expect(optionalComponent.checked).toBe(true);
-    expect(screen.getByText('4 components selected.')).toBeInTheDocument();
-  });
-
-  it('Start Draft Report shows draft setup prepared message', async () => {
-    await renderCreatePage();
-    fireEvent.change(screen.getByLabelText('Inspector'), { target: { value: 'A. Inspector' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Start Draft Report' }));
-
-    expect(await screen.findByRole('status')).toHaveTextContent('Backend save unavailable. Draft started locally.');
-  });
-
-  it('Start Draft Report stores shell-and-tube draft setup for calculation workspace prefill', async () => {
-    await renderCreatePage();
-    fireEvent.click(screen.getByLabelText('Shell and Tube Exchanger External'));
-    fireEvent.change(screen.getByLabelText('Shell Side Design Pressure'), { target: { value: '150' } });
-    fireEvent.change(screen.getByLabelText('Shell Side Design Temperature'), { target: { value: '450' } });
-    fireEvent.change(screen.getByLabelText('Tube Side Design Pressure'), { target: { value: '275' } });
-    fireEvent.change(screen.getByLabelText('Tube Side Design Temperature'), { target: { value: '625' } });
-    fireEvent.click(screen.getByLabelText('Shell Cover'));
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start Draft Report' }));
-
-    const storedDraft = JSON.parse(window.localStorage.getItem(API_INSPECTION_DRAFT_SETUP_STORAGE_KEY) ?? '{}');
-    expect(storedDraft).toMatchObject({
-      reportTypeId: 'api510.external.exchanger.shell-tube',
-      header: {
-        shellSideDesignPressure: '150',
-        shellSideDesignTemperature: '450',
-        tubeSideDesignPressure: '275',
-        tubeSideDesignTemperature: '625'
-      },
-      components: expect.arrayContaining(['Shell', 'Channel / Channel Head', 'Nozzles', 'Shell Cover'])
-    });
-  });
-
-
-  it('enables calculation workspace for supported API 510 setup types and disables it for unsupported types', async () => {
-    await renderCreatePage();
-    fireEvent.click(screen.getByLabelText('Shell and Tube Exchanger External'));
-    expect(await screen.findByRole('button', { name: 'Open Engineering Tools' })).toBeEnabled();
-
-    fireEvent.click(screen.getByLabelText('Horizontal Drum External'));
-    expect(screen.getByRole('button', { name: 'Open Engineering Tools' })).toBeEnabled();
-
-    fireEvent.click(screen.getByLabelText('Distillation Tower External'));
-    expect(screen.getByRole('button', { name: 'Open Engineering Tools' })).toBeDisabled();
-    expect(screen.getByText('Engineering tools coming soon')).toBeInTheDocument();
-  });
-
-  it('Allowable Stress is not present as a normal input', async () => {
-    await renderCreatePage();
-    fireEvent.click(screen.getByLabelText('Shell and Tube Exchanger External'));
-
-    expect(screen.queryByLabelText(/Allowable Stress/i)).not.toBeInTheDocument();
-    expect(screen.getByText('Allowable stress will be resolved from material tables during calculations.')).toBeInTheDocument();
-  });
-
-  it('shows API 570 editable setup fields by default', async () => {
-    await renderCreatePage();
-    expect(screen.getByLabelText('Inspection Date')).toBeInTheDocument();
-    expect(screen.getByLabelText('Inspector')).toBeInTheDocument();
-    expect(screen.getByLabelText('Design Pressure')).toBeInTheDocument();
-    expect(screen.getByLabelText('Design Temperature')).toBeInTheDocument();
-    expect(screen.getByLabelText('Circuit ID')).toBeInTheDocument();
-    expect(screen.getByLabelText('Line Number(s)')).toBeInTheDocument();
-    expect(screen.getByLabelText('Piping Class')).toBeInTheDocument();
-    expect(screen.getByLabelText('Pipe size/material rows')).toBeInTheDocument();
-  });
-
-
-  it('reports dashboard shows status cards/table and no start wizard, with create-report link', async () => {
-    render(<MemoryRouter initialEntries={['/reports']}><App /></MemoryRouter>);
     expect(await screen.findByRole('button', { name: 'Create Report' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Total Reports' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Draft Reports' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'In Review' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Completed' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Open Findings' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Recommendations' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Create Report' })).toBeInTheDocument();
-    expect(screen.queryByText('Step 1: Select Report Type')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Create Report' }));
-    expect(await screen.findByRole('heading', { name: 'Create New API Inspection Report' })).toBeInTheDocument();
   });
 
-  it('existing workspace routes still render', () => {
-    render(<MemoryRouter initialEntries={['/reports/api-570-piping-external']}><App /></MemoryRouter>);
-    expect(screen.getByText(/Loading API 570 Piping External report/i)).toBeInTheDocument();
-    cleanup();
+  it('/reports/new renders launcher content and excludes old wizard text', async () => {
+    render(<MemoryRouter initialEntries={['/reports/new']}><App /></MemoryRouter>);
 
-    render(<MemoryRouter initialEntries={['/reports/api-510-shell-tube-workspace']}><App /></MemoryRouter>);
-    expect(screen.getByLabelText('Component')).toBeInTheDocument();
-    cleanup();
+    expect(await screen.findByRole('heading', { name: 'Create Inspection Report' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Step 1: Choose Inspection Standard' })).toBeInTheDocument();
+    expect(screen.queryByText('Report Header')).not.toBeInTheDocument();
+    expect(screen.queryByText('Design Conditions')).not.toBeInTheDocument();
+    expect(screen.queryByText('Materials')).not.toBeInTheDocument();
+    expect(screen.queryByText('Components')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Start Draft Report' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Open Engineering Tools' })).not.toBeInTheDocument();
+  });
 
-    render(<MemoryRouter initialEntries={['/reports/api-510-drum-vessel-workspace']}><App /></MemoryRouter>);
-    expect(screen.getByLabelText('Component')).toBeInTheDocument();
+  it('Start Inspection Report is disabled initially and enables with valid selections', async () => {
+    render(<MemoryRouter initialEntries={['/reports/new']}><App /></MemoryRouter>);
+
+    const startButton = await screen.findByRole('button', { name: 'Start Inspection Report' });
+    expect(startButton).toBeDisabled();
+
+    fireEvent.click(screen.getByLabelText('API 510 Pressure Equipment'));
+    expect(startButton).toBeDisabled();
+
+    fireEvent.click(screen.getByLabelText('API 510 Shell and Tube External'));
+    expect(startButton).toBeEnabled();
+  });
+
+  it('selecting a standard reveals only valid report types', async () => {
+    render(<MemoryRouter initialEntries={['/reports/new']}><App /></MemoryRouter>);
+
+    await screen.findByRole('heading', { name: 'Create Inspection Report' });
+    fireEvent.click(screen.getByLabelText('STI / API 653 Tanks'));
+
+    expect(screen.getByLabelText('STI / API 653 Tank External')).toBeInTheDocument();
+    expect(screen.queryByLabelText('API 510 Drum / Vessel External')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('API 570 Piping External')).not.toBeInTheDocument();
+  });
+
+  it('clicking Start Inspection Report navigates to expected routes', async () => {
+    const { rerender } = render(<MemoryRouter initialEntries={['/reports/new']}><App /></MemoryRouter>);
+
+    await screen.findByRole('heading', { name: 'Create Inspection Report' });
+    fireEvent.click(screen.getByLabelText('API 570 Piping'));
+    fireEvent.click(screen.getByLabelText('API 570 Piping CUI External'));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Inspection Report' }));
+    expect(await screen.findByRole('heading', { name: 'API 570 Piping External Visual Inspection Report' })).toBeInTheDocument();
+
+    rerender(<MemoryRouter initialEntries={['/reports/new']}><App /></MemoryRouter>);
+    fireEvent.click(await screen.findByLabelText('API 510 Pressure Equipment'));
+    fireEvent.click(screen.getByLabelText('API 510 Drum / Vessel External'));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Inspection Report' }));
+    expect(await screen.findByRole('heading', { name: 'API 510 Drum / Vessel External Inspection Report' })).toBeInTheDocument();
   });
 });

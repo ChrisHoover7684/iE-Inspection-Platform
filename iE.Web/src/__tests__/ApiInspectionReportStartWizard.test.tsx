@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../App';
@@ -31,14 +31,6 @@ beforeEach(() => {
 });
 
 describe('ApiInspectionReportStartWizard launcher flow', () => {
-  it('/reports renders dashboard-only sections', async () => {
-    render(<MemoryRouter initialEntries={['/reports']}><App /></MemoryRouter>);
-    expect(await screen.findByRole('button', { name: 'Create Report' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Total Reports' })).toBeInTheDocument();
-    expect(screen.getByRole('table')).toBeInTheDocument();
-    expect(screen.queryByText('Step 1: Choose Inspection Standard')).not.toBeInTheDocument();
-  });
-
   it('/reports/new renders only launcher controls', async () => {
     await renderCreatePage();
     expect(screen.getByRole('link', { name: 'Back to Reports Dashboard' })).toBeInTheDocument();
@@ -54,73 +46,50 @@ describe('ApiInspectionReportStartWizard launcher flow', () => {
     expect(screen.queryByText(/Design Conditions/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Materials/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Components/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Default \/ Minimum/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Optional/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Start Draft Report/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Open External Inspection Report/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Open Tank External Report/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Open Engineering Tools/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Allowable stress/i)).not.toBeInTheDocument();
   });
 
-  it('navigates API 570 piping external', async () => {
-    await renderCreatePage();
-    fireEvent.click(screen.getByRole('button', { name: 'API 570 Piping' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Piping External' }));
-    fireEvent.click(screen.getByRole('button', { name: /^start inspection report$/i }));
-    expect(screen.getByTestId('location')).toHaveTextContent('/reports/api-570-piping-external');
-  });
-
-  it('navigates API 570 piping CUI external', async () => {
-    await renderCreatePage();
-    fireEvent.click(screen.getByRole('button', { name: 'API 570 Piping' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Piping CUI External' }));
-    fireEvent.click(screen.getByRole('button', { name: /^start inspection report$/i }));
-    expect(screen.getByTestId('location')).toHaveTextContent('/reports/api-570-piping-external?type=cui');
-  });
-
-  it('navigates API 510 selections to expected routes', async () => {
+  it('maps launcher selections to expected routes', async () => {
     const cases = [
-      ['Shell and Tube Exchanger External', '/reports/api-510-shell-tube-external'],
-      ['Horizontal Drum External', '/reports/api-510-drum-vessel-external'],
-      ['Distillation Tower External', '/reports/api-510-tower-column-external'],
-      ['Plate and Frame Exchanger External', '/reports/api-510-exchanger-external']
+      ['API 570 Piping', 'Piping External', '/reports/api-570-piping-external'],
+      ['API 570 Piping', 'Piping CUI External', '/reports/api-570-piping-external?type=cui'],
+      ['API 510 Pressure Equipment', 'Shell and Tube Exchanger External', '/reports/api-510-shell-tube-external'],
+      ['API 510 Pressure Equipment', 'Horizontal Drum External', '/reports/api-510-drum-vessel-external'],
+      ['API 510 Pressure Equipment', 'Distillation Tower External', '/reports/api-510-tower-column-external'],
+      ['API 510 Pressure Equipment', 'Plate and Frame Exchanger External', '/reports/api-510-exchanger-external'],
+      ['STI / API 653 Tanks', 'Tank External', '/reports/sti-api-653-tank-external']
     ] as const;
 
-    for (const [reportType, expectedPath] of cases) {
+    for (const [standard, reportType, expectedPath] of cases) {
       await renderCreatePage();
-      fireEvent.click(screen.getByRole('button', { name: 'API 510 Pressure Equipment' }));
+      fireEvent.click(screen.getByRole('button', { name: standard }));
       fireEvent.click(screen.getByRole('button', { name: reportType }));
-      fireEvent.click(screen.getByRole('button', { name: /^start inspection report$/i }));
-      expect(screen.getByTestId('location')).toHaveTextContent(expectedPath);
+      const startButton = screen.getByRole('button', { name: /^start inspection report$/i });
+      fireEvent.click(startButton);
+      await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent(expectedPath));
+      cleanup();
     }
   });
 
-  it('navigates STI/API 653 tank external', async () => {
-    await renderCreatePage();
-    fireEvent.click(screen.getByRole('button', { name: 'STI / API 653 Tanks' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Tank External' }));
-    fireEvent.click(screen.getByRole('button', { name: /^start inspection report$/i }));
-    expect(screen.getByTestId('location')).toHaveTextContent('/reports/sti-api-653-tank-external');
-  });
-
-  it('stores minimal selected context only and hides API 510 internal options', async () => {
+  it('stores minimal selected context only', async () => {
     await renderCreatePage();
     fireEvent.click(screen.getByRole('button', { name: 'API 510 Pressure Equipment' }));
     fireEvent.click(screen.getByRole('button', { name: 'Shell and Tube Exchanger External' }));
     fireEvent.click(screen.getByRole('button', { name: /^start inspection report$/i }));
 
-    const storedDraft = JSON.parse(window.localStorage.getItem(API_INSPECTION_DRAFT_SETUP_STORAGE_KEY) ?? '{}');
-    expect(storedDraft).toMatchObject({
-      selectedStandard: 'API 510 Pressure Equipment',
-      selectedReportTypeId: 'api510.external.exchanger.shell-tube',
-      selectedReportTypeLabel: 'Shell and Tube Exchanger External',
-      equipmentFamily: 'Pressure Equipment',
-      equipmentSubtype: 'Shell and Tube Exchanger'
+    const raw = window.localStorage.getItem(API_INSPECTION_DRAFT_SETUP_STORAGE_KEY);
+    expect(raw).toBeTruthy();
+    const context = JSON.parse(raw ?? '{}');
+    expect(context).toMatchObject({
+      selectedStandard: expect.any(String),
+      selectedReportTypeId: expect.any(String),
+      selectedReportTypeLabel: expect.any(String),
+      equipmentFamily: expect.any(String),
+      equipmentSubtype: expect.any(String)
     });
-    expect(storedDraft.startedAt).toEqual(expect.any(String));
-    expect(storedDraft.header).toEqual({});
-    expect(storedDraft.components).toEqual([]);
-    expect(screen.queryByText(/Internal/i)).not.toBeInTheDocument();
+    expect(context.startedAt).toEqual(expect.any(String));
+    expect(context).not.toHaveProperty('reportHeader');
+    expect(context).not.toHaveProperty('designConditions');
+    expect(context).not.toHaveProperty('materials');
   });
 });

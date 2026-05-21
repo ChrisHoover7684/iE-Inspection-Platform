@@ -7,8 +7,8 @@ export function ApiInspectionReportCreatePage() {
       <section className="dashboard-content create-report-page">
         <Link to="/reports" className="back-link">Back to Reports Dashboard</Link>
         <header className="card create-report-header">
-          <h2>Create New API Inspection Report</h2>
-          <p className="wizard-note">Follow the three steps below to select a report type, configure setup fields, and start a draft.</p>
+          <h2>Create Inspection Report</h2>
+          <p className="wizard-note">Use this launcher to choose a standard, select a report type, and start the inspection report.</p>
         </header>
         <ApiInspectionReportStartWizard />
       </section>

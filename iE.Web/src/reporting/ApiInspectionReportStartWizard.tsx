@@ -1,342 +1,130 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Api510ExternalReportShell } from './Api510ExternalReportShell';
-import { allApiInspectionReportOptions, apiInspectionReportHierarchy } from './apiInspectionReportHierarchy';
-import { API_INSPECTION_DRAFT_SETUP_STORAGE_KEY, type ApiInspectionDraftSetup } from './componentCalculationPrefill';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { allApiInspectionReportOptions, apiInspectionReportHierarchy, type ApiInspectionReportOption } from './apiInspectionReportHierarchy';
+import { API_INSPECTION_DRAFT_SETUP_STORAGE_KEY } from './componentCalculationPrefill';
 
-type FieldConfig = {
-  key: string;
-  label: string;
-  type?: 'text' | 'date' | 'number' | 'textarea';
-  placeholder?: string;
+type StandardId = 'api570' | 'api510' | 'sti653';
+
+type MinimalDraftSetup = {
+  selectedStandard: string;
+  selectedReportTypeId: string;
+  selectedReportTypeLabel: string;
+  equipmentFamily: string;
+  equipmentSubtype: string;
+  startedAt: string;
+  reportTypeId: string;
+  reportTypeLabel: string;
+  header: Record<string, string>;
+  components: string[];
 };
 
-type ComponentConfig = { minimum: string[]; optional: string[] };
-
-const commonFields: FieldConfig[] = [
-  { key: 'inspectionDate', label: 'Inspection Date', type: 'date' },
-  { key: 'inspector', label: 'Inspector' },
-  { key: 'clientFacility', label: 'Client / Facility' },
-  { key: 'unitArea', label: 'Unit / Area' },
-  { key: 'equipmentIdentifier', label: 'Equipment Tag / Line Number / Tank ID' },
-  { key: 'service', label: 'Service' },
-  { key: 'inspectionReason', label: 'Inspection Reason' },
-  { key: 'operatingStatus', label: 'Operating Status' },
-  { key: 'inspectionScope', label: 'Inspection Scope', type: 'textarea' }
+const standardCards: { id: StandardId; label: string }[] = [
+  { id: 'api570', label: 'API 570 Piping' },
+  { id: 'api510', label: 'API 510 Pressure Equipment' },
+  { id: 'sti653', label: 'STI / API 653 Tanks' }
 ];
 
-const api570DesignFields: FieldConfig[] = [
-  { key: 'designPressure', label: 'Design Pressure', type: 'number' },
-  { key: 'designTemperature', label: 'Design Temperature', type: 'number' },
-  { key: 'circuitId', label: 'Circuit ID' },
-  { key: 'lineNumbers', label: 'Line Number(s)' },
-  { key: 'pipingClass', label: 'Piping Class' },
-  { key: 'pipeSizeMaterialRows', label: 'Pipe size/material rows', type: 'textarea', placeholder: 'Add pipe size and material rows for the selected circuit.' }
-];
-
-const shellTubeDesignFields: FieldConfig[] = [
-  { key: 'shellSideDesignPressure', label: 'Shell Side Design Pressure', type: 'number' },
-  { key: 'shellSideDesignTemperature', label: 'Shell Side Design Temperature', type: 'number' },
-  { key: 'tubeSideDesignPressure', label: 'Tube Side Design Pressure', type: 'number' },
-  { key: 'tubeSideDesignTemperature', label: 'Tube Side Design Temperature', type: 'number' }
-];
-
-const shellTubeMaterialFields: FieldConfig[] = [
-  { key: 'shellMaterialSpec', label: 'Shell Material Spec' },
-  { key: 'shellMaterialGrade', label: 'Shell Material Grade' },
-  { key: 'shellProductForm', label: 'Shell Product Form' },
-  { key: 'tubeChannelMaterialSpec', label: 'Tube/Channel Material Spec' },
-  { key: 'tubeChannelMaterialGrade', label: 'Tube/Channel Material Grade' },
-  { key: 'tubeChannelProductForm', label: 'Tube/Channel Product Form' }
-];
-
-const plateFrameDesignFields: FieldConfig[] = [
-  { key: 'hotSideDesignPressure', label: 'Hot Side Design Pressure', type: 'number' },
-  { key: 'hotSideDesignTemperature', label: 'Hot Side Design Temperature', type: 'number' },
-  { key: 'coldSideDesignPressure', label: 'Cold Side Design Pressure', type: 'number' },
-  { key: 'coldSideDesignTemperature', label: 'Cold Side Design Temperature', type: 'number' }
-];
-
-const doublePipeDesignFields: FieldConfig[] = [
-  { key: 'innerPipeSideDesignPressure', label: 'Inner Pipe Side Design Pressure', type: 'number' },
-  { key: 'innerPipeSideDesignTemperature', label: 'Inner Pipe Side Design Temperature', type: 'number' },
-  { key: 'annulusOuterPipeSideDesignPressure', label: 'Annulus / Outer Pipe Side Design Pressure', type: 'number' },
-  { key: 'annulusOuterPipeSideDesignTemperature', label: 'Annulus / Outer Pipe Side Design Temperature', type: 'number' }
-];
-
-const airCoolerDesignFields: FieldConfig[] = [
-  { key: 'tubeSideDesignPressure', label: 'Tube Side Design Pressure', type: 'number' },
-  { key: 'tubeSideDesignTemperature', label: 'Tube Side Design Temperature', type: 'number' },
-  { key: 'headerBoxDesignPressure', label: 'Header Box Design Pressure', type: 'number' },
-  { key: 'headerBoxDesignTemperature', label: 'Header Box Design Temperature', type: 'number' }
-];
-
-const remainingExchangerMaterialFields: FieldConfig[] = [
-  { key: 'primaryMaterialSpec', label: 'Primary Material Spec' },
-  { key: 'primaryMaterialGrade', label: 'Primary Material Grade' },
-  { key: 'primaryProductForm', label: 'Primary Product Form' },
-  { key: 'secondaryMaterialSpec', label: 'Secondary Material Spec' },
-  { key: 'secondaryMaterialGrade', label: 'Secondary Material Grade' },
-  { key: 'secondaryProductForm', label: 'Secondary Product Form' }
-];
-
-const drumVesselDesignFields: FieldConfig[] = [
-  { key: 'vesselDesignPressure', label: 'Vessel Design Pressure', type: 'number' },
-  { key: 'vesselDesignTemperature', label: 'Vessel Design Temperature', type: 'number' }
-];
-
-const drumVesselMaterialFields: FieldConfig[] = [
-  { key: 'shellMaterialSpec', label: 'Shell Material Spec' },
-  { key: 'shellMaterialGrade', label: 'Shell Material Grade' },
-  { key: 'shellProductForm', label: 'Shell Product Form' },
-  { key: 'headMaterialSpec', label: 'Head Material Spec' },
-  { key: 'headMaterialGrade', label: 'Head Material Grade' },
-  { key: 'headProductForm', label: 'Head Product Form' },
-  { key: 'headType', label: 'Head Type' }
-];
-
-const towerDesignFields: FieldConfig[] = [
-  { key: 'vesselDesignPressure', label: 'Vessel Design Pressure', type: 'number' },
-  { key: 'vesselDesignTemperature', label: 'Vessel Design Temperature', type: 'number' }
-];
-
-const towerMaterialFields: FieldConfig[] = [
-  { key: 'shellCourseMaterialSpec', label: 'Shell Course Material Spec' },
-  { key: 'shellCourseMaterialGrade', label: 'Shell Course Material Grade' },
-  { key: 'shellCourseProductForm', label: 'Shell Course Product Form' }
-];
-
-const sti653DesignFields: FieldConfig[] = [
-  { key: 'tankId', label: 'Tank ID' },
-  { key: 'tankService', label: 'Tank Service' },
-  { key: 'tankConstruction', label: 'Tank Construction Standard' }
-];
-
-const componentsByType: Record<string, ComponentConfig> = {
-  'api570.piping-external': {
-    minimum: ['Piping Circuit', 'Injection / Deadlegs where applicable', 'Supports'],
-    optional: ['CUI Areas', 'Small Bore Connections', 'Valves / Flanges', 'Expansion Joints']
-  },
-  'api570.piping-cui-external': {
-    minimum: ['Piping Circuit', 'CUI Areas', 'Supports'],
-    optional: ['Small Bore Connections', 'Valves / Flanges', 'Expansion Joints']
-  },
-  'api510.external.exchanger.shell-tube': {
-    minimum: ['Shell', 'Channel / Channel Head', 'Nozzles'],
-    optional: ['Shell Cover', 'Channel Cover', 'Channel Head / Dollar Plate', 'Bonnet Head', 'Tubesheet Area', 'Saddles / Supports', 'Expansion Joint', 'Coating / Insulation Area']
-  },
-  'api510.external.exchanger.plate-frame': {
-    minimum: ['Frame Head', 'Pressure Plate', 'Plate Pack External', 'Ports / Nozzles', 'Tie Bolts'],
-    optional: ['Carrying Bar', 'Guide Bar', 'Gaskets / Seals', 'Supports', 'Leakage / Staining Areas', 'Coating / Corrosion Areas', 'Nameplate / Markings', 'CML Locations', 'Other Component']
-  },
-  'api510.external.exchanger.double-pipe': {
-    minimum: ['Inner Pipe External', 'Outer Pipe', 'Return Bends', 'Nozzles'],
-    optional: ['Flanges / Gaskets / Bolting', 'Supports', 'Expansion Joint', 'Insulation / Coating Area', 'Vents / Drains', 'CML Locations', 'Other Component']
-  },
-  'api510.external.exchanger.air-cooler': {
-    minimum: ['Header Box', 'Tube Bundle External', 'Nozzles', 'Frame / Supports'],
-    optional: ['Tubes', 'Fins', 'Tube Supports', 'Plugs / Covers', 'Fan / Guard Area', 'Louvers', 'Access Platforms', 'Coating / Corrosion Areas', 'Nameplate / Markings', 'CML Locations', 'Other Component']
-  },
-  'sti653.external.tank': {
-    minimum: ['Tank Shell', 'Roof', 'Nozzles / Appurtenances'],
-    optional: ['Foundation', 'Stairs / Platforms', 'External Coating', 'Insulation']
-  }
+const reportRouteByTypeId: Record<string, string> = {
+  'api570.piping-external': '/reports/api-570-piping-external',
+  'api570.piping-cui-external': '/reports/api-570-piping-external?type=cui',
+  'api510.external.exchanger.shell-tube': '/reports/api-510-shell-tube-external',
+  'api510.external.exchanger.plate-frame': '/reports/api-510-exchanger-external',
+  'api510.external.exchanger.double-pipe': '/reports/api-510-exchanger-external',
+  'api510.external.exchanger.air-cooler': '/reports/api-510-exchanger-external',
+  'api510.external.drum-vessel.horizontal-drum': '/reports/api-510-drum-vessel-external',
+  'api510.external.drum-vessel.vertical-drum': '/reports/api-510-drum-vessel-external',
+  'api510.external.drum-vessel.separator-ko-drum': '/reports/api-510-drum-vessel-external',
+  'api510.external.drum-vessel.accumulator-receiver': '/reports/api-510-drum-vessel-external',
+  'api510.external.drum-vessel.generic-pressure-vessel': '/reports/api-510-drum-vessel-external',
+  'api510.external.tower-column.distillation': '/reports/api-510-tower-column-external',
+  'api510.external.tower-column.absorber-stripper': '/reports/api-510-tower-column-external',
+  'api510.external.tower-column.packed-column': '/reports/api-510-tower-column-external',
+  'api510.external.tower-column.tray-column': '/reports/api-510-tower-column-external',
+  'sti653.external.tank': '/reports/sti-api-653-tank-external'
 };
 
-const drumVesselComponents: ComponentConfig = {
-  minimum: ['Shell', 'Heads', 'Nozzles', 'Supports', 'Manway where applicable'],
-  optional: ['Saddles', 'Skirt', 'Lifting Lugs', 'External Coating', 'Insulation']
+const equipmentFamilyByStandard: Record<StandardId, string> = {
+  api570: 'Piping',
+  api510: 'Pressure Equipment',
+  sti653: 'Tanks'
 };
 
-const commonTowerComponents = ['Shell Courses', 'Nozzles', 'Manways', 'Skirt', 'Base Ring / Anchor Bolts', 'Platforms / Ladders / Handrails'];
-const sharedTowerOptionalComponents = ['Heads', 'Insulation / Jacketing', 'Coating', 'Supports / Bracing', 'Davits / Lifting Attachments', 'External Piping Attachments', 'Vents / Drains', 'Nameplate / Markings', 'CML Locations'];
-
-const towerComponentsByType: Record<string, ComponentConfig> = {
-  'api510.external.tower-column.distillation': {
-    minimum: commonTowerComponents,
-    optional: [...sharedTowerOptionalComponents, 'Tray Manways', 'Draw Nozzles', 'Reboiler / Condenser Connections', 'Other Component']
-  },
-  'api510.external.tower-column.absorber-stripper': {
-    minimum: commonTowerComponents,
-    optional: [...sharedTowerOptionalComponents, 'Packing Access Manways', 'Distributor Nozzles', 'Reboiler / Overhead Connections', 'Other Component']
-  },
-  'api510.external.tower-column.packed-column': {
-    minimum: commonTowerComponents,
-    optional: [...sharedTowerOptionalComponents, 'Packing Support Access', 'Distributor Access', 'Mist Eliminator Access', 'Other Component']
-  },
-  'api510.external.tower-column.tray-column': {
-    minimum: commonTowerComponents,
-    optional: [...sharedTowerOptionalComponents, 'Tray Access Manways', 'Downcomer / Tray Access Locations', 'Draw Pan Connections', 'Other Component']
-  }
+const equipmentSubtypeByTypeId: Record<string, string> = {
+  'api570.piping-external': 'Piping External',
+  'api570.piping-cui-external': 'Piping CUI External',
+  'api510.external.exchanger.shell-tube': 'Shell and Tube Exchanger',
+  'api510.external.exchanger.plate-frame': 'Plate and Frame Exchanger',
+  'api510.external.exchanger.double-pipe': 'Double Pipe Exchanger',
+  'api510.external.exchanger.air-cooler': 'Air Cooler / Fin Fan',
+  'api510.external.drum-vessel.horizontal-drum': 'Horizontal Drum',
+  'api510.external.drum-vessel.vertical-drum': 'Vertical Drum',
+  'api510.external.drum-vessel.separator-ko-drum': 'Separator / KO Drum',
+  'api510.external.drum-vessel.accumulator-receiver': 'Accumulator / Receiver',
+  'api510.external.drum-vessel.generic-pressure-vessel': 'Generic Pressure Vessel',
+  'api510.external.tower-column.distillation': 'Distillation Tower',
+  'api510.external.tower-column.absorber-stripper': 'Absorber / Stripper',
+  'api510.external.tower-column.packed-column': 'Packed Column',
+  'api510.external.tower-column.tray-column': 'Tray Column',
+  'sti653.external.tank': 'Tank'
 };
 
-const isDrumVesselReport = (typeId: string) => typeId.includes('api510.external.drum-vessel.');
-const isTowerReport = (typeId: string) => typeId.includes('api510.external.tower-column.');
-const isApi570Report = (typeId: string) => typeId.startsWith('api570.');
-const isSti653Report = (typeId: string) => typeId.startsWith('sti653.');
-
-function getDesignFields(typeId: string) {
-  if (isApi570Report(typeId)) return api570DesignFields;
-  if (typeId === 'api510.external.exchanger.shell-tube') return shellTubeDesignFields;
-  if (typeId === 'api510.external.exchanger.plate-frame') return plateFrameDesignFields;
-  if (typeId === 'api510.external.exchanger.double-pipe') return doublePipeDesignFields;
-  if (typeId === 'api510.external.exchanger.air-cooler') return airCoolerDesignFields;
-  if (isDrumVesselReport(typeId)) return drumVesselDesignFields;
-  if (isTowerReport(typeId)) return towerDesignFields;
-  if (isSti653Report(typeId)) return sti653DesignFields;
-  return [];
-}
-
-function getMaterialFields(typeId: string) {
-  if (typeId === 'api510.external.exchanger.shell-tube') return shellTubeMaterialFields;
-  if (['api510.external.exchanger.plate-frame', 'api510.external.exchanger.double-pipe', 'api510.external.exchanger.air-cooler'].includes(typeId)) return remainingExchangerMaterialFields;
-  if (isDrumVesselReport(typeId)) return drumVesselMaterialFields;
-  if (isTowerReport(typeId)) return towerMaterialFields;
-  return [];
-}
-
-function getComponentConfig(typeId: string): ComponentConfig {
-  if (isDrumVesselReport(typeId)) return drumVesselComponents;
-  if (isTowerReport(typeId)) return towerComponentsByType[typeId] ?? { minimum: commonTowerComponents, optional: sharedTowerOptionalComponents };
-  return componentsByType[typeId] || { minimum: ['External visual inspection'], optional: ['Insulation / coating areas', 'Supports'] };
-}
-
-function EditableField({ field, value, onChange }: { field: FieldConfig; value: string; onChange: (key: string, value: string) => void }) {
-  if (field.type === 'textarea') {
-    return (
-      <label className="wizard-field">
-        <span>{field.label}</span>
-        <textarea value={value} placeholder={field.placeholder} onChange={(event) => onChange(field.key, event.target.value)} />
-      </label>
-    );
-  }
-
-  return (
-    <label className="wizard-field">
-      <span>{field.label}</span>
-      <input type={field.type || 'text'} value={value} placeholder={field.placeholder} onChange={(event) => onChange(field.key, event.target.value)} />
-    </label>
-  );
+function getOptionsForStandard(standard: StandardId) {
+  if (standard === 'api570') return [{ label: null, options: apiInspectionReportHierarchy.api570.options }];
+  if (standard === 'sti653') return [{ label: null, options: apiInspectionReportHierarchy.sti653External.options }];
+  return apiInspectionReportHierarchy.api510External.groups.map((group) => ({ label: group.label, options: group.options }));
 }
 
 export function ApiInspectionReportStartWizard() {
+  const navigate = useNavigate();
+  const [selectedStandard, setSelectedStandard] = useState<StandardId>('api570');
   const [selectedTypeId, setSelectedTypeId] = useState('api570.piping-external');
-  const [formValues, setFormValues] = useState<Record<string, string>>({});
-  const [selectedOptionalComponents, setSelectedOptionalComponents] = useState<string[]>([]);
-  const [draftMessage, setDraftMessage] = useState('');
-  const [draftSetup, setDraftSetup] = useState<ApiInspectionDraftSetup | null>(null);
-  const selected = useMemo(() => allApiInspectionReportOptions.find((option) => option.id === selectedTypeId), [selectedTypeId]);
 
-  const designFields = useMemo(() => getDesignFields(selectedTypeId), [selectedTypeId]);
-  const materialFields = useMemo(() => getMaterialFields(selectedTypeId), [selectedTypeId]);
-  const componentConfig = useMemo(() => getComponentConfig(selectedTypeId), [selectedTypeId]);
-  const selectedComponentCount = componentConfig.minimum.length + selectedOptionalComponents.length;
+  const selectedReportType = useMemo(() => allApiInspectionReportOptions.find((option) => option.id === selectedTypeId), [selectedTypeId]);
+  const groupedOptions = useMemo(() => getOptionsForStandard(selectedStandard), [selectedStandard]);
 
-  useEffect(() => {
-    setSelectedOptionalComponents([]);
-    setDraftMessage('');
-    setDraftSetup(null);
-  }, [selectedTypeId]);
-
-  const updateField = (key: string, value: string) => {
-    setFormValues((current) => ({ ...current, [key]: value }));
+  const onSelectStandard = (standard: StandardId) => {
+    setSelectedStandard(standard);
+    const first = getOptionsForStandard(standard).flatMap((g) => g.options)[0];
+    if (first) setSelectedTypeId(first.id);
   };
 
-  const toggleOptionalComponent = (component: string, checked: boolean) => {
-    setSelectedOptionalComponents((current) => {
-      if (checked) return current.includes(component) ? current : [...current, component];
-      return current.filter((item) => item !== component);
-    });
-  };
-
-  const startDraftReport = () => {
-    const draftSetup: ApiInspectionDraftSetup = {
-      reportTypeId: selectedTypeId,
-      reportTypeLabel: selected?.label,
-      header: formValues,
-      components: [...componentConfig.minimum, ...selectedOptionalComponents]
+  const startInspectionReport = () => {
+    if (!selectedReportType) return;
+    const draft: MinimalDraftSetup = {
+      selectedStandard: standardCards.find((s) => s.id === selectedStandard)?.label ?? selectedStandard,
+      selectedReportTypeId: selectedReportType.id,
+      selectedReportTypeLabel: selectedReportType.label,
+      equipmentFamily: equipmentFamilyByStandard[selectedStandard],
+      equipmentSubtype: equipmentSubtypeByTypeId[selectedReportType.id] ?? selectedReportType.label,
+      startedAt: new Date().toISOString(),
+      reportTypeId: selectedReportType.id,
+      reportTypeLabel: selectedReportType.label,
+      header: {},
+      components: []
     };
-    setDraftSetup(draftSetup);
-    window.localStorage.setItem(API_INSPECTION_DRAFT_SETUP_STORAGE_KEY, JSON.stringify(draftSetup));
-    setDraftMessage('Backend save unavailable. Draft started locally.');
+    window.localStorage.setItem(API_INSPECTION_DRAFT_SETUP_STORAGE_KEY, JSON.stringify(draft));
+    navigate(reportRouteByTypeId[selectedReportType.id] ?? '/reports');
   };
 
-  return <section className="card start-wizard" aria-label="API Inspection Report Start Wizard">
-    <h3>Step 1: Select Report Type</h3>
-    <div className="wizard-hierarchy wizard-step-layout" aria-label="Report type hierarchy">
-      <div className="wizard-hierarchy-group">
-        <h4>{apiInspectionReportHierarchy.api570.label}</h4>
-        {apiInspectionReportHierarchy.api570.options.map((option) => <label key={option.id}><input type="radio" name="report-type" checked={selectedTypeId === option.id} onChange={() => setSelectedTypeId(option.id)} />{option.label}</label>)}
-      </div>
-      <div className="wizard-hierarchy-group">
-        <h4>{apiInspectionReportHierarchy.api510External.label}</h4>
-        {apiInspectionReportHierarchy.api510External.groups.map((group) => <div key={group.label}><h5>{group.label}</h5>{group.options.map((option) => <label key={option.id}><input type="radio" name="report-type" checked={selectedTypeId === option.id} onChange={() => setSelectedTypeId(option.id)} />{option.label}</label>)}</div>)}
-      </div>
-      <div className="wizard-hierarchy-group">
-        <h4>{apiInspectionReportHierarchy.sti653External.label}</h4>
-        {apiInspectionReportHierarchy.sti653External.options.map((option) => <label key={option.id}><input type="radio" name="report-type" checked={selectedTypeId === option.id} onChange={() => setSelectedTypeId(option.id)} />{option.label}</label>)}
-      </div>
+  return <section className="card start-wizard" aria-label="Create Inspection Report Launcher">
+    <h3>Step 1: Choose Inspection Standard</h3>
+    <div className="wizard-hierarchy wizard-step-layout" aria-label="Inspection standards">
+      {standardCards.map((standard) => <button key={standard.id} type="button" className="wizard-standard-card" aria-pressed={selectedStandard === standard.id} onClick={() => onSelectStandard(standard.id)}>{standard.label}</button>)}
     </div>
 
-    <p><strong>Selected Report:</strong> {selected?.label}</p>
-
-    <h3>Step 2: Report Setup</h3>
-    <div className="wizard-card-grid wizard-step-layout">
-      <section className="card wizard-setup-card" aria-label="Report Header">
-        <h4>Report Header</h4>
-        <div className="wizard-field-grid">
-          {commonFields.map((field) => <EditableField key={field.key} field={field} value={formValues[field.key] || ''} onChange={updateField} />)}
-        </div>
-      </section>
-
-      <section className="card wizard-setup-card" aria-label="Design Conditions">
-        <h4>Design Conditions</h4>
-        {designFields.length > 0 ? <div className="wizard-field-grid">
-          {designFields.map((field) => <EditableField key={field.key} field={field} value={formValues[field.key] || ''} onChange={updateField} />)}
-        </div> : <p>Design setup fields will be added for this report type.</p>}
-        <p className="wizard-note">Allowable stress will be resolved from material tables during calculations.</p>
-      </section>
-
-      <section className="card wizard-setup-card" aria-label="Materials">
-        <h4>Materials</h4>
-        {materialFields.length > 0 ? <div className="wizard-field-grid">
-          {materialFields.map((field) => <EditableField key={field.key} field={field} value={formValues[field.key] || ''} onChange={updateField} />)}
-        </div> : <p>Material details will be captured in the report body or calculation workspace for this report type.</p>}
-      </section>
-
-      <section className="card wizard-setup-card" aria-label="Components">
-        <h4>Components</h4>
-        <p>{selectedComponentCount} components selected.</p>
-        <div className="wizard-component-list">
-          <h5>Default / Minimum</h5>
-          {componentConfig.minimum.map((component) => (
-            <label key={component}>
-              <input type="checkbox" checked disabled />
-              {component}
-            </label>
-          ))}
-          {componentConfig.optional.length > 0 && <>
-            <h5>Optional</h5>
-            {componentConfig.optional.map((component) => (
-              <label key={component}>
-                <input
-                  type="checkbox"
-                  checked={selectedOptionalComponents.includes(component)}
-                  onChange={(event) => toggleOptionalComponent(component, event.target.checked)}
-                />
-                {component}
-              </label>
-            ))}
-          </>}
-        </div>
-      </section>
-
-      <section className="card wizard-setup-card wizard-actions-card" aria-label="Actions">
-        <h4>Step 3: Actions</h4>
-        <button type="button" onClick={startDraftReport}>Start Draft Report</button>
-        {draftMessage && <p role="status" className="wizard-success-message">{draftMessage}</p>}
-        {draftSetup && <p className="wizard-note">Prepared draft: {draftSetup.reportTypeLabel} with {draftSetup.components.length} components selected.</p>}
-        <Api510ExternalReportShell reportTypeId={selectedTypeId} draftPrepared={Boolean(draftSetup)} />
-      </section>
+    <h3>Step 2: Choose Report Type</h3>
+    <div className="wizard-step-layout" aria-label="Report types">
+      {groupedOptions.map((group) => <section key={group.label ?? 'default'} className="wizard-hierarchy-group">
+        {group.label && <h4>{group.label}</h4>}
+        {group.options.map((option: ApiInspectionReportOption) => <button key={option.id} type="button" className="wizard-report-type-option" aria-pressed={selectedTypeId === option.id} onClick={() => setSelectedTypeId(option.id)}>{option.label}</button>)}
+      </section>)}
     </div>
+
+    <section className="card wizard-setup-card" aria-label="Selected report summary">
+      <h3>Step 3: Start Inspection Report</h3>
+      <p><strong>Selected Standard:</strong> {standardCards.find((s) => s.id === selectedStandard)?.label}</p>
+      <p><strong>Selected Report Type:</strong> {selectedReportType?.label}</p>
+      <button type="button" onClick={startInspectionReport}>Start Inspection Report</button>
+    </section>
   </section>;
 }

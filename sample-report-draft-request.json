@@ -1,0 +1,79 @@
+{
+  "id": "rpt-draft-sample-001",
+  "clientOrganizationId": "client-demo-refining",
+  "facilityId": "facility-demo-gulf-coast",
+  "processUnitId": "unit-demo-crude",
+  "assetId": "asset-demo-piping-system",
+  "createdByUserId": "user-demo-inspector",
+  "updatedByUserId": "user-demo-inspector",
+  "templateId": "api-570-piping-inspection",
+  "reportNumber": "570-2026-0001",
+  "equipmentTag": "10-P-101",
+  "unit": "Crude Unit",
+  "systemId": "SYS-100",
+  "circuitId": "CIR-10A",
+  "service": "Hydrocarbon",
+  "status": "Draft",
+  "createdAt": "2026-04-30T00:00:00Z",
+  "updatedAt": null,
+  "sections": [],
+  "findings": [
+    {
+      "id": "finding-001",
+      "findingType": 1,
+      "damageMechanism": 1,
+      "location": "6 o'clock position at elbow",
+      "description": "Localized pitting and external corrosion under damaged jacketing.",
+      "severity": 3,
+      "repairRequired": true,
+      "repairRecommendation": "Replace affected spool and reinsulate with proper weather barrier.",
+      "componentType": "Pipe Elbow",
+      "associatedChecklistItem": "cui-temperature-range",
+      "pitDepth": 0.042,
+      "isLocalized": true,
+      "isGeneral": false,
+      "photoIds": [
+        "photo-001"
+      ],
+      "ndeMethod": "UT",
+      "ndeResult": "Wall loss confirmed at pit location.",
+      "insulationCondition": null,
+      "thicknessResult": 0.180,
+      "minimumRequiredThickness": 0.250
+    },
+    {
+      "id": "finding-002",
+      "findingType": 7,
+      "damageMechanism": 8,
+      "location": "Flange gasket at pump discharge",
+      "description": "Active seepage observed at flange face.",
+      "severity": 2,
+      "repairRequired": true,
+      "repairRecommendation": null,
+      "componentType": "Flange",
+      "associatedChecklistItem": "leak-repair-devices-clamps",
+      "pitDepth": null,
+      "isLocalized": false,
+      "isGeneral": false,
+      "photoIds": [],
+      "ndeMethod": null,
+      "ndeResult": null,
+      "insulationCondition": null,
+      "thicknessResult": null,
+      "minimumRequiredThickness": null
+    }
+  ],
+  "photos": [
+    {
+      "id": "photo-001",
+      "photoNumber": "1",
+      "description": "Pitting at elbow under insulation",
+      "relatedComponent": "Pipe Elbow",
+      "relatedChecklistItem": "cui-temperature-range",
+      "photoRequired": true,
+      "photoAttached": true,
+      "fileName": "elbow-pitting.jpg",
+      "fileUrl": "https://example.local/photos/elbow-pitting.jpg"
+    }
+  ]
+}
